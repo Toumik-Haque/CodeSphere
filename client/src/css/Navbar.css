@@ -1,0 +1,381 @@
+/* ========================================
+   3. CODESPHERE NAVBAR
+======================================== */
+
+.codesphere-navbar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1030;
+  border-bottom: 1px solid transparent;
+  transition:
+    background-color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+.codesphere-navbar.navbar-scrolled {
+  background-color: rgba(11, 12, 16, 0.96);
+  border-bottom-color: var(--gold-border);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+}
+
+/* Brand logo */
+
+.navbar-logo-img {
+  display: block;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+}
+
+.textLogo-code {
+  color: var(--text-main);
+  font-size: 1.3rem;
+  font-weight: 750;
+  line-height: 1.15;
+  letter-spacing: -0.6px;
+}
+
+.textLogo-sphere,
+.gold-text {
+  color: var(--gold);
+}
+
+.textLogo-tag {
+  margin-top: 4px;
+  color: var(--text-muted);
+  font-size: 0.48rem;
+  font-weight: 600;
+  letter-spacing: 1.25px;
+  white-space: nowrap;
+}
+
+/* Desktop navigation */
+
+.desktop-navigation .nav-link {
+  position: relative;
+  padding: 8px 0;
+  color: rgba(255, 255, 255, 0.76);
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: color 0.2s ease;
+}
+
+.desktop-navigation .nav-link:hover {
+  color: var(--gold);
+}
+
+.desktop-navigation .nav-link::after {
+  position: absolute;
+  right: 0;
+  bottom: 2px;
+  left: 0;
+  height: 1px;
+  background: var(--gold);
+  content: "";
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.2s ease;
+}
+
+.desktop-navigation .nav-link:hover::after {
+  transform: scaleX(1);
+}
+
+.navbar-login-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 43px;
+  padding: 0 1.2rem;
+  white-space: nowrap;
+  border-radius: 75px;
+}
+
+.navbar-login-button i {
+  font-size: 1.4rem;
+  margin: 0;
+}
+
+/* Mobile hamburger icon */
+
+.codesphere-menu-toggle i {
+  font-size: 2.5rem;
+  /* line-height: 1; */
+  filter: invert(1);
+  margin: 0 !important;
+}
+
+.mobile-menu-close:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 4px;
+}
+
+/* ========================================
+   4. MOBILE MENU OVERLAY
+======================================== */
+
+.codesphere-menu-overlay {
+  position: fixed;
+  z-index: 1040;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.72);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.3s ease,
+    visibility 0.3s ease;
+}
+
+.codesphere-menu-overlay.active {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+/* ========================================
+   5. RIGHT-SIDE MOBILE DRAWER
+======================================== */
+
+.codesphere-mobile-menu {
+  position: fixed;
+  z-index: 1050;
+  top: 0;
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  width: min(370px, 88vw);
+  height: 100vh;
+  height: 100dvh;
+  padding: 25px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+
+  background:
+    radial-gradient(ellipse at top right,
+      rgba(212, 175, 55, 0.11),
+      transparent 48%),
+    var(--bg-dark);
+
+  border-left: 1px solid var(--gold-border);
+  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.45);
+
+  transform: translateX(105%);
+  visibility: hidden;
+  transition:
+    transform 0.3s ease-in-out,
+    visibility 0.3s ease-in-out;
+}
+
+.codesphere-mobile-menu.active {
+  transform: translateX(0);
+  visibility: visible;
+}
+
+/* Drawer header */
+
+.mobile-menu-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 24px;
+  border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+}
+
+.mobile-menu-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  text-decoration: none;
+}
+
+.mobile-menu-brand img {
+  width: 45px;
+  height: 45px;
+  object-fit: contain;
+}
+
+.mobile-brand-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.mobile-brand-text .textLogo-code {
+  font-size: 1.15rem;
+}
+
+.mobile-brand-text .textLogo-tag {
+  font-size: 0.42rem;
+  letter-spacing: 0.8px;
+}
+
+/* Close button */
+
+.mobile-menu-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--gold-border);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  color: var(--gold);
+  font-size: 1rem;
+  cursor: pointer;
+  transition:
+    background 0.2s ease,
+    transform 0.2s ease;
+}
+
+.mobile-menu-close:hover {
+  background: rgba(212, 175, 55, 0.1);
+  transform: rotate(90deg);
+}
+
+/* Drawer caption */
+
+.mobile-menu-caption {
+  margin: 30px 0 12px;
+  color: var(--gold);
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 2px;
+}
+
+/* Drawer links */
+
+.mobile-menu-links {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mobile-menu-links li {
+  border-bottom: 1px solid var(--line);
+}
+
+.mobile-menu-links a {
+  display: grid;
+  grid-template-columns: 30px 1fr 20px;
+  align-items: center;
+  gap: 12px;
+  padding: 17px 2px;
+  color: #f0f0f2;
+  font-size: 0.95rem;
+  font-weight: 500;
+  text-decoration: none;
+  transition:
+    color 0.2s ease,
+    padding 0.2s ease;
+}
+
+.mobile-menu-links a:hover {
+  padding-left: 8px;
+  color: var(--gold);
+}
+
+.mobile-menu-number {
+  color: #777e89;
+  font-size: 0.67rem;
+  letter-spacing: 1px;
+}
+
+.mobile-menu-links a>i {
+  color: var(--gold);
+  font-size: 0.9rem;
+  text-align: right;
+}
+
+/* Drawer footer */
+
+.mobile-menu-footer {
+  margin-top: auto;
+  padding-top: 30px;
+}
+
+.mobile-menu-footer>p {
+  margin-bottom: 14px;
+  color: #aeb4be;
+  font-size: 0.8rem;
+  letter-spacing: 1px;
+}
+
+.mobile-menu-join {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+}
+
+.mobile-menu-join i {
+  font-size: 1.2rem;
+}
+
+.mobile-menu-tagline {
+  display: block;
+  margin-top: 20px;
+  color: #676e79;
+  font-size: 0.57rem;
+  letter-spacing: 1.5px;
+  text-align: center;
+}
+
+/* ========================================
+   6. RESPONSIVE NAVBAR
+======================================== */
+
+@media (max-width: 991.98px) {
+  .navbar-logo-img {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+@media (max-width: 380px) {
+  .navbar-brand {
+    margin-left: 5px;
+  }
+  
+  .navbar-logo-img {
+    width: 43px;
+    height: 43px;
+  }
+
+  .textLogo-code {
+    font-size: 1.1rem;
+  }
+
+  .textLogo-tag {
+    font-size: 0.42rem;
+    letter-spacing: 0.9px;
+  }
+
+  .codesphere-mobile-menu {
+    padding: 20px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  .codesphere-navbar,
+  .codesphere-menu-overlay,
+  .codesphere-mobile-menu,
+  .mobile-menu-links a,
+  .mobile-menu-close {
+    transition: none;
+  }
+}
