@@ -109,7 +109,7 @@ img {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 110px 20px 40px;
+  padding: 80px 20px;
   background:
     radial-gradient(
       circle at 15% 15%,
@@ -254,7 +254,7 @@ img {
 
 @media (max-width: 480px) {
   .auth-page {
-    padding: 95px 14px 25px;
+    padding: 40px 14px 25px;
   }
 
   .auth-card {

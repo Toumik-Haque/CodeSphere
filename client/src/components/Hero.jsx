@@ -30,7 +30,7 @@ const Hero = () => {
         <div className="hero-content">
           <div className="hero-eyebrow">
             <span>OFFICIAL CODING CLUB OF AGEMC</span>
-            <i className="bi bi-patch-check-fill" style={{ fontSize: '1rem'}}/>
+            <i className="bi bi-patch-check-fill verify" style={{ fontSize: '1rem'}}/>
           </div>
 
           <h1 className="hero-title">

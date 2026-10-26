@@ -7,8 +7,8 @@ import '../css/Navbar.css';
 const navLinks = [
   { label: 'Home', path: '/' },
   { label: 'Events', path: '/events' },
-  { label: 'Join Us', path: '#join' },
-  { label: 'About', path: '#about' },
+  { label: 'Team', path: '/team' },
+  { label: 'Join Community', path: '/join' },
 ];
 
 const Navbar = () => {

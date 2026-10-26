@@ -1,11 +1,12 @@
 
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
-import ScrollToTop from './ScrollToTop.jsx';
 
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Events from './components/Events';
+import TeamCarousel from './components/TeamCarousel';
 import JoinUs from './components/JoinUs';
 import About from './components/About';
 import Footer from './components/Footer';
@@ -16,6 +17,7 @@ import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
+import Team from './pages/Team';
 
 function HomePage() {
   return (
@@ -24,6 +26,7 @@ function HomePage() {
       <main>
         <Hero />
         <Events />
+        <TeamCarousel />
         <JoinUs />
         <About />
       </main>
@@ -50,12 +53,29 @@ function ProtectedRoute({ children, adminOnly = false }) {
   return children;
 }
 
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+
+  useEffect(() => {
+    if (hash) return;
+
+    window.scrollTo({
+      top: 0,
+      left: 0,
+      behavior: 'auto',
+    });
+  }, [pathname, hash]);
+
+  return null;
+}
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:slug" element={<EventDetails />} />
+      <Route path="/team" element={<Team />} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

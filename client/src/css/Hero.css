@@ -94,7 +94,7 @@
 .hero-eyebrow {
   display: inline-flex;
   align-items: center;
-  gap: 11px;
+  gap: 8px;
   margin-bottom: 28px;
   padding: 10px 15px;
   border: 1px solid rgba(212, 175, 55, 0.25);
@@ -106,14 +106,9 @@
   letter-spacing: 2px;
 }
 
-/* .hero-status-dot {
-  width: 7px;
-  height: 7px;
-  flex: 0 0 auto;
-  border-radius: 50%;
-  background: var(--gold);
-  box-shadow: 0 0 12px rgba(212, 175, 55, 0.65);
-} */
+.verify {
+  color: #d49400;
+}
 
 /* Main heading */
 
