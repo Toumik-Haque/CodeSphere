@@ -7,7 +7,7 @@
   transition: background-color .25s ease, border-color .25s ease, box-shadow .25s ease;
 }
 .codesphere-navbar.navbar-scrolled { background: rgba(255,255,255,.97); border-bottom-color: var(--gold-border); box-shadow: 0 8px 30px rgba(21,54,83,.08); }
-.navbar-logo-img { display:block; width:52px; height:52px; object-fit:contain; }
+.navbar-logo-img { display:block; width:220px; height:52px; object-fit:contain; object-position:left center; }
 .textLogo-code { color:var(--navy); font-size:1.3rem; font-weight:800; line-height:1.15; letter-spacing:-.6px; }
 .textLogo-sphere, .gold-text { color:var(--gold-deep); }
 .textLogo-tag { margin-top:4px; color:var(--text-muted); font-size:.48rem; font-weight:700; letter-spacing:1.25px; white-space:nowrap; }
@@ -26,7 +26,7 @@
 .codesphere-mobile-menu.active { transform:translateX(0); visibility:visible; }
 .mobile-menu-header { display:flex; align-items:center; justify-content:space-between; gap:12px; padding-bottom:24px; border-bottom:1px solid var(--line); }
 .mobile-menu-brand { display:flex; align-items:center; gap:10px; min-width:0; }
-.mobile-menu-brand img { width:45px; height:45px; object-fit:contain; }
+.mobile-menu-brand img { width:min(220px,62vw); height:52px; object-fit:contain; object-position:left center; }
 .mobile-brand-text { display:flex; flex-direction:column; }
 .mobile-brand-text .textLogo-code { font-size:1.15rem; }
 .mobile-brand-text .textLogo-tag { font-size:.42rem; letter-spacing:.8px; }
@@ -45,5 +45,5 @@
 .mobile-menu-join i { font-size:1.15rem; }
 .mobile-menu-tagline { display:block; margin-top:20px; color:#7c8d9b; font-size:.57rem; letter-spacing:1.5px; text-align:center; }
 @media (max-width:991.98px) { .navbar-logo-img { width:48px; height:48px; } }
-@media (max-width:380px) { .navbar-brand { margin-left:5px; } .navbar-logo-img { width:43px; height:43px; } .textLogo-code { font-size:1.1rem; } .textLogo-tag { font-size:.42rem; letter-spacing:.9px; } .codesphere-mobile-menu { padding:20px; } }
+@media (max-width:380px) { .navbar-brand { margin-left:5px; } .navbar-logo-img { width:min(190px,55vw); height:43px; } .textLogo-code { font-size:1.1rem; } .textLogo-tag { font-size:.42rem; letter-spacing:.9px; } .codesphere-mobile-menu { padding:20px; } }
 @media (prefers-reduced-motion:reduce) { .codesphere-navbar,.codesphere-menu-overlay,.codesphere-mobile-menu,.mobile-menu-links a,.mobile-menu-close { transition:none; } }
