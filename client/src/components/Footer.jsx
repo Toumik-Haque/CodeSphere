@@ -10,7 +10,7 @@ const Footer = () => {
           <div className="footer-branding">
             <a href="#home" className="footer-brand">
               <img src={logo} alt="CodeSphere logo" />
-              <span>Code<span className="gold-text">Sphere</span></span>
+              
             </a>
 
             <p className="footer-tagline">
