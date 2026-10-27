@@ -1,274 +1,79 @@
-/* ========================================
-   1. GLOBAL STYLES
-======================================== */
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap');
 
 :root {
-  --gold: #d4af37;
-  --gold-light: #f3d778;
-  --gold-border: rgba(212, 175, 55, 0.25);
-  --text-main: #f5f5f5;
-  --text-muted: #a0a5af;
-  --bg-dark: #0b0c10;
-  --bg-card: #12151c;
-  --line: rgba(255, 255, 255, 0.09);
+  color-scheme: light;
+  --navy: #153653;
+  --navy-deep: #102d46;
+  --blue: #2875a8;
+  --sky: #eaf5fc;
+  --sky-strong: #d7ecf9;
+  --gold: #c9a24a;
+  --gold-light: #e1be6a;
+  --gold-deep: #946d1d;
+  --text-main: #153653;
+  --text-muted: #52677a;
+  --bg: #ffffff;
+  --bg-soft: #f7fbfe;
+  --bg-card: #ffffff;
+  --line: rgba(21, 54, 83, .12);
+  --gold-border: rgba(201, 162, 74, .34);
+  --shadow-sm: 0 5px 18px rgba(21, 54, 83, .06);
+  --shadow-md: 0 14px 38px rgba(21, 54, 83, .10);
+  --shadow-lg: 0 24px 70px rgba(21, 54, 83, .13);
+  --radius-md: 14px;
+  --radius-lg: 22px;
+  --gold-gradient: linear-gradient(135deg, #e1be6a 0%, #c9a24a 55%, #b38731 100%);
+  font-family: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; scroll-padding-top: 92px; }
+body { margin: 0; min-width: 320px; overflow-x: hidden; background: var(--bg); color: var(--text-main); font-family: 'DM Sans', system-ui, sans-serif; }
+body, button, input, textarea, select { font-family: 'DM Sans', system-ui, sans-serif; }
+img { max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+button, a { -webkit-tap-highlight-color: transparent; }
+button { font: inherit; }
+::selection { color: var(--navy-deep); background: #f0dfae; }
+:focus-visible { outline: 3px solid rgba(201, 162, 74, .8); outline-offset: 3px; }
+h1, h2, h3, h4, h5, h6 { font-family: 'Manrope', 'DM Sans', sans-serif; color: var(--navy); letter-spacing: -.035em; }
+p { text-wrap: pretty; }
+.container { --bs-gutter-x: 2rem; }
+.btn-gold { display: inline-flex; align-items: center; justify-content: center; gap: 9px; padding: 12px 20px; border: 1px solid #c39a3d; border-radius: 10px; background: var(--gold-gradient); color: #102d46 !important; font-size: .9rem; font-weight: 800; box-shadow: 0 6px 16px rgba(201, 162, 74, .2); transition: transform .2s ease, box-shadow .2s ease, filter .2s ease; }
+.btn-gold:hover { color: #102d46 !important; transform: translateY(-2px); box-shadow: 0 10px 24px rgba(201, 162, 74, .28); filter: saturate(1.05); }
+.gold-text { color: var(--gold-deep); }
+.text-muted { color: var(--text-muted) !important; }
+
+.auth-page { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 100px 20px 60px; background: radial-gradient(circle at 12% 12%, rgba(215,236,249,.9), transparent 32%), linear-gradient(180deg,#f8fcff,#fff 65%); }
+.auth-card { width: 100%; max-width: 460px; padding: clamp(24px,5vw,40px); border: 1px solid var(--line); border-radius: 22px; background: rgba(255,255,255,.96); box-shadow: var(--shadow-lg); }
+.auth-brand { display: inline-block; margin-bottom: 28px; color: var(--navy); font-size: 1.5rem; font-weight: 800; text-decoration: none; }
+.auth-brand span { color: var(--gold-deep); }
+.auth-eyebrow { margin-bottom: 8px; color: var(--gold-deep); font-size: .72rem; font-weight: 800; letter-spacing: 1.8px; }
+.auth-card h1 { margin-bottom: 10px; color: var(--navy); font-size: clamp(1.65rem,4vw,2rem); font-weight: 800; }
+.auth-subtitle { margin-bottom: 25px; color: var(--text-muted); font-size: .92rem; line-height: 1.7; }
+.auth-card label { display: block; margin: 16px 0 7px; color: var(--navy); font-size: .86rem; font-weight: 700; }
+.auth-card input { width: 100%; min-height: 47px; padding: 11px 13px; border: 1px solid #d6e2eb; border-radius: 10px; outline: none; background: #fbfdff; color: var(--navy); font: inherit; font-size: .92rem; transition: border-color .2s ease, box-shadow .2s ease; }
+.auth-card input:focus { border-color: var(--gold); box-shadow: 0 0 0 4px rgba(201,162,74,.12); }
+.auth-card input::placeholder { color: #8395a5; }
+.auth-submit { width: 100%; min-height: 48px; margin-top: 24px; border: 1px solid #c39a3d; border-radius: 10px; background: var(--gold-gradient); color: var(--navy-deep); font-weight: 800; cursor: pointer; transition: transform .2s ease, box-shadow .2s ease; }
+.auth-submit:hover { transform: translateY(-1px); box-shadow: 0 8px 20px rgba(201,162,74,.24); }
+.auth-submit:disabled { opacity: .65; cursor: not-allowed; }
+.auth-error { margin: 15px 0; padding: 11px 13px; border: 1px solid rgba(175,49,49,.25); border-radius: 10px; background: #fff4f3; color: #9e2828; font-size: .85rem; }
+.auth-switch { margin: 22px 0 0; color: var(--text-muted); text-align: center; font-size: .88rem; }
+.auth-switch a { color: var(--gold-deep); font-weight: 800; }
+.auth-home { display: block; margin-top: 24px; color: var(--text-muted); text-align: center; font-size: .88rem; }
+.auth-home:hover { color: var(--navy); }
+
+@media (max-width: 575px) {
+  html { scroll-padding-top: 78px; }
+  .container { --bs-gutter-x: 1.25rem; }
+  .auth-page { padding: 86px 14px 30px; }
+  .auth-card { border-radius: 17px; }
 }
-
-html {
-  scroll-behavior: smooth;
-  scroll-padding-top: 90px;
-}
-
-body {
-  margin: 0;
-  background: var(--bg-dark);
-  color: var(--text-main);
-  font-family: Arial, Helvetica, sans-serif;
-  overflow-x: hidden;
-}
-
-a {
-  color: inherit;
-  text-decoration: none;
-}
-
-button,
-a {
-  -webkit-tap-highlight-color: transparent;
-}
-
-button {
-  font: inherit;
-}
-
-img {
-  max-width: 100%;
-}
-
-::selection {
-  color: #0b0c10;
-  background: var(--gold);
-}
-
-/* ========================================
-   2. GOLD BUTTON
-======================================== */
-
-.btn-gold {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  padding: 11px 20px;
-  border: 1px solid var(--gold);
-  border-radius: 8px;
-  background: var(--gold);
-  color: #111 !important;
-  font-size: 0.88rem;
-  font-weight: 700;
-  transition:
-    background 0.2s ease,
-    border-color 0.2s ease,
-    box-shadow 0.2s ease,
-    transform 0.2s ease;
-}
-
-.btn-gold:hover {
-  border-color: var(--gold-light);
-  background: var(--gold-light);
-  color: #111 !important;
-  box-shadow: 0 5px 22px rgba(212, 175, 55, 0.16);
-  transform: translateY(-1px);
-}
-
-
-/* ========================================
-   3. ACCESSIBILITY
-======================================== */
-
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
-  .btn-gold {
-    transition: none;
-  }
-}
-
-
-/* ========================================
-   AUTHENTICATION PAGES
-======================================== */
-
-.auth-page {
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 80px 20px;
-  background:
-    radial-gradient(
-      circle at 15% 15%,
-      rgba(212, 175, 55, 0.08),
-      transparent 35%
-    ),
-    #0b0c10;
-}
-
-.auth-card {
-  width: 100%;
-  max-width: 460px;
-  padding: 36px;
-  border: 1px solid rgba(212, 175, 55, 0.2);
-  border-radius: 16px;
-  background: #12151c;
-  box-shadow: 0 20px 70px rgba(0, 0, 0, 0.3);
-}
-
-.auth-brand {
-  display: inline-block;
-  margin-bottom: 30px;
-  color: #f5f5f5;
-  font-size: 1.5rem;
-  font-weight: 800;
-  text-decoration: none;
-}
-
-.auth-brand span {
-  color: var(--gold);
-}
-
-.auth-eyebrow {
-  margin-bottom: 8px;
-  color: var(--gold);
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 2px;
-}
-
-.auth-card h1 {
-  margin-bottom: 10px;
-  color: #f5f5f5;
-  font-size: 1.8rem;
-  font-weight: 800;
-}
-
-.auth-subtitle {
-  margin-bottom: 25px;
-  color: #a2a9b5;
-  font-size: 0.9rem;
-  line-height: 1.6;
-}
-
-.auth-card label {
-  display: block;
-  margin: 16px 0 7px;
-  color: #e3e5e9;
-  font-size: 0.85rem;
-  font-weight: 600;
-}
-
-.auth-card input {
-  width: 100%;
-  min-height: 46px;
-  padding: 11px 13px;
-  border: 1px solid #303541;
-  border-radius: 8px;
-  outline: none;
-  background: #0d0f14;
-  color: #f5f5f5;
-  font: inherit;
-  font-size: 0.9rem;
-  transition: border-color 0.2s ease;
-}
-
-.auth-card input:focus {
-  border-color: var(--gold);
-}
-
-.auth-card input::placeholder {
-  color: #717987;
-}
-
-.auth-submit {
-  width: 100%;
-  min-height: 46px;
-  margin-top: 24px;
-  border: 1px solid var(--gold);
-  border-radius: 8px;
-  background: var(--gold);
-  color: #101010;
-  font-weight: 700;
-  cursor: pointer;
-  transition: background 0.2s ease;
-}
-
-.auth-submit:hover {
-  background: var(--gold-light);
-}
-
-.auth-submit:disabled {
-  opacity: 0.65;
-  cursor: not-allowed;
-}
-
-.auth-error {
-  margin: 15px 0;
-  padding: 11px 13px;
-  border: 1px solid rgba(255, 100, 100, 0.35);
-  border-radius: 8px;
-  background: rgba(255, 80, 80, 0.08);
-  color: #ffaaaa;
-  font-size: 0.85rem;
-}
-
-.auth-switch {
-  margin: 22px 0 0;
-  color: #a2a9b5;
-  text-align: center;
-  font-size: 0.85rem;
-}
-
-.auth-switch a {
-  color: var(--gold);
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.auth-home {
-  display: block;
-  margin-top: 24px;
-  color: #9299a5;
-  text-align: center;
-  font-size: 0.85rem;
-  text-decoration: none;
-}
-
-.auth-home:hover {
-  color: var(--gold);
-}
-
-@media (max-width: 480px) {
-  .auth-page {
-    padding: 40px 14px 25px;
-  }
-
-  .auth-card {
-    padding: 26px 20px;
-  }
-
-  .auth-card h1 {
-    font-size: 1.55rem;
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .auth-card input,
-  .auth-submit {
-    transition: none;
-  }
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
