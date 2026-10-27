@@ -77,14 +77,6 @@ const Navbar = () => {
               className="navbar-logo-img"
             />
 
-            <div className="d-flex flex-column ms-2">
-              <span className="textLogo-code">
-                Code<span className="textLogo-sphere">Sphere</span>
-              </span>
-              <span className="textLogo-tag">
-                — CODING COMMUNITY —
-              </span>
-            </div>
           </Link>
 
           {/* Mobile Hamburger */}
@@ -167,14 +159,6 @@ const Navbar = () => {
           >
             <img src={logo} alt="CodeSphere Logo" />
 
-            <span className="mobile-brand-text">
-              <span className="textLogo-code">
-                Code<span className="textLogo-sphere">Sphere</span>
-              </span>
-              <span className="textLogo-tag">
-                — CODING COMMUNITY —
-              </span>
-            </span>
           </Link>
 
           <button
