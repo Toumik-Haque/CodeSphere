@@ -3,11 +3,12 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
+import VideoBackground from './components/VideoBackground';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Events from './components/Events';
 import TeamCarousel from './components/TeamCarousel';
-import JoinUs from './components/JoinUs';
+import CTA from './components/CTA'
 import About from './components/About';
 import Footer from './components/Footer';
 
@@ -22,13 +23,14 @@ import Team from './pages/Team';
 function HomePage() {
   return (
     <>
+      <VideoBackground />
       <Navbar />
       <main>
         <Hero />
+        <About />
         <Events />
         <TeamCarousel />
-        <JoinUs />
-        <About />
+        <CTA />
       </main>
       <Footer />
     </>

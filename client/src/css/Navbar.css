@@ -1,6 +1,4 @@
-/* ========================================
-   3. CODESPHERE NAVBAR
-======================================== */
+/* CodeSphere — Simple, Modern Navbar */
 
 .codesphere-navbar {
   position: fixed;
@@ -9,63 +7,65 @@
   left: 0;
   width: 100%;
   z-index: 1030;
-  border-bottom: 1px solid transparent;
-  transition:
-    background-color 0.3s ease,
-    border-color 0.3s ease;
+  background: rgba(255, 255, 255, 0.94);
+  border-bottom: 1px solid rgba(16, 36, 58, 0.08);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  transition: background-color .25s ease,
+              border-color .25s ease,
+              box-shadow .25s ease;
 }
 
 .codesphere-navbar.navbar-scrolled {
-  background-color: rgba(11, 12, 16, 0.96);
-  border-bottom-color: var(--gold-border);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  background: rgba(255, 255, 255, 0.98);
+  border-bottom-color: rgba(16, 36, 58, 0.12);
+  box-shadow: 0 6px 24px rgba(16, 36, 58, 0.08);
 }
 
-/* Brand logo */
-
+/* Logo */
 .navbar-logo-img {
   display: block;
-  width: 52px;
+  width: 220px;
   height: 52px;
   object-fit: contain;
+  object-position: left center;
 }
 
 .textLogo-code {
-  color: var(--text-main);
+  color: #10243A;
   font-size: 1.3rem;
-  font-weight: 750;
+  font-weight: 800;
   line-height: 1.15;
-  letter-spacing: -0.6px;
+  letter-spacing: -.6px;
 }
 
 .textLogo-sphere,
 .gold-text {
-  color: var(--gold);
+  color: #D94324;
 }
 
 .textLogo-tag {
   margin-top: 4px;
-  color: var(--text-muted);
-  font-size: 0.48rem;
-  font-weight: 600;
+  color: #536579;
+  font-size: .48rem;
+  font-weight: 700;
   letter-spacing: 1.25px;
   white-space: nowrap;
 }
 
 /* Desktop navigation */
-
 .desktop-navigation .nav-link {
   position: relative;
   padding: 8px 0;
-  color: rgba(255, 255, 255, 0.76);
-  font-size: 0.9rem;
-  font-weight: 500;
-  transition: color 0.2s ease;
+  color: #243B50;
+  font-size: .91rem;
+  font-weight: 600;
+  transition: color .2s ease;
 }
 
-.desktop-navigation .nav-link:hover {
-  color: var(--gold);
+.desktop-navigation .nav-link:hover,
+.desktop-navigation .nav-link:focus-visible {
+  color: #D94324;
 }
 
 .desktop-navigation .nav-link::after {
@@ -73,62 +73,79 @@
   right: 0;
   bottom: 2px;
   left: 0;
-  height: 1px;
-  background: var(--gold);
+  height: 2px;
+  border-radius: 2px;
+  background: #F05A36;
   content: "";
   transform: scaleX(0);
   transform-origin: left;
-  transition: transform 0.2s ease;
+  transition: transform .2s ease;
 }
 
-.desktop-navigation .nav-link:hover::after {
+.desktop-navigation .nav-link:hover::after,
+.desktop-navigation .nav-link:focus-visible::after {
   transform: scaleX(1);
 }
 
+/* Login button */
 .navbar-login-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 43px;
+  padding: 0 2.4rem;
+  white-space: nowrap;
+  border-radius: 999px;
+  color: #D94324;
+  font-size: .91rem;
+  font-weight: 600;
+}
+
+.navbar-login-button:hover {
+  transform: translateY(-2px);
+  color: #D94324;
+  background-color: #ff330013;
+  /* filter: saturate(1.08); */
+}
+
+/* Signup button */
+.navbar-signup-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
   min-height: 43px;
   padding: 0 1.2rem;
   white-space: nowrap;
-  border-radius: 75px;
+  border-radius: 999px;
 }
 
-.navbar-login-button i {
-  font-size: 1.4rem;
-  margin: 0;
+/* Mobile menu toggle */
+.codesphere-menu-toggle {
+  color: #10243A !important;
 }
-
-/* Mobile hamburger icon */
 
 .codesphere-menu-toggle i {
-  font-size: 2.5rem;
-  /* line-height: 1; */
-  filter: invert(1);
   margin: 0 !important;
+  font-size: 2.1rem;
+  filter: none;
 }
 
 .mobile-menu-close:focus-visible {
-  outline: 2px solid var(--gold);
+  outline: 2px solid #D94324;
   outline-offset: 4px;
 }
 
-/* ========================================
-   4. MOBILE MENU OVERLAY
-======================================== */
-
+/* Menu overlay */
 .codesphere-menu-overlay {
   position: fixed;
   z-index: 1040;
   inset: 0;
-  background: rgba(0, 0, 0, 0.72);
+  background: rgba(16, 36, 58, 0.42);
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition:
-    opacity 0.3s ease,
-    visibility 0.3s ease;
+  transition: opacity .3s ease, visibility .3s ease;
+  backdrop-filter: blur(3px);
 }
 
 .codesphere-menu-overlay.active {
@@ -137,10 +154,7 @@
   pointer-events: auto;
 }
 
-/* ========================================
-   5. RIGHT-SIDE MOBILE DRAWER
-======================================== */
-
+/* Mobile drawer */
 .codesphere-mobile-menu {
   position: fixed;
   z-index: 1050;
@@ -154,21 +168,13 @@
   padding: 25px;
   overflow-y: auto;
   overscroll-behavior: contain;
-
-  background:
-    radial-gradient(ellipse at top right,
-      rgba(212, 175, 55, 0.11),
-      transparent 48%),
-    var(--bg-dark);
-
-  border-left: 1px solid var(--gold-border);
-  box-shadow: -20px 0 60px rgba(0, 0, 0, 0.45);
-
+  background: #FFFFFF;
+  border-left: 1px solid rgba(16, 36, 58, 0.12);
+  box-shadow: -20px 0 60px rgba(16, 36, 58, 0.16);
   transform: translateX(105%);
   visibility: hidden;
-  transition:
-    transform 0.3s ease-in-out,
-    visibility 0.3s ease-in-out;
+  transition: transform .3s ease-in-out,
+              visibility .3s ease-in-out;
 }
 
 .codesphere-mobile-menu.active {
@@ -176,15 +182,13 @@
   visibility: visible;
 }
 
-/* Drawer header */
-
 .mobile-menu-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 12px;
   padding-bottom: 24px;
-  border-bottom: 1px solid rgba(212, 175, 55, 0.16);
+  border-bottom: 1px solid #E2E8EF;
 }
 
 .mobile-menu-brand {
@@ -192,13 +196,13 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
-  text-decoration: none;
 }
 
 .mobile-menu-brand img {
-  width: 45px;
-  height: 45px;
+  width: min(220px, 62vw);
+  height: 52px;
   object-fit: contain;
+  object-position: left center;
 }
 
 .mobile-brand-text {
@@ -211,11 +215,9 @@
 }
 
 .mobile-brand-text .textLogo-tag {
-  font-size: 0.42rem;
-  letter-spacing: 0.8px;
+  font-size: .42rem;
+  letter-spacing: .8px;
 }
-
-/* Close button */
 
 .mobile-menu-close {
   display: grid;
@@ -223,33 +225,28 @@
   place-items: center;
   width: 40px;
   height: 40px;
-  border: 1px solid var(--gold-border);
-  border-radius: 10px;
-  background: rgba(255, 255, 255, 0.04);
-  color: var(--gold);
+  border: 1px solid #DCE4EC;
+  border-radius: 12px;
+  background: #FFFFFF;
+  color: #10243A;
   font-size: 1rem;
   cursor: pointer;
-  transition:
-    background 0.2s ease,
-    transform 0.2s ease;
+  transition: background-color .2s ease,
+              transform .2s ease;
 }
 
 .mobile-menu-close:hover {
-  background: rgba(212, 175, 55, 0.1);
+  background: #F2F6FA;
   transform: rotate(90deg);
 }
 
-/* Drawer caption */
-
 .mobile-menu-caption {
   margin: 30px 0 12px;
-  color: var(--gold);
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 2px;
+  color: #D94324;
+  font-size: .68rem;
+  font-weight: 800;
+  letter-spacing: 1.8px;
 }
-
-/* Drawer links */
 
 .mobile-menu-links {
   display: flex;
@@ -260,7 +257,7 @@
 }
 
 .mobile-menu-links li {
-  border-bottom: 1px solid var(--line);
+  border-bottom: 1px solid #E5EBF1;
 }
 
 .mobile-menu-links a {
@@ -269,44 +266,40 @@
   align-items: center;
   gap: 12px;
   padding: 17px 2px;
-  color: #f0f0f2;
-  font-size: 0.95rem;
-  font-weight: 500;
+  color: #10243A;
+  font-size: .97rem;
+  font-weight: 600;
   text-decoration: none;
-  transition:
-    color 0.2s ease,
-    padding 0.2s ease;
+  transition: color .2s ease, padding .2s ease;
 }
 
 .mobile-menu-links a:hover {
   padding-left: 8px;
-  color: var(--gold);
+  color: #D94324;
 }
 
 .mobile-menu-number {
-  color: #777e89;
-  font-size: 0.67rem;
+  color: #617386;
+  font-size: .67rem;
   letter-spacing: 1px;
 }
 
-.mobile-menu-links a>i {
-  color: var(--gold);
-  font-size: 0.9rem;
+.mobile-menu-links a > i {
+  color: #D94324;
+  font-size: .9rem;
   text-align: right;
 }
-
-/* Drawer footer */
 
 .mobile-menu-footer {
   margin-top: auto;
   padding-top: 30px;
 }
 
-.mobile-menu-footer>p {
+.mobile-menu-footer > p {
   margin-bottom: 14px;
-  color: #aeb4be;
-  font-size: 0.8rem;
-  letter-spacing: 1px;
+  color: #536579;
+  font-size: .82rem;
+  letter-spacing: .5px;
 }
 
 .mobile-menu-join {
@@ -318,23 +311,20 @@
   padding: 12px 16px;
 }
 
-.mobile-menu-join i {
-  font-size: 1.2rem;
+.mobile-login-btn {
+  border-color: #F05A36;
 }
 
 .mobile-menu-tagline {
   display: block;
   margin-top: 20px;
-  color: #676e79;
-  font-size: 0.57rem;
+  color: #617386;
+  font-size: .57rem;
   letter-spacing: 1.5px;
   text-align: center;
 }
 
-/* ========================================
-   6. RESPONSIVE NAVBAR
-======================================== */
-
+/* Responsive adjustments */
 @media (max-width: 991.98px) {
   .navbar-logo-img {
     width: 48px;
@@ -346,9 +336,9 @@
   .navbar-brand {
     margin-left: 5px;
   }
-  
+
   .navbar-logo-img {
-    width: 43px;
+    width: min(190px, 55vw);
     height: 43px;
   }
 
@@ -357,8 +347,8 @@
   }
 
   .textLogo-tag {
-    font-size: 0.42rem;
-    letter-spacing: 0.9px;
+    font-size: .42rem;
+    letter-spacing: .9px;
   }
 
   .codesphere-mobile-menu {
@@ -366,11 +356,8 @@
   }
 }
 
+/* Respect reduced-motion preferences */
 @media (prefers-reduced-motion: reduce) {
-  html {
-    scroll-behavior: auto;
-  }
-
   .codesphere-navbar,
   .codesphere-menu-overlay,
   .codesphere-mobile-menu,
@@ -379,3 +366,4 @@
     transition: none;
   }
 }
+

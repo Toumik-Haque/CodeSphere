@@ -88,11 +88,17 @@ export default function TeamCarousel() {
   }
 
   return (
-    <section className="core-team-section" aria-labelledby="core-team-title">
+    <section className="core-team-section bg-info" aria-labelledby="core-team-title">
       <div className="core-team-heading">
         <div>
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
-          <h2 id="core-team-title">Meet Our Core Team</h2>
+          <p className="core-team-eyebrow">
+            <span className="section-eyebrow-line" />
+            THE PEOPLE BEHIND
+          </p>
+          <h2 id="core-team-title">
+            Meet Our{' '}
+            <span className="gold-text">Core Team.</span>
+          </h2>
           <p className="core-team-description">
             The people bringing ideas to life and building our community.
           </p>
@@ -140,27 +146,84 @@ export default function TeamCarousel() {
               <h3>{member.name}</h3>
               <p className="core-member-role">{member.role}</p>
 
-              {member.link && (
+              {/* {member.link && (
                 <a
                   className="core-member-link"
                   href={member.link}
                   target="_blank"
                   rel="noopener noreferrer"
                 >
-                  Supporting link
+                  Check out
                   <i className="bi bi-arrow-up-right" aria-hidden="true" />
                 </a>
-              )}
+              )} */}
+              <div className="core-member-socials">
+                <a
+                  href={member.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${member.name} on LinkedIn`}
+                  title="LinkedIn"
+                >
+                  <i className="bi bi-linkedin" aria-hidden="true" />
+                </a>
+                {member.linkedin && (
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on LinkedIn`}
+                    title="LinkedIn"
+                  >
+                    <i className="bi bi-linkedin" aria-hidden="true" />
+                  </a>
+                )}
+
+                <a
+                    href={member.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                {member.instagram && (
+                  <a
+                    href={member.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                )}
+
+                <a
+                    href={member.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on GitHub`}
+                    title="GitHub"
+                  >
+                    <i className="bi bi-github" aria-hidden="true" />
+                  </a>
+                {member.github && (
+                  <a
+                    href={member.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on GitHub`}
+                    title="GitHub"
+                  >
+                    <i className="bi bi-github" aria-hidden="true" />
+                  </a>
+                )}
+              </div>
             </div>
           </article>
         ))}
-      </div>
-
-      <div className="core-team-footer">
-        <Link to="/team" className="core-team-view-all">
-          Meet the entire team
-          <i className="bi bi-arrow-right" aria-hidden="true" />
-        </Link>
       </div>
     </section>
   );

@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
 import '../css/Admin.css';
 
 const initialForm = {
@@ -374,7 +374,7 @@ export default function Admin() {
     });
 
     setSelectedImage(null);
-    setImagePreview(event.bannerImage || '');
+    setImagePreview(event.bannerImage?.url || '');
     setMessage('');
     setError('');
     setShowEventForm(true);

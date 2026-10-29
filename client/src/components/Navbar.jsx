@@ -1,21 +1,23 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
 import '../css/Navbar.css';
 
 const navLinks = [
   { label: 'Home', path: '/' },
   { label: 'Events', path: '/events' },
+  { label: 'Materials', path: '/materials' },
   { label: 'Team', path: '/team' },
-  { label: 'Join Community', path: '/join' },
+  { label: 'Gallery', path: '/gallery' },
+  { label: 'Contact Us', path: '/contact' },
 ];
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
@@ -55,6 +57,18 @@ const Navbar = () => {
 
   const closeMenu = () => setIsMenuOpen(false);
 
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      closeMenu();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <>
       {/* Main Navbar */}
@@ -77,14 +91,6 @@ const Navbar = () => {
               className="navbar-logo-img"
             />
 
-            <div className="d-flex flex-column ms-2">
-              <span className="textLogo-code">
-                Code<span className="textLogo-sphere">Sphere</span>
-              </span>
-              <span className="textLogo-tag">
-                — CODING COMMUNITY —
-              </span>
-            </div>
           </Link>
 
           {/* Mobile Hamburger */}
@@ -113,6 +119,34 @@ const Navbar = () => {
                 </li>
               ))}
 
+              {/* <li className="nav-item ms-lg-2">
+                <Link
+                  to={
+                    isAuthenticated
+                      ? (isAdmin ? '/admin' : '/profile')
+                      : '/login'
+                  }
+                  className="btn btn-gold navbar-login-button"
+                >
+                  {isAuthenticated
+                    ? (isAdmin ? 'Admin Dashboard' : 'Profile')
+                    : 'Login'}
+
+                  <i
+                    className={`bi ${isAuthenticated
+                      ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
+                      : 'bi-arrow-up-right'
+                      }`}
+                    aria-hidden="true"
+                  />
+                </Link>
+              </li> */}
+
+            </ul>
+          </div>
+
+          {/* <div className="desktop-navigation d-none d-lg-flex">
+            <ul className='navbar-nav align-items-center gap-4'>
               <li className="nav-item ms-lg-2">
                 <Link
                   to={
@@ -124,20 +158,70 @@ const Navbar = () => {
                 >
                   {isAuthenticated
                     ? (isAdmin ? 'Admin Dashboard' : 'Profile')
-                    : 'Sign In'}
+                    : 'Login'}
 
                   <i
                     className={`bi ${isAuthenticated
                       ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                      : 'bi-box-arrow-in-right'
+                      : 'bi-arrow-up-right'
                       }`}
                     aria-hidden="true"
                   />
                 </Link>
               </li>
+            </ul>
+          </div> */}
 
+          <div className="desktop-navigation d-none d-lg-flex">
+            <ul className="navbar-nav align-items-center gap-3">
+              {isAuthenticated ? (
+                <li className="nav-item ms-lg-2">
+                  <Link
+                    to={isAdmin ? '/admin' : '/profile'}
+                    className="btn btn-gold border-0 navbar-login-button"
+                  >
+                    {isAdmin ? 'Dashboard' : 'Profile'}
+
+                    <i
+                      className={`bi ${isAdmin ? 'bi-speedometer2' : 'bi-person-circle'
+                        }`}
+                      aria-hidden="true"
+                    />
+                  </Link>
+                </li>
+              ) : (
+                <>
+                  <li className="nav-item">
+                    <Link
+                      to={
+                        isAuthenticated
+                          ? (isAdmin ? '/admin' : '/profile')
+                          : '/login'
+                      }
+                      className="btn btn-outline-light navbar-login-button"
+                    >
+                      {isAuthenticated
+                        ? (isAdmin ? 'Dashboard' : 'Profile')
+                        : 'Login'}
+                    </Link>
+                  </li>
+
+                  <li className="nav-item">
+                    {!isAuthenticated
+                      ? <Link to="register" className="btn btn-gold border-0 navbar-signup-button">
+                        Sign Up
+                        <i className="bi bi-arrow-up-right" aria-hidden="true" />
+                      </Link>
+                      : <button 
+                      onclick = { handleLogout }
+                      className="btn btn-gold border-0 navbar-signup-button"
+                      >Sign Out</button>}
+                  </li>
+                </>
+              )}
             </ul>
           </div>
+
         </div>
       </nav>
 
@@ -167,14 +251,6 @@ const Navbar = () => {
           >
             <img src={logo} alt="CodeSphere Logo" />
 
-            <span className="mobile-brand-text">
-              <span className="textLogo-code">
-                Code<span className="textLogo-sphere">Sphere</span>
-              </span>
-              <span className="textLogo-tag">
-                — CODING COMMUNITY —
-              </span>
-            </span>
           </Link>
 
           <button
@@ -218,7 +294,7 @@ const Navbar = () => {
         <div className="mobile-menu-footer">
           <p>Learn. Build. Grow.</p>
 
-          <Link
+          {/* <Link
             className="btn btn-gold mobile-menu-join"
             to={
               isAuthenticated
@@ -230,8 +306,8 @@ const Navbar = () => {
             <span>
               <i
                 className={`bi ${isAuthenticated
-                    ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                    : 'bi-box-arrow-in-right'
+                  ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
+                  : 'bi-box-arrow-in-right'
                   } me-3`}
                 aria-hidden="true"
               />
@@ -241,7 +317,46 @@ const Navbar = () => {
             </span>
 
             <i className="bi bi-arrow-up-right" aria-hidden="true" />
-          </Link>
+          </Link> */}
+
+          {isAuthenticated ? (
+            <Link
+              className="btn navbar-account-button mobile-menu-join"
+              to={isAdmin ? '/admin' : '/profile'}
+              onClick={closeMenu}
+            >
+              <span>
+                <i
+                  className={`bi ${isAdmin ? 'bi-speedometer2' : 'bi-person-circle'
+                    } me-2`}
+                  aria-hidden="true"
+                />
+                {isAdmin ? 'Admin Dashboard' : 'Profile'}
+              </span>
+
+              <i className="bi bi-arrow-up-right" aria-hidden="true" />
+            </Link>
+          ) : (
+            <div className="mobile-auth-buttons d-flex flex-column gap-3">
+              <Link
+                className="btn mobile-login-btn navbar-login-button"
+                to="/login"
+                onClick={closeMenu}
+              >
+                Login
+              </Link>
+
+              <Link
+                className="btn btn-gold navbar-auth-button navbar-signup-button"
+                to="/register"
+                onClick={closeMenu}
+              >
+                Sign Up
+                <i className="bi bi-arrow-right" aria-hidden="true" />
+              </Link>
+            </div>
+          )}
+
 
           <span className="mobile-menu-tagline">
             BUILD SOMETHING AMAZING.

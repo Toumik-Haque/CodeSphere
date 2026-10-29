@@ -1,5 +1,5 @@
 import React from 'react';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
 import '../css/Footer.css';
 
 const Footer = () => {
@@ -10,7 +10,7 @@ const Footer = () => {
           <div className="footer-branding">
             <a href="#home" className="footer-brand">
               <img src={logo} alt="CodeSphere logo" />
-              <span>Code<span className="gold-text">Sphere</span></span>
+              
             </a>
 
             <p className="footer-tagline">
