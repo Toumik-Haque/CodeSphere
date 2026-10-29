@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import Navbar from '../components/Navbar';
+import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
 import '../css/CoreMembers.css';
 
@@ -47,138 +49,123 @@ export default function Team() {
   }, []);
 
   return (
-    <main className="team-page">
-      <header className="team-page-hero">
-        <Link to="/" className="team-back-link">
-          <i className="bi bi-arrow-left" aria-hidden="true" />
-          Back to Home
-        </Link>
+    <>
+      <Navbar />
 
-        <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
-        <h1>Meet Our <span>Core Team</span></h1>
-        <p className="team-page-intro">
-          Meet the people who collaborate, create, and help our community grow.
-        </p>
-      </header>
+      <main className="team-page">
+        <div className='container'>
+          <header className="team-page-hero">
+            <p className="core-team-eyebrow">
+              <span className="core-team-eyebrow-line" />
+              THE PEOPLE BEHIND
+            </p>
+            <h1>Meet Our <span>Core Team</span></h1>
+            <p className="team-page-intro">
+              Meet the people who collaborate, create, and help our community grow.
+            </p>
+          </header>
 
-      <section className="team-directory" aria-label="Core team members">
-        {loading ? (
-          <p className="core-team-status" aria-live="polite">
-            Loading our team...
-          </p>
-        ) : error ? (
-          <p className="team-error" role="alert">{error}</p>
-        ) : members.length === 0 ? (
-          <p className="core-team-status">
-            Our team profiles will be available soon.
-          </p>
-        ) : (
-          <div className="team-directory-grid">
-            {members.map((member) => (
-              <article className="team-directory-card" key={member._id}>
-                <div className="team-directory-photo-wrap">
-                  {member.image?.url ? (
-                    <img
-                      src={member.image.url}
-                      alt={member.name}
-                      className="team-directory-photo"
-                      loading="lazy"
-                    />
-                  ) : (
-                    <div
-                      className="team-directory-photo-fallback"
-                      aria-hidden="true"
-                    >
-                      {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
+          <section className="team-directory" aria-label="Core team members">
+            {loading ? (
+              <p className="core-team-status" aria-live="polite">
+                Loading our team...
+              </p>
+            ) : error ? (
+              <p className="team-error" role="alert">{error}</p>
+            ) : members.length === 0 ? (
+              <p className="core-team-status">
+                Our team profiles will be available soon.
+              </p>
+            ) : (
+              <div className="team-directory-grid">
+                {members.map((member) => (
+                  <article className="core-member-slide" key={member._id}>
+
+                    <div className="core-member-photo-wrap">
+                      {member.image?.url ? (
+                        <img
+                          className="core-member-photo"
+                          src={member.image.url}
+                          alt={member.name}
+                          loading="lazy"
+                        />
+                      ) : (
+                        <div className="core-member-photo-fallback" aria-hidden="true">
+                          {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
+                        </div>
+                      )}
+
+                      <div className="core-member-socials">
+                        <a
+                          href={member.instagram}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${member.name} on Instagram`}
+                          title="Instagram"
+                        >
+                          <i className="bi bi-instagram" aria-hidden="true" />
+                        </a>
+                        <a
+                          href={member.instagram}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          aria-label={`${member.name} on Instagram`}
+                          title="Instagram"
+                        >
+                          <i className="bi bi-linkedin" aria-hidden="true" />
+                        </a>
+                        {member.instagram && (
+                          <a
+                            href={member.instagram}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`${member.name} on Instagram`}
+                            title="Instagram"
+                          >
+                            <i className="bi bi-instagram" aria-hidden="true" />
+                          </a>
+                        )}
+
+                        {member.linkedin && (
+                          <a
+                            href={member.linkedin}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`${member.name} on LinkedIn`}
+                            title="LinkedIn"
+                          >
+                            <i className="bi bi-linkedin" aria-hidden="true" />
+                          </a>
+                        )}
+                      </div>
                     </div>
-                  )}
-                </div>
 
-                <div className="team-directory-info">
-                  <h2>{member.name}</h2>
-                  <p className="core-member-role">{member.role}</p>
 
-                  {/* {member.link && (
-                    <a
-                      href={member.link}
-                      className="core-member-link"
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      Supporting link
-                      <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                    </a>
-                  )} */}
-                  <div className="core-member-socials">
+                    <div className="core-member-info">
+                      <h3>{member.name}</h3>
+                      <p className="core-member-role">{member.role}</p>
+
+                      {/* {member.link && (
                 <a
-                  href={member.linkedin}
+                  className="core-member-link"
+                  href={member.link}
                   target="_blank"
                   rel="noopener noreferrer"
-                  aria-label={`${member.name} on LinkedIn`}
-                  title="LinkedIn"
                 >
-                  <i className="bi bi-linkedin" aria-hidden="true" />
+                  Check out
+                  <i className="bi bi-arrow-up-right" aria-hidden="true" />
                 </a>
-                {member.linkedin && (
-                  <a
-                    href={member.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on LinkedIn`}
-                    title="LinkedIn"
-                  >
-                    <i className="bi bi-linkedin" aria-hidden="true" />
-                  </a>
-                )}
-
-                <a
-                    href={member.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on Instagram`}
-                    title="Instagram"
-                  >
-                    <i className="bi bi-instagram" aria-hidden="true" />
-                  </a>
-                {member.instagram && (
-                  <a
-                    href={member.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on Instagram`}
-                    title="Instagram"
-                  >
-                    <i className="bi bi-instagram" aria-hidden="true" />
-                  </a>
-                )}
-
-                <a
-                    href={member.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on GitHub`}
-                    title="GitHub"
-                  >
-                    <i className="bi bi-github" aria-hidden="true" />
-                  </a>
-                {member.github && (
-                  <a
-                    href={member.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on GitHub`}
-                    title="GitHub"
-                  >
-                    <i className="bi bi-github" aria-hidden="true" />
-                  </a>
-                )}
+              )} */}
+                    </div>
+                  </article>
+                ))}
               </div>
-                </div>
-              </article>
-            ))}
-          </div>
-        )}
-      </section>
-    </main>
+            )}
+          </section>
+        </div>
+      </main>
+
+      <Footer />
+    </>
   );
 }

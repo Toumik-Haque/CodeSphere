@@ -65,7 +65,10 @@ export default function TeamCarousel() {
     return (
       <section className="core-team-section" aria-busy="true">
         <div className="core-team-heading">
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
+          <p className="core-team-eyebrow">
+            <span className="core-team-eyebrow-line" />
+            THE PEOPLE BEHIND
+          </p>
           <h2>Meet Our Core Team</h2>
         </div>
         <p className="core-team-status">Loading our team...</p>
@@ -77,7 +80,10 @@ export default function TeamCarousel() {
     return (
       <section className="core-team-section">
         <div className="core-team-heading">
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
+          <p className="core-team-eyebrow">
+            <span className="core-team-eyebrow-line" />
+            THE PEOPLE BEHIND
+          </p>
           <h2>Meet Our Core Team</h2>
         </div>
         <p className="core-team-status">
@@ -92,7 +98,7 @@ export default function TeamCarousel() {
       <div className="core-team-heading">
         <div>
           <p className="core-team-eyebrow">
-            <span className="section-eyebrow-line" />
+            <span className="core-team-eyebrow-line" />
             THE PEOPLE BEHIND
           </p>
           <h2 id="core-team-title">
@@ -127,6 +133,7 @@ export default function TeamCarousel() {
       <div className="core-team-track" ref={trackRef}>
         {members.map((member) => (
           <article className="core-member-slide" key={member._id}>
+
             <div className="core-member-photo-wrap">
               {member.image?.url ? (
                 <img
@@ -140,7 +147,52 @@ export default function TeamCarousel() {
                   {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
+
+              <div className="core-member-socials">
+                <a
+                    href={member.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                  <a
+                    href={member.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-linkedin" aria-hidden="true" />
+                  </a>
+                  {member.instagram && (
+                  <a
+                    href={member.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                )}
+
+                {member.linkedin && (
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on LinkedIn`}
+                    title="LinkedIn"
+                  >
+                    <i className="bi bi-linkedin" aria-hidden="true" />
+                  </a>
+                )}
+              </div>
             </div>
+
 
             <div className="core-member-info">
               <h3>{member.name}</h3>
@@ -157,70 +209,6 @@ export default function TeamCarousel() {
                   <i className="bi bi-arrow-up-right" aria-hidden="true" />
                 </a>
               )} */}
-              <div className="core-member-socials">
-                <a
-                  href={member.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${member.name} on LinkedIn`}
-                  title="LinkedIn"
-                >
-                  <i className="bi bi-linkedin" aria-hidden="true" />
-                </a>
-                {member.linkedin && (
-                  <a
-                    href={member.linkedin}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on LinkedIn`}
-                    title="LinkedIn"
-                  >
-                    <i className="bi bi-linkedin" aria-hidden="true" />
-                  </a>
-                )}
-
-                <a
-                    href={member.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on Instagram`}
-                    title="Instagram"
-                  >
-                    <i className="bi bi-instagram" aria-hidden="true" />
-                  </a>
-                {member.instagram && (
-                  <a
-                    href={member.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on Instagram`}
-                    title="Instagram"
-                  >
-                    <i className="bi bi-instagram" aria-hidden="true" />
-                  </a>
-                )}
-
-                <a
-                    href={member.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on GitHub`}
-                    title="GitHub"
-                  >
-                    <i className="bi bi-github" aria-hidden="true" />
-                  </a>
-                {member.github && (
-                  <a
-                    href={member.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on GitHub`}
-                    title="GitHub"
-                  >
-                    <i className="bi bi-github" aria-hidden="true" />
-                  </a>
-                )}
-              </div>
             </div>
           </article>
         ))}
