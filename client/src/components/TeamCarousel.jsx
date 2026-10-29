@@ -1,164 +1,226 @@
+
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { apiRequest } from '../lib/api';
 import '../css/CoreMembers.css';
 
+const teamMembers = [
+  {
+    _id: 'member-1',
+    name: 'Arnab Kr Dey',
+    role: 'Core Team Member',
+    image: 'https://i.pravatar.cc/500?img=12',
+  },
+  {
+    _id: 'member-2',
+    name: 'Sayan Singha',
+    role: 'Core Team Member',
+    image: 'https://i.pravatar.cc/500?img=11',
+  },
+  {
+    _id: 'member-3',
+    name: 'Toumik Haq',
+    role: 'Core Team Member',
+    image: 'https://i.pravatar.cc/500?img=13',
+  },
+  {
+    _id: 'member-4',
+    name: 'Saikat Tunga',
+    role: 'Core Team Member',
+    image: 'https://i.pravatar.cc/500?img=14',
+  },
+  {
+    _id: 'member-5',
+    name: 'Sovan Rajbanshi',
+    role: 'Core Team Member',
+    image: 'https://i.pravatar.cc/500?img=15',
+  },
+];
+
+const SCROLL_SPEED = 50;
+
 export default function TeamCarousel() {
-  const [members, setMembers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
   const trackRef = useRef(null);
+  const [paused, setPaused] = useState(false);
 
   useEffect(() => {
-    let active = true;
+    const track = trackRef.current;
 
-    async function loadMembers() {
-      try {
-        const data = await apiRequest('/core-members');
+    if (!track) return undefined;
 
-        if (active) {
-          const list = Array.isArray(data)
-            ? data
-            : Array.isArray(data?.members)
-              ? data.members
-              : [];
+    const mediaQuery = window.matchMedia(
+      '(prefers-reduced-motion: reduce)'
+    );
 
-          setMembers(
-            [...list].sort(
-              (a, b) =>
-                (a.order ?? 0) - (b.order ?? 0) ||
-                (a.name || '').localeCompare(b.name || '')
-            )
-          );
+    let animationFrame;
+    let previousTime = 0;
+
+    const animate = (time) => {
+      const currentTrack = trackRef.current;
+
+      if (!currentTrack) return;
+
+      if (!previousTime) previousTime = time;
+
+      const deltaTime = Math.min(time - previousTime, 40);
+      previousTime = time;
+
+      const firstCard = currentTrack.children[0];
+      const duplicateFirstCard =
+        currentTrack.children[teamMembers.length];
+
+      if (firstCard && duplicateFirstCard) {
+        const loopPoint =
+          duplicateFirstCard.offsetLeft - firstCard.offsetLeft;
+
+        if (
+          !paused &&
+          !mediaQuery.matches &&
+          loopPoint > 0 &&
+          currentTrack.scrollWidth > currentTrack.clientWidth
+        ) {
+          currentTrack.scrollLeft +=
+            (SCROLL_SPEED * deltaTime) / 1000;
+
+          if (currentTrack.scrollLeft >= loopPoint) {
+            currentTrack.scrollLeft -= loopPoint;
+          }
         }
-      } catch (err) {
-        if (active) {
-          setError(err.message || 'Unable to load team members.');
-        }
-      } finally {
-        if (active) setLoading(false);
       }
+
+      animationFrame = window.requestAnimationFrame(animate);
+    };
+
+    const handleMotionChange = () => {
+      previousTime = 0;
+    };
+
+    if (mediaQuery.addEventListener) {
+      mediaQuery.addEventListener('change', handleMotionChange);
+    } else {
+      mediaQuery.addListener(handleMotionChange);
     }
 
-    loadMembers();
+    animationFrame = window.requestAnimationFrame(animate);
 
     return () => {
-      active = false;
+      window.cancelAnimationFrame(animationFrame);
+
+      if (mediaQuery.removeEventListener) {
+        mediaQuery.removeEventListener(
+          'change',
+          handleMotionChange
+        );
+      } else {
+        mediaQuery.removeListener(handleMotionChange);
+      }
     };
-  }, []);
+  }, [paused]);
 
-  function scrollTrack(direction) {
-    if (!trackRef.current) return;
-
-    const track = trackRef.current;
-    const card = track.querySelector('.core-member-slide');
-    const gap = 20;
-    const distance = card ? card.getBoundingClientRect().width + gap : track.clientWidth;
-
-    track.scrollBy({
-      left: direction * distance,
-      behavior: 'smooth',
-    });
-  }
-
-  if (loading) {
-    return (
-      <section className="core-team-section" aria-busy="true">
-        <div className="core-team-heading">
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
-          <h2>Meet Our Core Team</h2>
-        </div>
-        <p className="core-team-status">Loading our team...</p>
-      </section>
-    );
-  }
-
-  if (error || members.length === 0) {
-    return (
-      <section className="core-team-section">
-        <div className="core-team-heading">
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
-          <h2>Meet Our Core Team</h2>
-        </div>
-        <p className="core-team-status">
-          {error || 'Our team profiles will be available soon.'}
-        </p>
-      </section>
-    );
-  }
+  const displayMembers = [...teamMembers, ...teamMembers];
 
   return (
-    <section className="core-team-section" aria-labelledby="core-team-title">
+    <section
+      className="core-team-section"
+      aria-labelledby="core-team-title"
+    >
       <div className="core-team-heading">
-        <div>
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
-          <h2 id="core-team-title">Meet Our Core Team</h2>
+        <div className="core-team-heading-content">
+          <p className="core-team-eyebrow">
+            THE PEOPLE BEHIND CODESPHERE
+          </p>
+
+          <h2 id="core-team-title">
+            Meet Our <span>Core Team</span>
+          </h2>
+
           <p className="core-team-description">
             The people bringing ideas to life and building our community.
           </p>
         </div>
-
-        <div className="core-team-controls">
-          <button
-            type="button"
-            className="core-team-arrow"
-            onClick={() => scrollTrack(-1)}
-            aria-label="Previous team members"
-          >
-            <i className="bi bi-arrow-left" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="core-team-arrow"
-            onClick={() => scrollTrack(1)}
-            aria-label="Next team members"
-          >
-            <i className="bi bi-arrow-right" aria-hidden="true" />
-          </button>
-        </div>
       </div>
 
-      <div className="core-team-track" ref={trackRef}>
-        {members.map((member) => (
-          <article className="core-member-slide" key={member._id}>
-            <div className="core-member-photo-wrap">
-              {member.image?.url ? (
-                <img
-                  className="core-member-photo"
-                  src={member.image.url}
-                  alt={member.name}
-                  loading="lazy"
-                />
-              ) : (
-                <div className="core-member-photo-fallback" aria-hidden="true">
-                  {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
-                </div>
-              )}
-            </div>
+      <div
+        className="core-team-viewport"
+        onMouseEnter={() => setPaused(true)}
+        onMouseLeave={() => setPaused(false)}
+        onFocus={() => setPaused(true)}
+        onBlur={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            setPaused(false);
+          }
+        }}
+      >
+        <div
+          className="core-team-track"
+          ref={trackRef}
+          role="region"
+          aria-label="Core team members"
+          aria-roledescription="carousel"
+          tabIndex={0}
+        >
+          {displayMembers.map((member, index) => {
+            const isDuplicate = index >= teamMembers.length;
 
-            <div className="core-member-info">
-              <h3>{member.name}</h3>
-              <p className="core-member-role">{member.role}</p>
-
-              {member.link && (
-                <a
-                  className="core-member-link"
-                  href={member.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
+            return (
+              <article
+                className="core-member-slide"
+                key={`${member._id}-${index}`}
+                aria-hidden={isDuplicate ? true : undefined}
+                inert={isDuplicate ? true : undefined}
+              >
+                <Link
+                  to="/team"
+                  className="core-member-card-link"
+                  aria-label={`Meet ${member.name} and the entire team`}
+                  tabIndex={isDuplicate ? -1 : undefined}
                 >
-                  Supporting link
-                  <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                </a>
-              )}
-            </div>
-          </article>
-        ))}
+                  <div className="core-member-photo-wrap">
+                    <img
+                      className="core-member-photo"
+                      src={member.image}
+                      alt={
+                        isDuplicate ? '' : `Portrait of ${member.name}`
+                      }
+                      loading={index < 4 ? 'eager' : 'lazy'}
+                      decoding="async"
+                      draggable={false}
+                    />
+
+                    <div className="team-card-overlay">
+                      <div className="team-card-socials">
+                        <span
+                          className="team-card-social-icon"
+                          aria-hidden="true"
+                        >
+                          <i className="bi bi-linkedin" />
+                        </span>
+
+                        <span
+                          className="team-card-social-icon"
+                          aria-hidden="true"
+                        >
+                          <i className="bi bi-instagram" />
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="core-member-info">
+                    <h3>{member.name}</h3>
+                    <p className="core-member-role">
+                      {member.role}
+                    </p>
+                  </div>
+                </Link>
+              </article>
+            );
+          })}
+        </div>
       </div>
 
       <div className="core-team-footer">
         <Link to="/team" className="core-team-view-all">
-          Meet the entire team
+          <span>Meet the entire team</span>
           <i className="bi bi-arrow-right" aria-hidden="true" />
         </Link>
       </div>
