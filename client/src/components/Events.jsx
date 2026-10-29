@@ -1,9 +1,8 @@
-
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import '../css/Events.css';
-import logo from '../assets/logo.png';
+import brand from '../assets/brand.svg';
 
 function getPublishedTime(event) {
   const value = event.publishedAt || event.createdAt;
@@ -65,7 +64,7 @@ export default function Events() {
     };
   }, []);
 
-  const latestEvents = events.slice(0, 3);
+  const latestEvents = events.slice(0, 4);
 
   return (
     <section className="events-section" id="events">
@@ -77,13 +76,13 @@ export default function Events() {
           </span>
 
           <h2 className="events-title">
-            Moments That{' '}
-            <span className="gold-text">Move Us Forward.</span>
+            Explore our{' '}
+            <span className="gold-text">Events.</span>
           </h2>
 
           <p className="events-subtitle">
-            Explore the latest CodeSphere events, ideas, and experiences
-            shared by our community.
+            Workshops, coding sessions, and experiences that bring our
+            community together.
           </p>
         </div>
 
@@ -106,7 +105,7 @@ export default function Events() {
         <div className="events-view-all">
           <Link to="/events" className="events-view-all-link">
             View All Events
-            <i className="bi bi-arrow-up-right" aria-hidden="true" />
+            <i className="bi bi-arrow-right" aria-hidden="true" />
           </Link>
         </div>
       </div>
@@ -159,8 +158,8 @@ export function EventCard({ event }) {
             className="published-event-banner-fallback"
             style={{ display: event.bannerImage?.url ? 'none' : 'flex' }}
           >
-            <img src={logo} alt="CodeSphere logo" />
-            <span>CodeSphere Event</span>
+            <img src={brand} alt="CodeSphere logo" />
+            <span>{event.category || 'CodeSphere Event'}</span>
           </div>
 
         </div>

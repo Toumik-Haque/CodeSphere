@@ -1,45 +1,25 @@
 import React from 'react';
-import campusVideo from '../assets/campusVideo.mp4';
 import '../css/Hero.css';
 
 const Hero = () => {
   return (
     <section className="hero-section" id="home">
-      {/* Campus video background */}
-      <div className="hero-video-wrapper">
-        <video
-          className="hero-video"
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="metadata"
-          aria-hidden="true"
-        >
-          <source src={campusVideo} type="video/mp4" />
-        </video>
-      </div>
-
-      {/* Dark overlays */}
-      <div className="hero-overlay" />
-      <div className="hero-glow hero-glow-one" />
-      <div className="hero-glow hero-glow-two" />
 
       {/* Hero content */}
       <div className="container hero-container">
         <div className="hero-content">
           <div className="hero-eyebrow">
-            <span>OFFICIAL CODING CLUB OF AGEMC</span>
-            <i className="bi bi-patch-check-fill verify" style={{ fontSize: '1rem'}}/>
+            <span>OFFICIAL CODING COMMUNITY OF AGEMC</span>
+            <i className="bi bi-patch-check-fill verify" style={{ fontSize: '1rem' }} />
           </div>
 
           <h1 className="hero-title">
             Where Ideas
             <br />
-            Become 
+            Become
             <span> </span>
             <span className="hero-title-highlight">
-               Innovation.
+              Innovation.
             </span>
           </h1>
 
@@ -51,9 +31,9 @@ const Hero = () => {
 
           <div className="hero-actions">
             <a className="hero-btn hero-btn-primary" href="#join">
-              Join CodeSphere
+              Let's Start Now
               <i
-                className="bi bi-arrow-up-right"
+                className="bi bi-arrow-right"
                 aria-hidden="true"
               />
             </a>
@@ -67,38 +47,54 @@ const Hero = () => {
             </a>
           </div>
 
-          {/* Community highlights */}
-          <div className="hero-highlights">
-            <div className="hero-highlight-item">
-              <i className="bi bi-code-square" aria-hidden="true" />
-              <span>Build Together</span>
-            </div>
+          {/* Social media links */}
+          <div className="hero-socials" aria-label="Follow CodeSphere">
+            <span className="hero-socials-label">FOLLOW US</span>
 
-            <span className="hero-highlight-divider" />
+            <a
+              href="https://github.com/YOUR-USERNAME"
+              className="hero-social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="GitHub"
+            >
+              <i className="bi bi-github" aria-hidden="true" />
+            </a>
 
-            <div className="hero-highlight-item">
-              <i className="bi bi-lightbulb" aria-hidden="true" />
-              <span>Learn Together</span>
-            </div>
+            <a
+              href="https://www.linkedin.com/company/YOUR-PAGE"
+              className="hero-social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="LinkedIn"
+            >
+              <i className="bi bi-linkedin" aria-hidden="true" />
+            </a>
 
-            <span className="hero-highlight-divider" />
-
-            <div className="hero-highlight-item">
-              <i className="bi bi-rocket-takeoff" aria-hidden="true" />
-              <span>Grow Together</span>
-            </div>
+            <a
+              href="https://www.instagram.com/YOUR-USERNAME"
+              className="hero-social-link"
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label="Instagram"
+            >
+              <i className="bi bi-instagram" aria-hidden="true" />
+            </a>
           </div>
+
+
         </div>
 
         {/* Bottom scroll indicator */}
         <a
           className="hero-scroll-indicator"
-          href="#events"
+          href="#about"
           aria-label="Scroll to Events section"
         >
           <span>SCROLL TO EXPLORE</span>
           <i className="bi bi-arrow-down" aria-hidden="true" />
         </a>
+
       </div>
     </section>
   );

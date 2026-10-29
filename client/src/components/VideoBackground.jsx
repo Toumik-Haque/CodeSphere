@@ -1,4 +1,5 @@
 import { useEffect, useRef } from 'react';
+import '../css/VideoBackground.css';
 import campusVideo from '../assets/campusVideo.mp4';
 
 const VideoBackground = () => {

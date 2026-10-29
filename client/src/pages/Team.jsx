@@ -98,7 +98,7 @@ export default function Team() {
                   <h2>{member.name}</h2>
                   <p className="core-member-role">{member.role}</p>
 
-                  {member.link && (
+                  {/* {member.link && (
                     <a
                       href={member.link}
                       className="core-member-link"
@@ -108,7 +108,71 @@ export default function Team() {
                       Supporting link
                       <i className="bi bi-arrow-up-right" aria-hidden="true" />
                     </a>
-                  )}
+                  )} */}
+                  <div className="core-member-socials">
+                <a
+                  href={member.linkedin}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label={`${member.name} on LinkedIn`}
+                  title="LinkedIn"
+                >
+                  <i className="bi bi-linkedin" aria-hidden="true" />
+                </a>
+                {member.linkedin && (
+                  <a
+                    href={member.linkedin}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on LinkedIn`}
+                    title="LinkedIn"
+                  >
+                    <i className="bi bi-linkedin" aria-hidden="true" />
+                  </a>
+                )}
+
+                <a
+                    href={member.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                {member.instagram && (
+                  <a
+                    href={member.instagram}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                )}
+
+                <a
+                    href={member.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on GitHub`}
+                    title="GitHub"
+                  >
+                    <i className="bi bi-github" aria-hidden="true" />
+                  </a>
+                {member.github && (
+                  <a
+                    href={member.github}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on GitHub`}
+                    title="GitHub"
+                  >
+                    <i className="bi bi-github" aria-hidden="true" />
+                  </a>
+                )}
+              </div>
                 </div>
               </article>
             ))}

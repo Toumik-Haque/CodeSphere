@@ -5,7 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
 import '../css/EventDetails.css';
-import logo from '../assets/logo.png';
+import brand from '../assets/brand.svg';
 
 function formatDate(value, options = {}) {
   if (!value) return 'Date to be announced';
@@ -206,8 +206,8 @@ export default function EventDetails() {
                         display: event.bannerImage?.url ? 'none' : 'flex',
                       }}
                     >
-                      <img src={logo} alt="CodeSphere logo" />
-                      <span>CodeSphere Event</span>
+                      <img src={brand} alt="CodeSphere logo" />
+                      <span>{event.category || 'CodeSphere Event'}</span>
                     </div>
                   </div>
                 </section>
