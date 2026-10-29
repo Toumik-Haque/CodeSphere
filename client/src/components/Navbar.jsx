@@ -9,7 +9,6 @@ const navLinks = [
   { label: 'Events', path: '/events' },
   { label: 'Materials', path: '/materials' },
   { label: 'Team', path: '/team' },
-  { label: 'Gallery', path: '/gallery' },
   { label: 'Contact Us', path: '/contact' },
 ];
 
@@ -83,7 +82,14 @@ const Navbar = () => {
           <Link
             className="navbar-brand d-flex align-items-center"
             to="/"
-            onClick={closeMenu}
+            onClick={() => {
+              closeMenu();
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'auto',
+              });
+            }}
           >
             <img
               src={logo}
@@ -119,33 +125,10 @@ const Navbar = () => {
                 </li>
               ))}
 
-              {/* <li className="nav-item ms-lg-2">
-                <Link
-                  to={
-                    isAuthenticated
-                      ? (isAdmin ? '/admin' : '/profile')
-                      : '/login'
-                  }
-                  className="btn btn-gold navbar-login-button"
-                >
-                  {isAuthenticated
-                    ? (isAdmin ? 'Admin Dashboard' : 'Profile')
-                    : 'Login'}
-
-                  <i
-                    className={`bi ${isAuthenticated
-                      ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                      : 'bi-arrow-up-right'
-                      }`}
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li> */}
-
             </ul>
           </div>
 
-          {/* <div className="desktop-navigation d-none d-lg-flex">
+          <div className="desktop-navigation d-none d-lg-flex">
             <ul className='navbar-nav align-items-center gap-4'>
               <li className="nav-item ms-lg-2">
                 <Link
@@ -158,7 +141,7 @@ const Navbar = () => {
                 >
                   {isAuthenticated
                     ? (isAdmin ? 'Admin Dashboard' : 'Profile')
-                    : 'Login'}
+                    : 'Sign In'}
 
                   <i
                     className={`bi ${isAuthenticated
@@ -169,56 +152,6 @@ const Navbar = () => {
                   />
                 </Link>
               </li>
-            </ul>
-          </div> */}
-
-          <div className="desktop-navigation d-none d-lg-flex">
-            <ul className="navbar-nav align-items-center gap-3">
-              {isAuthenticated ? (
-                <li className="nav-item ms-lg-2">
-                  <Link
-                    to={isAdmin ? '/admin' : '/profile'}
-                    className="btn btn-gold border-0 navbar-login-button"
-                  >
-                    {isAdmin ? 'Dashboard' : 'Profile'}
-
-                    <i
-                      className={`bi ${isAdmin ? 'bi-speedometer2' : 'bi-person-circle'
-                        }`}
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-              ) : (
-                <>
-                  <li className="nav-item">
-                    <Link
-                      to={
-                        isAuthenticated
-                          ? (isAdmin ? '/admin' : '/profile')
-                          : '/login'
-                      }
-                      className="btn btn-outline-light navbar-login-button"
-                    >
-                      {isAuthenticated
-                        ? (isAdmin ? 'Dashboard' : 'Profile')
-                        : 'Login'}
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-                    {!isAuthenticated
-                      ? <Link to="register" className="btn btn-gold border-0 navbar-signup-button">
-                        Sign Up
-                        <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                      </Link>
-                      : <button 
-                      onclick = { handleLogout }
-                      className="btn btn-gold border-0 navbar-signup-button"
-                      >Sign Out</button>}
-                  </li>
-                </>
-              )}
             </ul>
           </div>
 
@@ -247,7 +180,14 @@ const Navbar = () => {
           <Link
             to="/"
             className="mobile-menu-brand"
-            onClick={closeMenu}
+            onClick={() => {
+              closeMenu();
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'auto',
+              });
+            }}
           >
             <img src={logo} alt="CodeSphere Logo" />
 
@@ -294,7 +234,7 @@ const Navbar = () => {
         <div className="mobile-menu-footer">
           <p>Learn. Build. Grow.</p>
 
-          {/* <Link
+          <Link
             className="btn btn-gold mobile-menu-join"
             to={
               isAuthenticated
@@ -317,46 +257,7 @@ const Navbar = () => {
             </span>
 
             <i className="bi bi-arrow-up-right" aria-hidden="true" />
-          </Link> */}
-
-          {isAuthenticated ? (
-            <Link
-              className="btn navbar-account-button mobile-menu-join"
-              to={isAdmin ? '/admin' : '/profile'}
-              onClick={closeMenu}
-            >
-              <span>
-                <i
-                  className={`bi ${isAdmin ? 'bi-speedometer2' : 'bi-person-circle'
-                    } me-2`}
-                  aria-hidden="true"
-                />
-                {isAdmin ? 'Admin Dashboard' : 'Profile'}
-              </span>
-
-              <i className="bi bi-arrow-up-right" aria-hidden="true" />
-            </Link>
-          ) : (
-            <div className="mobile-auth-buttons d-flex flex-column gap-3">
-              <Link
-                className="btn mobile-login-btn navbar-login-button"
-                to="/login"
-                onClick={closeMenu}
-              >
-                Login
-              </Link>
-
-              <Link
-                className="btn btn-gold navbar-auth-button navbar-signup-button"
-                to="/register"
-                onClick={closeMenu}
-              >
-                Sign Up
-                <i className="bi bi-arrow-right" aria-hidden="true" />
-              </Link>
-            </div>
-          )}
-
+          </Link>
 
           <span className="mobile-menu-tagline">
             BUILD SOMETHING AMAZING.

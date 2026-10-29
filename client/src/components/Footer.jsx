@@ -1,6 +1,15 @@
 import React from 'react';
-import logo from '../assets/logo.svg';
+import { Link, useNavigate } from 'react-router-dom';
+import logo from '../assets/brand-dark.png';
 import '../css/Footer.css';
+
+const navLinks = [
+  { label: 'Home', path: '/' },
+  { label: 'Events', path: '/events' },
+  { label: 'Materials', path: '/materials' },
+  { label: 'Team', path: '/team' },
+  { label: 'Contact Us', path: '/contact' },
+];
 
 const Footer = () => {
   return (
@@ -8,22 +17,43 @@ const Footer = () => {
       <div className="container">
         <div className="footer-main">
           <div className="footer-branding">
-            <a href="#home" className="footer-brand">
-              <img src={logo} alt="CodeSphere logo" />
-              
-            </a>
+            <Link
+              className="footer-brand"
+              to="/"
+              onClick={() => {
+                closeMenu();
+                window.scrollTo({
+                  top: 0,
+                  left: 0,
+                  behavior: 'auto',
+                });
+              }}
+            >
+              <img
+                src={logo}
+                alt="CodeSphere Logo"
+                className="navbar-logo-img"
+              />
+
+            </Link>
 
             <p className="footer-tagline">
               Learn together. Build together. Grow together.
             </p>
           </div>
 
-          <nav className="footer-links" aria-label="Footer navigation">
-            <a href="/">Home</a>
-            <a href="/events">Events</a>
-            <a href="/#join">Join Us</a>
-            <a href="/#about">About</a>
-          </nav>
+          <div>
+            <ul className="footer-links align-items-center gap-4">
+              {navLinks.map((link) => (
+                <li className="nav-item" key={link.label}>
+                  <Link className="nav-link" to={link.path}>
+                    {link.label}
+                  </Link>
+                </li>
+              ))}
+
+            </ul>
+          </div>
 
           <div className="footer-socials">
             <a href="http://" target="_blank" rel="noopener noreferrer" className='social-icon-btn'>

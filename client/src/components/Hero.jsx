@@ -1,4 +1,5 @@
 import React from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import '../css/Hero.css';
 
 const Hero = () => {
@@ -30,13 +31,13 @@ const Hero = () => {
           </p>
 
           <div className="hero-actions">
-            <a className="hero-btn hero-btn-primary" href="#join">
+            <Link className="hero-btn hero-btn-primary" to="/register">
               Let's Start Now
               <i
-                className="bi bi-arrow-right"
+                className="bi bi-arrow-up-right"
                 aria-hidden="true"
               />
-            </a>
+            </Link>
 
             <a
               className="hero-btn hero-btn-secondary"
