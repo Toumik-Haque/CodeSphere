@@ -14,6 +14,9 @@ const initialForm = {
   venue: '',
   mode: 'In-person',
   meetingLink: '',
+  registrationLink: '',
+  linkedinPostLink: '',
+  instagramPostLink: '',
   status: 'draft',
 };
 
@@ -32,6 +35,17 @@ function toDateTimeLocal(value) {
   return new Date(date.getTime() - offset)
     .toISOString()
     .slice(0, 16);
+}
+
+function isValidOptionalUrl(value) {
+  if (!value.trim()) return true;
+
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 export default function Admin() {
@@ -370,6 +384,9 @@ export default function Admin() {
       venue: event.venue || '',
       mode: event.mode || 'In-person',
       meetingLink: event.meetingLink || '',
+      registrationLink: event.registrationLink || '',
+      linkedinPostLink: event.linkedinPostLink || '',
+      instagramPostLink: event.instagramPostLink || '',
       status: event.status || 'draft',
     });
 
@@ -409,6 +426,19 @@ export default function Admin() {
       return;
     }
 
+    const optionalLinks = [
+      ['Registration link', form.registrationLink],
+      ['LinkedIn post link', form.linkedinPostLink],
+      ['Instagram post link', form.instagramPostLink],
+    ];
+
+    for (const [label, value] of optionalLinks) {
+      if (!isValidOptionalUrl(value)) {
+        setError(`${label} must be a valid URL starting with https://`);
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
@@ -425,6 +455,9 @@ export default function Admin() {
       formData.append('venue', form.venue);
       formData.append('mode', form.mode);
       formData.append('meetingLink', form.meetingLink);
+      formData.append('registrationLink', form.registrationLink.trim());
+      formData.append('linkedinPostLink', form.linkedinPostLink.trim());
+      formData.append('instagramPostLink', form.instagramPostLink.trim());
       formData.append('status', form.status);
 
       if (selectedImage) {
@@ -842,29 +875,77 @@ export default function Admin() {
                     />
                   </div>
 
+                  {form.mode !== 'Online' && (
+                    <div className="admin-form-field">
+                      <label htmlFor="event-venue">Venue</label>
+                      <input
+                        id="event-venue"
+                        name="venue"
+                        value={form.venue}
+                        onChange={updateField}
+                        maxLength={200}
+                        placeholder="Campus hall or event location"
+                        required={form.mode === 'In-person'}
+                      />
+                    </div>
+                  )}
+
+                  {form.mode !== 'In-person' && (
+                    <div className="admin-form-field">
+                      <label htmlFor="event-meeting-link">
+                        Meeting link (optional)
+                      </label>
+                      <input
+                        id="event-meeting-link"
+                        name="meetingLink"
+                        type="url"
+                        value={form.meetingLink}
+                        onChange={updateField}
+                        placeholder="https://..."
+                        required={form.mode === 'Online'}
+                      />
+                    </div>
+                  )}
+
                   <div className="admin-form-field">
-                    <label htmlFor="event-venue">Venue</label>
+                    <label htmlFor="event-registration-link">
+                      Registration link (optional)
+                    </label>
                     <input
-                      id="event-venue"
-                      name="venue"
-                      value={form.venue}
+                      id="event-registration-link"
+                      name="registrationLink"
+                      type="url"
+                      value={form.registrationLink}
                       onChange={updateField}
-                      maxLength={200}
-                      placeholder="Campus hall or online"
+                      placeholder="https://..."
                     />
                   </div>
 
                   <div className="admin-form-field">
-                    <label htmlFor="event-meeting-link">
-                      Meeting link (optional)
+                    <label htmlFor="event-linkedin-post">
+                      LinkedIn post link (optional)
                     </label>
                     <input
-                      id="event-meeting-link"
-                      name="meetingLink"
+                      id="event-linkedin-post"
+                      name="linkedinPostLink"
                       type="url"
-                      value={form.meetingLink}
+                      value={form.linkedinPostLink}
                       onChange={updateField}
-                      placeholder="https://..."
+                      placeholder="https://www.linkedin.com/..."
+                    />
+                  </div>
+
+                  <div className="admin-form-field">
+                    <label htmlFor="event-instagram-post">
+                      Instagram post link (optional)
+                    </label>
+                    <input
+                      id="event-instagram-post"
+                      name="instagramPostLink"
+                      type="url"
+                      value={form.instagramPostLink}
+                      onChange={updateField}
+                      placeholder="https://www.instagram.com/..."
                     />
                   </div>
 

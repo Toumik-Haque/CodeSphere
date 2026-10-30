@@ -1,5 +1,6 @@
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '../context/AuthContext';
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -48,6 +49,8 @@ function eventHasPassed(event) {
 export default function EventDetails() {
   const { slug } = useParams();
 
+  const { user } = useAuth();
+  const isAuthenticated = Boolean(user);
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -254,15 +257,75 @@ export default function EventDetails() {
                       : 'This event is upcoming.'}
                   </p>
 
-                  {!passed && event.meetingLink && (
+                  {!passed && (
+                    <>
+                      {event.registrationLink ? (
+                        isAuthenticated ? (
+                          <a
+                            className="event-view-button text-white"
+                            href={event.registrationLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Register Now
+                            <i className="bi bi-arrow-up-right" aria-hidden="true" />
+                          </a>
+                        ) : (
+                          <Link className="event-view-button text-white" to="/login">
+                            Login to Register
+                            <i className="bi bi-arrow-right" aria-hidden="true" />
+                          </Link>
+                        )
+                      ) : (
+                        <p className="event-view-status">
+                          Registration details will be announced soon.
+                        </p>
+                      )}
+
+                      {event.meetingLink && (
+                        isAuthenticated ? (
+                          <a
+                            className="event-view-button text-white"
+                            href={event.meetingLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            Meeting Link
+                            <i className="bi bi-arrow-up-right" aria-hidden="true" />
+                          </a>
+                        ) : (
+                          <Link className="event-view-button text-white" to="/login">
+                            Login to Access Meeting
+                            <i className="bi bi-arrow-right" aria-hidden="true" />
+                          </Link>
+                        )
+                      )}
+                    </>
+                  )}
+
+                  {passed && event.linkedinPostLink && (
                     <a
-                      className="event-view-button"
-                      href={event.meetingLink}
+                      className="event-view-button text-white"
+                      href={event.linkedinPostLink}
                       target="_blank"
                       rel="noopener noreferrer"
                     >
-                      View event / Join
-                      <i className="bi bi-arrow-up-right" aria-hidden="true" />
+                      <i className='bi bi-linkedin' aria-hidden="true" />
+                      LINKEDIN POST
+                      <i className='bi bi-arrow-up-right' aria-hidden="true" />
+                    </a>
+                  )}
+
+                  {passed && event.instagramPostLink && (
+                    <a
+                      className="event-view-button text-white"
+                      href={event.instagramPostLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      <i className='bi bi-instagram' aria-hidden="true" />
+                      INSTAGRAM POST
+                      <i className='bi bi-arrow-up-right' aria-hidden="true" />
                     </a>
                   )}
                 </aside>

@@ -102,6 +102,21 @@ async function makeUniqueSlug(title) {
   return slug;
 }
 
+function isValidOptionalUrl(value) {
+  if (typeof value !== 'string' || value.length > 2048) {
+    return false;
+  }
+
+  if (!value.trim()) return true;
+
+  try {
+    const url = new URL(value.trim());
+    return ['http:', 'https:'].includes(url.protocol);
+  } catch {
+    return false;
+  }
+}
+
 function validateEvent(body) {
   const {
     title,
@@ -112,6 +127,9 @@ function validateEvent(body) {
     venue = '',
     mode = 'In-person',
     meetingLink = '',
+    registrationLink = '',
+    linkedinPostLink = '',
+    instagramPostLink = '',
     status = 'draft',
   } = body;
 
@@ -130,9 +148,20 @@ function validateEvent(body) {
     typeof venue !== 'string' ||
     venue.length > 200 ||
     typeof meetingLink !== 'string' ||
-    meetingLink.length > 2048
+    !isValidOptionalUrl(meetingLink) ||
+    !isValidOptionalUrl(registrationLink) ||
+    !isValidOptionalUrl(linkedinPostLink) ||
+    !isValidOptionalUrl(instagramPostLink)
   ) {
     return 'Please provide valid event details.';
+  }
+
+  if (mode === 'In-person' && !venue.trim()) {
+    return 'Please provide a venue for an in-person event.';
+  }
+
+  if (mode === 'Online' && !meetingLink.trim()) {
+    return 'Please provide a meeting link for an online event.';
   }
 
   if (endDate && (
@@ -141,17 +170,6 @@ function validateEvent(body) {
     Date.parse(endDate) < Date.parse(date)
   )) {
     return 'The event end date must be valid and not before the start date.';
-  }
-
-  if (meetingLink) {
-    try {
-      const url = new URL(meetingLink);
-      if (!['http:', 'https:'].includes(url.protocol)) {
-        return 'Meeting links must use HTTP or HTTPS.';
-      }
-    } catch {
-      return 'Please enter a valid meeting link.';
-    }
   }
 
   return null;
@@ -277,9 +295,16 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
       endDate: req.body.endDate
         ? new Date(req.body.endDate)
         : null,
-      venue: (req.body.venue || '').trim(),
+      venue: req.body.mode === 'Online'
+        ? ''
+        : (req.body.venue || '').trim(),
       mode: req.body.mode || 'In-person',
-      meetingLink: (req.body.meetingLink || '').trim(),
+      meetingLink: req.body.mode === 'In-person'
+        ? ''
+        : (req.body.meetingLink || '').trim(),
+      registrationLink: (req.body.registrationLink || '').trim(),
+      linkedinPostLink: (req.body.linkedinPostLink || '').trim(),
+      instagramPostLink: (req.body.instagramPostLink || '').trim(),
       status: req.body.status || 'draft',
       bannerImage: uploadedBanner
         ? {
@@ -346,8 +371,20 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
       venue: req.body.venue ?? existing.venue,
       mode: req.body.mode ?? existing.mode,
       meetingLink: req.body.meetingLink ?? existing.meetingLink,
+      registrationLink: req.body.registrationLink ?? existing.registrationLink ?? '',
+      linkedinPostLink: req.body.linkedinPostLink ?? existing.linkedinPostLink ?? '',
+      instagramPostLink: req.body.instagramPostLink ?? existing.instagramPostLink ?? '',
       status: req.body.status ?? existing.status,
     };
+
+    // Clear fields that do not apply to the selected event format.
+    if (candidate.mode === 'Online') {
+      candidate.venue = '';
+    }
+
+    if (candidate.mode === 'In-person') {
+      candidate.meetingLink = '';
+    }
 
     const validationError = validateEvent(candidate);
 
@@ -374,6 +411,9 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
       venue: (candidate.venue || '').trim(),
       mode: candidate.mode,
       meetingLink: (candidate.meetingLink || '').trim(),
+      registrationLink: candidate.registrationLink.trim(),
+      linkedinPostLink: candidate.linkedinPostLink.trim(),
+      instagramPostLink: candidate.instagramPostLink.trim(),
       status: candidate.status,
     });
 
