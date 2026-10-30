@@ -59,6 +59,21 @@ const eventSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    registrationLink: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    linkedinPostLink: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+    instagramPostLink: {
+      type: String,
+      trim: true,
+      default: '',
+    },
     status: {
       type: String,
       enum: ['draft', 'published'],
