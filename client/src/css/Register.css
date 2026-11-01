@@ -1,0 +1,445 @@
+/* =========================================
+   CodeSphere Registration — OTP Form
+   Theme: Futuristic Navy + White + Orange
+   Works alongside the global stylesheet
+========================================= */
+
+/* =========================================
+   AUTHENTICATION CARD
+========================================= */
+
+.auth-card {
+  max-width: 490px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: var(--shadow-lg);
+}
+
+.auth-brand {
+  color: var(--navy);
+}
+
+.auth-brand span {
+  color: var(--gold-deep);
+}
+
+.auth-eyebrow {
+  color: var(--gold-deep);
+}
+
+.auth-card h1 {
+  color: var(--navy);
+}
+
+.auth-subtitle {
+  color: var(--text-muted);
+  line-height: 1.7;
+}
+
+/* =========================================
+   MODERN THREE-STEP PROGRESS INDICATOR
+========================================= */
+
+.auth-steps {
+  position: relative;
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin: 28px 4px 34px;
+}
+
+.auth-steps::before {
+  content: "";
+  position: absolute;
+  top: 17px;
+  left: 16%;
+  right: 16%;
+  height: 3px;
+  border-radius: 10px;
+  background: #DCE7F0;
+  z-index: 0;
+}
+
+.auth-step {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  color: #8191A1;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+  transition: color 0.25s ease;
+}
+
+.auth-step-circle {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 2px solid #DCE7F0;
+  border-radius: 50%;
+  background: #FFFFFF;
+  color: #8191A1;
+  font-size: 13px;
+  font-weight: 800;
+  transition:
+    color 0.25s ease,
+    background 0.25s ease,
+    border-color 0.25s ease,
+    box-shadow 0.25s ease,
+    transform 0.25s ease;
+}
+
+/* Active step */
+
+.auth-step.active {
+  color: var(--gold-deep);
+}
+
+.auth-step.active .auth-step-circle {
+  border-color: var(--gold);
+  background: var(--gold-gradient);
+  color: #FFFFFF;
+  box-shadow: 0 0 0 5px rgba(240, 90, 54, 0.13);
+  transform: scale(1.04);
+}
+
+/* Completed step */
+
+.auth-step.completed {
+  color: var(--navy);
+}
+
+.auth-step.completed .auth-step-circle {
+  border-color: var(--navy);
+  background: var(--navy);
+  color: #FFFFFF;
+}
+
+/* =========================================
+   FORM LABELS
+========================================= */
+
+.auth-card label {
+  display: block;
+  margin: 17px 0 7px;
+  color: var(--navy);
+  font-size: 0.86rem;
+  font-weight: 700;
+}
+
+/* =========================================
+   INPUTS AND DROPDOWN
+========================================= */
+
+.auth-card input,
+.auth-card select {
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 49px;
+  padding: 12px 14px;
+  border: 1px solid #D0DCE7;
+  border-radius: 10px;
+  outline: none;
+  background: #FFFFFF;
+  color: var(--navy);
+  font-family: inherit;
+  font-size: 0.92rem;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.auth-card input::placeholder {
+  color: #74879A;
+}
+
+.auth-card input:focus,
+.auth-card select:focus {
+  border-color: var(--gold);
+  background: #FFFFFF;
+  box-shadow: 0 0 0 4px rgba(240, 90, 54, 0.14);
+}
+
+.auth-card select {
+  cursor: pointer;
+}
+
+/* =========================================
+   OTP FIELD
+========================================= */
+
+#register-otp {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 9px;
+  color: var(--navy);
+}
+
+/* =========================================
+   PRIMARY ORANGE BUTTON
+========================================= */
+
+.auth-submit {
+  width: 100%;
+  min-height: 48px;
+  margin-top: 22px;
+  padding: 12px 18px;
+  border: 1px solid var(--gold-deep);
+  border-radius: 10px;
+  background: var(--gold-gradient);
+  color: #FFFFFF;
+  font-family: inherit;
+  font-size: 0.9rem;
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 18px rgba(217, 67, 36, 0.20);
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    filter 0.2s ease;
+}
+
+.auth-submit:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 10px 26px rgba(217, 67, 36, 0.28);
+  filter: saturate(1.08);
+}
+
+.auth-submit:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   SECONDARY ACTION BUTTONS
+========================================= */
+
+.auth-card button.auth-home {
+  display: block;
+  width: 100%;
+  min-height: 42px;
+  margin-top: 13px;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #F4F8FC;
+  color: var(--navy);
+  font-family: inherit;
+  font-size: 0.85rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.auth-card button.auth-home:hover:not(:disabled) {
+  border-color: var(--gold);
+  background: #FFF5F1;
+  color: var(--gold-deep);
+}
+
+.auth-card button.auth-home:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* =========================================
+   SUCCESS AND ERROR MESSAGES
+========================================= */
+
+.auth-error,
+.auth-success {
+  margin: 16px 0;
+  padding: 12px 14px;
+  border-radius: 10px;
+  font-size: 0.85rem;
+  line-height: 1.6;
+}
+
+.auth-error {
+  border: 1px solid rgba(175, 49, 49, 0.25);
+  background: #FFF4F3;
+  color: #9E2828;
+}
+
+.auth-success {
+  border: 1px solid rgba(22, 130, 83, 0.18);
+  background: #EDF9F2;
+  color: #16794B;
+}
+
+/* =========================================
+   ACCOUNT LINKS
+========================================= */
+
+.auth-switch {
+  margin: 22px 0 0;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.88rem;
+}
+
+.auth-switch a {
+  color: var(--gold-deep);
+  font-weight: 800;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-switch a:hover {
+  color: var(--navy);
+  text-decoration: underline;
+}
+
+.auth-card > a.auth-home {
+  display: block;
+  margin-top: 24px;
+  color: var(--text-muted);
+  text-align: center;
+  font-size: 0.88rem;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.auth-card > a.auth-home:hover {
+  color: var(--gold-deep);
+}
+
+/* =========================================
+   PASSWORD VISIBILITY TOGGLE
+========================================= */
+
+.password-input-wrap {
+  position: relative;
+  width: 100%;
+  margin-bottom: 18px;
+}
+
+.password-input-wrap input {
+  box-sizing: border-box;
+  width: 100%;
+  padding-right: 50px !important;
+}
+
+.password-toggle {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-muted);
+  font-size: 19px;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+}
+
+.password-toggle:hover {
+  color: var(--gold-deep);
+  background: rgba(240, 90, 54, 0.10);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 2px;
+}
+
+.password-toggle i {
+  pointer-events: none;
+}
+
+/* =========================================
+   ACCESSIBILITY
+========================================= */
+
+.auth-card button:focus-visible,
+.auth-card a:focus-visible,
+.auth-card input:focus-visible,
+.auth-card select:focus-visible {
+  outline: 3px solid rgba(240, 90, 54, 0.35);
+  outline-offset: 3px;
+}
+
+/* =========================================
+   MOBILE RESPONSIVENESS
+========================================= */
+
+@media (max-width: 575px) {
+  .auth-page {
+    padding: 86px 14px 30px;
+  }
+
+  .auth-card {
+    padding: 26px 20px;
+    border-radius: 17px;
+  }
+
+  .auth-brand {
+    font-size: 1.4rem;
+  }
+
+  .auth-card h1 {
+    font-size: 1.65rem;
+  }
+
+  .auth-card input,
+  .auth-card select {
+    min-height: 47px;
+  }
+
+  .auth-steps {
+    margin: 24px 0 30px;
+  }
+}
+
+@media (max-width: 400px) {
+  .auth-step {
+    font-size: 10px;
+  }
+
+  .auth-step-circle {
+    width: 32px;
+    height: 32px;
+    font-size: 12px;
+  }
+
+  .auth-steps::before {
+    top: 15px;
+  }
+
+  #register-otp {
+    letter-spacing: 6px;
+    font-size: 22px;
+  }
+}
+
+/* =========================================
+   REDUCED MOTION
+========================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  .auth-card *,
+  .auth-card *::before,
+  .auth-card *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
