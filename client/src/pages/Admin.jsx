@@ -69,7 +69,8 @@ export default function Admin() {
   const initialCoreMemberForm = {
     name: '',
     role: '',
-    link: '',
+    linkedinLink: '',
+    instagramLink: '',
   };
 
   const [coreMembers, setCoreMembers] = useState([]);
@@ -199,7 +200,8 @@ export default function Admin() {
     setCoreMemberForm({
       name: member.name || '',
       role: member.role || '',
-      link: member.link || member.linkedin || member.github || '',
+      linkedinLink: member.linkedinLink || '',
+      instagramLink: member.instagramLink || '',
     });
 
     setEditingCoreMemberId(member._id);
@@ -227,15 +229,22 @@ export default function Admin() {
       return;
     }
 
-    if (coreMemberForm.link.trim()) {
+    const optionalLinks = [
+      ['LinkedIn profile link', coreMemberForm.linkedinLink],
+      ['Instagram profile link', coreMemberForm.instagramLink],
+    ];
+
+    for (const [label, value] of optionalLinks) {
+      if (!value.trim()) continue;
+
       try {
-        const url = new URL(coreMemberForm.link.trim());
+        const url = new URL(value.trim());
 
         if (!['http:', 'https:'].includes(url.protocol)) {
           throw new Error();
         }
       } catch {
-        setError('Please enter a valid supporting link starting with https://');
+        setError(`${label} must be a valid URL starting with https://`);
         return;
       }
     }
@@ -247,7 +256,8 @@ export default function Admin() {
 
       formData.append('name', coreMemberForm.name.trim());
       formData.append('role', coreMemberForm.role.trim());
-      formData.append('link', coreMemberForm.link.trim());
+      formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
+      formData.append('instagramLink', coreMemberForm.instagramLink.trim());
 
       if (coreMemberImage) {
         formData.append('image', coreMemberImage);
@@ -622,15 +632,6 @@ export default function Admin() {
             alt="CodeSphere Logo"
             className="navbar-logo-img"
           />
-
-          <div className="d-flex flex-column ms-2">
-            <span className="textLogo-code">
-              Code<span className="textLogo-sphere">Sphere</span>
-            </span>
-            <span className="textLogo-tag">
-              — CODING COMMUNITY —
-            </span>
-          </div>
         </Link>
 
         <div className="admin-topbar-actions">
@@ -1418,20 +1419,30 @@ export default function Admin() {
                       />
                     </div>
 
-                    <div className="admin-form-field admin-form-field-full">
-                      <label htmlFor="core-member-link">Supporting link</label>
+                    <div className="admin-form-field">
+                      <label htmlFor="core-member-linkedin">LinkedIn profile</label>
                       <input
-                        id="core-member-link"
-                        name="link"
+                        id="core-member-linkedin"
+                        name="linkedinLink"
                         type="url"
-                        value={coreMemberForm.link}
+                        value={coreMemberForm.linkedinLink}
                         onChange={updateCoreMemberField}
                         maxLength={500}
-                        placeholder="https://linkedin.com/in/... or your portfolio"
+                        placeholder="https://www.linkedin.com/in/..."
                       />
-                      <small className="text-secondary">
-                        LinkedIn, GitHub, portfolio, or another profile.
-                      </small>
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="core-member-instagram">Instagram profile</label>
+                      <input
+                        id="core-member-instagram"
+                        name="instagramLink"
+                        type="url"
+                        value={coreMemberForm.instagramLink}
+                        onChange={updateCoreMemberField}
+                        maxLength={500}
+                        placeholder="https://www.instagram.com/..."
+                      />
                     </div>
 
                     <div className="admin-form-field admin-form-field-full">
@@ -1621,17 +1632,31 @@ export default function Admin() {
                             <h3>{member.name}</h3>
                             <p className="core-member-role">{member.role}</p>
 
-                            {member.link && (
-                              <a
-                                className="core-member-supporting-link"
-                                href={member.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <i className="bi bi-box-arrow-up-right" aria-hidden="true" />
-                                <span>View profile</span>
-                              </a>
-                            )}
+                            <div className="admin-core-member-social-links">
+                              {member.linkedinLink && (
+                                <a
+                                  href={member.linkedinLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={`LinkedIn profile of ${member.name}`}
+                                >
+                                  <i className="bi bi-linkedin" aria-hidden="true" />
+                                  <span>LinkedIn</span>
+                                </a>
+                              )}
+
+                              {member.instagramLink && (
+                                <a
+                                  href={member.instagramLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={`Instagram profile of ${member.name}`}
+                                >
+                                  <i className="bi bi-instagram" aria-hidden="true" />
+                                  <span>Instagram</span>
+                                </a>
+                              )}
+                            </div>
 
                             <div className="admin-event-actions admin-core-member-actions">
                               <button

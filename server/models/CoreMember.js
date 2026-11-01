@@ -1,4 +1,3 @@
-
 const mongoose = require('mongoose');
 
 const coreMemberSchema = new mongoose.Schema(
@@ -28,7 +27,14 @@ const coreMemberSchema = new mongoose.Schema(
       },
     },
 
-    link: {
+    linkedinLink: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: 500,
+    },
+
+    instagramLink: {
       type: String,
       trim: true,
       default: '',

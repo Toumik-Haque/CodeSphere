@@ -1,3 +1,4 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
@@ -37,9 +38,10 @@ function handleImageUpload(req, res, next) {
   upload.single('image')(req, res, (error) => {
     if (error) {
       return res.status(400).json({
-        message: error.code === 'LIMIT_FILE_SIZE'
-          ? 'Image must be 5 MB or smaller.'
-          : error.message || 'Invalid image upload.',
+        message:
+          error.code === 'LIMIT_FILE_SIZE'
+            ? 'Image must be 5 MB or smaller.'
+            : error.message || 'Invalid image upload.',
       });
     }
 
@@ -74,9 +76,36 @@ async function deleteCloudinaryImage(publicId) {
   });
 }
 
+// Validate an optional LinkedIn or Instagram URL.
+function validateOptionalUrl(value, label) {
+  if (typeof value !== 'string') {
+    return `${label} must be a valid URL.`;
+  }
+
+  const trimmedValue = value.trim();
+
+  if (!trimmedValue) return null;
+
+  if (trimmedValue.length > 500) {
+    return `${label} must be 500 characters or fewer.`;
+  }
+
+  try {
+    const url = new URL(trimmedValue);
+
+    if (!['http:', 'https:'].includes(url.protocol)) {
+      return `${label} must use HTTP or HTTPS.`;
+    }
+  } catch {
+    return `Please enter a valid ${label.toLowerCase()}.`;
+  }
+
+  return null;
+}
+
 // Validate member details.
 function validateMember(body) {
-  const { name, role, link = '' } = body;
+  const { name, role } = body;
 
   if (
     typeof name !== 'string' ||
@@ -84,24 +113,24 @@ function validateMember(body) {
     name.trim().length > 100 ||
     typeof role !== 'string' ||
     !role.trim() ||
-    role.trim().length > 100 ||
-    typeof link !== 'string' ||
-    link.length > 500
+    role.trim().length > 100
   ) {
-    return 'Please provide a valid member name, role, and supporting link.';
+    return 'Please provide a valid member name and role.';
   }
 
-  if (link.trim()) {
-    try {
-      const url = new URL(link.trim());
+  const linkedinError = validateOptionalUrl(
+    body.linkedinLink ?? '',
+    'LinkedIn profile link'
+  );
 
-      if (!['http:', 'https:'].includes(url.protocol)) {
-        return 'The supporting link must use HTTP or HTTPS.';
-      }
-    } catch {
-      return 'Please enter a valid supporting URL.';
-    }
-  }
+  if (linkedinError) return linkedinError;
+
+  const instagramError = validateOptionalUrl(
+    body.instagramLink ?? '',
+    'Instagram profile link'
+  );
+
+  if (instagramError) return instagramError;
 
   return null;
 }
@@ -148,21 +177,18 @@ router.post(
         });
       }
 
-      if (req.file) {
-        uploadedImage = await uploadToCloudinary(req.file.buffer);
-      }
+      uploadedImage = await uploadToCloudinary(req.file.buffer);
 
       const member = await CoreMember.create({
         name: req.body.name.trim(),
         role: req.body.role.trim(),
-        link: (req.body.link || '').trim(),
+        linkedinLink: (req.body.linkedinLink || '').trim(),
+        instagramLink: (req.body.instagramLink || '').trim(),
         order: 0,
-        image: uploadedImage
-          ? {
-            url: uploadedImage.secure_url,
-            publicId: uploadedImage.public_id,
-          }
-          : undefined,
+        image: {
+          url: uploadedImage.secure_url,
+          publicId: uploadedImage.public_id,
+        },
       });
 
       return res.status(201).json({
@@ -214,8 +240,8 @@ router.patch(
       const candidate = {
         name: req.body.name ?? member.name,
         role: req.body.role ?? member.role,
-        link: req.body.link ?? member.link ?? member.linkedin ?? member.github ?? '',
-        order: String(member.order ?? 0),
+        linkedinLink: req.body.linkedinLink ?? member.linkedinLink ?? '',
+        instagramLink: req.body.instagramLink ?? member.instagramLink ?? '',
       };
 
       const validationError = validateMember(candidate);
@@ -232,12 +258,10 @@ router.patch(
 
       const oldPublicId = member.image?.publicId;
 
-      Object.assign(member, {
-        name: candidate.name.trim(),
-        role: candidate.role.trim(),
-        link: candidate.link.trim(),
-        order: Number(candidate.order),
-      });
+      member.name = candidate.name.trim();
+      member.role = candidate.role.trim();
+      member.linkedinLink = candidate.linkedinLink.trim();
+      member.instagramLink = candidate.instagramLink.trim();
 
       if (uploadedImage) {
         member.image = {
@@ -248,7 +272,7 @@ router.patch(
 
       await member.save();
 
-      // Remove the old image only after the database update succeeds.
+      // Delete the previous image only after the database update succeeds.
       if (uploadedImage && oldPublicId) {
         try {
           await deleteCloudinaryImage(oldPublicId);
@@ -300,7 +324,10 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
       try {
         await deleteCloudinaryImage(member.image.publicId);
       } catch (cleanupError) {
-        console.error('Deleted member image cleanup error:', cleanupError.message);
+        console.error(
+          'Deleted member image cleanup error:',
+          cleanupError.message
+        );
       }
     }
 
