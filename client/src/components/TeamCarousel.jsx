@@ -1,7 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import '../css/CoreMembers.css';
+import '../css/TeamCarousel.css';
 
 const teamMembers = [
   {
