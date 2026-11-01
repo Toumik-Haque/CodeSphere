@@ -2,7 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
 import '../css/Admin.css';
 
 const initialForm = {
@@ -14,6 +14,9 @@ const initialForm = {
   venue: '',
   mode: 'In-person',
   meetingLink: '',
+  registrationLink: '',
+  linkedinPostLink: '',
+  instagramPostLink: '',
   status: 'draft',
 };
 
@@ -32,6 +35,17 @@ function toDateTimeLocal(value) {
   return new Date(date.getTime() - offset)
     .toISOString()
     .slice(0, 16);
+}
+
+function isValidOptionalUrl(value) {
+  if (!value.trim()) return true;
+
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 export default function Admin() {
@@ -55,7 +69,8 @@ export default function Admin() {
   const initialCoreMemberForm = {
     name: '',
     role: '',
-    link: '',
+    linkedinLink: '',
+    instagramLink: '',
   };
 
   const [coreMembers, setCoreMembers] = useState([]);
@@ -185,7 +200,8 @@ export default function Admin() {
     setCoreMemberForm({
       name: member.name || '',
       role: member.role || '',
-      link: member.link || member.linkedin || member.github || '',
+      linkedinLink: member.linkedinLink || '',
+      instagramLink: member.instagramLink || '',
     });
 
     setEditingCoreMemberId(member._id);
@@ -213,15 +229,22 @@ export default function Admin() {
       return;
     }
 
-    if (coreMemberForm.link.trim()) {
+    const optionalLinks = [
+      ['LinkedIn profile link', coreMemberForm.linkedinLink],
+      ['Instagram profile link', coreMemberForm.instagramLink],
+    ];
+
+    for (const [label, value] of optionalLinks) {
+      if (!value.trim()) continue;
+
       try {
-        const url = new URL(coreMemberForm.link.trim());
+        const url = new URL(value.trim());
 
         if (!['http:', 'https:'].includes(url.protocol)) {
           throw new Error();
         }
       } catch {
-        setError('Please enter a valid supporting link starting with https://');
+        setError(`${label} must be a valid URL starting with https://`);
         return;
       }
     }
@@ -233,7 +256,8 @@ export default function Admin() {
 
       formData.append('name', coreMemberForm.name.trim());
       formData.append('role', coreMemberForm.role.trim());
-      formData.append('link', coreMemberForm.link.trim());
+      formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
+      formData.append('instagramLink', coreMemberForm.instagramLink.trim());
 
       if (coreMemberImage) {
         formData.append('image', coreMemberImage);
@@ -370,11 +394,14 @@ export default function Admin() {
       venue: event.venue || '',
       mode: event.mode || 'In-person',
       meetingLink: event.meetingLink || '',
+      registrationLink: event.registrationLink || '',
+      linkedinPostLink: event.linkedinPostLink || '',
+      instagramPostLink: event.instagramPostLink || '',
       status: event.status || 'draft',
     });
 
     setSelectedImage(null);
-    setImagePreview(event.bannerImage || '');
+    setImagePreview(event.bannerImage?.url || '');
     setMessage('');
     setError('');
     setShowEventForm(true);
@@ -409,6 +436,19 @@ export default function Admin() {
       return;
     }
 
+    const optionalLinks = [
+      ['Registration link', form.registrationLink],
+      ['LinkedIn post link', form.linkedinPostLink],
+      ['Instagram post link', form.instagramPostLink],
+    ];
+
+    for (const [label, value] of optionalLinks) {
+      if (!isValidOptionalUrl(value)) {
+        setError(`${label} must be a valid URL starting with https://`);
+        return;
+      }
+    }
+
     setSaving(true);
 
     try {
@@ -425,6 +465,9 @@ export default function Admin() {
       formData.append('venue', form.venue);
       formData.append('mode', form.mode);
       formData.append('meetingLink', form.meetingLink);
+      formData.append('registrationLink', form.registrationLink.trim());
+      formData.append('linkedinPostLink', form.linkedinPostLink.trim());
+      formData.append('instagramPostLink', form.instagramPostLink.trim());
       formData.append('status', form.status);
 
       if (selectedImage) {
@@ -589,15 +632,6 @@ export default function Admin() {
             alt="CodeSphere Logo"
             className="navbar-logo-img"
           />
-
-          <div className="d-flex flex-column ms-2">
-            <span className="textLogo-code">
-              Code<span className="textLogo-sphere">Sphere</span>
-            </span>
-            <span className="textLogo-tag">
-              — CODING COMMUNITY —
-            </span>
-          </div>
         </Link>
 
         <div className="admin-topbar-actions">
@@ -842,29 +876,77 @@ export default function Admin() {
                     />
                   </div>
 
+                  {form.mode !== 'Online' && (
+                    <div className="admin-form-field">
+                      <label htmlFor="event-venue">Venue</label>
+                      <input
+                        id="event-venue"
+                        name="venue"
+                        value={form.venue}
+                        onChange={updateField}
+                        maxLength={200}
+                        placeholder="Campus hall or event location"
+                        required={form.mode === 'In-person'}
+                      />
+                    </div>
+                  )}
+
+                  {form.mode !== 'In-person' && (
+                    <div className="admin-form-field">
+                      <label htmlFor="event-meeting-link">
+                        Meeting link (optional)
+                      </label>
+                      <input
+                        id="event-meeting-link"
+                        name="meetingLink"
+                        type="url"
+                        value={form.meetingLink}
+                        onChange={updateField}
+                        placeholder="https://..."
+                        required={form.mode === 'Online'}
+                      />
+                    </div>
+                  )}
+
                   <div className="admin-form-field">
-                    <label htmlFor="event-venue">Venue</label>
+                    <label htmlFor="event-registration-link">
+                      Registration link (optional)
+                    </label>
                     <input
-                      id="event-venue"
-                      name="venue"
-                      value={form.venue}
+                      id="event-registration-link"
+                      name="registrationLink"
+                      type="url"
+                      value={form.registrationLink}
                       onChange={updateField}
-                      maxLength={200}
-                      placeholder="Campus hall or online"
+                      placeholder="https://..."
                     />
                   </div>
 
                   <div className="admin-form-field">
-                    <label htmlFor="event-meeting-link">
-                      Meeting link (optional)
+                    <label htmlFor="event-linkedin-post">
+                      LinkedIn post link (optional)
                     </label>
                     <input
-                      id="event-meeting-link"
-                      name="meetingLink"
+                      id="event-linkedin-post"
+                      name="linkedinPostLink"
                       type="url"
-                      value={form.meetingLink}
+                      value={form.linkedinPostLink}
                       onChange={updateField}
-                      placeholder="https://..."
+                      placeholder="https://www.linkedin.com/..."
+                    />
+                  </div>
+
+                  <div className="admin-form-field">
+                    <label htmlFor="event-instagram-post">
+                      Instagram post link (optional)
+                    </label>
+                    <input
+                      id="event-instagram-post"
+                      name="instagramPostLink"
+                      type="url"
+                      value={form.instagramPostLink}
+                      onChange={updateField}
+                      placeholder="https://www.instagram.com/..."
                     />
                   </div>
 
@@ -1337,20 +1419,30 @@ export default function Admin() {
                       />
                     </div>
 
-                    <div className="admin-form-field admin-form-field-full">
-                      <label htmlFor="core-member-link">Supporting link</label>
+                    <div className="admin-form-field">
+                      <label htmlFor="core-member-linkedin">LinkedIn profile</label>
                       <input
-                        id="core-member-link"
-                        name="link"
+                        id="core-member-linkedin"
+                        name="linkedinLink"
                         type="url"
-                        value={coreMemberForm.link}
+                        value={coreMemberForm.linkedinLink}
                         onChange={updateCoreMemberField}
                         maxLength={500}
-                        placeholder="https://linkedin.com/in/... or your portfolio"
+                        placeholder="https://www.linkedin.com/in/..."
                       />
-                      <small className="text-secondary">
-                        LinkedIn, GitHub, portfolio, or another profile.
-                      </small>
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="core-member-instagram">Instagram profile</label>
+                      <input
+                        id="core-member-instagram"
+                        name="instagramLink"
+                        type="url"
+                        value={coreMemberForm.instagramLink}
+                        onChange={updateCoreMemberField}
+                        maxLength={500}
+                        placeholder="https://www.instagram.com/..."
+                      />
                     </div>
 
                     <div className="admin-form-field admin-form-field-full">
@@ -1540,17 +1632,31 @@ export default function Admin() {
                             <h3>{member.name}</h3>
                             <p className="core-member-role">{member.role}</p>
 
-                            {member.link && (
-                              <a
-                                className="core-member-supporting-link"
-                                href={member.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <i className="bi bi-box-arrow-up-right" aria-hidden="true" />
-                                <span>View profile</span>
-                              </a>
-                            )}
+                            <div className="admin-core-member-social-links">
+                              {member.linkedinLink && (
+                                <a
+                                  href={member.linkedinLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={`LinkedIn profile of ${member.name}`}
+                                >
+                                  <i className="bi bi-linkedin" aria-hidden="true" />
+                                  <span>LinkedIn</span>
+                                </a>
+                              )}
+
+                              {member.instagramLink && (
+                                <a
+                                  href={member.instagramLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={`Instagram profile of ${member.name}`}
+                                >
+                                  <i className="bi bi-instagram" aria-hidden="true" />
+                                  <span>Instagram</span>
+                                </a>
+                              )}
+                            </div>
 
                             <div className="admin-event-actions admin-core-member-actions">
                               <button

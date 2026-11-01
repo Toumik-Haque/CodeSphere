@@ -3,16 +3,18 @@ import { useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
 import { AuthProvider, useAuth } from './context/AuthContext';
 
+import VideoBackground from './components/VideoBackground';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Events from './components/Events';
 import TeamCarousel from './components/TeamCarousel';
-import JoinUs from './components/JoinUs';
+import CTA from './components/CTA'
 import About from './components/About';
 import Footer from './components/Footer';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import EventsPage from './pages/EventsPage';
@@ -22,13 +24,14 @@ import Team from './pages/Team';
 function HomePage() {
   return (
     <>
+      <VideoBackground />
       <Navbar />
       <main>
         <Hero />
+        <About />
         <Events />
         <TeamCarousel />
-        <JoinUs />
-        <About />
+        <CTA />
       </main>
       <Footer />
     </>
@@ -54,17 +57,15 @@ function ProtectedRoute({ children, adminOnly = false }) {
 }
 
 function ScrollToTop() {
-  const { pathname, hash } = useLocation();
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    if (hash) return;
-
     window.scrollTo({
       top: 0,
       left: 0,
       behavior: 'auto',
     });
-  }, [pathname, hash]);
+  }, [pathname]);
 
   return null;
 }
@@ -79,6 +80,7 @@ function AppRoutes() {
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         path="/profile"
