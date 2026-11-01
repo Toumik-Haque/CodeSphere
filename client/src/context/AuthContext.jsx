@@ -3,6 +3,7 @@ import React, {
   useContext,
   useState,
 } from 'react';
+
 import { apiRequest } from '../lib/api';
 
 const AuthContext = createContext(null);
@@ -22,6 +23,41 @@ export function AuthProvider({ children }) {
     () => localStorage.getItem('codesphere_token')
   );
 
+  async function sendOtp(email) {
+    return apiRequest('/auth/send-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async function verifyOtp(email, otp) {
+    return apiRequest('/auth/verify-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+  }
+
+  async function forgotPassword(email) {
+    return apiRequest('/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async function verifyResetOtp(email, otp) {
+    return apiRequest('/auth/verify-reset-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    });
+  }
+
+  async function resetPassword(email, password) {
+    return apiRequest('/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ email, password }),
+    });
+  }
+
   async function login(email, password) {
     const data = await apiRequest('/auth/login', {
       method: 'POST',
@@ -37,10 +73,22 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
-  async function register(name, email, password) {
+  async function register(
+    name,
+    email,
+    password,
+    collegeName,
+    yearOfStudy
+  ) {
     const data = await apiRequest('/auth/register', {
       method: 'POST',
-      body: JSON.stringify({ name, email, password }),
+      body: JSON.stringify({
+        name,
+        email,
+        password,
+        collegeName,
+        yearOfStudy,
+      }),
     });
 
     localStorage.setItem('codesphere_token', data.token);
@@ -55,13 +103,25 @@ export function AuthProvider({ children }) {
   function logout() {
     localStorage.removeItem('codesphere_token');
     localStorage.removeItem('codesphere_user');
+
     setToken(null);
     setUser(null);
   }
 
   return (
     <AuthContext.Provider
-      value={{ user, token, login, register, logout }}
+      value={{
+        user,
+        token,
+        login,
+        register,
+        sendOtp,
+        verifyOtp,
+        forgotPassword,
+        verifyResetOtp,
+        resetPassword,
+        logout,
+      }}
     >
       {children}
     </AuthContext.Provider>
