@@ -1,11 +1,35 @@
-/* ========================================
-   CODESPHERE FOOTER
-======================================== */
 
 .codesphere-footer {
-  padding: 70px 0 36px;
-  background: #090a0d;
-  border-top: 1px solid rgba(212, 175, 55, 0.18);
+  position: relative;
+  overflow: hidden;
+  padding: 62px 0 24px;
+  color: #F7F8FA;
+  background:
+    radial-gradient(
+      ellipse at 85% 0%,
+      rgba(233, 78, 46, 0.12),
+      transparent 35%
+    ),
+    linear-gradient(135deg, #101C2D 0%, #152238 55%, #192B42 100%);
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Restrained coral highlight */
+.codesphere-footer::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 8%;
+  width: 84%;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #E94E2E,
+    rgba(233, 78, 46, 0.2),
+    transparent
+  );
+  pointer-events: none;
 }
 
 .footer-main {
@@ -14,7 +38,7 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 32px;
-  margin-bottom: 48px;
+  margin-bottom: 42px;
 }
 
 .footer-branding {
@@ -28,69 +52,79 @@
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  color: #f5f5f5;
+  color: #FFFFFF;
   font-size: 1.2rem;
   font-weight: 800;
-  text-decoration: none;
 }
 
+/* Keep a dark background from swallowing a dark logo */
 .footer-brand img {
-  width: 38px;
-  height: 38px;
+  width: 190px;
+  height: 52px;
   object-fit: contain;
+  object-position: left center;
 }
 
 .footer-tagline {
   margin: 0;
-  color: #9299a5;
-  font-size: 0.85rem;
+  color: #B9C5D4;
+  font-size: 0.88rem;
+  line-height: 1.8;
 }
 
 .footer-links {
   display: flex;
   align-items: center;
-  gap: 28px;
-  list-style: none;
+  gap: 26px;
   flex-wrap: wrap;
+  list-style: none;
+  padding: 0;
+  margin: 0;
 }
 
 .footer-links a,
 .footer-bottom a {
-  color: #b7bdc7;
-  font-size: 0.85rem;
+  color: #C5CFDB;
+  font-size: 0.88rem;
+  font-weight: 500;
   text-decoration: none;
   transition: color 0.2s ease;
 }
 
 .footer-links a:hover,
 .footer-bottom a:hover {
-  color: var(--gold);
+  color: #FF8066;
 }
 
 .footer-socials {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 10px;
 }
 
 .social-icon-btn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  color: #b7bdc7;
-  background: #b7bdc70d;
-  border: 1px solid rgba(128, 128, 128, 0.336);
-  display: flex;
+  display: inline-flex;
+  width: 39px;
+  height: 39px;
   align-items: center;
   justify-content: center;
-  transition: all 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 50%;
+  color: #F7F8FA;
+  background: rgba(255, 255, 255, 0.055);
+  box-shadow: none;
+  transition:
+    color 0.2s ease,
+    border-color 0.2s ease,
+    background-color 0.2s ease,
+    transform 0.2s ease;
 }
 
 .social-icon-btn:hover {
-  color: var(--gold);
-  border-color: var(--gold-border);
-  background: rgba(132, 131, 126, 0.126);
-  transform: translateY(-2px);
+  color: #FFFFFF;
+  border-color: #E94E2E;
+  background: #E94E2E;
+  transform: translateY(-3px);
 }
 
 .footer-bottom {
@@ -99,10 +133,10 @@
   justify-content: space-between;
   flex-wrap: wrap;
   gap: 16px;
-  padding-top: 28px;
-  border-top: 1px solid rgba(255, 255, 255, 0.08);
-  color: #777f8c;
-  font-size: 0.82rem;
+  padding-top: 22px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: #9EADBF;
+  font-size: 0.8rem;
 }
 
 .footer-bottom a {
@@ -112,30 +146,48 @@
 }
 
 .footer-bottom a i {
-  color: var(--gold);
+  color: #FF8066;
   font-size: 1rem;
 }
 
+.footer-links a:focus-visible,
+.footer-bottom a:focus-visible,
+.social-icon-btn:focus-visible {
+  outline: 2px solid #FF8066;
+  outline-offset: 4px;
+}
+
 @media (max-width: 768px) {
+  .codesphere-footer {
+    padding: 42px 0 22px;
+  }
+
   .footer-main {
     flex-direction: column;
     align-items: flex-start;
-    gap: 16px;
+    gap: 24px;
+    margin-bottom: 30px;
   }
 
   .footer-links {
-    gap: 16px;
+    gap: 16px 22px;
   }
 
   .footer-bottom {
     flex-direction: column;
     align-items: flex-start;
+    gap: 12px;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .footer-links a,
-  .footer-bottom a {
+  .footer-bottom a,
+  .social-icon-btn {
     transition: none;
+  }
+
+  .social-icon-btn:hover {
+    transform: none;
   }
 }

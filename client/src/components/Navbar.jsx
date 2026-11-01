@@ -1,21 +1,22 @@
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.png';
+import logo from '../assets/logo.svg';
 import '../css/Navbar.css';
 
 const navLinks = [
   { label: 'Home', path: '/' },
   { label: 'Events', path: '/events' },
+  { label: 'Materials', path: '/materials' },
   { label: 'Team', path: '/team' },
-  { label: 'Join Community', path: '/join' },
+  { label: 'Contact Us', path: '/contact' },
 ];
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
@@ -55,6 +56,18 @@ const Navbar = () => {
 
   const closeMenu = () => setIsMenuOpen(false);
 
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    try {
+      await logout();
+      closeMenu();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
+
   return (
     <>
       {/* Main Navbar */}
@@ -69,7 +82,14 @@ const Navbar = () => {
           <Link
             className="navbar-brand d-flex align-items-center"
             to="/"
-            onClick={closeMenu}
+            onClick={() => {
+              closeMenu();
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'auto',
+              });
+            }}
           >
             <img
               src={logo}
@@ -77,14 +97,6 @@ const Navbar = () => {
               className="navbar-logo-img"
             />
 
-            <div className="d-flex flex-column ms-2">
-              <span className="textLogo-code">
-                Code<span className="textLogo-sphere">Sphere</span>
-              </span>
-              <span className="textLogo-tag">
-                — CODING COMMUNITY —
-              </span>
-            </div>
           </Link>
 
           {/* Mobile Hamburger */}
@@ -113,6 +125,11 @@ const Navbar = () => {
                 </li>
               ))}
 
+            </ul>
+          </div>
+
+          <div className="desktop-navigation d-none d-lg-flex">
+            <ul className='navbar-nav align-items-center gap-4'>
               <li className="nav-item ms-lg-2">
                 <Link
                   to={
@@ -129,15 +146,15 @@ const Navbar = () => {
                   <i
                     className={`bi ${isAuthenticated
                       ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                      : 'bi-box-arrow-in-right'
+                      : 'bi-arrow-up-right'
                       }`}
                     aria-hidden="true"
                   />
                 </Link>
               </li>
-
             </ul>
           </div>
+
         </div>
       </nav>
 
@@ -163,18 +180,17 @@ const Navbar = () => {
           <Link
             to="/"
             className="mobile-menu-brand"
-            onClick={closeMenu}
+            onClick={() => {
+              closeMenu();
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'auto',
+              });
+            }}
           >
             <img src={logo} alt="CodeSphere Logo" />
 
-            <span className="mobile-brand-text">
-              <span className="textLogo-code">
-                Code<span className="textLogo-sphere">Sphere</span>
-              </span>
-              <span className="textLogo-tag">
-                — CODING COMMUNITY —
-              </span>
-            </span>
           </Link>
 
           <button
@@ -230,8 +246,8 @@ const Navbar = () => {
             <span>
               <i
                 className={`bi ${isAuthenticated
-                    ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                    : 'bi-box-arrow-in-right'
+                  ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
+                  : 'bi-box-arrow-in-right'
                   } me-3`}
                 aria-hidden="true"
               />

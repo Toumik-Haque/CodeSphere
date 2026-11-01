@@ -2513,3 +2513,29 @@
   }
 }
 
+
+
+/* Light brand theme overrides */
+.admin-page { background:#f5f9fc; color:var(--navy); }
+.admin-topbar { background:rgba(255,255,255,.96); border-bottom-color:var(--line); box-shadow:0 4px 20px rgba(21,54,83,.06); }
+.admin-topbar-actions { color:var(--text-muted); }
+.admin-logout,.admin-secondary-button,.admin-events-section > .admin-section-heading > .admin-event-actions button,.admin-event-item .admin-event-actions button { border-color:#d6e2eb; background:#fff; color:var(--navy); }
+.admin-logout:hover,.admin-secondary-button:hover,.admin-event-item .admin-event-actions button:hover { border-color:var(--gold); color:var(--gold-deep); background:#fff9f7; }
+.admin-container { color:var(--navy); }
+.admin-heading p:not(.auth-eyebrow),.admin-panel-subtitle,.admin-event-info p { color:var(--text-muted); }
+.admin-panel,.admin-event-item { border-color:var(--line); background:#fff; box-shadow:var(--shadow-sm); }
+.admin-form-field label { color:var(--navy); }
+.admin-form-field input,.admin-form-field select,.admin-form-field textarea { border-color:#d6e2eb; background:#fbfdff; color:var(--navy); }
+.admin-form-field input:focus,.admin-form-field select:focus,.admin-form-field textarea:focus { border-color:var(--gold); box-shadow:0 0 0 3px rgba(233,78,46,.1); }
+.admin-form-field select option { background:#fff; color:var(--navy); }
+.admin-form-field input[type="datetime-local"]::-webkit-calendar-picker-indicator { filter:none; }
+.admin-empty { border-color:#d6e2eb; color:var(--text-muted); background:#fff; }
+.admin-event-meta { color:var(--gold-deep); }
+.admin-status { background:#edf4f8; color:#52677a; }
+.admin-status.published { background:#e8f7ee; color:#207746; }
+.admin-event-info .admin-event-description { color:#52677a; }
+.admin-events-section > .admin-section-heading > .admin-event-actions .auth-submit { border-color:var(--gold); background:var(--gold-gradient); color:var(--navy-deep); }
+.admin-events-section > .admin-section-heading > .admin-event-actions .auth-submit:hover { border-color:var(--gold-light); background:var(--gold-light); color:var(--navy-deep); }
+.admin-events-section > .admin-section-heading > .admin-event-actions .admin-secondary-button:hover { border-color:var(--gold); background:#fff9f7; color:var(--gold-deep); }
+.admin-event-item .admin-event-actions .admin-delete-button:hover { border-color:#d94b4b; color:#b42323; }
+.admin-page button:focus-visible { outline-color:var(--gold); }

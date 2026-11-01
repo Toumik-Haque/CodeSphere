@@ -42,9 +42,10 @@ export default function TeamCarousel() {
   const trackRef = useRef(null);
   const [paused, setPaused] = useState(false);
 
+  const displayMembers = [...teamMembers, ...teamMembers];
+
   useEffect(() => {
     const track = trackRef.current;
-
     if (!track) return undefined;
 
     const mediaQuery = window.matchMedia(
@@ -56,7 +57,6 @@ export default function TeamCarousel() {
 
     const animate = (time) => {
       const currentTrack = trackRef.current;
-
       if (!currentTrack) return;
 
       if (!previousTime) previousTime = time;
@@ -106,17 +106,12 @@ export default function TeamCarousel() {
       window.cancelAnimationFrame(animationFrame);
 
       if (mediaQuery.removeEventListener) {
-        mediaQuery.removeEventListener(
-          'change',
-          handleMotionChange
-        );
+        mediaQuery.removeEventListener('change', handleMotionChange);
       } else {
         mediaQuery.removeListener(handleMotionChange);
       }
     };
   }, [paused]);
-
-  const displayMembers = [...teamMembers, ...teamMembers];
 
   return (
     <section
@@ -207,9 +202,7 @@ export default function TeamCarousel() {
 
                   <div className="core-member-info">
                     <h3>{member.name}</h3>
-                    <p className="core-member-role">
-                      {member.role}
-                    </p>
+                    <p className="core-member-role">{member.role}</p>
                   </div>
                 </Link>
               </article>
