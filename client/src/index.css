@@ -325,3 +325,42 @@ p {
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Login — Forgot Password link */
+
+.login-forgot {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: -7px;
+  margin-bottom: 17px;
+}
+
+.login-forgot a {
+  color: var(--gold-deep);
+  font-size: 0.84rem;
+  font-weight: 700;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+
+.login-forgot a:hover {
+  color: var(--navy);
+  text-decoration: underline;
+}
+
+/* Password reset OTP */
+
+#reset-otp {
+  text-align: center;
+  font-size: 24px;
+  font-weight: 800;
+  letter-spacing: 9px;
+  color: var(--navy);
+}
+
+/* Password reset form spacing */
+
+.auth-card .password-input-wrap {
+  margin-bottom: 16px;
+}

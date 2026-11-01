@@ -96,27 +96,9 @@ export default function Team() {
                       )}
 
                       <div className="core-member-socials">
-                        <a
-                          href={member.instagram}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`${member.name} on Instagram`}
-                          title="Instagram"
-                        >
-                          <i className="bi bi-instagram" aria-hidden="true" />
-                        </a>
-                        <a
-                          href={member.instagram}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          aria-label={`${member.name} on Instagram`}
-                          title="Instagram"
-                        >
-                          <i className="bi bi-linkedin" aria-hidden="true" />
-                        </a>
-                        {member.instagram && (
+                        {member.instagramLink && (
                           <a
-                            href={member.instagram}
+                            href={member.instagramLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${member.name} on Instagram`}
@@ -126,9 +108,9 @@ export default function Team() {
                           </a>
                         )}
 
-                        {member.linkedin && (
+                        {member.linkedinLink && (
                           <a
-                            href={member.linkedin}
+                            href={member.linkedinLink}
                             target="_blank"
                             rel="noopener noreferrer"
                             aria-label={`${member.name} on LinkedIn`}
@@ -144,18 +126,6 @@ export default function Team() {
                     <div className="core-member-info">
                       <h3>{member.name}</h3>
                       <p className="core-member-role">{member.role}</p>
-
-                      {/* {member.link && (
-                <a
-                  className="core-member-link"
-                  href={member.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Check out
-                  <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                </a>
-              )} */}
                     </div>
                   </article>
                 ))}

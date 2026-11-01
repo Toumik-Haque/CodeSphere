@@ -14,6 +14,7 @@ import Footer from './components/Footer';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
+import ResetPassword from './pages/ResetPassword';
 import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import EventsPage from './pages/EventsPage';
@@ -79,6 +80,7 @@ function AppRoutes() {
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       <Route
         path="/profile"

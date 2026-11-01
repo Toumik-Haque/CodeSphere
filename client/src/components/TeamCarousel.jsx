@@ -1,52 +1,62 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { apiRequest } from '../lib/api';
+import '../css/CoreMembers.css';
 import '../css/TeamCarousel.css';
-
-const teamMembers = [
-  {
-    _id: 'member-1',
-    name: 'Arnab Kr Dey',
-    role: 'Core Team Member',
-    image: 'https://i.pravatar.cc/500?img=12',
-  },
-  {
-    _id: 'member-2',
-    name: 'Sayan Singha',
-    role: 'Core Team Member',
-    image: 'https://i.pravatar.cc/500?img=11',
-  },
-  {
-    _id: 'member-3',
-    name: 'Toumik Haq',
-    role: 'Core Team Member',
-    image: 'https://i.pravatar.cc/500?img=13',
-  },
-  {
-    _id: 'member-4',
-    name: 'Saikat Tunga',
-    role: 'Core Team Member',
-    image: 'https://i.pravatar.cc/500?img=14',
-  },
-  {
-    _id: 'member-5',
-    name: 'Sovan Rajbanshi',
-    role: 'Core Team Member',
-    image: 'https://i.pravatar.cc/500?img=15',
-  },
-];
 
 const SCROLL_SPEED = 50;
 
 export default function TeamCarousel() {
-  const trackRef = useRef(null);
+  const [members, setMembers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [paused, setPaused] = useState(false);
+  const trackRef = useRef(null);
 
-  const displayMembers = [...teamMembers, ...teamMembers];
+  useEffect(() => {
+    let active = true;
+
+    async function loadMembers() {
+      try {
+        const data = await apiRequest('/core-members');
+
+        if (active) {
+          const list = Array.isArray(data)
+            ? data
+            : Array.isArray(data?.members)
+              ? data.members
+              : [];
+
+          setMembers(
+            [...list].sort(
+              (a, b) =>
+                (a.order ?? 0) - (b.order ?? 0) ||
+                (a.name || '').localeCompare(b.name || '')
+            )
+          );
+        }
+      } catch (err) {
+        if (active) {
+          setError(err.message || 'Unable to load team members.');
+        }
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+
+    loadMembers();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const displayMembers = [...members, ...members];
 
   useEffect(() => {
     const track = trackRef.current;
-    if (!track) return undefined;
+    if (!track || members.length === 0) return undefined;
 
     const mediaQuery = window.matchMedia(
       '(prefers-reduced-motion: reduce)'
@@ -66,7 +76,7 @@ export default function TeamCarousel() {
 
       const firstCard = currentTrack.children[0];
       const duplicateFirstCard =
-        currentTrack.children[teamMembers.length];
+        currentTrack.children[members.length];
 
       if (firstCard && duplicateFirstCard) {
         const loopPoint =
@@ -111,7 +121,43 @@ export default function TeamCarousel() {
         mediaQuery.removeListener(handleMotionChange);
       }
     };
-  }, [paused]);
+  }, [paused, members]);
+
+  if (loading) {
+    return (
+      <section className="core-team-section" aria-busy="true">
+        <div className="core-team-heading">
+          <p className="core-team-eyebrow">
+            THE PEOPLE BEHIND CODESPHERE
+          </p>
+          <h2>Meet Our Core Team</h2>
+        </div>
+        <p className="core-team-status">Loading our team...</p>
+      </section>
+    );
+  }
+
+  if (error || members.length === 0) {
+    return (
+      <section className="core-team-section">
+        <div className="core-team-heading">
+          <p className="core-team-eyebrow">
+            THE PEOPLE BEHIND CODESPHERE
+          </p>
+          <h2>Meet Our Core Team</h2>
+        </div>
+        <p className="core-team-status">
+          {error || 'Our team profiles will be available soon.'}
+        </p>
+        <div className="core-team-footer">
+          <Link to="/team" className="core-team-view-all">
+            <span>Meet the entire team</span>
+            <i className="bi bi-arrow-right" aria-hidden="true" />
+          </Link>
+        </div>
+      </section>
+    );
+  }
 
   return (
     <section
@@ -154,7 +200,7 @@ export default function TeamCarousel() {
           tabIndex={0}
         >
           {displayMembers.map((member, index) => {
-            const isDuplicate = index >= teamMembers.length;
+            const isDuplicate = index >= members.length;
 
             return (
               <article
@@ -163,48 +209,56 @@ export default function TeamCarousel() {
                 aria-hidden={isDuplicate ? true : undefined}
                 inert={isDuplicate ? true : undefined}
               >
-                <Link
-                  to="/team"
-                  className="core-member-card-link"
-                  aria-label={`Meet ${member.name} and the entire team`}
-                  tabIndex={isDuplicate ? -1 : undefined}
-                >
-                  <div className="core-member-photo-wrap">
+                <div className="core-member-photo-wrap">
+                  {member.image?.url ? (
                     <img
                       className="core-member-photo"
-                      src={member.image}
-                      alt={
-                        isDuplicate ? '' : `Portrait of ${member.name}`
-                      }
+                      src={member.image.url}
+                      alt={isDuplicate ? '' : `Portrait of ${member.name}`}
                       loading={index < 4 ? 'eager' : 'lazy'}
                       decoding="async"
                       draggable={false}
                     />
-
-                    <div className="team-card-overlay">
-                      <div className="team-card-socials">
-                        <span
-                          className="team-card-social-icon"
-                          aria-hidden="true"
-                        >
-                          <i className="bi bi-linkedin" />
-                        </span>
-
-                        <span
-                          className="team-card-social-icon"
-                          aria-hidden="true"
-                        >
-                          <i className="bi bi-instagram" />
-                        </span>
-                      </div>
+                  ) : (
+                    <div
+                      className="core-member-photo-fallback"
+                      aria-hidden="true"
+                    >
+                      {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
                     </div>
-                  </div>
+                  )}
 
-                  <div className="core-member-info">
-                    <h3>{member.name}</h3>
-                    <p className="core-member-role">{member.role}</p>
+                  <div className="core-member-socials">
+                    {member.instagramLink && (
+                      <a
+                        href={member.instagramLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${member.name} on Instagram`}
+                        tabIndex={isDuplicate ? -1 : undefined}
+                      >
+                        <i className="bi bi-instagram" aria-hidden="true" />
+                      </a>
+                    )}
+
+                    {member.linkedinLink && (
+                      <a
+                        href={member.linkedinLink}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        aria-label={`${member.name} on LinkedIn`}
+                        tabIndex={isDuplicate ? -1 : undefined}
+                      >
+                        <i className="bi bi-linkedin" aria-hidden="true" />
+                      </a>
+                    )}
                   </div>
-                </Link>
+                </div>
+
+                <div className="core-member-info">
+                  <h3>{member.name}</h3>
+                  <p className="core-member-role">{member.role}</p>
+                </div>
               </article>
             );
           })}

@@ -8,6 +8,18 @@ const userSchema = new mongoose.Schema(
       trim: true,
       maxlength: 80,
     },
+    collegeName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 150,
+      default: 'ALIPURDUAR GOVERNMENT ENGINEERING AND MANAGEMENT COLLEGE',
+    },
+    yearOfStudy: {
+      type: String,
+      required: true,
+      enum: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
+    },
     email: {
       type: String,
       required: true,
