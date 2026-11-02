@@ -1,7 +1,14 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../components/Navbar';
 import logo from '../assets/logo.svg';
 import '../css/Admin.css';
 
@@ -20,12 +27,6 @@ const initialForm = {
   status: 'draft',
 };
 
-const categories = [
-  'Workshop',
-  'Hackathon',
-  'Community Meetup',
-];
-
 const initialCoreMemberForm = {
   name: '',
   role: '',
@@ -33,10 +34,21 @@ const initialCoreMemberForm = {
   instagramLink: '',
 };
 
+const categories = [
+  'Workshop',
+  'Hackathon',
+  'Community Meetup',
+];
+
+const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
 function toDateTimeLocal(value) {
   if (!value) return '';
 
   const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return '';
+
   const offset = date.getTimezoneOffset() * 60000;
 
   return new Date(date.getTime() - offset)
@@ -49,42 +61,75 @@ function isValidOptionalUrl(value) {
 
   try {
     const url = new URL(value.trim());
-    return url.protocol === 'http:' || url.protocol === 'https:';
+    return ['http:', 'https:'].includes(url.protocol);
   } catch {
     return false;
   }
+}
+
+function getInitial(name) {
+  return name?.trim()?.charAt(0)?.toUpperCase() || 'A';
+}
+
+function formatDate(value) {
+  if (!value) return 'Date unavailable';
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) return 'Date unavailable';
+
+  return date.toLocaleString(undefined, {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
 }
 
 export default function Admin() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
 
-  const [form, setForm] = useState(initialForm);
-  const [events, setEvents] = useState([]);
-  const [editingId, setEditingId] = useState(null);
-  const [showEventForm, setShowEventForm] = useState(false);
+  // --------------------------------------------------
+  // MAIN NAVIGATION
+  // --------------------------------------------------
 
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [activeSection, setActiveSection] = useState('home');
+  const [activeEventTab, setActiveEventTab] = useState('manage');
+
+  // --------------------------------------------------
+  // GLOBAL FEEDBACK
+  // --------------------------------------------------
+
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
+
+  function clearFeedback() {
+    setError('');
+    setMessage('');
+  }
+
+  // --------------------------------------------------
+  // EVENTS
+  // --------------------------------------------------
+
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+
+  const [form, setForm] = useState(initialForm);
+  const [editingId, setEditingId] = useState(null);
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
   const [removeEventImage, setRemoveEventImage] = useState(false);
 
-  const [activeSection, setActiveSection] = useState('home');
+  const eventImageInputRef = useRef(null);
+  const eventPreviewUrlRef = useRef(null);
 
-  const [coreMembers, setCoreMembers] = useState([]);
-  const [showCoreMemberForm, setShowCoreMemberForm] = useState(false);
-  const [coreMemberForm, setCoreMemberForm] = useState(initialCoreMemberForm);
-  const [editingCoreMemberId, setEditingCoreMemberId] = useState(null);
-  const [coreMemberImage, setCoreMemberImage] = useState(null);
-  const [coreMemberImagePreview, setCoreMemberImagePreview] = useState('');
-  const [removeCoreMemberImage, setRemoveCoreMemberImage] = useState(false);
-  const [coreMembersLoading, setCoreMembersLoading] = useState(false);
-  const [coreMemberSaving, setCoreMemberSaving] = useState(false);
-  const [coreMemberSearch, setCoreMemberSearch] = useState('');
+  const [eventSearch, setEventSearch] = useState('');
+  const [eventCategory, setEventCategory] = useState('all');
 
   const [summary, setSummary] = useState({
     totalMembers: 0,
@@ -93,41 +138,35 @@ export default function Admin() {
     pastEvents: 0,
   });
 
-  const [members, setMembers] = useState([]);
-  const [memberSearch, setMemberSearch] = useState('');
-  const [membersLoading, setMembersLoading] = useState(false);
-
-  const [selectedAttendanceEvent, setSelectedAttendanceEvent] = useState('');
-  const [attendanceRows, setAttendanceRows] = useState([]);
-  const [attendanceLoading, setAttendanceLoading] = useState(false);
-  const [attendanceSavingId, setAttendanceSavingId] = useState('');
-
-  const [eventSearch, setEventSearch] = useState('');
-  const [eventCategory, setEventCategory] = useState('all');
-
-  // Revoke temporary image preview URLs to avoid memory leaks.
-  function clearEventImagePreview() {
-    if (imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview);
+  const clearEventImagePreview = useCallback(() => {
+    if (eventPreviewUrlRef.current) {
+      URL.revokeObjectURL(eventPreviewUrlRef.current);
+      eventPreviewUrlRef.current = null;
     }
 
     setSelectedImage(null);
     setImagePreview('');
-  }
+  }, []);
 
-  function clearCoreMemberImagePreview() {
-    if (coreMemberImagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(coreMemberImagePreview);
+  const createEventPreview = useCallback((file) => {
+    if (eventPreviewUrlRef.current) {
+      URL.revokeObjectURL(eventPreviewUrlRef.current);
     }
 
-    setCoreMemberImage(null);
-    setCoreMemberImagePreview('');
-  }
+    const url = URL.createObjectURL(file);
+
+    eventPreviewUrlRef.current = url;
+    setImagePreview(url);
+  }, []);
 
   const loadSummary = useCallback(async () => {
     try {
       const data = await apiRequest('/events/admin/summary');
-      setSummary((current) => ({ ...current, ...data }));
+
+      setSummary((current) => ({
+        ...current,
+        ...data,
+      }));
     } catch (err) {
       console.error('Unable to load dashboard summary:', err.message);
     }
@@ -135,326 +174,45 @@ export default function Admin() {
 
   const loadEvents = useCallback(async () => {
     setLoading(true);
-    setError('');
 
     try {
       const data = await apiRequest('/events/admin/all');
+
       setEvents(Array.isArray(data.events) ? data.events : []);
+
       await loadSummary();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Unable to load events.');
     } finally {
       setLoading(false);
     }
   }, [loadSummary]);
 
-  const loadMembers = useCallback(async () => {
-    setMembersLoading(true);
-
-    try {
-      const query = memberSearch.trim()
-        ? `?search=${encodeURIComponent(memberSearch.trim())}`
-        : '';
-
-      const data = await apiRequest(`/events/admin/members${query}`);
-      setMembers(data.members || []);
-    } catch (err) {
-      setError(err.message || 'Unable to load members.');
-    } finally {
-      setMembersLoading(false);
-    }
-  }, [memberSearch]);
-
-  const loadCoreMembers = useCallback(async () => {
-    setCoreMembersLoading(true);
-
-    try {
-      const data = await apiRequest('/core-members');
-      setCoreMembers(Array.isArray(data.members) ? data.members : []);
-    } catch (err) {
-      setError(err.message || 'Unable to load core members.');
-    } finally {
-      setCoreMembersLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (activeSection === 'coreMembers' || activeSection === 'home') {
-      loadCoreMembers();
-    }
-  }, [activeSection, loadCoreMembers]);
-
-  function updateCoreMemberField(event) {
+  function updateField(event) {
     const { name, value } = event.target;
 
-    setCoreMemberForm((current) => ({
+    setForm((current) => ({
       ...current,
       [name]: value,
     }));
   }
 
-  function resetCoreMemberForm() {
-    clearCoreMemberImagePreview();
+  function resetEventForm() {
+    clearEventImagePreview();
 
-    setCoreMemberForm(initialCoreMemberForm);
-    setEditingCoreMemberId(null);
-    setRemoveCoreMemberImage(false);
+    setForm(initialForm);
+    setEditingId(null);
+    setRemoveEventImage(false);
 
-    const input = document.getElementById('core-member-image');
-    if (input) input.value = '';
-  }
-
-  function openCreateCoreMemberForm() {
-    resetCoreMemberForm();
-    setError('');
-    setMessage('');
-    setShowCoreMemberForm(true);
-  }
-
-  function cancelCoreMemberEditing() {
-    resetCoreMemberForm();
-    setError('');
-    setMessage('');
-    setShowCoreMemberForm(false);
-  }
-
-  function editCoreMember(member) {
-    clearCoreMemberImagePreview();
-
-    setCoreMemberForm({
-      name: member.name || '',
-      role: member.role || '',
-      linkedinLink: member.linkedinLink || '',
-      instagramLink: member.instagramLink || '',
-    });
-
-    setEditingCoreMemberId(member._id);
-    setShowCoreMemberForm(true);
-    setCoreMemberImage(null);
-    setCoreMemberImagePreview(member.image?.url || '');
-    setRemoveCoreMemberImage(false);
-
-    const input = document.getElementById('core-member-image');
-    if (input) input.value = '';
-
-    setError('');
-    setMessage('');
-
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  function handleCoreMemberImageChange(event) {
-    const file = event.target.files?.[0];
-
-    if (!file) return;
-
-    if (file.size > 5 * 1024 * 1024) {
-      setError('Image must be 5 MB or smaller.');
-      event.target.value = '';
-      return;
+    if (eventImageInputRef.current) {
+      eventImageInputRef.current.value = '';
     }
-
-    if (coreMemberImagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(coreMemberImagePreview);
-    }
-
-    setError('');
-    setCoreMemberImage(file);
-    setCoreMemberImagePreview(URL.createObjectURL(file));
-
-    // Selecting a replacement cancels the removal request.
-    setRemoveCoreMemberImage(false);
-  }
-
-  function removeCurrentCoreMemberImage() {
-    if (coreMemberImagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(coreMemberImagePreview);
-    }
-
-    setCoreMemberImage(null);
-    setCoreMemberImagePreview('');
-
-    // When editing, this tells the backend to remove the saved image.
-    setRemoveCoreMemberImage(Boolean(editingCoreMemberId));
-
-    const input = document.getElementById('core-member-image');
-    if (input) input.value = '';
-  }
-
-  async function saveCoreMember(event) {
-    event.preventDefault();
-    setError('');
-    setMessage('');
-
-    if (!coreMemberForm.name.trim() || !coreMemberForm.role.trim()) {
-      setError('Please enter the member name and role.');
-      return;
-    }
-
-    if (!editingCoreMemberId && !coreMemberImage) {
-      setError('Please upload a profile image.');
-      return;
-    }
-
-    const optionalLinks = [
-      ['LinkedIn profile link', coreMemberForm.linkedinLink],
-      ['Instagram profile link', coreMemberForm.instagramLink],
-    ];
-
-    for (const [label, value] of optionalLinks) {
-      if (!value.trim()) continue;
-
-      try {
-        const url = new URL(value.trim());
-
-        if (!['http:', 'https:'].includes(url.protocol)) {
-          throw new Error();
-        }
-      } catch {
-        setError(`${label} must be a valid URL starting with https://`);
-        return;
-      }
-    }
-
-    setCoreMemberSaving(true);
-
-    try {
-      const formData = new FormData();
-
-      formData.append('name', coreMemberForm.name.trim());
-      formData.append('role', coreMemberForm.role.trim());
-      formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
-      formData.append('instagramLink', coreMemberForm.instagramLink.trim());
-
-      if (coreMemberImage) {
-        formData.append('image', coreMemberImage);
-      }
-
-      // Send an explicit removal instruction when editing an existing member.
-      if (editingCoreMemberId && removeCoreMemberImage) {
-        formData.append('removeImage', 'true');
-      }
-
-      const result = editingCoreMemberId
-        ? await apiRequest(`/core-members/${editingCoreMemberId}`, {
-          method: 'PATCH',
-          body: formData,
-        })
-        : await apiRequest('/core-members', {
-          method: 'POST',
-          body: formData,
-        });
-
-      setMessage(result.message || 'Core member saved successfully.');
-      resetCoreMemberForm();
-      setShowCoreMemberForm(false);
-      await loadCoreMembers();
-    } catch (err) {
-      setError(err.message || 'Unable to save core member.');
-    } finally {
-      setCoreMemberSaving(false);
-    }
-  }
-
-  async function deleteCoreMember(member) {
-    const confirmed = window.confirm(
-      `Delete "${member.name}" from Core Members?`
-    );
-
-    if (!confirmed) return;
-
-    setError('');
-    setMessage('');
-
-    try {
-      const result = await apiRequest(`/core-members/${member._id}`, {
-        method: 'DELETE',
-      });
-
-      setMessage(result.message || 'Core member deleted successfully.');
-
-      if (editingCoreMemberId === member._id) {
-        resetCoreMemberForm();
-      }
-
-      await loadCoreMembers();
-    } catch (err) {
-      setError(err.message || 'Unable to delete core member.');
-    }
-  }
-
-  const loadAttendance = useCallback(async () => {
-    if (!selectedAttendanceEvent) {
-      setAttendanceRows([]);
-      return;
-    }
-
-    setAttendanceLoading(true);
-    setAttendanceRows([]);
-
-    try {
-      const data = await apiRequest(
-        `/events/admin/${selectedAttendanceEvent}/attendance`
-      );
-
-      setAttendanceRows(data.attendance || []);
-    } catch (err) {
-      setError(err.message || 'Unable to load attendance.');
-    } finally {
-      setAttendanceLoading(false);
-    }
-  }, [selectedAttendanceEvent]);
-
-  useEffect(() => {
-    loadEvents();
-  }, [loadEvents]);
-
-  useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [activeSection]);
-
-  useEffect(() => {
-    if (activeSection === 'attendance') {
-      loadMembers();
-    }
-  }, [activeSection, loadMembers]);
-
-  useEffect(() => {
-    if (activeSection === 'attendance' && selectedAttendanceEvent) {
-      loadAttendance();
-    }
-  }, [activeSection, selectedAttendanceEvent, loadAttendance]);
-
-  useEffect(() => {
-    if (activeSection !== 'attendance' || events.length === 0) {
-      return;
-    }
-
-    if (!selectedAttendanceEvent) {
-      setSelectedAttendanceEvent(
-        events.find((event) => event.status === 'published')?._id ||
-        events[0]._id
-      );
-    }
-  }, [activeSection, events, selectedAttendanceEvent]);
-
-  function updateField(event) {
-    const { name, value } = event.target;
-    setForm((current) => ({ ...current, [name]: value }));
   }
 
   function openCreateForm() {
-    clearEventImagePreview();
-
-    setEditingId(null);
-    setForm(initialForm);
-    setRemoveEventImage(false);
-    setError('');
-    setMessage('');
-    setShowEventForm(true);
-
-    const input = document.getElementById('bannerImage');
-    if (input) input.value = '';
+    resetEventForm();
+    clearFeedback();
+    setActiveEventTab('form');
   }
 
   function startEditing(event) {
@@ -480,14 +238,18 @@ export default function Admin() {
     setSelectedImage(null);
     setImagePreview(event.bannerImage?.url || '');
     setRemoveEventImage(false);
-    setMessage('');
-    setError('');
-    setShowEventForm(true);
 
-    const input = document.getElementById('bannerImage');
-    if (input) input.value = '';
+    if (eventImageInputRef.current) {
+      eventImageInputRef.current.value = '';
+    }
 
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    clearFeedback();
+    setActiveEventTab('form');
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
   }
 
   function handleEventImageChange(event) {
@@ -495,65 +257,78 @@ export default function Admin() {
 
     if (!file) return;
 
-    if (file.size > 5 * 1024 * 1024) {
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
       setError('Image must be 5 MB or smaller.');
       event.target.value = '';
       return;
     }
 
-    if (imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview);
-    }
-
-    setSelectedImage(file);
-    setImagePreview(URL.createObjectURL(file));
-
-    // A replacement image cancels any previous removal request.
-    setRemoveEventImage(false);
     setError('');
+    setSelectedImage(file);
+    createEventPreview(file);
+    setRemoveEventImage(false);
   }
 
   function removeCurrentEventImage() {
-    if (imagePreview.startsWith('blob:')) {
-      URL.revokeObjectURL(imagePreview);
-    }
+    clearEventImagePreview();
 
-    setSelectedImage(null);
-    setImagePreview('');
-
-    // For an existing event, tell the backend to remove the saved banner.
     setRemoveEventImage(Boolean(editingId));
 
-    const input = document.getElementById('bannerImage');
-    if (input) input.value = '';
+    if (eventImageInputRef.current) {
+      eventImageInputRef.current.value = '';
+    }
   }
 
   function cancelEditing() {
-    clearEventImagePreview();
-
-    setShowEventForm(false);
-    setEditingId(null);
-    setForm(initialForm);
-    setRemoveEventImage(false);
-    setError('');
-    setMessage('');
-
-    const imageInput = document.getElementById('bannerImage');
-    if (imageInput) imageInput.value = '';
+    resetEventForm();
+    clearFeedback();
+    setActiveEventTab('manage');
   }
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setError('');
-    setMessage('');
+    clearFeedback();
+
+    if (!form.title.trim()) {
+      setError('Please enter an event title.');
+      return;
+    }
 
     if (!form.date || Number.isNaN(new Date(form.date).getTime())) {
       setError('Please provide a valid event start date and time.');
       return;
     }
 
-    if (form.endDate && new Date(form.endDate) < new Date(form.date)) {
+    if (
+      form.endDate &&
+      new Date(form.endDate) < new Date(form.date)
+    ) {
       setError('The end date and time must be after the start date.');
+      return;
+    }
+
+    if (form.mode === 'In-person' && !form.venue.trim()) {
+      setError('Please enter the event venue.');
+      return;
+    }
+
+    if (form.mode === 'Online' && !form.meetingLink.trim()) {
+      setError('Please enter the meeting link.');
+      return;
+    }
+
+    if (
+      form.mode !== 'In-person' &&
+      form.meetingLink.trim() &&
+      !isValidOptionalUrl(form.meetingLink)
+    ) {
+      setError('Meeting link must be a valid HTTP or HTTPS URL.');
       return;
     }
 
@@ -565,7 +340,7 @@ export default function Admin() {
 
     for (const [label, value] of optionalLinks) {
       if (!isValidOptionalUrl(value)) {
-        setError(`${label} must be a valid URL starting with https://`);
+        setError(`${label} must be a valid HTTP or HTTPS URL.`);
         return;
       }
     }
@@ -575,17 +350,21 @@ export default function Admin() {
     try {
       const formData = new FormData();
 
-      formData.append('title', form.title);
+      formData.append('title', form.title.trim());
       formData.append('category', form.category);
       formData.append('description', form.description);
       formData.append('date', new Date(form.date).toISOString());
+
       formData.append(
         'endDate',
-        form.endDate ? new Date(form.endDate).toISOString() : ''
+        form.endDate
+          ? new Date(form.endDate).toISOString()
+          : ''
       );
-      formData.append('venue', form.venue);
+
+      formData.append('venue', form.venue.trim());
       formData.append('mode', form.mode);
-      formData.append('meetingLink', form.meetingLink);
+      formData.append('meetingLink', form.meetingLink.trim());
       formData.append('registrationLink', form.registrationLink.trim());
       formData.append('linkedinPostLink', form.linkedinPostLink.trim());
       formData.append('instagramPostLink', form.instagramPostLink.trim());
@@ -595,7 +374,6 @@ export default function Admin() {
         formData.append('bannerImage', selectedImage);
       }
 
-      // Send an explicit removal instruction when editing an existing event.
       if (editingId && removeEventImage) {
         formData.append('removeBannerImage', 'true');
       }
@@ -610,16 +388,10 @@ export default function Admin() {
           body: formData,
         });
 
+      resetEventForm();
+      setActiveEventTab('manage');
+
       setMessage(result.message || 'Event saved successfully.');
-
-      clearEventImagePreview();
-      setForm(initialForm);
-      setEditingId(null);
-      setRemoveEventImage(false);
-      setShowEventForm(false);
-
-      const imageInput = document.getElementById('bannerImage');
-      if (imageInput) imageInput.value = '';
 
       await loadEvents();
     } catch (err) {
@@ -630,22 +402,24 @@ export default function Admin() {
   }
 
   async function togglePublish(event) {
-    setError('');
-    setMessage('');
+    clearFeedback();
 
     try {
       const status =
-        event.status === 'published' ? 'draft' : 'published';
+        event.status === 'published'
+          ? 'draft'
+          : 'published';
 
       const result = await apiRequest(`/events/${event._id}`, {
         method: 'PATCH',
         body: JSON.stringify({ status }),
       });
 
-      setMessage(result.message);
+      setMessage(result.message || 'Event status updated.');
+
       await loadEvents();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Unable to update event status.');
     }
   }
 
@@ -656,25 +430,358 @@ export default function Admin() {
 
     if (!confirmed) return;
 
-    setError('');
-    setMessage('');
+    clearFeedback();
 
     try {
       const result = await apiRequest(`/events/${event._id}`, {
         method: 'DELETE',
       });
 
-      setMessage(result.message);
-
       if (editingId === event._id) {
-        cancelEditing();
+        resetEventForm();
+        setActiveEventTab('manage');
       }
+
+      setMessage(result.message || 'Event deleted successfully.');
 
       await loadEvents();
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Unable to delete event.');
     }
   }
+
+  const filteredEvents = useMemo(() => {
+    const query = eventSearch.trim().toLowerCase();
+
+    return events.filter((event) => {
+      const matchesSearch =
+        `${event.title || ''} ${event.venue || ''}`
+          .toLowerCase()
+          .includes(query);
+
+      const matchesCategory =
+        eventCategory === 'all' ||
+        (event.category || '').toLowerCase() ===
+        eventCategory.toLowerCase();
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [events, eventSearch, eventCategory]);
+
+  // --------------------------------------------------
+  // CORE MEMBERS
+  // --------------------------------------------------
+
+  const [coreMembers, setCoreMembers] = useState([]);
+  const [coreMembersLoading, setCoreMembersLoading] = useState(false);
+  const [coreMemberSaving, setCoreMemberSaving] = useState(false);
+
+  const [activeCoreMemberTab, setActiveCoreMemberTab] = useState('manage');
+  const showCoreMemberForm = activeCoreMemberTab === 'form';
+  const [coreMemberForm, setCoreMemberForm] = useState(initialCoreMemberForm);
+  const [editingCoreMemberId, setEditingCoreMemberId] = useState(null);
+
+  const [coreMemberImage, setCoreMemberImage] = useState(null);
+  const [coreMemberImagePreview, setCoreMemberImagePreview] = useState('');
+  const [removeCoreMemberImage, setRemoveCoreMemberImage] = useState(false);
+
+  const [coreMemberSearch, setCoreMemberSearch] = useState('');
+
+  const coreMemberImageInputRef = useRef(null);
+  const coreMemberPreviewUrlRef = useRef(null);
+
+  const clearCoreMemberImagePreview = useCallback(() => {
+    if (coreMemberPreviewUrlRef.current) {
+      URL.revokeObjectURL(coreMemberPreviewUrlRef.current);
+      coreMemberPreviewUrlRef.current = null;
+    }
+
+    setCoreMemberImage(null);
+    setCoreMemberImagePreview('');
+  }, []);
+
+  const createCoreMemberPreview = useCallback((file) => {
+    if (coreMemberPreviewUrlRef.current) {
+      URL.revokeObjectURL(coreMemberPreviewUrlRef.current);
+    }
+
+    const url = URL.createObjectURL(file);
+
+    coreMemberPreviewUrlRef.current = url;
+    setCoreMemberImagePreview(url);
+  }, []);
+
+  const loadCoreMembers = useCallback(async () => {
+    setCoreMembersLoading(true);
+
+    try {
+      const data = await apiRequest('/core-members');
+
+      setCoreMembers(
+        Array.isArray(data.members) ? data.members : []
+      );
+    } catch (err) {
+      setError(err.message || 'Unable to load core members.');
+    } finally {
+      setCoreMembersLoading(false);
+    }
+  }, []);
+
+  function updateCoreMemberField(event) {
+    const { name, value } = event.target;
+
+    setCoreMemberForm((current) => ({
+      ...current,
+      [name]: value,
+    }));
+  }
+
+  function resetCoreMemberForm() {
+    clearCoreMemberImagePreview();
+
+    setCoreMemberForm(initialCoreMemberForm);
+    setEditingCoreMemberId(null);
+    setRemoveCoreMemberImage(false);
+
+    if (coreMemberImageInputRef.current) {
+      coreMemberImageInputRef.current.value = '';
+    }
+  }
+
+  function openCreateCoreMemberForm() {
+    resetCoreMemberForm();
+    clearFeedback();
+    setActiveCoreMemberTab('form');
+  }
+
+  function cancelCoreMemberEditing() {
+    resetCoreMemberForm();
+    clearFeedback();
+    setActiveCoreMemberTab('manage');
+  }
+
+  function editCoreMember(member) {
+    clearCoreMemberImagePreview();
+
+    setCoreMemberForm({
+      name: member.name || '',
+      role: member.role || '',
+      linkedinLink: member.linkedinLink || '',
+      instagramLink: member.instagramLink || '',
+    });
+
+    setEditingCoreMemberId(member._id);
+    setCoreMemberImage(null);
+    setCoreMemberImagePreview(member.image?.url || '');
+    setRemoveCoreMemberImage(false);
+    setActiveCoreMemberTab('form');
+
+    if (coreMemberImageInputRef.current) {
+      coreMemberImageInputRef.current.value = '';
+    }
+
+    clearFeedback();
+
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }
+
+  function handleCoreMemberImageChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      setError('Please select a valid image.');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > MAX_IMAGE_SIZE) {
+      setError('Image must be 5 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    setError('');
+    setCoreMemberImage(file);
+    createCoreMemberPreview(file);
+    setRemoveCoreMemberImage(false);
+  }
+
+  function removeCurrentCoreMemberImage() {
+    clearCoreMemberImagePreview();
+
+    setRemoveCoreMemberImage(Boolean(editingCoreMemberId));
+
+    if (coreMemberImageInputRef.current) {
+      coreMemberImageInputRef.current.value = '';
+    }
+  }
+
+  async function saveCoreMember(event) {
+    event.preventDefault();
+    clearFeedback();
+
+    if (
+      !coreMemberForm.name.trim() ||
+      !coreMemberForm.role.trim()
+    ) {
+      setError('Please enter the member name and role.');
+      return;
+    }
+
+    if (!editingCoreMemberId && !coreMemberImage) {
+      setError('Please upload a profile image.');
+      return;
+    }
+
+    const optionalLinks = [
+      ['LinkedIn profile link', coreMemberForm.linkedinLink],
+      ['Instagram profile link', coreMemberForm.instagramLink],
+    ];
+
+    for (const [label, value] of optionalLinks) {
+      if (!isValidOptionalUrl(value)) {
+        setError(`${label} must be a valid HTTP or HTTPS URL.`);
+        return;
+      }
+    }
+
+    setCoreMemberSaving(true);
+
+    try {
+      const formData = new FormData();
+
+      formData.append('name', coreMemberForm.name.trim());
+      formData.append('role', coreMemberForm.role.trim());
+      formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
+      formData.append('instagramLink', coreMemberForm.instagramLink.trim());
+
+      if (coreMemberImage) {
+        formData.append('image', coreMemberImage);
+      }
+
+      if (editingCoreMemberId && removeCoreMemberImage) {
+        formData.append('removeImage', 'true');
+      }
+
+      const result = editingCoreMemberId
+        ? await apiRequest(`/core-members/${editingCoreMemberId}`, {
+          method: 'PATCH',
+          body: formData,
+        })
+        : await apiRequest('/core-members', {
+          method: 'POST',
+          body: formData,
+        });
+
+      resetCoreMemberForm();
+      setActiveCoreMemberTab('manage');
+
+      setMessage(result.message || 'Core member saved successfully.');
+
+      await loadCoreMembers();
+    } catch (err) {
+      setError(err.message || 'Unable to save core member.');
+    } finally {
+      setCoreMemberSaving(false);
+    }
+  }
+
+  async function deleteCoreMember(member) {
+    const confirmed = window.confirm(
+      `Delete "${member.name}" from Core Members?`
+    );
+
+    if (!confirmed) return;
+
+    clearFeedback();
+
+    try {
+      const result = await apiRequest(`/core-members/${member._id}`, {
+        method: 'DELETE',
+      });
+
+      if (editingCoreMemberId === member._id) {
+        resetCoreMemberForm();
+        setActiveCoreMemberTab('manage');
+      }
+
+      setMessage(result.message || 'Core member deleted successfully.');
+
+      await loadCoreMembers();
+    } catch (err) {
+      setError(err.message || 'Unable to delete core member.');
+    }
+  }
+
+  const filteredCoreMembers = useMemo(() => {
+    const query = coreMemberSearch.trim().toLowerCase();
+
+    return coreMembers.filter((member) => (
+      (member.name || '').toLowerCase().includes(query) ||
+      (member.role || '').toLowerCase().includes(query)
+    ));
+  }, [coreMembers, coreMemberSearch]);
+
+  // --------------------------------------------------
+  // ATTENDANCE
+  // --------------------------------------------------
+
+  const [members, setMembers] = useState([]);
+  const [memberSearch, setMemberSearch] = useState('');
+  const [membersLoading, setMembersLoading] = useState(false);
+
+  const [selectedAttendanceEvent, setSelectedAttendanceEvent] = useState('');
+  const [attendanceRows, setAttendanceRows] = useState([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(false);
+  const [attendanceSavingId, setAttendanceSavingId] = useState('');
+
+  const loadMembers = useCallback(async () => {
+    setMembersLoading(true);
+
+    try {
+      const query = memberSearch.trim()
+        ? `?search=${encodeURIComponent(memberSearch.trim())}`
+        : '';
+
+      const data = await apiRequest(
+        `/events/admin/members${query}`
+      );
+
+      setMembers(Array.isArray(data.members) ? data.members : []);
+    } catch (err) {
+      setError(err.message || 'Unable to load members.');
+    } finally {
+      setMembersLoading(false);
+    }
+  }, [memberSearch]);
+
+  const loadAttendance = useCallback(async () => {
+    if (!selectedAttendanceEvent) {
+      setAttendanceRows([]);
+      return;
+    }
+
+    setAttendanceLoading(true);
+
+    try {
+      const data = await apiRequest(
+        `/events/admin/${selectedAttendanceEvent}/attendance`
+      );
+
+      setAttendanceRows(
+        Array.isArray(data.attendance) ? data.attendance : []
+      );
+    } catch (err) {
+      setError(err.message || 'Unable to load attendance.');
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }, [selectedAttendanceEvent]);
 
   async function updateAttendance(userId, status) {
     if (!selectedAttendanceEvent) {
@@ -682,8 +789,7 @@ export default function Admin() {
       return;
     }
 
-    setError('');
-    setMessage('');
+    clearFeedback();
     setAttendanceSavingId(userId);
 
     try {
@@ -695,7 +801,10 @@ export default function Admin() {
         }
       );
 
-      setMessage(result.message || 'Attendance updated successfully.');
+      setMessage(
+        result.message || 'Attendance updated successfully.'
+      );
+
       await loadAttendance();
     } catch (err) {
       setError(err.message || 'Unable to update attendance.');
@@ -704,191 +813,251 @@ export default function Admin() {
     }
   }
 
+  const getAttendanceStatus = useCallback((member) => {
+    const record = attendanceRows.find(
+      (row) =>
+        String(row._id ?? row.userId ?? row.memberId) ===
+        String(member._id)
+    );
+
+    return record?.status || 'absent';
+  }, [attendanceRows]);
+
+  const presentCount = useMemo(() => {
+    return members.filter(
+      (member) => getAttendanceStatus(member) === 'present'
+    ).length;
+  }, [members, getAttendanceStatus]);
+
+  const absentCount = Math.max(0, members.length - presentCount);
+
+  const attendancePercentage = members.length
+    ? Math.round((presentCount / members.length) * 100)
+    : 0;
+
+  // --------------------------------------------------
+  // EFFECTS
+  // --------------------------------------------------
+
+  useEffect(() => {
+    loadEvents();
+  }, [loadEvents]);
+
+  useEffect(() => {
+    if (activeSection === 'home' || activeSection === 'coreMembers') {
+      loadCoreMembers();
+    }
+  }, [activeSection, loadCoreMembers]);
+
+  useEffect(() => {
+    if (activeSection === 'attendance') {
+      loadMembers();
+    }
+  }, [activeSection, loadMembers]);
+
+  useEffect(() => {
+    if (activeSection === 'attendance' && selectedAttendanceEvent) {
+      loadAttendance();
+    } else if (!selectedAttendanceEvent) {
+      setAttendanceRows([]);
+    }
+  }, [activeSection, selectedAttendanceEvent, loadAttendance]);
+
+  useEffect(() => {
+    if (activeSection !== 'attendance' || events.length === 0) {
+      return;
+    }
+
+    if (!selectedAttendanceEvent) {
+      const firstEvent =
+        events.find((event) => event.status === 'published') ||
+        events[0];
+
+      setSelectedAttendanceEvent(firstEvent._id);
+    }
+  }, [activeSection, events, selectedAttendanceEvent]);
+
+  useEffect(() => {
+    window.scrollTo({
+      top: 0,
+      behavior: 'smooth',
+    });
+  }, [activeSection]);
+
+  // Revoke temporary image URLs when the component unmounts.
+  useEffect(() => {
+    return () => {
+      if (eventPreviewUrlRef.current) {
+        URL.revokeObjectURL(eventPreviewUrlRef.current);
+      }
+
+      if (coreMemberPreviewUrlRef.current) {
+        URL.revokeObjectURL(coreMemberPreviewUrlRef.current);
+      }
+    };
+  }, []);
+
+  // --------------------------------------------------
+  // NAVIGATION HELPERS
+  // --------------------------------------------------
+
   function handleLogout() {
     logout();
     navigate('/login', { replace: true });
   }
 
-  const presentCount = members.filter((member) => {
-    const record = attendanceRows.find(
-      (row) => String(row._id ?? row.userId ?? row.memberId) === String(member._id)
-    );
+  function goToSection(section) {
+    clearFeedback();
 
-    return record?.status === 'present';
-  }).length;
-
-  const absentCount = Math.max(0, members.length - presentCount);
-
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch = `${event.title || ''} ${event.venue || ''}`
-      .toLowerCase()
-      .includes(eventSearch.trim().toLowerCase());
-
-    const matchesCategory = eventCategory === 'all' ||
-      (event.category || '').toLowerCase() === eventCategory.toLowerCase();
-
-    return matchesSearch && matchesCategory;
-  });
-
-  function goBackToDashboard() {
-    if (showEventForm) {
-      cancelEditing();
-    } else if (showCoreMemberForm) {
-      cancelCoreMemberEditing();
-    } else {
-      setActiveSection('home');
+    if (section !== 'events' && activeEventTab === 'form') {
+      resetEventForm();
+      setActiveEventTab('manage');
     }
 
-    setError('');
-    setMessage('');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (section !== 'coreMembers' && activeCoreMemberTab === 'form') {
+      resetCoreMemberForm();
+      setActiveCoreMemberTab('manage');
+    }
+
+    setActiveSection(section);
   }
 
+  function goBackToDashboard() {
+    if (activeSection === 'events' && activeEventTab === 'form') {
+      cancelEditing();
+      return;
+    }
+
+    if (activeSection === 'coreMembers' && activeCoreMemberTab === 'form') {
+      cancelCoreMemberEditing();
+      return;
+    }
+
+    goToSection('home');
+  }
+
+  // --------------------------------------------------
+  // REUSABLE NAVIGATION BUTTON
+  // --------------------------------------------------
+
+  function NavigationButton({ section, icon, children }) {
+    return (
+      <button
+        type="button"
+        className={`admin-nav-item ${activeSection === section ? 'active' : ''
+          }`}
+        onClick={() => goToSection(section)}
+        aria-current={activeSection === section ? 'page' : undefined}
+      >
+        <i className={icon} aria-hidden="true" />
+        <span>{children}</span>
+      </button>
+    );
+  }
+
+  // --------------------------------------------------
+  // RENDER
+  // --------------------------------------------------
+
+  const pageTitle = {
+    home: 'Dashboard',
+    events:
+      activeEventTab === 'form'
+        ? editingId
+          ? 'Edit Event'
+          : 'Create Event'
+        : 'Events',
+    attendance: 'Attendance',
+    coreMembers: showCoreMemberForm
+      ? editingCoreMemberId
+        ? 'Edit Core Member'
+        : 'Add Core Member'
+      : 'Core Members',
+  }[activeSection];
+
   return (
-    <main className="admin-page">
-      <header className="admin-topbar">
-        <Link
-          className="navbar-brand d-flex align-items-center"
-          to="/"
-        >
-          <img
-            src={logo}
-            alt="CodeSphere Logo"
-            className="navbar-logo-img"
-          />
-        </Link>
+    <>
+      <Navbar />
 
-        <div className="admin-topbar-actions">
-          <span>{user?.name}</span>
-          <button
-            type="button"
-            className="admin-logout"
-            onClick={handleLogout}
+      <main className="admin-page">
+        {/* ================================================
+          DESKTOP SIDEBAR
+         ================================================ */}
+
+        <aside className="admin-sidebar">
+          <Link to="/">
+            <img src={logo} alt="Codesphere Logo" />
+          </Link>
+
+          <div className="admin-sidebar-label">
+            WORKSPACE
+          </div>
+
+          <nav
+            className="admin-navigation"
+            aria-label="Admin navigation"
           >
-            <span className="smallDisplayNone">Sign Out</span>
-            <i className="bi bi-box-arrow-right m-0" />
-          </button>
-        </div>
-      </header>
+            <NavigationButton
+              section="home"
+              icon="bi bi-grid-1x2-fill"
+            >
+              Dashboard
+            </NavigationButton>
 
-      <div className="admin-container">
-        {activeSection === 'home' && (
-          <section className="admin-home">
-            <div className="admin-heading">
-              <div>
-                <p className="auth-eyebrow">ADMINISTRATION</p>
-                <p>
-                  Manage CodeSphere events, members attendance and publish
-                  updates for members.
-                </p>
+            <NavigationButton
+              section="events"
+              icon="bi bi-calendar-event"
+            >
+              Events
+            </NavigationButton>
+
+            <NavigationButton
+              section="attendance"
+              icon="bi bi-clipboard-check"
+            >
+              Attendance
+            </NavigationButton>
+
+            <NavigationButton
+              section="coreMembers"
+              icon="bi bi-people"
+            >
+              Core Members
+            </NavigationButton>
+          </nav>
+
+          <div className="admin-sidebar-bottom">
+            <div className="admin-profile">
+              <div className="admin-profile-avatar">
+                {getInitial(user?.name)}
+              </div>
+
+              <div className="admin-profile-info">
+                <strong>{user?.name || 'Administrator'}</strong>
+                <span>Administrator</span>
               </div>
             </div>
 
-            <div className="admin-section-buttons">
-              <button
-                type="button"
-                className="admin-section-button"
-                onClick={() => {
-                  setActiveSection('events');
-                  cancelEditing();
-                }}
-              >
-                <span className="admin-section-icon">
-                  <i className="bi bi-calendar-event" aria-hidden="true" />
-                </span>
-                <span className="admin-section-copy">
-                  <strong>Events</strong>
-                  <small>Manage events</small>
-                </span>
-                <i className="bi bi-arrow-up-right admin-section-arrow" aria-hidden="true" />
-              </button>
+            <button
+              type="button"
+              className="admin-sidebar-logout"
+              onClick={handleLogout}
+            >
+              <i className="bi bi-box-arrow-right" aria-hidden="true" />
+              <span>Sign Out</span>
+            </button>
+          </div>
+        </aside>
 
-              <button
-                type="button"
-                className="admin-section-button"
-                onClick={() => setActiveSection('attendance')}
-              >
-                <span className="admin-section-icon">
-                  <i className="bi bi-clipboard-check" aria-hidden="true" />
-                </span>
-                <span className="admin-section-copy">
-                  <strong>Attendance</strong>
-                  <small>Track attendance</small>
-                </span>
-                <i className="bi bi-arrow-up-right admin-section-arrow" aria-hidden="true" />
-              </button>
+        {/* ================================================
+          MAIN WORKSPACE
+      ================================================ */}
 
-              <button
-                type="button"
-                className="admin-section-button"
-                onClick={() => setActiveSection('coreMembers')}
-              >
-                <span className="admin-section-icon">
-                  <i className="bi bi-people" aria-hidden="true" />
-                </span>
-                <span className="admin-section-copy">
-                  <strong>Core Members</strong>
-                  <small>Manage team</small>
-                </span>
-                <i className="bi bi-arrow-up-right admin-section-arrow" aria-hidden="true" />
-              </button>
-            </div>
+        <div className="admin-main">
 
-            <div className="admin-dashboard-heading">
-              <div>
-                <h2>Dashboard Overview</h2>
-                <p className="admin-panel-subtitle">
-                  Here's what's happening in your CodeSphere community.
-                </p>
-              </div>
-            </div>
+          <div className="admin-container">
 
-            <div className="admin-stats-grid admin-stats-compact">
-              <article className="admin-stat-card">
-                <div className="admin-stat-icon">
-                  <i className="bi bi-easel" aria-hidden="true" />
-                </div>
-                <p>Total Workshops</p>
-                <strong>
-                  {events.filter(
-                    (event) => event.category?.toLowerCase() === 'workshop'
-                  ).length}
-                </strong>
-              </article>
-
-              <article className="admin-stat-card">
-                <div className="admin-stat-icon">
-                  <i className="bi bi-code-square" aria-hidden="true" />
-                </div>
-                <p>Total Hackathons</p>
-                <strong>
-                  {events.filter(
-                    (event) => event.category?.toLowerCase() === 'hackathon'
-                  ).length}
-                </strong>
-              </article>
-
-              <article className="admin-stat-card">
-                <div className="admin-stat-icon">
-                  <i className="bi bi-person-badge" aria-hidden="true" />
-                </div>
-                <p>Core Members</p>
-                <strong>{coreMembers.length}</strong>
-              </article>
-
-              <article className="admin-stat-card">
-                <div className="admin-stat-icon">
-                  <i className="bi bi-people" aria-hidden="true" />
-                </div>
-                <p>Registered Members</p>
-                <strong>{summary.totalMembers}</strong>
-              </article>
-            </div>
-          </section>
-        )}
-
-        {activeSection === 'events' && (
-          <>
+            {/* GLOBAL FEEDBACK */}
             {error && (
               <div className="auth-error" role="alert">
                 {error}
@@ -901,884 +1070,1280 @@ export default function Admin() {
               </div>
             )}
 
-            {showEventForm ? (
-              <section className="admin-panel">
-                <button
-                  type="button"
-                  className="admin-back-arrow mb-3"
-                  onClick={goBackToDashboard}
-                  aria-label="Back to dashboard"
-                >
-                  <i className="bi bi-arrow-left" aria-hidden="true" />
-                </button>
+            {/* ============================================
+              DASHBOARD
+          ============================================ */}
 
-                <h2>{editingId ? 'Edit Event' : 'Create an Event'}</h2>
+            {activeSection === 'home' && (
+              <section className="admin-home">
 
-                <p className="admin-panel-subtitle">
-                  Save a draft first or publish an event for visitors.
-                </p>
-
-                <form className="admin-event-form" onSubmit={handleSubmit}>
-                  <div className="admin-form-field admin-field-full">
-                    <label htmlFor="event-title">Event title</label>
-                    <input
-                      id="event-title"
-                      name="title"
-                      value={form.title}
-                      onChange={updateField}
-                      maxLength={120}
-                      required
-                    />
-                  </div>
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-category">Category</label>
-                    <select
-                      id="event-category"
-                      name="category"
-                      value={form.category}
-                      onChange={updateField}
-                      required
-                    >
-                      {categories.map((category) => (
-                        <option key={category} value={category}>
-                          {category}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-mode">Event format</label>
-                    <select
-                      id="event-mode"
-                      name="mode"
-                      value={form.mode}
-                      onChange={updateField}
-                    >
-                      <option>In-person</option>
-                      <option>Online</option>
-                      <option>Hybrid</option>
-                    </select>
-                  </div>
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-date">Start date and time</label>
-                    <input
-                      id="event-date"
-                      name="date"
-                      type="datetime-local"
-                      value={form.date}
-                      onChange={updateField}
-                      required
-                    />
-                  </div>
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-end-date">
-                      End date and time (optional)
-                    </label>
-                    <input
-                      id="event-end-date"
-                      name="endDate"
-                      type="datetime-local"
-                      min={form.date || undefined}
-                      value={form.endDate}
-                      onChange={updateField}
-                    />
-                  </div>
-
-                  <div className="admin-form-field admin-field-full">
-                    <label htmlFor="event-description">Description</label>
-                    <textarea
-                      id="event-description"
-                      name="description"
-                      value={form.description}
-                      onChange={updateField}
-                      maxLength={5000}
-                      rows={4}
-                      required
-                    />
-                  </div>
-
-                  {form.mode !== 'Online' && (
-                    <div className="admin-form-field">
-                      <label htmlFor="event-venue">Venue</label>
-                      <input
-                        id="event-venue"
-                        name="venue"
-                        value={form.venue}
-                        onChange={updateField}
-                        maxLength={200}
-                        placeholder="Campus hall or event location"
-                        required={form.mode === 'In-person'}
-                      />
-                    </div>
-                  )}
-
-                  {form.mode !== 'In-person' && (
-                    <div className="admin-form-field">
-                      <label htmlFor="event-meeting-link">
-                        Meeting link (optional)
-                      </label>
-                      <input
-                        id="event-meeting-link"
-                        name="meetingLink"
-                        type="url"
-                        value={form.meetingLink}
-                        onChange={updateField}
-                        placeholder="https://..."
-                        required={form.mode === 'Online'}
-                      />
-                    </div>
-                  )}
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-registration-link">
-                      Registration link (optional)
-                    </label>
-                    <input
-                      id="event-registration-link"
-                      name="registrationLink"
-                      type="url"
-                      value={form.registrationLink}
-                      onChange={updateField}
-                      placeholder="https://..."
-                    />
-                  </div>
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-linkedin-post">
-                      LinkedIn post link (optional)
-                    </label>
-                    <input
-                      id="event-linkedin-post"
-                      name="linkedinPostLink"
-                      type="url"
-                      value={form.linkedinPostLink}
-                      onChange={updateField}
-                      placeholder="https://www.linkedin.com/..."
-                    />
-                  </div>
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-instagram-post">
-                      Instagram post link (optional)
-                    </label>
-                    <input
-                      id="event-instagram-post"
-                      name="instagramPostLink"
-                      type="url"
-                      value={form.instagramPostLink}
-                      onChange={updateField}
-                      placeholder="https://www.instagram.com/..."
-                    />
-                  </div>
-
-                  <div className="admin-form-field">
-                    <label htmlFor="event-status">Initial status</label>
-                    <select
-                      id="event-status"
-                      name="status"
-                      value={form.status}
-                      onChange={updateField}
-                    >
-                      <option value="draft">Draft — not public</option>
-                      <option value="published">
-                        Published — visible to visitors
-                      </option>
-                    </select>
-                  </div>
-
-                  <div className="mb-3 admin-form-field admin-field-full">
-                    <label htmlFor="bannerImage" className="form-label">
-                      Event Banner (optional)
-                    </label>
-
-                    <input
-                      id="bannerImage"
-                      type="file"
-                      className="form-control"
-                      accept="image/png,image/jpeg,image/webp"
-                      onChange={handleEventImageChange}
-                    />
-
-                    {imagePreview && (
-                      <div className="mt-3">
-                        <img
-                          src={imagePreview}
-                          alt="Event banner preview"
-                          style={{
-                            width: '100%',
-                            maxHeight: '220px',
-                            objectFit: 'contain',
-                            borderRadius: '8px',
-                          }}
-                        />
-
-                        <button
-                          type="button"
-                          className="admin-secondary-button mt-2"
-                          onClick={removeCurrentEventImage}
-                        >
-                          Remove image
-                        </button>
-                      </div>
-                    )}
-
-                    <small className="text-secondary">
-                      PNG, JPG, or WebP. Maximum file size: 5 MB.
-                    </small>
-                  </div>
-
-                  <div className="admin-form-actions admin-field-full">
-                    <button
-                      className="auth-submit"
-                      type="submit"
-                      disabled={saving}
-                    >
-                      {saving
-                        ? 'Saving...'
-                        : editingId
-                          ? 'Save Changes'
-                          : 'Create Event'}
-                    </button>
-
-                    <button
-                      className="admin-secondary-button"
-                      type="button"
-                      onClick={cancelEditing}
-                      disabled={saving}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </form>
-              </section>
-            ) : (
-              <section className="admin-events-section">
-                <div className="admin-section-heading admin-events-dashboard-heading">
+                <div className="admin-heading">
                   <div>
-                    <button
-                      type="button"
-                      className="admin-back-arrow"
-                      onClick={goBackToDashboard}
-                      aria-label="Back to dashboard"
-                    >
-                      <i className="bi bi-arrow-left" aria-hidden="true" />
-                    </button>
-                    <h2>Manage Events</h2>
-                  </div>
+                    <p className="auth-eyebrow">
+                      CODESPHERE ADMIN
+                    </p>
 
-                  <div className="admin-event-actions">
-                    <button
-                      type="button"
-                      className="admin-secondary-button"
-                      onClick={loadEvents}
-                      disabled={loading}
-                    >
-                      <i className="bi bi-arrow-clockwise" aria-hidden="true" />
-                      <span className="smallDisplayNone">Refresh</span>
-                    </button>
+                    <h2>Welcome back, {user?.name?.split(' ')[0] || 'Admin'}!</h2>
 
-                    <button
-                      type="button"
-                      className="auth-submit"
-                      onClick={openCreateForm}
-                    >
-                      <i className="bi bi-plus-lg" aria-hidden="true" />
-                      <span className="smallDisplayNone">Create Event</span>
-                    </button>
+                    <p>
+                      Manage your events, members and community activity
+                      from one place.
+                    </p>
                   </div>
                 </div>
 
-                <div className="admin-event-filters">
-                  <label className="admin-event-search">
-                    <i className="bi bi-search" aria-hidden="true" />
-                    <input
-                      type="search"
-                      value={eventSearch}
-                      onChange={(e) => setEventSearch(e.target.value)}
-                      placeholder="Search events"
-                      aria-label="Search events"
-                    />
-                  </label>
+                {/* OVERVIEW */}
+                <div className="admin-dashboard-heading">
+                  <div>
+                    <h2>Overview</h2>
 
-                  <select
-                    value={eventCategory}
-                    onChange={(e) => setEventCategory(e.target.value)}
-                    aria-label="Filter events by category"
+                    <p className="admin-panel-subtitle">
+                      A quick look at your CodeSphere community.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="admin-stats-grid admin-stats-compact">
+
+                  <article className="admin-stat-card">
+                    <div className="admin-stat-icon">
+                      <i className="bi bi-calendar-event" aria-hidden="true" />
+                    </div>
+
+                    <p>Total Events</p>
+                    <strong>{summary.totalEvents}</strong>
+                  </article>
+
+                  <article className="admin-stat-card">
+                    <div className="admin-stat-icon">
+                      <i className="bi bi-calendar-check" aria-hidden="true" />
+                    </div>
+
+                    <p>Upcoming Events</p>
+                    <strong>{summary.upcomingEvents}</strong>
+                  </article>
+
+                  <article className="admin-stat-card">
+                    <div className="admin-stat-icon">
+                      <i className="bi bi-people" aria-hidden="true" />
+                    </div>
+
+                    <p>Registered Members</p>
+                    <strong>{summary.totalMembers}</strong>
+                  </article>
+
+                  <article className="admin-stat-card">
+                    <div className="admin-stat-icon">
+                      <i className="bi bi-person-badge" aria-hidden="true" />
+                    </div>
+
+                    <p>Core Members</p>
+                    <strong>{coreMembers.length}</strong>
+                  </article>
+
+                </div>
+
+                {/* RECENT EVENTS */}
+                <div className="admin-dashboard-heading mt-4">
+                  <div>
+                    <h2>Recent Events</h2>
+
+                    <p className="admin-panel-subtitle">
+                      Your latest event activity.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-secondary-button"
+                    onClick={() => goToSection('events')}
                   >
-                    <option value="all">All categories</option>
-                    {categories.map((category) => (
-                      <option key={category} value={category}>
-                        {category}
-                      </option>
-                    ))}
-                  </select>
+                    View all events
+                    <i className="bi bi-arrow-right" aria-hidden="true" />
+                  </button>
                 </div>
 
                 {loading ? (
                   <p className="admin-empty">Loading events...</p>
                 ) : events.length === 0 ? (
-                  <p className="admin-empty">
-                    No events yet. Click Create Event to add your first event.
-                  </p>
-                ) : filteredEvents.length === 0 ? (
-                  <p className="admin-empty">No events match these filters.</p>
+                  <div className="admin-empty">
+                    <i className="bi bi-calendar-plus" aria-hidden="true" />
+                    <p>No events have been created yet.</p>
+
+                    <button
+                      type="button"
+                      className="auth-submit"
+                      onClick={() => {
+                        goToSection('events');
+                        openCreateForm();
+                      }}
+                    >
+                      <i className="bi bi-plus-lg" aria-hidden="true" />
+                      Create your first event
+                    </button>
+                  </div>
                 ) : (
                   <div className="admin-event-list">
-                    {filteredEvents.map((event) => (
-                      <article className="admin-event-item" key={event._id}>
+                    {events.slice(0, 3).map((event) => (
+                      <article
+                        className="admin-event-item"
+                        key={event._id}
+                      >
+                        {event.bannerImage?.url ? (
+                          <img
+                            className="admin-event-image"
+                            src={event.bannerImage.url}
+                            alt={`${event.title} banner`}
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="admin-event-image admin-event-image-placeholder">
+                            <i className="bi bi-calendar-event" />
+                          </div>
+                        )}
+
                         <div className="admin-event-info">
                           <div className="admin-event-meta">
                             <span>{event.category}</span>
+
                             <span className={`admin-status ${event.status}`}>
                               {event.status}
                             </span>
                           </div>
 
                           <h3>{event.title}</h3>
-                          <p>{new Date(event.date).toLocaleString()}</p>
-                          <p>{event.venue || event.mode}</p>
-                          <p className="admin-event-description">
-                            {event.description}
+
+                          <p>
+                            <i className="bi bi-calendar3 me-2" />
+                            {formatDate(event.date)}
+                          </p>
+
+                          <p>
+                            <i className="bi bi-geo-alt me-2" />
+                            {event.venue || event.mode}
                           </p>
                         </div>
 
                         <div className="admin-event-actions">
+                          <Link
+                            to={`/events/${event.slug}`}
+                            className="admin-view-button"
+                          >
+                            <i className="bi bi-eye" aria-hidden="true" />
+                            View
+                          </Link>
+
                           <button
                             type="button"
-                            onClick={() => startEditing(event)}
+                            onClick={() => {
+                              goToSection('events');
+                              startEditing(event);
+                            }}
                           >
+                            <i className="bi bi-pencil" aria-hidden="true" />
                             Edit
-                          </button>
-
-                          <button
-                            type="button"
-                            onClick={() => togglePublish(event)}
-                          >
-                            {event.status === 'published'
-                              ? 'Unpublish'
-                              : 'Publish'}
-                          </button>
-
-                          <button
-                            type="button"
-                            className="admin-delete-button"
-                            onClick={() => deleteEvent(event)}
-                          >
-                            Delete
                           </button>
                         </div>
                       </article>
                     ))}
                   </div>
                 )}
+
               </section>
             )}
-          </>
-        )}
 
-        {activeSection === 'attendance' && (
-          <section className="admin-members-panel">
-            <div className="admin-section-heading">
-              <div>
-                <button
-                  type="button"
-                  className="admin-back-arrow"
-                  onClick={goBackToDashboard}
-                  aria-label="Back to dashboard"
-                >
-                  <i className="bi bi-arrow-left mt-1" aria-hidden="true" />
-                </button>
-                <h2>
-                  <span className="smallDisplayNone">Manage</span> Attendance
-                </h2>
-              </div>
+            {/* ============================================
+              EVENTS
+          ============================================ */}
+            {activeSection === 'events' && (
+              <section className="admin-events-section">
 
-              <div className="admin-event-actions">
-                <button
-                  type="button"
-                  className="admin-secondary-button"
-                  onClick={() => {
-                    loadMembers();
-                    loadAttendance();
-                  }}
-                  disabled={membersLoading || attendanceLoading}
-                >
-                  <i className="bi bi-arrow-clockwise" aria-hidden="true" />
-                  <span className="smallDisplayNone">Refresh</span>
-                </button>
-              </div>
-            </div>
+                <div className="admin-section-heading">
+                  <div>
+                    <h2>Event Management</h2>
 
-            {error && (
-              <div className="auth-error" role="alert">
-                {error}
-              </div>
-            )}
-
-            {message && (
-              <div className="admin-success" role="status">
-                {message}
-              </div>
-            )}
-
-            <div className="admin-members-toolbar">
-              <div className="admin-form-field mb-2">
-                <label htmlFor="attendance-event">Select event</label>
-                <select
-                  id="attendance-event"
-                  value={selectedAttendanceEvent}
-                  onChange={(e) => setSelectedAttendanceEvent(e.target.value)}
-                >
-                  <option value="">Choose an event</option>
-                  {events.map((event) => (
-                    <option key={event._id} value={event._id}>
-                      {event.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-
-              <div className="attendance-stats-card">
-                <div className="attendance-stats-left">
-                  <h3>Attendance Stats</h3>
-
-                  <div className="attendance-stat-row">
-                    <span>Total</span>
-                    <strong>{members.length}</strong>
-                  </div>
-
-                  <div className="attendance-stat-row">
-                    <span>Present</span>
-                    <strong>{presentCount}</strong>
-                  </div>
-
-                  <div className="attendance-stat-row">
-                    <span>Absent</span>
-                    <strong>{absentCount}</strong>
+                    <p className="admin-panel-subtitle">
+                      Create, update and publish your CodeSphere events.
+                    </p>
                   </div>
                 </div>
 
+                {/* TABS */}
                 <div
-                  className="attendance-percentage-circle"
-                  style={{
-                    '--attendance-percent': `${members.length > 0
-                      ? Math.round((presentCount / members.length) * 100)
-                      : 0
-                      }%`,
-                  }}
+                  className="admin-event-tabs"
+                  role="tablist"
+                  aria-label="Event management"
                 >
-                  <div className="attendance-circle-inner">
-                    <strong>
-                      {members.length > 0
-                        ? Math.round((presentCount / members.length) * 100)
-                        : 0}%
-                    </strong>
-                    <span>Present</span>
-                  </div>
+                  <button
+                    type="button"
+                    role="tab"
+                    id="manage-events-tab"
+                    aria-selected={activeEventTab === 'manage'}
+                    aria-controls="manage-events-panel"
+                    className={`admin-event-tab ${activeEventTab === 'manage' ? 'active' : ''
+                      }`}
+                    onClick={() => {
+                      setActiveEventTab('manage');
+                      clearFeedback();
+                    }}
+                  >
+                    <i className="bi bi-calendar-event" />
+                    Manage Events
+                  </button>
+
+                  <button
+                    type="button"
+                    role="tab"
+                    id="event-form-tab"
+                    aria-selected={activeEventTab === 'form'}
+                    aria-controls="event-form-panel"
+                    className={`admin-event-tab ${activeEventTab === 'form' ? 'active' : ''
+                      }`}
+                    onClick={() => {
+                      if (activeEventTab !== 'form') {
+                        openCreateForm();
+                      }
+                    }}
+                  >
+                    <i className={`bi bi-${editingId ? 'pencil' : 'plus-circle'}`} />
+                    {editingId ? 'Edit Event' : 'Create Event'}
+                  </button>
                 </div>
-              </div>
-            </div>
 
-            <div className="members-list d-flex flex-column gap-4">
-              <div className="admin-form-field">
-                <label htmlFor="member-search">Search members</label>
-                <input
-                  id="member-search"
-                  type="search"
-                  placeholder="Search by name or email"
-                  value={memberSearch}
-                  onChange={(e) => setMemberSearch(e.target.value)}
-                />
-              </div>
+                {/* MANAGE EVENTS */}
+                {activeEventTab === 'manage' && (
+                  <div
+                    role="tabpanel"
+                    id="manage-events-pane"
+                    aria-labelledby="manage-events-tab"
+                  >
 
-              {!selectedAttendanceEvent ? (
-                <p className="admin-empty">
-                  Create an event first, then select it to manage attendance.
-                </p>
-              ) : membersLoading || attendanceLoading ? (
-                <p className="admin-empty">
-                  Loading members and attendance...
-                </p>
-              ) : members.length === 0 ? (
-                <p className="admin-empty">
-                  No members match your search.
-                </p>
-              ) : (
-                <div className="admin-member-list">
-                  {members.map((member) => {
-                    const record = attendanceRows.find(
-                      (row) => String(row._id ?? row.userId ?? row.memberId) === String(member._id)
-                    );
-
-                    const status = record?.status || 'absent';
-                    const savingRow = attendanceSavingId === member._id;
-
-                    return (
-                      <article
-                        className="admin-member-item"
-                        key={member._id}
+                    <div className="admin-event-filters">
+                      <select
+                        className="admin-form-select"
+                        value={eventCategory}
+                        onChange={(event) => setEventCategory(event.target.value)}
+                        aria-label="Filter events by category"
                       >
-                        <div className="admin-member-info">
-                          <div
-                            className="admin-member-avatar"
-                            aria-hidden="true"
-                          >
-                            {member.name?.trim().charAt(0).toUpperCase() || '?'}
-                          </div>
+                        <option value="all">All categories</option>
 
-                          <div className="admin-member-details">
-                            <h3>{member.name}</h3>
-                            <p>{member.email}</p>
-                          </div>
-                        </div>
+                        {categories.map((category) => (
+                          <option key={category} value={category}>
+                            {category}
+                          </option>
+                        ))}
+                      </select>
 
-                        <div className="admin-attendance-actions">
-                          <div
-                            className={`admin-attendance-toggle ${status}`}
-                            role="group"
-                            aria-label={`Attendance for ${member.name}`}
-                          >
-                            <button
-                              type="button"
-                              className={`admin-toggle-option present-option ${status === 'present' ? 'active' : ''}`}
-                              onClick={() => updateAttendance(member._id, 'present')}
-                              disabled={savingRow || status === 'present'}
-                              aria-pressed={status === 'present'}
-                            >
-                              <span className="toggle-indicator">✓</span>
-                              Present
-                            </button>
+                      <label className="admin-event-search">
+                        <i className="bi bi-search" />
 
-                            <button
-                              type="button"
-                              className={`admin-toggle-option absent-option ${status === 'absent' ? 'active' : ''}`}
-                              onClick={() => updateAttendance(member._id, 'absent')}
-                              disabled={savingRow || status === 'absent'}
-                              aria-pressed={status === 'absent'}
-                            >
-                              <span className="toggle-indicator">—</span>
-                              Absent
-                            </button>
-                          </div>
-
-                          {savingRow && (
-                            <span
-                              className="admin-attendance-saving"
-                              role="status"
-                            >
-                              Saving…
-                            </span>
-                          )}
-                        </div>
-                      </article>
-                    );
-                  })}
-                </div>
-              )}
-            </div>
-          </section>
-        )}
-
-        {activeSection === 'coreMembers' && (
-          <>
-            {error && (
-              <div className="auth-error" role="alert">
-                {error}
-              </div>
-            )}
-
-            {message && (
-              <div className="auth-success" role="status">
-                {message}
-              </div>
-            )}
-
-            {showCoreMemberForm ? (
-              <section className="admin-panel">
-                <button
-                  type="button"
-                  className="admin-back-arrow mb-3"
-                  onClick={goBackToDashboard}
-                  aria-label="Back to dashboard"
-                >
-                  <i className="bi bi-arrow-left" aria-hidden="true" />
-                </button>
-
-                <h2>
-                  {editingCoreMemberId ? 'Edit Core Member' : 'Add Core Member'}
-                </h2>
-
-                <p className="admin-panel-subtitle">
-                  Save a draft first or publish an event for visitors.
-                </p>
-
-                <form className="admin-event-form" onSubmit={saveCoreMember}>
-                  <div className="admin-form-grid">
-                    <div className="admin-form-field">
-                      <label htmlFor="core-member-name">Full name *</label>
-                      <input
-                        id="core-member-name"
-                        name="name"
-                        value={coreMemberForm.name}
-                        onChange={updateCoreMemberField}
-                        maxLength={100}
-                        required
-                      />
-                    </div>
-
-                    <div className="admin-form-field">
-                      <label htmlFor="core-member-role">Role / position *</label>
-                      <input
-                        id="core-member-role"
-                        name="role"
-                        value={coreMemberForm.role}
-                        onChange={updateCoreMemberField}
-                        maxLength={100}
-                        placeholder="e.g. Technical Lead"
-                        required
-                      />
-                    </div>
-
-                    <div className="admin-form-field">
-                      <label htmlFor="core-member-linkedin">LinkedIn profile</label>
-                      <input
-                        id="core-member-linkedin"
-                        name="linkedinLink"
-                        type="url"
-                        value={coreMemberForm.linkedinLink}
-                        onChange={updateCoreMemberField}
-                        maxLength={500}
-                        placeholder="https://www.linkedin.com/in/..."
-                      />
-                    </div>
-
-                    <div className="admin-form-field">
-                      <label htmlFor="core-member-instagram">Instagram profile</label>
-                      <input
-                        id="core-member-instagram"
-                        name="instagramLink"
-                        type="url"
-                        value={coreMemberForm.instagramLink}
-                        onChange={updateCoreMemberField}
-                        maxLength={500}
-                        placeholder="https://www.instagram.com/..."
-                      />
-                    </div>
-
-                    <div className="admin-form-field admin-form-field-full">
-                      <label htmlFor="core-member-image">
-                        Profile image {editingCoreMemberId ? '(optional when editing)' : '*'}
+                        <input
+                          type="search"
+                          value={eventSearch}
+                          onChange={(event) => setEventSearch(event.target.value)}
+                          placeholder="Search events..."
+                          aria-label="Search events"
+                        />
                       </label>
-
-                      <input
-                        id="core-member-image"
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp"
-                        required={!editingCoreMemberId && !coreMemberImage}
-                        onChange={handleCoreMemberImageChange}
-                      />
-
-                      {coreMemberImagePreview && (
-                        <div className="core-member-image-preview">
-                          <img
-                            src={coreMemberImagePreview}
-                            alt="Core member preview"
-                          />
-
-                          <button
-                            type="button"
-                            className="admin-secondary-button"
-                            onClick={removeCurrentCoreMemberImage}
-                          >
-                            Remove image
-                          </button>
-                        </div>
-                      )}
                     </div>
-                  </div>
 
-                  <div className="admin-form-actions admin-field-full">
-                    <button
-                      type="button"
-                      className="admin-secondary-button"
-                      onClick={cancelCoreMemberEditing}
-                      disabled={coreMemberSaving}
-                    >
-                      Cancel
-                    </button>
+                    {loading ? (
+                      <p className="admin-empty">Loading events...</p>
+                    ) : events.length === 0 ? (
+                      <div className="admin-empty">
+                        <i className="bi bi-calendar-plus" />
+                        <p>No events have been created yet.</p>
 
-                    <button
-                      type="submit"
-                      className="auth-submit"
-                      disabled={coreMemberSaving}
-                    >
-                      {coreMemberSaving
-                        ? 'Saving...'
-                        : editingCoreMemberId
-                          ? 'Update Member'
-                          : 'Add Member'}
-                    </button>
-                  </div>
-                </form>
-              </section>
-            ) : (
-              <section className="admin-events-section admin-core-members-list">
-                <div className="admin-section-heading admin-events-dashboard-heading">
-                  <div className="flex-column align-items-start">
-                    <button
-                      type="button"
-                      className="admin-back-arrow"
-                      onClick={goBackToDashboard}
-                      aria-label="Back to dashboard"
-                    >
-                      <i className="bi bi-arrow-left" aria-hidden="true" />
-                    </button>
-
-                    <h2>
-                      <span className="smallDisplayNone">Manage</span> Core Members
-                    </h2>
-                  </div>
-
-                  <div className="admin-event-actions">
-                    <button
-                      type="button"
-                      className="admin-secondary-button mt-auto"
-                      onClick={loadCoreMembers}
-                      disabled={coreMembersLoading}
-                    >
-                      <i className="bi bi-arrow-clockwise" aria-hidden="true" />
-                      <span className="smallDisplayNone">Refresh</span>
-                    </button>
-
-                    <button
-                      type="button"
-                      className="auth-submit"
-                      onClick={openCreateCoreMemberForm}
-                    >
-                      <i className="bi bi-plus-lg" aria-hidden="true" />
-                      <span className="smallDisplayNone">Add New</span>
-                    </button>
-                  </div>
-                </div>
-
-                <div className="admin-event-filters">
-                  <label className="admin-event-search">
-                    <i className="bi bi-search" aria-hidden="true" />
-                    <input
-                      id="core-member-search"
-                      type="search"
-                      value={coreMemberSearch}
-                      onChange={(event) => setCoreMemberSearch(event.target.value)}
-                      placeholder="Search core members"
-                      aria-label="Search core members"
-                    />
-                  </label>
-                </div>
-
-                {coreMembersLoading ? (
-                  <p className="admin-empty">Loading core members...</p>
-                ) : coreMembers.filter((member) => {
-                  const query = coreMemberSearch.trim().toLowerCase();
-
-                  return (
-                    member.name?.toLowerCase().includes(query) ||
-                    member.role?.toLowerCase().includes(query)
-                  );
-                }).length === 0 ? (
-                  <p className="admin-empty">
-                    {coreMembers.length === 0
-                      ? 'No core members added yet.'
-                      : 'No members match your search.'}
-                  </p>
-                ) : (
-                  <div className="admin-event-list admin-core-member-list">
-                    {coreMembers
-                      .filter((member) => {
-                        const query = coreMemberSearch.trim().toLowerCase();
-
-                        return (
-                          member.name?.toLowerCase().includes(query) ||
-                          member.role?.toLowerCase().includes(query)
-                        );
-                      })
-                      .map((member) => (
-                        <article
-                          className="admin-event-item admin-core-member-item"
-                          key={member._id}
+                        <button
+                          type="button"
+                          className="auth-submit"
+                          onClick={openCreateForm}
                         >
-                          {member.image?.url ? (
-                            <img
-                              className="admin-core-member-avatar"
-                              src={member.image.url}
-                              alt={member.name}
-                            />
-                          ) : (
-                            <div className="admin-core-member-avatar admin-core-member-fallback">
-                              {member.name?.charAt(0)?.toUpperCase() || '?'}
+                          Create your first event
+                        </button>
+                      </div>
+                    ) : filteredEvents.length === 0 ? (
+                      <p className="admin-empty">
+                        No events match your search.
+                      </p>
+                    ) : (
+                      <div className="admin-event-list">
+                        {filteredEvents.map((event) => (
+                          <article
+                            className="admin-event-item"
+                            key={event._id}
+                          >
+                            {event.bannerImage?.url ? (
+                              <img
+                                className="admin-event-image"
+                                src={event.bannerImage.url}
+                                alt={`${event.title} banner`}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="admin-event-image admin-event-image-placeholder">
+                                <i className="bi bi-calendar-event" />
+                              </div>
+                            )}
+
+                            <div className="admin-event-info">
+                              <div className="admin-event-meta">
+                                <span>{event.category}</span>
+
+                                <span className={`admin-status ${event.status}`}>
+                                  {event.status}
+                                </span>
+                              </div>
+
+                              <h3>{event.title}</h3>
+
+                              <p>
+                                <i className="bi bi-calendar3 me-2" />
+                                {formatDate(event.date)}
+                              </p>
+
+                              <p>
+                                <i className="bi bi-geo-alt me-2" />
+                                {event.venue || event.mode}
+                              </p>
                             </div>
-                          )}
 
-                          <div className="admin-core-member-card-content">
-                            <h3>{member.name}</h3>
-                            <p className="core-member-role">{member.role}</p>
+                            <div className="admin-event-actions">
+                              <Link
+                                to={`/events/${event.slug}`}
+                                className="admin-view-button"
+                              >
+                                <i className="bi bi-eye" aria-hidden="true" />
+                                View
+                              </Link>
 
-                            <div className="admin-core-member-social-links">
-                              {member.linkedinLink && (
-                                <a
-                                  href={member.linkedinLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  aria-label={`LinkedIn profile of ${member.name}`}
-                                >
-                                  <i className="bi bi-linkedin" aria-hidden="true" />
-                                  <span>LinkedIn</span>
-                                </a>
-                              )}
-
-                              {member.instagramLink && (
-                                <a
-                                  href={member.instagramLink}
-                                  target="_blank"
-                                  rel="noopener noreferrer"
-                                  aria-label={`Instagram profile of ${member.name}`}
-                                >
-                                  <i className="bi bi-instagram" aria-hidden="true" />
-                                  <span>Instagram</span>
-                                </a>
-                              )}
-                            </div>
-
-                            <div className="admin-event-actions admin-core-member-actions">
                               <button
                                 type="button"
-                                className="admin-secondary-button"
-                                onClick={() => editCoreMember(member)}
+                                onClick={() => startEditing(event)}
                               >
-                                <i className="bi bi-pencil" aria-hidden="true" /> Edit
+                                <i className="bi bi-pencil" />
+                                Edit
                               </button>
 
                               <button
                                 type="button"
-                                className="admin-secondary-button"
-                                onClick={() => deleteCoreMember(member)}
+                                onClick={() => togglePublish(event)}
                               >
-                                <i className="bi bi-trash" aria-hidden="true" /> Delete
+                                <i
+                                  className={`bi ${event.status === 'published'
+                                    ? 'bi-eye-slash'
+                                    : 'bi-eye'
+                                    }`}
+                                />
+
+                                {event.status === 'published'
+                                  ? 'Unpublish'
+                                  : 'Publish'}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="admin-delete-button"
+                                onClick={() => deleteEvent(event)}
+                              >
+                                <i className="bi bi-trash" />
+                                Delete
                               </button>
                             </div>
-                          </div>
-                        </article>
-                      ))}
+                          </article>
+                        ))}
+                      </div>
+                    )}
+
                   </div>
                 )}
+
+                {/* CREATE / EDIT EVENT */}
+                {activeEventTab === 'form' && (
+                  <div
+                    role="tabpanel"
+                    id="event-form-pane"
+                    aria-labelledby="event-form-tab"
+                  >
+
+                    <form
+                      className="admin-event-form"
+                      onSubmit={handleSubmit}
+                    >
+
+                      <div className="admin-form-field admin-field-full">
+                        <label htmlFor="event-title">
+                          Event title *
+                        </label>
+
+                        <input
+                          id="event-title"
+                          name="title"
+                          value={form.title}
+                          onChange={updateField}
+                          maxLength={120}
+                          placeholder="Enter event name"
+                          required
+                        />
+                      </div>
+
+                      <div className="admin-form-field">
+                        <label htmlFor="event-category">
+                          Category *
+                        </label>
+
+                        <select
+                          className="admin-form-select"
+                          id="event-category"
+                          name="category"
+                          value={form.category}
+                          onChange={updateField}
+                          required
+                        >
+                          {categories.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+
+                      <div className="admin-form-field">
+                        <label htmlFor="event-mode">
+                          Format *
+                        </label>
+
+                        <select
+                          className="admin-form-select"
+                          id="event-mode"
+                          name="mode"
+                          value={form.mode}
+                          onChange={updateField}
+                        >
+                          <option>In-person</option>
+                          <option>Online</option>
+                          <option>Hybrid</option>
+                        </select>
+                      </div>
+
+                      <div className="admin-form-field">
+                        <label htmlFor="event-date">
+                          Start date and time *
+                        </label>
+
+                        <input
+                          id="event-date"
+                          name="date"
+                          type="datetime-local"
+                          value={form.date}
+                          onChange={updateField}
+                          required
+                        />
+                      </div>
+
+                      <div className="admin-form-field">
+                        <label htmlFor="event-end-date">
+                          End date and time
+                        </label>
+
+                        <input
+                          id="event-end-date"
+                          name="endDate"
+                          type="datetime-local"
+                          min={form.date || undefined}
+                          value={form.endDate}
+                          onChange={updateField}
+                        />
+                      </div>
+
+                      <div className="admin-form-field admin-field-full">
+                        <label htmlFor="event-description">
+                          Description *
+                        </label>
+
+                        <textarea
+                          id="event-description"
+                          name="description"
+                          value={form.description}
+                          onChange={updateField}
+                          maxLength={5000}
+                          rows={5}
+                          placeholder="Describe the event..."
+                          required
+                        />
+                      </div>
+
+                      {form.mode !== 'Online' && (
+                        <div className="admin-form-field">
+                          <label htmlFor="event-venue">
+                            Venue {form.mode === 'In-person' ? '*' : ''}
+                          </label>
+
+                          <input
+                            id="event-venue"
+                            name="venue"
+                            value={form.venue}
+                            onChange={updateField}
+                            maxLength={200}
+                            placeholder="Enter event venue"
+                            required={form.mode === 'In-person'}
+                          />
+                        </div>
+                      )}
+
+                      {form.mode !== 'In-person' && (
+                        <div className="admin-form-field">
+                          <label htmlFor="event-meeting-link">
+                            Meeting link {form.mode === 'Online' ? '*' : ''}
+                          </label>
+
+                          <input
+                            id="event-meeting-link"
+                            name="meetingLink"
+                            type="url"
+                            value={form.meetingLink}
+                            onChange={updateField}
+                            placeholder="https://..."
+                            required={form.mode === 'Online'}
+                          />
+                        </div>
+                      )}
+
+                      <div className="admin-form-field">
+                        <label htmlFor="event-registration-link">
+                          Registration link
+                        </label>
+
+                        <input
+                          id="event-registration-link"
+                          name="registrationLink"
+                          type="url"
+                          value={form.registrationLink}
+                          onChange={updateField}
+                          placeholder="https://..."
+                        />
+                      </div>
+
+                      <div className="admin-form-field">
+                        <label htmlFor="event-status">
+                          Visibility
+                        </label>
+
+                        <select
+                          className="admin-form-select"
+                          id="event-status"
+                          name="status"
+                          value={form.status}
+                          onChange={updateField}
+                        >
+                          <option value="draft">
+                            Draft — hidden from visitors
+                          </option>
+
+                          <option value="published">
+                            Published — visible to visitors
+                          </option>
+                        </select>
+                      </div>
+
+                      {/* EVENT BANNER */}
+
+                      <div className="admin-form-field admin-field-full">
+                        <label htmlFor="bannerImage">
+                          Event banner
+                        </label>
+
+                        <input
+                          className="admin-file-input"
+                          ref={eventImageInputRef}
+                          id="bannerImage"
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp"
+                          onChange={handleEventImageChange}
+                        />
+
+                        {imagePreview && (
+                          <div className="mt-3">
+                            <img
+                              src={imagePreview}
+                              alt="Event banner preview"
+                              style={{
+                                width: '100%',
+                                maxHeight: '240px',
+                                objectFit: 'contain',
+                                borderRadius: '12px',
+                                background: '#f5f8fc',
+                              }}
+                            />
+
+                            <button
+                              type="button"
+                              className="admin-secondary-button mt-2"
+                              onClick={removeCurrentEventImage}
+                            >
+                              <i className="bi bi-trash" />
+                              Remove image
+                            </button>
+                          </div>
+                        )}
+
+                        <small>
+                          PNG, JPG or WebP. Maximum size: 5 MB.
+                        </small>
+                      </div>
+
+                      {/* SOCIAL LINKS */}
+                      <div className="admin-form-field mt-3">
+                        <label htmlFor="event-linkedin-post">
+                          LinkedIn post
+                        </label>
+
+                        <input
+                          id="event-linkedin-post"
+                          name="linkedinPostLink"
+                          type="url"
+                          value={form.linkedinPostLink}
+                          onChange={updateField}
+                          placeholder="https://www.linkedin.com/..."
+                        />
+                      </div>
+
+                      <div className="admin-form-field mt-3">
+                        <label htmlFor="event-instagram-post">
+                          Instagram post
+                        </label>
+
+                        <input
+                          id="event-instagram-post"
+                          name="instagramPostLink"
+                          type="url"
+                          value={form.instagramPostLink}
+                          onChange={updateField}
+                          placeholder="https://www.instagram.com/..."
+                        />
+                      </div>
+
+                      <div className="admin-form-actions admin-field-full">
+                        <button
+                          className="admin-secondary-button admin-cancel-button"
+                          type="button"
+                          onClick={cancelEditing}
+                          disabled={saving}
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          className="auth-submit m-0"
+                          type="submit"
+                          disabled={saving}
+                        >
+                          {saving ? (
+                            <>
+                              <span
+                                className="spinner-border spinner-border-sm"
+                                aria-hidden="true"
+                              />
+                              Saving...
+                            </>
+                          ) : (
+                            <>
+                              <i className="bi bi-check-lg" />
+                              {editingId ? 'Save Changes' : 'Create Event'}
+                            </>
+                          )}
+                        </button>
+                      </div>
+
+                    </form>
+                  </div>
+                )}
+
               </section>
             )}
-          </>
-        )}
-      </div>
-    </main>
+
+            {/* ============================================
+              ATTENDANCE
+          ============================================ */}
+            {activeSection === 'attendance' && (
+              <section className="admin-members-panel">
+
+                <div className="admin-section-heading">
+                  <div>
+
+                    <h2>Manage Attendance</h2>
+
+                    <p className="admin-panel-subtitle">
+                      Select an event and update member attendance.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-secondary-button"
+                    onClick={() => {
+                      loadMembers();
+                      loadAttendance();
+                    }}
+                    disabled={membersLoading || attendanceLoading}
+                  >
+                    <i className="bi bi-arrow-clockwise" />
+                    Refresh
+                  </button>
+                </div>
+
+                <div className="admin-members-toolbar">
+
+                  <div className="admin-form-field">
+                    <label htmlFor="attendance-event">
+                      Select event
+                    </label>
+
+                    <select
+                      className="admin-form-select"
+                      id="attendance-event"
+                      value={selectedAttendanceEvent}
+                      onChange={(event) =>
+                        setSelectedAttendanceEvent(event.target.value)
+                      }
+                    >
+                      <option value="">Select an event</option>
+
+                      {events.map((event) => (
+                        <option key={event._id} value={event._id}>
+                          {event.title}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+
+                  <div className="attendance-stats-card">
+                    <div className="attendance-stats-left">
+                      <h3>Attendance summary</h3>
+
+                      <div className="attendance-stat-row">
+                        <span>Matching members</span>
+                        <strong>{members.length}</strong>
+                      </div>
+
+                      <div className="attendance-stat-row">
+                        <span>Present</span>
+                        <strong>{presentCount}</strong>
+                      </div>
+
+                      <div className="attendance-stat-row">
+                        <span>Absent</span>
+                        <strong>{absentCount}</strong>
+                      </div>
+                    </div>
+
+                    <div
+                      className="attendance-percentage-circle"
+                      style={{
+                        '--attendance-percent': `${attendancePercentage}%`,
+                      }}
+                    >
+                      <div className="attendance-circle-inner">
+                        <strong>{attendancePercentage}%</strong>
+                        <span>Present</span>
+                      </div>
+                    </div>
+                  </div>
+
+                </div>
+
+                <div className="members-list">
+
+                  <div className="admin-form-field">
+                    <label htmlFor="member-search">
+                      Find a member
+                    </label>
+
+                    <label className="admin-event-search">
+                      <i className="bi bi-search" aria-hidden="true" />
+
+                      <input
+                        id="member-search"
+                        type="search"
+                        placeholder="Search by name or email..."
+                        value={memberSearch}
+                        onChange={(event) => setMemberSearch(event.target.value)}
+                        aria-label="Search members by name or email"
+                      />
+                    </label>
+                  </div>
+
+                  {!selectedAttendanceEvent ? (
+                    <p className="admin-empty">
+                      Select an event to manage its attendance.
+                    </p>
+                  ) : membersLoading || attendanceLoading ? (
+                    <p className="admin-empty">
+                      Loading attendance...
+                    </p>
+                  ) : members.length === 0 ? (
+                    <p className="admin-empty">
+                      No members found.
+                    </p>
+                  ) : (
+                    <div className="admin-member-list">
+
+                      {members.map((member) => {
+                        const status = getAttendanceStatus(member);
+                        const savingRow =
+                          attendanceSavingId === member._id;
+
+                        return (
+                          <article
+                            className="admin-member-item"
+                            key={member._id}
+                          >
+
+                            <div className="admin-member-info">
+                              <div className="admin-member-avatar">
+                                {getInitial(member.name)}
+                              </div>
+
+                              <div className="admin-member-details">
+                                <h3>{member.name}</h3>
+                                <p>{member.email}</p>
+                              </div>
+                            </div>
+
+                            <div className="admin-attendance-actions">
+
+                              <div
+                                className={`admin-attendance-toggle ${status}`}
+                                role="group"
+                                aria-label={`Attendance for ${member.name}`}
+                              >
+                                <button
+                                  type="button"
+                                  className={`admin-toggle-option present-option ${status === 'present' ? 'active' : ''
+                                    }`}
+                                  onClick={() =>
+                                    updateAttendance(member._id, 'present')
+                                  }
+                                  disabled={savingRow || status === 'present'}
+                                  aria-pressed={status === 'present'}
+                                >
+                                  <span className="toggle-indicator">✓</span>
+                                  Present
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className={`admin-toggle-option absent-option ${status === 'absent' ? 'active' : ''
+                                    }`}
+                                  onClick={() =>
+                                    updateAttendance(member._id, 'absent')
+                                  }
+                                  disabled={savingRow || status === 'absent'}
+                                  aria-pressed={status === 'absent'}
+                                >
+                                  <span className="toggle-indicator">—</span>
+                                  Absent
+                                </button>
+                              </div>
+
+                              {savingRow && (
+                                <span
+                                  className="admin-attendance-saving"
+                                  role="status"
+                                >
+                                  Saving...
+                                </span>
+                              )}
+
+                            </div>
+
+                          </article>
+                        );
+                      })}
+
+                    </div>
+                  )}
+
+                </div>
+              </section>
+            )}
+
+            {/* ============================================
+              CORE MEMBERS
+          ============================================ */}
+
+            {activeSection === 'coreMembers' && (
+              <>
+                <section className="admin-events-section">
+                  <div className="admin-section-heading">
+                    <div>
+                      <h2>Core Members Management</h2>
+                      <p className="admin-panel-subtitle">
+                        Add, edit and manage your CodeSphere team.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div
+                    className="admin-event-tabs"
+                    role="tablist"
+                    aria-label="Core member management"
+                  >
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={activeCoreMemberTab === 'manage'}
+                      className={`admin-event-tab ${activeCoreMemberTab === 'manage' ? 'active' : ''
+                        }`}
+                      onClick={cancelCoreMemberEditing}
+                    >
+                      <i className="bi bi-people" />
+                      Manage Member
+                    </button>
+
+                    <button
+                      type="button"
+                      role="tab"
+                      aria-selected={activeCoreMemberTab === 'form'}
+                      className={`admin-event-tab ${activeCoreMemberTab === 'form' ? 'active' : ''
+                        }`}
+                      onClick={() => {
+                        if (activeCoreMemberTab !== 'form') {
+                          openCreateCoreMemberForm();
+                        }
+                      }}
+                    >
+                      <i className={`bi bi-${editingCoreMemberId ? 'pencil' : 'plus-circle'}`} />
+                      {editingCoreMemberId ? 'Edit Member' : 'Add Member'}
+                    </button>
+                  </div>
+                </section>
+
+                {showCoreMemberForm ? (
+
+                  /* ADD / EDIT CORE MEMBER */
+                  <section className="admin-panel">
+
+                    <form
+                      className="admin-event-form"
+                      onSubmit={saveCoreMember}
+                    >
+
+                      <div className="admin-form-field">
+                        <label htmlFor="core-member-name">
+                          Full name *
+                        </label>
+
+                        <input
+                          id="core-member-name"
+                          name="name"
+                          value={coreMemberForm.name}
+                          onChange={updateCoreMemberField}
+                          maxLength={100}
+                          placeholder="Enter full name"
+                          required
+                        />
+                      </div>
+
+                      <div className="admin-form-field">
+                        <label htmlFor="core-member-role">
+                          Position *
+                        </label>
+
+                        <input
+                          id="core-member-role"
+                          name="role"
+                          value={coreMemberForm.role}
+                          onChange={updateCoreMemberField}
+                          maxLength={100}
+                          placeholder="e.g. Technical Lead"
+                          required
+                        />
+                      </div>
+
+                      <div className="admin-form-field admin-field-full">
+                        <label htmlFor="core-member-image">
+                          Profile image {editingCoreMemberId ? '(optional)' : '*'}
+                        </label>
+
+                        <input
+                          className="admin-file-input"
+                          ref={coreMemberImageInputRef}
+                          id="core-member-image"
+                          type="file"
+                          accept="image/jpeg,image/png,image/webp"
+                          required={!editingCoreMemberId && !coreMemberImage}
+                          onChange={handleCoreMemberImageChange}
+                        />
+
+                        {coreMemberImagePreview && (
+                          <div className="core-member-image-preview">
+                            <img
+                              src={coreMemberImagePreview}
+                              alt="Core member preview"
+                            />
+
+                            <button
+                              type="button"
+                              className="admin-secondary-button"
+                              onClick={removeCurrentCoreMemberImage}
+                            >
+                              <i className="bi bi-trash" />
+                              Remove image
+                            </button>
+                          </div>
+                        )}
+
+                        <small>
+                          PNG, JPG or WebP. Maximum size: 5 MB.
+                        </small>
+                      </div>
+
+                      <div className="admin-form-field mt-3">
+                        <label htmlFor="core-member-linkedin">
+                          LinkedIn profile
+                        </label>
+
+                        <input
+                          id="core-member-linkedin"
+                          name="linkedinLink"
+                          type="url"
+                          value={coreMemberForm.linkedinLink}
+                          onChange={updateCoreMemberField}
+                          maxLength={500}
+                          placeholder="https://www.linkedin.com/in/..."
+                        />
+                      </div>
+
+                      <div className="admin-form-field mt-3">
+                        <label htmlFor="core-member-instagram">
+                          Instagram profile
+                        </label>
+
+                        <input
+                          id="core-member-instagram"
+                          name="instagramLink"
+                          type="url"
+                          value={coreMemberForm.instagramLink}
+                          onChange={updateCoreMemberField}
+                          maxLength={500}
+                          placeholder="https://www.instagram.com/..."
+                        />
+                      </div>
+
+                      <div className="admin-form-actions admin-field-full">
+                        <button
+                          type="button"
+                          className="admin-secondary-button admin-cancel-button"
+                          onClick={cancelCoreMemberEditing}
+                          disabled={coreMemberSaving}
+                        >
+                          Cancel
+                        </button>
+
+                        <button
+                          type="submit"
+                          className="auth-submit m-0"
+                          disabled={coreMemberSaving}
+                        >
+                          {coreMemberSaving
+                            ? 'Saving...'
+                            : editingCoreMemberId
+                              ? 'Save Changes'
+                              : 'Add Member'}
+                        </button>
+                      </div>
+
+                    </form>
+                  </section>
+
+                ) : (
+
+                  /* CORE MEMBER DIRECTORY */
+                  <section className="admin-events-section admin-core-members-list">
+                    <div className="admin-event-filters">
+                      <label className="admin-event-search">
+                        <i className="bi bi-search" />
+
+                        <input
+                          id="core-member-search"
+                          type="search"
+                          value={coreMemberSearch}
+                          onChange={(event) =>
+                            setCoreMemberSearch(event.target.value)
+                          }
+                          placeholder="Search by name or position..."
+                          aria-label="Search core members"
+                        />
+                      </label>
+                    </div>
+
+                    {coreMembersLoading ? (
+                      <p className="admin-empty">
+                        Loading core members...
+                      </p>
+                    ) : filteredCoreMembers.length === 0 ? (
+                      <div className="admin-empty">
+                        <i className="bi bi-people" />
+
+                        <p>
+                          {coreMembers.length === 0
+                            ? 'No core members added yet.'
+                            : 'No members match your search.'}
+                        </p>
+
+                        {coreMembers.length === 0 && (
+                          <button
+                            type="button"
+                            className="auth-submit"
+                            onClick={openCreateCoreMemberForm}
+                          >
+                            <i className="bi bi-plus-lg" />
+                            Add First Member
+                          </button>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="admin-event-list admin-core-member-list">
+
+                        {filteredCoreMembers.map((member) => (
+                          <article
+                            className="admin-event-item admin-core-member-item"
+                            key={member._id}
+                          >
+
+                            {member.image?.url ? (
+                              <img
+                                className="admin-core-member-avatar"
+                                src={member.image.url}
+                                alt={member.name}
+                                loading="lazy"
+                              />
+                            ) : (
+                              <div className="admin-core-member-avatar admin-core-member-fallback">
+                                {getInitial(member.name)}
+                              </div>
+                            )}
+
+                            <div className="admin-core-member-card-content">
+                              <h3>{member.name}</h3>
+
+                              <p className="core-member-role">
+                                {member.role}
+                              </p>
+
+                              <div className="admin-core-member-social-links">
+
+                                {member.linkedinLink && (
+                                  <a
+                                    href={member.linkedinLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`LinkedIn profile of ${member.name}`}
+                                  >
+                                    <i className="bi bi-linkedin" />
+                                    <span>LinkedIn</span>
+                                  </a>
+                                )}
+
+                                {member.instagramLink && (
+                                  <a
+                                    href={member.instagramLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`Instagram profile of ${member.name}`}
+                                  >
+                                    <i className="bi bi-instagram" />
+                                    <span>Instagram</span>
+                                  </a>
+                                )}
+
+                              </div>
+
+                              <div className="admin-event-actions admin-core-member-actions">
+                                <button
+                                  type="button"
+                                  onClick={() => editCoreMember(member)}
+                                >
+                                  <i className="bi bi-pencil" />
+                                  Edit
+                                </button>
+
+                                <button
+                                  type="button"
+                                  className="admin-delete-button"
+                                  onClick={() => deleteCoreMember(member)}
+                                >
+                                  <i className="bi bi-trash" />
+                                  Delete
+                                </button>
+                              </div>
+                            </div>
+
+                          </article>
+                        ))}
+
+                      </div>
+                    )}
+
+                  </section>
+                )}
+              </>
+            )}
+
+          </div>
+        </div>
+
+        {/* ================================================
+          MOBILE BOTTOM NAVIGATION
+      ================================================ */}
+
+        <nav
+          className="admin-mobile-nav"
+          aria-label="Mobile admin navigation"
+        >
+          <button
+            type="button"
+            className={activeSection === 'home' ? 'active' : ''}
+            onClick={() => goToSection('home')}
+            aria-current={activeSection === 'home' ? 'page' : undefined}
+          >
+            <i className="bi bi-grid-1x2-fill" />
+            <span>Home</span>
+          </button>
+
+          <button
+            type="button"
+            className={activeSection === 'events' ? 'active' : ''}
+            onClick={() => goToSection('events')}
+            aria-current={activeSection === 'events' ? 'page' : undefined}
+          >
+            <i className="bi bi-calendar-event" />
+            <span>Events</span>
+          </button>
+
+          <button
+            type="button"
+            className={activeSection === 'attendance' ? 'active' : ''}
+            onClick={() => goToSection('attendance')}
+            aria-current={activeSection === 'attendance' ? 'page' : undefined}
+          >
+            <i className="bi bi-clipboard-check" />
+            <span>Attendance</span>
+          </button>
+
+          <button
+            type="button"
+            className={activeSection === 'coreMembers' ? 'active' : ''}
+            onClick={() => goToSection('coreMembers')}
+            aria-current={activeSection === 'coreMembers' ? 'page' : undefined}
+          >
+            <i className="bi bi-people" />
+            <span>Team</span>
+          </button>
+        </nav>
+
+      </main>
+    </>
   );
 }
