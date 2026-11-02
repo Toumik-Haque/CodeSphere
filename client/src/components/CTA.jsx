@@ -1,3 +1,4 @@
+import { Link } from 'react-router-dom'
 import '../css/CTA.css';
 
 const CTA = () => (
@@ -14,10 +15,10 @@ const CTA = () => (
       We'd love to hear from you.
     </p>
 
-    <a href="/contact" className="btn btn-gold contact-cta-button">
+    <Link to="/contact" className="btn btn-gold contact-cta-button">
       Contact Us
       <i className="bi bi-arrow-up-right" aria-hidden="true" />
-    </a>
+    </Link>
   </div>
 </section>
 );

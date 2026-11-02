@@ -40,10 +40,17 @@ function formatTime(value) {
 }
 
 function eventHasPassed(event) {
-  const end = event.endDate || event.date;
-  const endTime = new Date(end).getTime();
+  let end;
 
-  return Number.isFinite(endTime) && endTime < Date.now();
+  if (event.endDate) {
+    end = new Date(event.endDate);
+  } else {
+    end = new Date(event.date);
+    end.setDate(end.getDate() + 1);
+    end.setHours(0, 0, 0, 0);
+  }
+
+  return Number.isFinite(end.getTime()) && end.getTime() < Date.now();
 }
 
 export default function EventDetails() {

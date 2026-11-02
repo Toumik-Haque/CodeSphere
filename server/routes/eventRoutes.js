@@ -417,17 +417,25 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
       status: candidate.status,
     });
 
+    const shouldRemoveBanner =
+      !req.file && req.body.removeBannerImage === 'true';
+
     if (uploadedBanner) {
       existing.bannerImage = {
         url: uploadedBanner.secure_url,
         publicId: uploadedBanner.public_id,
+      };
+    } else if (shouldRemoveBanner) {
+      existing.bannerImage = {
+        url: '',
+        publicId: '',
       };
     }
 
     await existing.save();
 
     // Delete the previous image only after the update succeeds.
-    if (uploadedBanner && oldPublicId) {
+    if ((uploadedBanner || shouldRemoveBanner) && oldPublicId) {
       try {
         await deleteCloudinaryImage(oldPublicId);
       } catch (cleanupError) {

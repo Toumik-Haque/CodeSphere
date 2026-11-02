@@ -1,3 +1,4 @@
+
 const express = require('express');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
@@ -48,6 +49,258 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
+
+// ============================================
+// SHARED MODERN CODESPHERE OTP EMAIL TEMPLATE
+// ============================================
+
+function buildOtpEmailHtml({
+  title,
+  subtitle,
+  otp,
+  description,
+  securityMessage,
+}) {
+  return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>${title}</title>
+</head>
+
+<body style="
+  margin: 0;
+  padding: 0;
+  background-color: #F3F7FB;
+  font-family: Arial, Helvetica, sans-serif;
+  color: #153653;
+">
+
+  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+    border="0" style="background-color: #F3F7FB; padding: 35px 12px;">
+
+    <tr>
+      <td align="center">
+
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+          border="0" style="
+            max-width: 560px;
+            background-color: #FFFFFF;
+            border-radius: 18px;
+            overflow: hidden;
+            border: 1px solid #E5EDF4;
+          ">
+
+          <!-- Brand Header -->
+          <tr>
+            <td align="center" style="
+              padding: 30px 25px;
+              background-color: #153653;
+            ">
+
+              <div style="
+                color: #FFFFFF;
+                font-size: 27px;
+                font-weight: 800;
+                letter-spacing: -1px;
+              ">
+                Code<span style="color: #FF8568;">Sphere</span>
+              </div>
+
+              <div style="
+                margin-top: 8px;
+                color: #D5E6F2;
+                font-size: 10px;
+                font-weight: 600;
+                letter-spacing: 3px;
+              ">
+                LEARN · BUILD · CONNECT
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Main Content -->
+          <tr>
+            <td style="padding: 38px 32px 20px;">
+
+              <div style="
+                display: inline-block;
+                padding: 7px 13px;
+                border-radius: 30px;
+                background-color: #FFF0EB;
+                color: #D94324;
+                font-size: 10px;
+                font-weight: 800;
+                letter-spacing: 1.4px;
+              ">
+                ${subtitle}
+              </div>
+
+              <h1 style="
+                margin: 20px 0 12px;
+                color: #153653;
+                font-size: 26px;
+                line-height: 1.3;
+                letter-spacing: -0.7px;
+              ">
+                ${title}
+              </h1>
+
+              <p style="
+                margin: 0;
+                color: #52677A;
+                font-size: 15px;
+                line-height: 1.8;
+              ">
+                ${description}
+              </p>
+
+              <!-- OTP Box -->
+              <table role="presentation" width="100%" cellspacing="0"
+                cellpadding="0" border="0" style="margin: 28px 0;">
+
+                <tr>
+                  <td align="center" style="
+                    padding: 25px 15px;
+                    background-color: #FFF5F1;
+                    border: 1px solid #F9D7CC;
+                    border-radius: 14px;
+                  ">
+
+                    <div style="
+                      margin-bottom: 12px;
+                      color: #A94A35;
+                      font-size: 10px;
+                      font-weight: 800;
+                      letter-spacing: 2px;
+                    ">
+                      YOUR ONE-TIME PASSWORD
+                    </div>
+
+                    <div style="
+                      color: #153653;
+                      font-size: 34px;
+                      font-weight: 800;
+                      letter-spacing: 9px;
+                      line-height: 1.4;
+                    ">
+                      ${otp}
+                    </div>
+
+                    <div style="
+                      margin-top: 12px;
+                      color: #7B8794;
+                      font-size: 11px;
+                    ">
+                      Enter this code in CodeSphere
+                    </div>
+
+                  </td>
+                </tr>
+              </table>
+
+              <!-- Expiry Notice -->
+              <table role="presentation" width="100%" cellspacing="0"
+                cellpadding="0" border="0">
+
+                <tr>
+                  <td width="34" valign="top" style="padding-top: 2px;">
+
+                    <div style="
+                      width: 25px;
+                      height: 25px;
+                      border-radius: 50%;
+                      background-color: #FFF0EB;
+                      color: #D94324;
+                      text-align: center;
+                      line-height: 25px;
+                      font-size: 14px;
+                      font-weight: bold;
+                    ">
+                      !
+                    </div>
+
+                  </td>
+
+                  <td style="
+                    color: #52677A;
+                    font-size: 13px;
+                    line-height: 1.7;
+                  ">
+                    This code expires in
+                    <strong style="color: #D94324;">
+                      ${OTP_EXPIRY_MINUTES} minutes
+                    </strong>.
+                    Please use it before it expires.
+                  </td>
+                </tr>
+
+              </table>
+
+              <!-- Security Message -->
+              <div style="
+                margin-top: 25px;
+                padding-top: 20px;
+                border-top: 1px solid #EAF0F5;
+                color: #7B8794;
+                font-size: 12px;
+                line-height: 1.8;
+              ">
+                ${securityMessage}
+              </div>
+
+            </td>
+          </tr>
+
+          <!-- Footer -->
+          <tr>
+            <td align="center" style="
+              padding: 22px 25px;
+              background-color: #F8FAFC;
+              border-top: 1px solid #EAF0F5;
+            ">
+
+              <div style="
+                color: #153653;
+                font-size: 13px;
+                font-weight: 800;
+              ">
+                Code<span style="color: #F05A36;">Sphere</span>
+              </div>
+
+              <p style="
+                margin: 7px 0 0;
+                color: #8996A5;
+                font-size: 11px;
+                line-height: 1.6;
+              ">
+                Learn. Build. Connect.<br />
+                This is an automated email. Please do not reply.
+              </p>
+
+            </td>
+          </tr>
+
+        </table>
+
+      </td>
+    </tr>
+
+  </table>
+
+</body>
+</html>
+  `;
+}
+
+
+// ============================================
+// SEND REGISTRATION OTP EMAIL
+// ============================================
+
 async function sendOtpEmail(email, otp) {
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
     method: 'POST',
@@ -61,32 +314,43 @@ async function sendOtpEmail(email, otp) {
         name: process.env.BREVO_SENDER_NAME || 'CodeSphere',
         email: process.env.BREVO_SENDER_EMAIL,
       },
+
       to: [{ email }],
+
       subject: 'Your CodeSphere email verification code',
+
       textContent:
-        `Your CodeSphere verification code is ${otp}. ` +
+        `Your CodeSphere email verification code is ${otp}. ` +
         `It expires in ${OTP_EXPIRY_MINUTES} minutes. ` +
         'If you did not request this code, you can ignore this email.',
-      htmlContent: `
-        <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#152238">
-          <h2 style="margin-bottom:8px">Verify your email</h2>
-          <p>Use this code to verify your email address for CodeSphere:</p>
-          <div style="font-size:32px;font-weight:700;letter-spacing:8px;padding:18px;background:#F6F3EE;text-align:center;border-radius:10px">
-            ${otp}
-          </div>
-          <p>This code expires in ${OTP_EXPIRY_MINUTES} minutes.</p>
-          <p style="color:#5B6678;font-size:13px">If you did not request this code, you can ignore this email.</p>
-        </div>
-      `,
+
+      htmlContent: buildOtpEmailHtml({
+        title: 'Verify your email address.',
+        subtitle: 'EMAIL VERIFICATION',
+        otp,
+
+        description:
+          'Welcome to CodeSphere! Use the one-time password below to verify your email address and complete your registration.',
+
+        securityMessage:
+          'If you did not try to create a CodeSphere account, you can safely ignore this email. Never share this code with anyone.',
+      }),
     }),
   });
 
   if (!response.ok) {
     const details = await response.text();
+
     console.error('Brevo email error:', details);
+
     throw new Error('Unable to send verification email.');
   }
 }
+
+
+// ============================================
+// SEND PASSWORD RESET OTP EMAIL
+// ============================================
 
 async function sendPasswordResetEmail(email, otp) {
   const response = await fetch('https://api.brevo.com/v3/smtp/email', {
@@ -101,36 +365,44 @@ async function sendPasswordResetEmail(email, otp) {
         name: process.env.BREVO_SENDER_NAME || 'CodeSphere',
         email: process.env.BREVO_SENDER_EMAIL,
       },
+
       to: [{ email }],
+
       subject: 'Your CodeSphere password reset code',
+
       textContent:
         `Your CodeSphere password reset code is ${otp}. ` +
         `It expires in ${OTP_EXPIRY_MINUTES} minutes. ` +
-        'If you did not request this, you can ignore this email.',
-      htmlContent: `
-        <div style="font-family:Arial,sans-serif;max-width:520px;margin:auto;padding:28px;color:#10243A">
-          <h2>Reset your CodeSphere password</h2>
-          <p>Use this code to reset your password:</p>
-          <div style="font-size:32px;font-weight:700;letter-spacing:8px;padding:18px;background:#EAF5FC;text-align:center;border-radius:10px">
-            ${otp}
-          </div>
-          <p>This code expires in ${OTP_EXPIRY_MINUTES} minutes.</p>
-          <p style="color:#536579;font-size:13px">
-            If you did not request this code, you can ignore this email.
-          </p>
-        </div>
-      `,
+        'If you did not request a password reset, you can ignore this email.',
+
+      htmlContent: buildOtpEmailHtml({
+        title: 'Reset your password.',
+        subtitle: 'PASSWORD RESET',
+        otp,
+
+        description:
+          'We received a request to reset your CodeSphere account password. Enter the one-time password below to continue.',
+
+        securityMessage:
+          'If you did not request a password reset, do not share this code with anyone. You can safely ignore this email. Your existing password will remain unchanged unless you complete the reset process.',
+      }),
     }),
   });
 
   if (!response.ok) {
     const details = await response.text();
+
     console.error('Brevo password reset email error:', details);
+
     throw new Error('Unable to send password reset email.');
   }
 }
 
-// Send or resend an OTP
+
+// ============================================
+// SEND OR RESEND REGISTRATION OTP
+// ============================================
+
 router.post('/send-otp', async (req, res) => {
   try {
     const email =
@@ -139,7 +411,9 @@ router.post('/send-otp', async (req, res) => {
         : '';
 
     if (!isValidEmail(email)) {
-      return res.status(400).json({ message: 'Enter a valid email address.' });
+      return res.status(400).json({
+        message: 'Enter a valid email address.',
+      });
     }
 
     const existingUser = await User.findOne({ email });
@@ -171,8 +445,12 @@ router.post('/send-otp', async (req, res) => {
     }
 
     record.otpHash = hashOtp(email, otp);
-    record.expiresAt = new Date(now.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000);
-    record.resendAfter = new Date(now.getTime() + OTP_RESEND_SECONDS * 1000);
+    record.expiresAt = new Date(
+      now.getTime() + OTP_EXPIRY_MINUTES * 60 * 1000
+    );
+    record.resendAfter = new Date(
+      now.getTime() + OTP_RESEND_SECONDS * 1000
+    );
     record.attempts = 0;
     record.verifiedAt = null;
 
@@ -184,15 +462,21 @@ router.post('/send-otp', async (req, res) => {
       expiresIn: OTP_EXPIRY_MINUTES * 60,
       resendAfter: OTP_RESEND_SECONDS,
     });
+
   } catch (error) {
     console.error('Send OTP error:', error.message);
+
     return res.status(500).json({
       message: 'Unable to send the verification code right now.',
     });
   }
 });
 
-// Verify the OTP
+
+// ============================================
+// VERIFY REGISTRATION OTP
+// ============================================
+
 router.post('/verify-otp', async (req, res) => {
   try {
     const email =
@@ -220,7 +504,9 @@ router.post('/verify-otp', async (req, res) => {
     }
 
     if (record.verifiedAt) {
-      return res.json({ message: 'Email already verified.' });
+      return res.json({
+        message: 'Email already verified.',
+      });
     }
 
     if (record.attempts >= MAX_OTP_ATTEMPTS) {
@@ -253,16 +539,25 @@ router.post('/verify-otp', async (req, res) => {
     record.verifiedAt = new Date();
     await record.save();
 
-    return res.json({ message: 'Email verified successfully.' });
+    return res.json({
+      message: 'Email verified successfully.',
+    });
+
   } catch (error) {
     console.error('Verify OTP error:', error.message);
+
     return res.status(500).json({
       message: 'Unable to verify the email right now.',
     });
   }
 });
 
-// Register a regular user — requires verified email
+
+// ============================================
+// REGISTER REGULAR USER
+// REQUIRES VERIFIED EMAIL
+// ============================================
+
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password, collegeName, yearOfStudy } = req.body;
@@ -280,14 +575,17 @@ router.post('/register', async (req, res) => {
       !STUDY_YEARS.includes(yearOfStudy)
     ) {
       return res.status(400).json({
-        message: 'Please provide valid registration details. Password must be 8–128 characters.',
+        message:
+          'Please provide valid registration details. Password must be 8–128 characters.',
       });
     }
 
     const normalizedEmail = normalizeEmail(email);
 
     if (!isValidEmail(normalizedEmail)) {
-      return res.status(400).json({ message: 'Enter a valid email address.' });
+      return res.status(400).json({
+        message: 'Enter a valid email address.',
+      });
     }
 
     const verification = await EmailOtp.findOne({
@@ -302,7 +600,9 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email: normalizedEmail });
+    const existingUser = await User.findOne({
+      email: normalizedEmail,
+    });
 
     if (existingUser) {
       return res.status(409).json({
@@ -338,6 +638,7 @@ router.post('/register', async (req, res) => {
         role: user.role,
       },
     });
+
   } catch (error) {
     if (error.code === 11000) {
       return res.status(409).json({
@@ -346,11 +647,18 @@ router.post('/register', async (req, res) => {
     }
 
     console.error('Registration error:', error.message);
-    return res.status(500).json({ message: 'Unable to register right now.' });
+
+    return res.status(500).json({
+      message: 'Unable to register right now.',
+    });
   }
 });
 
+
+// ============================================
 // FORGOT PASSWORD — SEND RESET OTP
+// ============================================
+
 router.post('/forgot-password', async (req, res) => {
   try {
     const email =
@@ -413,6 +721,7 @@ router.post('/forgot-password', async (req, res) => {
       expiresIn: OTP_EXPIRY_MINUTES * 60,
       resendAfter: OTP_RESEND_SECONDS,
     });
+
   } catch (error) {
     console.error('Forgot password error:', error.message);
 
@@ -422,7 +731,11 @@ router.post('/forgot-password', async (req, res) => {
   }
 });
 
+
+// ============================================
 // FORGOT PASSWORD — VERIFY RESET OTP
+// ============================================
+
 router.post('/verify-reset-otp', async (req, res) => {
   try {
     const email =
@@ -488,6 +801,7 @@ router.post('/verify-reset-otp', async (req, res) => {
     return res.json({
       message: 'Code verified successfully.',
     });
+
   } catch (error) {
     console.error('Reset OTP verification error:', error.message);
 
@@ -497,7 +811,11 @@ router.post('/verify-reset-otp', async (req, res) => {
   }
 });
 
+
+// ============================================
 // FORGOT PASSWORD — SAVE NEW PASSWORD
+// ============================================
+
 router.post('/reset-password', async (req, res) => {
   try {
     const email =
@@ -526,7 +844,8 @@ router.post('/reset-password', async (req, res) => {
 
     if (!record) {
       return res.status(403).json({
-        message: 'Please verify a valid reset code before changing your password.',
+        message:
+          'Please verify a valid reset code before changing your password.',
       });
     }
 
@@ -547,8 +866,10 @@ router.post('/reset-password', async (req, res) => {
     await PasswordResetOtp.deleteOne({ _id: record._id });
 
     return res.json({
-      message: 'Password reset successful. Please sign in with your new password.',
+      message:
+        'Password reset successful. Please sign in with your new password.',
     });
+
   } catch (error) {
     console.error('Password reset error:', error.message);
 
@@ -559,7 +880,10 @@ router.post('/reset-password', async (req, res) => {
 });
 
 
-// Shared login for users and admins
+// ============================================
+// SHARED LOGIN FOR USERS AND ADMINS
+// ============================================
+
 router.post('/login', async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -599,13 +923,21 @@ router.post('/login', async (req, res) => {
         role: user.role,
       },
     });
+
   } catch (error) {
     console.error('Login error:', error.message);
-    return res.status(500).json({ message: 'Unable to log in right now.' });
+
+    return res.status(500).json({
+      message: 'Unable to log in right now.',
+    });
   }
 });
 
-// Get the currently authenticated user's profile
+
+// ============================================
+// GET CURRENTLY AUTHENTICATED USER PROFILE
+// ============================================
+
 router.get('/me', protect, async (req, res) => {
   res.json({
     user: {
@@ -619,5 +951,6 @@ router.get('/me', protect, async (req, res) => {
     },
   });
 });
+
 
 module.exports = router;
