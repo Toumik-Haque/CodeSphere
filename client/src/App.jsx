@@ -1,6 +1,13 @@
 
 import { useEffect } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from 'react-router-dom';
+
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import VideoBackground from './components/VideoBackground';
@@ -8,7 +15,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Events from './components/Events';
 import TeamCarousel from './components/TeamCarousel';
-import CTA from './components/CTA'
+import CTA from './components/CTA';
 import About from './components/About';
 import Footer from './components/Footer';
 
@@ -27,6 +34,7 @@ function HomePage() {
     <>
       <VideoBackground />
       <Navbar />
+
       <main>
         <Hero />
         <About />
@@ -34,11 +42,13 @@ function HomePage() {
         <TeamCarousel />
         <CTA />
       </main>
+
       <Footer />
     </>
   );
 }
 
+// Protect routes that require authentication.
 function ProtectedRoute({ children, adminOnly = false }) {
   const { user, token } = useAuth();
 
@@ -57,6 +67,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
   return children;
 }
 
+// Scroll to the top whenever the route changes.
 function ScrollToTop() {
   const { pathname } = useLocation();
 
@@ -74,16 +85,19 @@ function ScrollToTop() {
 function AppRoutes() {
   return (
     <Routes>
+      {/* Public pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:slug" element={<EventDetails />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
 
+      {/* Authentication pages */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
+      {/* Protected student profile */}
       <Route
         path="/profile"
         element={
@@ -93,6 +107,21 @@ function AppRoutes() {
         }
       />
 
+      {/* Redirect old capital-P profile URL */}
+      <Route
+        path="/Profile"
+        element={<Navigate to="/profile" replace />}
+      />
+
+      {/* Development-only profile preview (no login required) */}
+      {import.meta.env.DEV && (
+        <Route
+          path="/profile-preview"
+          element={<Profile preview />}
+        />
+      )}
+
+      {/* Protected admin dashboard */}
       <Route
         path="/admin"
         element={
@@ -102,6 +131,7 @@ function AppRoutes() {
         }
       />
 
+      {/* Unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
@@ -111,6 +141,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <ScrollToTop />
+
       <AuthProvider>
         <AppRoutes />
       </AuthProvider>
