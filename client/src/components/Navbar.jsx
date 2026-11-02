@@ -26,7 +26,9 @@ const Navbar = () => {
   // Separate refs for desktop and mobile dropdowns.
   const desktopDropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
+  const profileRef = useRef(null);
   const { user, logout } = useAuth();
 
   const isAuthenticated = Boolean(user);
@@ -35,7 +37,10 @@ const Navbar = () => {
   const dashboardPath = isAdmin ? '/admin' : '/profile';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
-  // Navbar scroll effect.
+  const userName = user?.name || 'Student';
+  const userEmail = user?.email || '';
+
+  // Navbar scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -44,9 +49,7 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   // Close dropdown when clicking outside both desktop and mobile menus.
@@ -74,23 +77,43 @@ const Navbar = () => {
 
   // Close the mobile drawer with Escape and prevent background scrolling.
   useEffect(() => {
-    if (!isMenuOpen) return;
+    const handleOutsideClick = (event) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
+        setIsProfileOpen(false);
         setIsMenuOpen(false);
         setIsDropdownOpen(false);
       }
     };
 
-    const previousOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = 'hidden';
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
       document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Mobile drawer scroll lock
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
     };
   }, [isMenuOpen]);
 
@@ -216,7 +239,6 @@ const Navbar = () => {
 
   return (
     <>
-      {/* Main Navbar */}
       <nav
         className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${
           isScrolled ? 'navbar-scrolled' : ''
@@ -255,10 +277,7 @@ const Navbar = () => {
             aria-expanded={isMenuOpen}
             aria-controls="codesphere-mobile-menu"
           >
-            <i
-              className="bi bi-filter-right"
-              aria-hidden="true"
-            />
+            <i className="bi bi-filter-right" aria-hidden="true" />
           </button>
 
           {/* Desktop Navigation Links */}
@@ -282,7 +301,6 @@ const Navbar = () => {
               </li>
             </ul>
           </div>
-
         </div>
       </nav>
 
@@ -339,10 +357,7 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Drawer Label */}
-        <p className="mobile-menu-caption">
-          EXPLORE CODESPHERE
-        </p>
+        <p className="mobile-menu-caption">EXPLORE CODESPHERE</p>
 
         {/* Navigation Links */}
         <ul className="mobile-menu-links">
@@ -360,16 +375,13 @@ const Navbar = () => {
                   {link.label}
                 </span>
 
-                <i
-                  className="bi bi-arrow-up-right"
-                  aria-hidden="true"
-                />
+                <i className="bi bi-arrow-up-right" aria-hidden="true" />
               </Link>
             </li>
           ))}
         </ul>
 
-        {/* Drawer Footer */}
+        {/* Mobile Account Footer */}
         <div className="mobile-menu-footer">
           <p>Learn. Build. Grow.</p>
 
