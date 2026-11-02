@@ -20,6 +20,7 @@ import Admin from './pages/Admin';
 import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
 import Team from './pages/Team';
+import Contact from './pages/Contact';
 
 function HomePage() {
   return (
@@ -77,6 +78,7 @@ function AppRoutes() {
       <Route path="/events" element={<EventsPage />} />
       <Route path="/events/:slug" element={<EventDetails />} />
       <Route path="/team" element={<Team />} />
+      <Route path="/contact" element={<Contact />} />
 
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />

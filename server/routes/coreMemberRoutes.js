@@ -263,17 +263,25 @@ router.patch(
       member.linkedinLink = candidate.linkedinLink.trim();
       member.instagramLink = candidate.instagramLink.trim();
 
+      const shouldRemoveImage =
+        !req.file && req.body.removeImage === 'true';
+
       if (uploadedImage) {
         member.image = {
           url: uploadedImage.secure_url,
           publicId: uploadedImage.public_id,
+        };
+      } else if (shouldRemoveImage) {
+        member.image = {
+          url: '',
+          publicId: '',
         };
       }
 
       await member.save();
 
       // Delete the previous image only after the database update succeeds.
-      if (uploadedImage && oldPublicId) {
+      if ((uploadedImage || shouldRemoveImage) && oldPublicId) {
         try {
           await deleteCloudinaryImage(oldPublicId);
         } catch (cleanupError) {

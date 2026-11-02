@@ -20,10 +20,12 @@ app.get('/api/health', (req, res) => {
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
 const coreMemberRoutes = require('./routes/coreMemberRoutes');
+const contactRoutes = require('./routes/contactRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/core-members', coreMemberRoutes);
+app.use('/api/contact', contactRoutes);
 
 const PORT = process.env.PORT || 5000;
 
