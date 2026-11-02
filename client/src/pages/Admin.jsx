@@ -14,6 +14,9 @@ const initialForm = {
   venue: '',
   mode: 'In-person',
   meetingLink: '',
+  registrationLink: '',
+  linkedinPostLink: '',
+  instagramPostLink: '',
   status: 'draft',
 };
 
@@ -22,6 +25,13 @@ const categories = [
   'Hackathon',
   'Community Meetup',
 ];
+
+const initialCoreMemberForm = {
+  name: '',
+  role: '',
+  linkedinLink: '',
+  instagramLink: '',
+};
 
 function toDateTimeLocal(value) {
   if (!value) return '';
@@ -32,6 +42,17 @@ function toDateTimeLocal(value) {
   return new Date(date.getTime() - offset)
     .toISOString()
     .slice(0, 16);
+}
+
+function isValidOptionalUrl(value) {
+  if (!value.trim()) return true;
+
+  try {
+    const url = new URL(value.trim());
+    return url.protocol === 'http:' || url.protocol === 'https:';
+  } catch {
+    return false;
+  }
 }
 
 export default function Admin() {
@@ -50,13 +71,9 @@ export default function Admin() {
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
-  const [activeSection, setActiveSection] = useState('home');
+  const [removeEventImage, setRemoveEventImage] = useState(false);
 
-  const initialCoreMemberForm = {
-    name: '',
-    role: '',
-    link: '',
-  };
+  const [activeSection, setActiveSection] = useState('home');
 
   const [coreMembers, setCoreMembers] = useState([]);
   const [showCoreMemberForm, setShowCoreMemberForm] = useState(false);
@@ -64,6 +81,7 @@ export default function Admin() {
   const [editingCoreMemberId, setEditingCoreMemberId] = useState(null);
   const [coreMemberImage, setCoreMemberImage] = useState(null);
   const [coreMemberImagePreview, setCoreMemberImagePreview] = useState('');
+  const [removeCoreMemberImage, setRemoveCoreMemberImage] = useState(false);
   const [coreMembersLoading, setCoreMembersLoading] = useState(false);
   const [coreMemberSaving, setCoreMemberSaving] = useState(false);
   const [coreMemberSearch, setCoreMemberSearch] = useState('');
@@ -86,6 +104,25 @@ export default function Admin() {
 
   const [eventSearch, setEventSearch] = useState('');
   const [eventCategory, setEventCategory] = useState('all');
+
+  // Revoke temporary image preview URLs to avoid memory leaks.
+  function clearEventImagePreview() {
+    if (imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setSelectedImage(null);
+    setImagePreview('');
+  }
+
+  function clearCoreMemberImagePreview() {
+    if (coreMemberImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(coreMemberImagePreview);
+    }
+
+    setCoreMemberImage(null);
+    setCoreMemberImagePreview('');
+  }
 
   const loadSummary = useCallback(async () => {
     try {
@@ -128,7 +165,6 @@ export default function Admin() {
     }
   }, [memberSearch]);
 
-
   const loadCoreMembers = useCallback(async () => {
     setCoreMembersLoading(true);
 
@@ -158,10 +194,11 @@ export default function Admin() {
   }
 
   function resetCoreMemberForm() {
+    clearCoreMemberImagePreview();
+
     setCoreMemberForm(initialCoreMemberForm);
     setEditingCoreMemberId(null);
-    setCoreMemberImage(null);
-    setCoreMemberImagePreview('');
+    setRemoveCoreMemberImage(false);
 
     const input = document.getElementById('core-member-image');
     if (input) input.value = '';
@@ -182,20 +219,66 @@ export default function Admin() {
   }
 
   function editCoreMember(member) {
+    clearCoreMemberImagePreview();
+
     setCoreMemberForm({
       name: member.name || '',
       role: member.role || '',
-      link: member.link || member.linkedin || member.github || '',
+      linkedinLink: member.linkedinLink || '',
+      instagramLink: member.instagramLink || '',
     });
 
     setEditingCoreMemberId(member._id);
     setShowCoreMemberForm(true);
     setCoreMemberImage(null);
     setCoreMemberImagePreview(member.image?.url || '');
+    setRemoveCoreMemberImage(false);
+
+    const input = document.getElementById('core-member-image');
+    if (input) input.value = '';
+
     setError('');
     setMessage('');
 
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function handleCoreMemberImageChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be 5 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    if (coreMemberImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(coreMemberImagePreview);
+    }
+
+    setError('');
+    setCoreMemberImage(file);
+    setCoreMemberImagePreview(URL.createObjectURL(file));
+
+    // Selecting a replacement cancels the removal request.
+    setRemoveCoreMemberImage(false);
+  }
+
+  function removeCurrentCoreMemberImage() {
+    if (coreMemberImagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(coreMemberImagePreview);
+    }
+
+    setCoreMemberImage(null);
+    setCoreMemberImagePreview('');
+
+    // When editing, this tells the backend to remove the saved image.
+    setRemoveCoreMemberImage(Boolean(editingCoreMemberId));
+
+    const input = document.getElementById('core-member-image');
+    if (input) input.value = '';
   }
 
   async function saveCoreMember(event) {
@@ -213,15 +296,22 @@ export default function Admin() {
       return;
     }
 
-    if (coreMemberForm.link.trim()) {
+    const optionalLinks = [
+      ['LinkedIn profile link', coreMemberForm.linkedinLink],
+      ['Instagram profile link', coreMemberForm.instagramLink],
+    ];
+
+    for (const [label, value] of optionalLinks) {
+      if (!value.trim()) continue;
+
       try {
-        const url = new URL(coreMemberForm.link.trim());
+        const url = new URL(value.trim());
 
         if (!['http:', 'https:'].includes(url.protocol)) {
           throw new Error();
         }
       } catch {
-        setError('Please enter a valid supporting link starting with https://');
+        setError(`${label} must be a valid URL starting with https://`);
         return;
       }
     }
@@ -233,10 +323,16 @@ export default function Admin() {
 
       formData.append('name', coreMemberForm.name.trim());
       formData.append('role', coreMemberForm.role.trim());
-      formData.append('link', coreMemberForm.link.trim());
+      formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
+      formData.append('instagramLink', coreMemberForm.instagramLink.trim());
 
       if (coreMemberImage) {
         formData.append('image', coreMemberImage);
+      }
+
+      // Send an explicit removal instruction when editing an existing member.
+      if (editingCoreMemberId && removeCoreMemberImage) {
+        formData.append('removeImage', 'true');
       }
 
       const result = editingCoreMemberId
@@ -313,7 +409,6 @@ export default function Admin() {
     loadEvents();
   }, [loadEvents]);
 
-  // Start each dashboard section at the top, even if the home page was scrolled.
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeSection]);
@@ -349,16 +444,22 @@ export default function Admin() {
   }
 
   function openCreateForm() {
+    clearEventImagePreview();
+
     setEditingId(null);
     setForm(initialForm);
-    setSelectedImage(null);
-    setImagePreview('');
+    setRemoveEventImage(false);
     setError('');
     setMessage('');
     setShowEventForm(true);
+
+    const input = document.getElementById('bannerImage');
+    if (input) input.value = '';
   }
 
   function startEditing(event) {
+    clearEventImagePreview();
+
     setEditingId(event._id);
 
     setForm({
@@ -370,24 +471,70 @@ export default function Admin() {
       venue: event.venue || '',
       mode: event.mode || 'In-person',
       meetingLink: event.meetingLink || '',
+      registrationLink: event.registrationLink || '',
+      linkedinPostLink: event.linkedinPostLink || '',
+      instagramPostLink: event.instagramPostLink || '',
       status: event.status || 'draft',
     });
 
     setSelectedImage(null);
     setImagePreview(event.bannerImage?.url || '');
+    setRemoveEventImage(false);
     setMessage('');
     setError('');
     setShowEventForm(true);
 
+    const input = document.getElementById('bannerImage');
+    if (input) input.value = '';
+
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
+  function handleEventImageChange(event) {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      setError('Image must be 5 MB or smaller.');
+      event.target.value = '';
+      return;
+    }
+
+    if (imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setSelectedImage(file);
+    setImagePreview(URL.createObjectURL(file));
+
+    // A replacement image cancels any previous removal request.
+    setRemoveEventImage(false);
+    setError('');
+  }
+
+  function removeCurrentEventImage() {
+    if (imagePreview.startsWith('blob:')) {
+      URL.revokeObjectURL(imagePreview);
+    }
+
+    setSelectedImage(null);
+    setImagePreview('');
+
+    // For an existing event, tell the backend to remove the saved banner.
+    setRemoveEventImage(Boolean(editingId));
+
+    const input = document.getElementById('bannerImage');
+    if (input) input.value = '';
+  }
+
   function cancelEditing() {
+    clearEventImagePreview();
+
     setShowEventForm(false);
     setEditingId(null);
     setForm(initialForm);
-    setSelectedImage(null);
-    setImagePreview('');
+    setRemoveEventImage(false);
     setError('');
     setMessage('');
 
@@ -399,6 +546,7 @@ export default function Admin() {
     event.preventDefault();
     setError('');
     setMessage('');
+
     if (!form.date || Number.isNaN(new Date(form.date).getTime())) {
       setError('Please provide a valid event start date and time.');
       return;
@@ -407,6 +555,19 @@ export default function Admin() {
     if (form.endDate && new Date(form.endDate) < new Date(form.date)) {
       setError('The end date and time must be after the start date.');
       return;
+    }
+
+    const optionalLinks = [
+      ['Registration link', form.registrationLink],
+      ['LinkedIn post link', form.linkedinPostLink],
+      ['Instagram post link', form.instagramPostLink],
+    ];
+
+    for (const [label, value] of optionalLinks) {
+      if (!isValidOptionalUrl(value)) {
+        setError(`${label} must be a valid URL starting with https://`);
+        return;
+      }
     }
 
     setSaving(true);
@@ -425,10 +586,18 @@ export default function Admin() {
       formData.append('venue', form.venue);
       formData.append('mode', form.mode);
       formData.append('meetingLink', form.meetingLink);
+      formData.append('registrationLink', form.registrationLink.trim());
+      formData.append('linkedinPostLink', form.linkedinPostLink.trim());
+      formData.append('instagramPostLink', form.instagramPostLink.trim());
       formData.append('status', form.status);
 
       if (selectedImage) {
         formData.append('bannerImage', selectedImage);
+      }
+
+      // Send an explicit removal instruction when editing an existing event.
+      if (editingId && removeEventImage) {
+        formData.append('removeBannerImage', 'true');
       }
 
       const result = editingId
@@ -442,10 +611,11 @@ export default function Admin() {
         });
 
       setMessage(result.message || 'Event saved successfully.');
+
+      clearEventImagePreview();
       setForm(initialForm);
       setEditingId(null);
-      setSelectedImage(null);
-      setImagePreview('');
+      setRemoveEventImage(false);
       setShowEventForm(false);
 
       const imageInput = document.getElementById('bannerImage');
@@ -553,18 +723,16 @@ export default function Admin() {
     const matchesSearch = `${event.title || ''} ${event.venue || ''}`
       .toLowerCase()
       .includes(eventSearch.trim().toLowerCase());
+
     const matchesCategory = eventCategory === 'all' ||
       (event.category || '').toLowerCase() === eventCategory.toLowerCase();
+
     return matchesSearch && matchesCategory;
   });
 
   function goBackToDashboard() {
     if (showEventForm) {
-      setShowEventForm(false);
-      setEditingId(null);
-      setForm(initialForm);
-      setSelectedImage(null);
-      setImagePreview('');
+      cancelEditing();
     } else if (showCoreMemberForm) {
       cancelCoreMemberEditing();
     } else {
@@ -579,7 +747,6 @@ export default function Admin() {
   return (
     <main className="admin-page">
       <header className="admin-topbar">
-
         <Link
           className="navbar-brand d-flex align-items-center"
           to="/"
@@ -589,15 +756,6 @@ export default function Admin() {
             alt="CodeSphere Logo"
             className="navbar-logo-img"
           />
-
-          <div className="d-flex flex-column ms-2">
-            <span className="textLogo-code">
-              Code<span className="textLogo-sphere">Sphere</span>
-            </span>
-            <span className="textLogo-tag">
-              — CODING COMMUNITY —
-            </span>
-          </div>
         </Link>
 
         <div className="admin-topbar-actions">
@@ -625,22 +783,19 @@ export default function Admin() {
                 </p>
               </div>
             </div>
+
             <div className="admin-section-buttons">
               <button
                 type="button"
                 className="admin-section-button"
                 onClick={() => {
                   setActiveSection('events');
-                  setShowEventForm(false);
-                  setEditingId(null);
-                  setForm(initialForm);
-                  setSelectedImage(null);
-                  setImagePreview('');
-                  setError('');
-                  setMessage('');
+                  cancelEditing();
                 }}
               >
-                <span className="admin-section-icon"><i className="bi bi-calendar-event" aria-hidden="true" /></span>
+                <span className="admin-section-icon">
+                  <i className="bi bi-calendar-event" aria-hidden="true" />
+                </span>
                 <span className="admin-section-copy">
                   <strong>Events</strong>
                   <small>Manage events</small>
@@ -653,7 +808,9 @@ export default function Admin() {
                 className="admin-section-button"
                 onClick={() => setActiveSection('attendance')}
               >
-                <span className="admin-section-icon"><i className="bi bi-clipboard-check" aria-hidden="true" /></span>
+                <span className="admin-section-icon">
+                  <i className="bi bi-clipboard-check" aria-hidden="true" />
+                </span>
                 <span className="admin-section-copy">
                   <strong>Attendance</strong>
                   <small>Track attendance</small>
@@ -666,7 +823,9 @@ export default function Admin() {
                 className="admin-section-button"
                 onClick={() => setActiveSection('coreMembers')}
               >
-                <span className="admin-section-icon"><i className="bi bi-people" aria-hidden="true" /></span>
+                <span className="admin-section-icon">
+                  <i className="bi bi-people" aria-hidden="true" />
+                </span>
                 <span className="admin-section-copy">
                   <strong>Core Members</strong>
                   <small>Manage team</small>
@@ -674,6 +833,7 @@ export default function Admin() {
                 <i className="bi bi-arrow-up-right admin-section-arrow" aria-hidden="true" />
               </button>
             </div>
+
             <div className="admin-dashboard-heading">
               <div>
                 <h2>Dashboard Overview</h2>
@@ -682,6 +842,7 @@ export default function Admin() {
                 </p>
               </div>
             </div>
+
             <div className="admin-stats-grid admin-stats-compact">
               <article className="admin-stat-card">
                 <div className="admin-stat-icon">
@@ -690,8 +851,7 @@ export default function Admin() {
                 <p>Total Workshops</p>
                 <strong>
                   {events.filter(
-                    (event) =>
-                      event.category?.toLowerCase() === 'workshop'
+                    (event) => event.category?.toLowerCase() === 'workshop'
                   ).length}
                 </strong>
               </article>
@@ -703,8 +863,7 @@ export default function Admin() {
                 <p>Total Hackathons</p>
                 <strong>
                   {events.filter(
-                    (event) =>
-                      event.category?.toLowerCase() === 'hackathon'
+                    (event) => event.category?.toLowerCase() === 'hackathon'
                   ).length}
                 </strong>
               </article>
@@ -842,29 +1001,77 @@ export default function Admin() {
                     />
                   </div>
 
+                  {form.mode !== 'Online' && (
+                    <div className="admin-form-field">
+                      <label htmlFor="event-venue">Venue</label>
+                      <input
+                        id="event-venue"
+                        name="venue"
+                        value={form.venue}
+                        onChange={updateField}
+                        maxLength={200}
+                        placeholder="Campus hall or event location"
+                        required={form.mode === 'In-person'}
+                      />
+                    </div>
+                  )}
+
+                  {form.mode !== 'In-person' && (
+                    <div className="admin-form-field">
+                      <label htmlFor="event-meeting-link">
+                        Meeting link (optional)
+                      </label>
+                      <input
+                        id="event-meeting-link"
+                        name="meetingLink"
+                        type="url"
+                        value={form.meetingLink}
+                        onChange={updateField}
+                        placeholder="https://..."
+                        required={form.mode === 'Online'}
+                      />
+                    </div>
+                  )}
+
                   <div className="admin-form-field">
-                    <label htmlFor="event-venue">Venue</label>
+                    <label htmlFor="event-registration-link">
+                      Registration link (optional)
+                    </label>
                     <input
-                      id="event-venue"
-                      name="venue"
-                      value={form.venue}
+                      id="event-registration-link"
+                      name="registrationLink"
+                      type="url"
+                      value={form.registrationLink}
                       onChange={updateField}
-                      maxLength={200}
-                      placeholder="Campus hall or online"
+                      placeholder="https://..."
                     />
                   </div>
 
                   <div className="admin-form-field">
-                    <label htmlFor="event-meeting-link">
-                      Meeting link (optional)
+                    <label htmlFor="event-linkedin-post">
+                      LinkedIn post link (optional)
                     </label>
                     <input
-                      id="event-meeting-link"
-                      name="meetingLink"
+                      id="event-linkedin-post"
+                      name="linkedinPostLink"
                       type="url"
-                      value={form.meetingLink}
+                      value={form.linkedinPostLink}
                       onChange={updateField}
-                      placeholder="https://..."
+                      placeholder="https://www.linkedin.com/..."
+                    />
+                  </div>
+
+                  <div className="admin-form-field">
+                    <label htmlFor="event-instagram-post">
+                      Instagram post link (optional)
+                    </label>
+                    <input
+                      id="event-instagram-post"
+                      name="instagramPostLink"
+                      type="url"
+                      value={form.instagramPostLink}
+                      onChange={updateField}
+                      placeholder="https://www.instagram.com/..."
                     />
                   </div>
 
@@ -893,21 +1100,7 @@ export default function Admin() {
                       type="file"
                       className="form-control"
                       accept="image/png,image/jpeg,image/webp"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-
-                        if (!file) {
-                          setSelectedImage(null);
-                          return;
-                        }
-
-                        if (imagePreview.startsWith('blob:')) {
-                          URL.revokeObjectURL(imagePreview);
-                        }
-
-                        setSelectedImage(file);
-                        setImagePreview(URL.createObjectURL(file));
-                      }}
+                      onChange={handleEventImageChange}
                     />
 
                     {imagePreview && (
@@ -922,6 +1115,14 @@ export default function Admin() {
                             borderRadius: '8px',
                           }}
                         />
+
+                        <button
+                          type="button"
+                          className="admin-secondary-button mt-2"
+                          onClick={removeCurrentEventImage}
+                        >
+                          Remove image
+                        </button>
                       </div>
                     )}
 
@@ -976,10 +1177,7 @@ export default function Admin() {
                       onClick={loadEvents}
                       disabled={loading}
                     >
-                      <i
-                        className="bi bi-arrow-clockwise"
-                        aria-hidden="true"
-                      />
+                      <i className="bi bi-arrow-clockwise" aria-hidden="true" />
                       <span className="smallDisplayNone">Refresh</span>
                     </button>
 
@@ -1005,6 +1203,7 @@ export default function Admin() {
                       aria-label="Search events"
                     />
                   </label>
+
                   <select
                     value={eventCategory}
                     onChange={(e) => setEventCategory(e.target.value)}
@@ -1012,7 +1211,9 @@ export default function Admin() {
                   >
                     <option value="all">All categories</option>
                     {categories.map((category) => (
-                      <option key={category} value={category}>{category}</option>
+                      <option key={category} value={category}>
+                        {category}
+                      </option>
                     ))}
                   </select>
                 </div>
@@ -1091,10 +1292,12 @@ export default function Admin() {
                 >
                   <i className="bi bi-arrow-left mt-1" aria-hidden="true" />
                 </button>
-                <h2><span className='smallDisplayNone'>Manage</span> Attendance</h2>
+                <h2>
+                  <span className="smallDisplayNone">Manage</span> Attendance
+                </h2>
               </div>
 
-              <div className='admin-event-actions'>
+              <div className="admin-event-actions">
                 <button
                   type="button"
                   className="admin-secondary-button"
@@ -1104,7 +1307,7 @@ export default function Admin() {
                   }}
                   disabled={membersLoading || attendanceLoading}
                 >
-                  <i className="bi bi-arrow-clockwise" aria-hidden="true" />{' '}
+                  <i className="bi bi-arrow-clockwise" aria-hidden="true" />
                   <span className="smallDisplayNone">Refresh</span>
                 </button>
               </div>
@@ -1162,10 +1365,10 @@ export default function Admin() {
                 <div
                   className="attendance-percentage-circle"
                   style={{
-                    "--attendance-percent": `${members.length > 0
+                    '--attendance-percent': `${members.length > 0
                       ? Math.round((presentCount / members.length) * 100)
                       : 0
-                      }%`
+                      }%`,
                   }}
                 >
                   <div className="attendance-circle-inner">
@@ -1180,7 +1383,7 @@ export default function Admin() {
               </div>
             </div>
 
-            <div className='members-list d-flex flex-column gap-4'>
+            <div className="members-list d-flex flex-column gap-4">
               <div className="admin-form-field">
                 <label htmlFor="member-search">Search members</label>
                 <input
@@ -1241,11 +1444,8 @@ export default function Admin() {
                           >
                             <button
                               type="button"
-                              className={`admin-toggle-option present-option ${status === 'present' ? 'active' : ''
-                                }`}
-                              onClick={() =>
-                                updateAttendance(member._id, 'present')
-                              }
+                              className={`admin-toggle-option present-option ${status === 'present' ? 'active' : ''}`}
+                              onClick={() => updateAttendance(member._id, 'present')}
                               disabled={savingRow || status === 'present'}
                               aria-pressed={status === 'present'}
                             >
@@ -1255,11 +1455,8 @@ export default function Admin() {
 
                             <button
                               type="button"
-                              className={`admin-toggle-option absent-option ${status === 'absent' ? 'active' : ''
-                                }`}
-                              onClick={() =>
-                                updateAttendance(member._id, 'absent')
-                              }
+                              className={`admin-toggle-option absent-option ${status === 'absent' ? 'active' : ''}`}
+                              onClick={() => updateAttendance(member._id, 'absent')}
                               disabled={savingRow || status === 'absent'}
                               aria-pressed={status === 'absent'}
                             >
@@ -1283,17 +1480,25 @@ export default function Admin() {
                 </div>
               )}
             </div>
-
           </section>
         )}
 
         {activeSection === 'coreMembers' && (
           <>
-            {error && <div className="auth-error" role="alert">{error}</div>}
-            {message && <div className="auth-success" role="status">{message}</div>}
+            {error && (
+              <div className="auth-error" role="alert">
+                {error}
+              </div>
+            )}
+
+            {message && (
+              <div className="auth-success" role="status">
+                {message}
+              </div>
+            )}
 
             {showCoreMemberForm ? (
-              <section className='admin-panel'>
+              <section className="admin-panel">
                 <button
                   type="button"
                   className="admin-back-arrow mb-3"
@@ -1303,14 +1508,15 @@ export default function Admin() {
                   <i className="bi bi-arrow-left" aria-hidden="true" />
                 </button>
 
-                <h2>{editingCoreMemberId ? 'Edit Core Member' : 'Add Core Member'}</h2>
+                <h2>
+                  {editingCoreMemberId ? 'Edit Core Member' : 'Add Core Member'}
+                </h2>
 
                 <p className="admin-panel-subtitle">
                   Save a draft first or publish an event for visitors.
                 </p>
 
                 <form className="admin-event-form" onSubmit={saveCoreMember}>
-
                   <div className="admin-form-grid">
                     <div className="admin-form-field">
                       <label htmlFor="core-member-name">Full name *</label>
@@ -1337,20 +1543,30 @@ export default function Admin() {
                       />
                     </div>
 
-                    <div className="admin-form-field admin-form-field-full">
-                      <label htmlFor="core-member-link">Supporting link</label>
+                    <div className="admin-form-field">
+                      <label htmlFor="core-member-linkedin">LinkedIn profile</label>
                       <input
-                        id="core-member-link"
-                        name="link"
+                        id="core-member-linkedin"
+                        name="linkedinLink"
                         type="url"
-                        value={coreMemberForm.link}
+                        value={coreMemberForm.linkedinLink}
                         onChange={updateCoreMemberField}
                         maxLength={500}
-                        placeholder="https://linkedin.com/in/... or your portfolio"
+                        placeholder="https://www.linkedin.com/in/..."
                       />
-                      <small className="text-secondary">
-                        LinkedIn, GitHub, portfolio, or another profile.
-                      </small>
+                    </div>
+
+                    <div className="admin-form-field">
+                      <label htmlFor="core-member-instagram">Instagram profile</label>
+                      <input
+                        id="core-member-instagram"
+                        name="instagramLink"
+                        type="url"
+                        value={coreMemberForm.instagramLink}
+                        onChange={updateCoreMemberField}
+                        maxLength={500}
+                        placeholder="https://www.instagram.com/..."
+                      />
                     </div>
 
                     <div className="admin-form-field admin-form-field-full">
@@ -1363,62 +1579,27 @@ export default function Admin() {
                         type="file"
                         accept="image/jpeg,image/png,image/webp"
                         required={!editingCoreMemberId && !coreMemberImage}
-                        onChange={(event) => {
-                          const file = event.target.files?.[0];
-                          if (!file) return;
-
-                          if (file.size > 5 * 1024 * 1024) {
-                            setError('Image must be 5 MB or smaller.');
-                            event.target.value = '';
-                            return;
-                          }
-
-                          if (coreMemberImagePreview.startsWith('blob:')) {
-                            URL.revokeObjectURL(coreMemberImagePreview);
-                          }
-
-                          setError('');
-                          setCoreMemberImage(file);
-                          setCoreMemberImagePreview(URL.createObjectURL(file));
-                        }}
+                        onChange={handleCoreMemberImageChange}
                       />
+
+                      {coreMemberImagePreview && (
+                        <div className="core-member-image-preview">
+                          <img
+                            src={coreMemberImagePreview}
+                            alt="Core member preview"
+                          />
+
+                          <button
+                            type="button"
+                            className="admin-secondary-button"
+                            onClick={removeCurrentCoreMemberImage}
+                          >
+                            Remove image
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
-
-                  {coreMemberImagePreview && (
-                    <div className="core-member-image-preview">
-                      <img
-                        src={coreMemberImagePreview}
-                        alt="Core member preview"
-                      />
-
-                      <button
-                        type="button"
-                        className="admin-secondary-button"
-                        onClick={() => {
-                          if (coreMemberImagePreview.startsWith('blob:')) {
-                            URL.revokeObjectURL(coreMemberImagePreview);
-                          }
-
-                          setCoreMemberImage(null);
-
-                          // Restore the existing image when editing a member.
-                          setCoreMemberImagePreview(
-                            editingCoreMemberId
-                              ? coreMembers.find(
-                                (member) => member._id === editingCoreMemberId
-                              )?.image?.url || ''
-                              : ''
-                          );
-
-                          const input = document.getElementById('core-member-image');
-                          if (input) input.value = '';
-                        }}
-                      >
-                        Remove image
-                      </button>
-                    </div>
-                  )}
 
                   <div className="admin-form-actions admin-field-full">
                     <button
@@ -1447,7 +1628,7 @@ export default function Admin() {
             ) : (
               <section className="admin-events-section admin-core-members-list">
                 <div className="admin-section-heading admin-events-dashboard-heading">
-                  <div className='flex-column align-items-start'>
+                  <div className="flex-column align-items-start">
                     <button
                       type="button"
                       className="admin-back-arrow"
@@ -1456,7 +1637,10 @@ export default function Admin() {
                     >
                       <i className="bi bi-arrow-left" aria-hidden="true" />
                     </button>
-                    <h2><span className='smallDisplayNone'>Manage</span> Core Members</h2>
+
+                    <h2>
+                      <span className="smallDisplayNone">Manage</span> Core Members
+                    </h2>
                   </div>
 
                   <div className="admin-event-actions">
@@ -1466,10 +1650,7 @@ export default function Admin() {
                       onClick={loadCoreMembers}
                       disabled={coreMembersLoading}
                     >
-                      <i
-                        className="bi bi-arrow-clockwise"
-                        aria-hidden="true"
-                      />
+                      <i className="bi bi-arrow-clockwise" aria-hidden="true" />
                       <span className="smallDisplayNone">Refresh</span>
                     </button>
 
@@ -1502,6 +1683,7 @@ export default function Admin() {
                   <p className="admin-empty">Loading core members...</p>
                 ) : coreMembers.filter((member) => {
                   const query = coreMemberSearch.trim().toLowerCase();
+
                   return (
                     member.name?.toLowerCase().includes(query) ||
                     member.role?.toLowerCase().includes(query)
@@ -1517,13 +1699,17 @@ export default function Admin() {
                     {coreMembers
                       .filter((member) => {
                         const query = coreMemberSearch.trim().toLowerCase();
+
                         return (
                           member.name?.toLowerCase().includes(query) ||
                           member.role?.toLowerCase().includes(query)
                         );
                       })
                       .map((member) => (
-                        <article className="admin-event-item admin-core-member-item" key={member._id}>
+                        <article
+                          className="admin-event-item admin-core-member-item"
+                          key={member._id}
+                        >
                           {member.image?.url ? (
                             <img
                               className="admin-core-member-avatar"
@@ -1540,17 +1726,31 @@ export default function Admin() {
                             <h3>{member.name}</h3>
                             <p className="core-member-role">{member.role}</p>
 
-                            {member.link && (
-                              <a
-                                className="core-member-supporting-link"
-                                href={member.link}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                <i className="bi bi-box-arrow-up-right" aria-hidden="true" />
-                                <span>View profile</span>
-                              </a>
-                            )}
+                            <div className="admin-core-member-social-links">
+                              {member.linkedinLink && (
+                                <a
+                                  href={member.linkedinLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={`LinkedIn profile of ${member.name}`}
+                                >
+                                  <i className="bi bi-linkedin" aria-hidden="true" />
+                                  <span>LinkedIn</span>
+                                </a>
+                              )}
+
+                              {member.instagramLink && (
+                                <a
+                                  href={member.instagramLink}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  aria-label={`Instagram profile of ${member.name}`}
+                                >
+                                  <i className="bi bi-instagram" aria-hidden="true" />
+                                  <span>Instagram</span>
+                                </a>
+                              )}
+                            </div>
 
                             <div className="admin-event-actions admin-core-member-actions">
                               <button
@@ -1560,6 +1760,7 @@ export default function Admin() {
                               >
                                 <i className="bi bi-pencil" aria-hidden="true" /> Edit
                               </button>
+
                               <button
                                 type="button"
                                 className="admin-secondary-button"
@@ -1577,7 +1778,6 @@ export default function Admin() {
             )}
           </>
         )}
-
       </div>
     </main>
   );

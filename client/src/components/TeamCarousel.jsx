@@ -1,5 +1,5 @@
+
 import { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import '../css/CoreMembers.css';
 
@@ -7,8 +7,12 @@ export default function TeamCarousel() {
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const trackRef = useRef(null);
+  const [isAutoScrolling, setIsAutoScrolling] = useState(true);
 
+  const trackRef = useRef(null);
+  const isPausedRef = useRef(false);
+
+  // Load core team members.
   useEffect(() => {
     let active = true;
 
@@ -36,7 +40,9 @@ export default function TeamCarousel() {
           setError(err.message || 'Unable to load team members.');
         }
       } finally {
-        if (active) setLoading(false);
+        if (active) {
+          setLoading(false);
+        }
       }
     }
 
@@ -47,16 +53,73 @@ export default function TeamCarousel() {
     };
   }, []);
 
-  function scrollTrack(direction) {
-    if (!trackRef.current) return;
-
+  // Automatically scroll horizontally in one direction.
+  useEffect(() => {
     const track = trackRef.current;
-    const card = track.querySelector('.core-member-slide');
-    const gap = 20;
-    const distance = card ? card.getBoundingClientRect().width + gap : track.clientWidth;
 
-    track.scrollBy({
-      left: direction * distance,
+    if (!track || members.length < 2 || !isAutoScrolling) return;
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      return;
+    }
+
+    let animationFrame;
+    let previousTime = 0;
+
+    const speed = 50; // Pixels per second.
+
+    const animate = (time) => {
+      if (!previousTime) previousTime = time;
+
+      const deltaTime = Math.min((time - previousTime) / 1000, 0.05);
+      previousTime = time;
+
+      if (!isPausedRef.current) {
+        const maxScroll = track.scrollWidth - track.clientWidth;
+
+        if (maxScroll > 0) {
+          track.scrollLeft += speed * deltaTime;
+
+          // Return to the beginning after reaching the last card.
+          if (track.scrollLeft >= maxScroll) {
+            track.scrollLeft = 0;
+          }
+        }
+      }
+
+      animationFrame = requestAnimationFrame(animate);
+    };
+
+    animationFrame = requestAnimationFrame(animate);
+
+    return () => {
+      cancelAnimationFrame(animationFrame);
+    };
+  }, [members.length, isAutoScrolling]);
+
+  // Manual carousel navigation.
+  function scrollTrack(direction) {
+    const track = trackRef.current;
+
+    if (!track) return;
+
+    const card = track.querySelector('.core-member-slide');
+    const styles = window.getComputedStyle(track);
+    const gap = parseFloat(styles.columnGap) || 20;
+
+    const distance = card
+      ? card.getBoundingClientRect().width + gap
+      : track.clientWidth;
+
+    const maxScroll = track.scrollWidth - track.clientWidth;
+
+    const nextPosition = Math.max(
+      0,
+      Math.min(maxScroll, track.scrollLeft + direction * distance)
+    );
+
+    track.scrollTo({
+      left: nextPosition,
       behavior: 'smooth',
     });
   }
@@ -65,9 +128,13 @@ export default function TeamCarousel() {
     return (
       <section className="core-team-section" aria-busy="true">
         <div className="core-team-heading">
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
+          <p className="core-team-eyebrow">
+            <span className="core-team-eyebrow-line" />
+            THE PEOPLE BEHIND
+          </p>
           <h2>Meet Our Core Team</h2>
         </div>
+
         <p className="core-team-status">Loading our team...</p>
       </section>
     );
@@ -77,9 +144,13 @@ export default function TeamCarousel() {
     return (
       <section className="core-team-section">
         <div className="core-team-heading">
-          <p className="core-team-eyebrow">THE PEOPLE BEHIND CODESPHERE</p>
+          <p className="core-team-eyebrow">
+            <span className="core-team-eyebrow-line" />
+            THE PEOPLE BEHIND
+          </p>
           <h2>Meet Our Core Team</h2>
         </div>
+
         <p className="core-team-status">
           {error || 'Our team profiles will be available soon.'}
         </p>
@@ -88,17 +159,22 @@ export default function TeamCarousel() {
   }
 
   return (
-    <section className="core-team-section bg-info" aria-labelledby="core-team-title">
+    <section
+      className="core-team-section bg-info"
+      aria-labelledby="core-team-title"
+    >
       <div className="core-team-heading">
         <div>
           <p className="core-team-eyebrow">
-            <span className="section-eyebrow-line" />
+            <span className="core-team-eyebrow-line" />
             THE PEOPLE BEHIND
           </p>
+
           <h2 id="core-team-title">
             Meet Our{' '}
             <span className="gold-text">Core Team.</span>
           </h2>
+
           <p className="core-team-description">
             The people bringing ideas to life and building our community.
           </p>
@@ -108,23 +184,44 @@ export default function TeamCarousel() {
           <button
             type="button"
             className="core-team-arrow"
-            onClick={() => scrollTrack(-1)}
-            aria-label="Previous team members"
+            onClick={() => {
+              setIsAutoScrolling((current) => !current);
+            }}
+            aria-label={
+              isAutoScrolling
+                ? 'Pause automatic scrolling'
+                : 'Resume automatic scrolling'
+            }
+            title={isAutoScrolling ? 'Pause scrolling' : 'Resume scrolling'}
           >
-            <i className="bi bi-arrow-left" aria-hidden="true" />
-          </button>
-          <button
-            type="button"
-            className="core-team-arrow"
-            onClick={() => scrollTrack(1)}
-            aria-label="Next team members"
-          >
-            <i className="bi bi-arrow-right" aria-hidden="true" />
+            <i
+              className={`bi ${
+                isAutoScrolling ? 'bi-pause-fill' : 'bi-play-fill'
+              }`}
+              aria-hidden="true"
+            />
           </button>
         </div>
       </div>
 
-      <div className="core-team-track" ref={trackRef}>
+      <div
+        className="core-team-track"
+        ref={trackRef}
+        onMouseEnter={() => {
+          isPausedRef.current = true;
+        }}
+        onMouseLeave={() => {
+          isPausedRef.current = false;
+        }}
+        onFocusCapture={() => {
+          isPausedRef.current = true;
+        }}
+        onBlurCapture={(event) => {
+          if (!event.currentTarget.contains(event.relatedTarget)) {
+            isPausedRef.current = false;
+          }
+        }}
+      >
         {members.map((member) => (
           <article className="core-member-slide" key={member._id}>
             <div className="core-member-photo-wrap">
@@ -136,40 +233,30 @@ export default function TeamCarousel() {
                   loading="lazy"
                 />
               ) : (
-                <div className="core-member-photo-fallback" aria-hidden="true">
+                <div
+                  className="core-member-photo-fallback"
+                  aria-hidden="true"
+                >
                   {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
-            </div>
 
-            <div className="core-member-info">
-              <h3>{member.name}</h3>
-              <p className="core-member-role">{member.role}</p>
-
-              {/* {member.link && (
-                <a
-                  className="core-member-link"
-                  href={member.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                >
-                  Check out
-                  <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                </a>
-              )} */}
               <div className="core-member-socials">
-                <a
-                  href={member.linkedin}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label={`${member.name} on LinkedIn`}
-                  title="LinkedIn"
-                >
-                  <i className="bi bi-linkedin" aria-hidden="true" />
-                </a>
-                {member.linkedin && (
+                {member.instagramLink && (
                   <a
-                    href={member.linkedin}
+                    href={member.instagramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                )}
+
+                {member.linkedinLink && (
+                  <a
+                    href={member.linkedinLink}
                     target="_blank"
                     rel="noopener noreferrer"
                     aria-label={`${member.name} on LinkedIn`}
@@ -178,49 +265,12 @@ export default function TeamCarousel() {
                     <i className="bi bi-linkedin" aria-hidden="true" />
                   </a>
                 )}
-
-                <a
-                    href={member.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on Instagram`}
-                    title="Instagram"
-                  >
-                    <i className="bi bi-instagram" aria-hidden="true" />
-                  </a>
-                {member.instagram && (
-                  <a
-                    href={member.instagram}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on Instagram`}
-                    title="Instagram"
-                  >
-                    <i className="bi bi-instagram" aria-hidden="true" />
-                  </a>
-                )}
-
-                <a
-                    href={member.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on GitHub`}
-                    title="GitHub"
-                  >
-                    <i className="bi bi-github" aria-hidden="true" />
-                  </a>
-                {member.github && (
-                  <a
-                    href={member.github}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on GitHub`}
-                    title="GitHub"
-                  >
-                    <i className="bi bi-github" aria-hidden="true" />
-                  </a>
-                )}
               </div>
+            </div>
+
+            <div className="core-member-info">
+              <h3>{member.name}</h3>
+              <p className="core-member-role">{member.role}</p>
             </div>
           </article>
         ))}

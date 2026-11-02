@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.svg';
@@ -9,18 +10,25 @@ const navLinks = [
   { label: 'Events', path: '/events' },
   { label: 'Materials', path: '/materials' },
   { label: 'Team', path: '/team' },
-  { label: 'Gallery', path: '/gallery' },
   { label: 'Contact Us', path: '/contact' },
 ];
 
 const Navbar = () => {
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
 
+  const profileRef = useRef(null);
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
+
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
+  const userName = user?.name || 'Student';
+  const userEmail = user?.email || '';
+
+  // Navbar scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -29,68 +37,97 @@ const Navbar = () => {
     window.addEventListener('scroll', handleScroll, { passive: true });
     handleScroll();
 
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close the drawer with Escape and prevent background scrolling.
+  // Close profile dropdown when clicking outside or pressing Escape
   useEffect(() => {
-    if (!isMenuOpen) return;
+    const handleOutsideClick = (event) => {
+      if (
+        profileRef.current &&
+        !profileRef.current.contains(event.target)
+      ) {
+        setIsProfileOpen(false);
+      }
+    };
 
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
+        setIsProfileOpen(false);
         setIsMenuOpen(false);
       }
     };
 
-    const previousOverflow = document.body.style.overflow;
-
-    document.body.style.overflow = 'hidden';
+    document.addEventListener('mousedown', handleOutsideClick);
+    document.addEventListener('touchstart', handleOutsideClick);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.body.style.overflow = previousOverflow;
+      document.removeEventListener('mousedown', handleOutsideClick);
+      document.removeEventListener('touchstart', handleOutsideClick);
       document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, []);
+
+  // Mobile drawer scroll lock
+  useEffect(() => {
+    if (!isMenuOpen) return;
+
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.body.style.overflow = previousOverflow;
     };
   }, [isMenuOpen]);
 
   const closeMenu = () => setIsMenuOpen(false);
 
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      await logout();
-      closeMenu();
-      navigate('/login', { replace: true });
-    } catch (error) {
-      console.error('Logout failed:', error);
-    }
+  const handleLogout = () => {
+    logout();
+    setIsProfileOpen(false);
+    closeMenu();
+    navigate('/login', { replace: true });
   };
+
+  const profileInitial = userName.charAt(0).toUpperCase();
+
+  const accountLink = isAuthenticated
+    ? (isAdmin ? '/admin' : '/profile')
+    : '/login';
+
+  const accountLabel = isAuthenticated
+    ? (isAdmin ? 'Admin Dashboard' : 'Profile')
+    : 'Sign In';
 
   return (
     <>
-      {/* Main Navbar */}
       <nav
-        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${isScrolled ? 'navbar-scrolled' : ''
-          }`}
+        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${
+          isScrolled ? 'navbar-scrolled' : ''
+        }`}
         aria-label="Main navigation"
       >
         <div className="container">
 
-          {/* Brand: Existing logo and wordmark */}
+          {/* Brand */}
           <Link
             className="navbar-brand d-flex align-items-center"
             to="/"
-            onClick={closeMenu}
+            onClick={() => {
+              closeMenu();
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'auto',
+              });
+            }}
           >
             <img
               src={logo}
               alt="CodeSphere Logo"
               className="navbar-logo-img"
             />
-
           </Link>
 
           {/* Mobile Hamburger */}
@@ -102,10 +139,7 @@ const Navbar = () => {
             aria-expanded={isMenuOpen}
             aria-controls="codesphere-mobile-menu"
           >
-            <i
-              className="bi bi-filter-right"
-              aria-hidden="true"
-            />
+            <i className="bi bi-filter-right" aria-hidden="true" />
           </button>
 
           {/* Desktop Navigation */}
@@ -118,126 +152,122 @@ const Navbar = () => {
                   </Link>
                 </li>
               ))}
-
-              {/* <li className="nav-item ms-lg-2">
-                <Link
-                  to={
-                    isAuthenticated
-                      ? (isAdmin ? '/admin' : '/profile')
-                      : '/login'
-                  }
-                  className="btn btn-gold navbar-login-button"
-                >
-                  {isAuthenticated
-                    ? (isAdmin ? 'Admin Dashboard' : 'Profile')
-                    : 'Login'}
-
-                  <i
-                    className={`bi ${isAuthenticated
-                      ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                      : 'bi-arrow-up-right'
-                      }`}
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li> */}
-
             </ul>
           </div>
 
-          {/* <div className="desktop-navigation d-none d-lg-flex">
-            <ul className='navbar-nav align-items-center gap-4'>
-              <li className="nav-item ms-lg-2">
-                <Link
-                  to={
-                    isAuthenticated
-                      ? (isAdmin ? '/admin' : '/profile')
-                      : '/login'
-                  }
-                  className="btn btn-gold navbar-login-button"
-                >
-                  {isAuthenticated
-                    ? (isAdmin ? 'Admin Dashboard' : 'Profile')
-                    : 'Login'}
-
-                  <i
-                    className={`bi ${isAuthenticated
-                      ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                      : 'bi-arrow-up-right'
-                      }`}
-                    aria-hidden="true"
-                  />
-                </Link>
-              </li>
-            </ul>
-          </div> */}
-
+          {/* Desktop Account Area */}
           <div className="desktop-navigation d-none d-lg-flex">
-            <ul className="navbar-nav align-items-center gap-3">
-              {isAuthenticated ? (
-                <li className="nav-item ms-lg-2">
-                  <Link
-                    to={isAdmin ? '/admin' : '/profile'}
-                    className="btn btn-gold border-0 navbar-login-button"
+            <ul className="navbar-nav align-items-center gap-4">
+
+              {isAuthenticated && !isAdmin ? (
+                <li
+                  className="nav-item profile-dropdown-wrapper"
+                  ref={profileRef}
+                  onMouseEnter={() => setIsProfileOpen(true)}
+                  onMouseLeave={() => setIsProfileOpen(false)}
+                >
+                  <button
+                    type="button"
+                    className={`profile-trigger ${
+                      isProfileOpen ? 'active' : ''
+                    }`}
+                    onClick={() => setIsProfileOpen((prev) => !prev)}
+                    aria-expanded={isProfileOpen}
+                    aria-haspopup="true"
                   >
-                    {isAdmin ? 'Dashboard' : 'Profile'}
+                    <span className="profile-trigger-avatar">
+                      {profileInitial}
+                    </span>
+
+                    <span className="profile-trigger-name">
+                      {userName}
+                    </span>
 
                     <i
-                      className={`bi ${isAdmin ? 'bi-speedometer2' : 'bi-person-circle'
-                        }`}
+                      className={`bi bi-chevron-down profile-chevron ${
+                        isProfileOpen ? 'rotated' : ''
+                      }`}
+                      aria-hidden="true"
+                    />
+                  </button>
+
+                  <div
+                    className={`profile-dropdown ${
+                      isProfileOpen ? 'show' : ''
+                    }`}
+                  >
+                    <div className="profile-dropdown-user">
+                      <span className="profile-dropdown-avatar">
+                        {profileInitial}
+                      </span>
+
+                      <div className="profile-dropdown-user-info">
+                        <strong>{userName}</strong>
+                        <span>{userEmail}</span>
+                      </div>
+                    </div>
+
+                    <div className="profile-dropdown-divider" />
+
+                    <Link
+                      to="/profile"
+                      className="profile-dropdown-link"
+                      onClick={() => setIsProfileOpen(false)}
+                    >
+                      <i className="bi bi-person-circle" />
+                      <span>View Profile</span>
+                      <i className="bi bi-arrow-up-right profile-link-arrow" />
+                    </Link>
+
+                    <button
+                      type="button"
+                      className="profile-dropdown-link logout-link"
+                      onClick={handleLogout}
+                    >
+                      <i className="bi bi-box-arrow-right" />
+                      <span>Logout</span>
+                    </button>
+                  </div>
+                </li>
+              ) : (
+                <li className="nav-item ms-lg-2">
+                  <Link
+                    to={accountLink}
+                    className="btn btn-gold navbar-login-button"
+                  >
+                    {accountLabel}
+                    <i
+                      className={`bi ${
+                        isAuthenticated
+                          ? 'bi-speedometer2'
+                          : 'bi-arrow-up-right'
+                      }`}
                       aria-hidden="true"
                     />
                   </Link>
                 </li>
-              ) : (
-                <>
-                  <li className="nav-item">
-                    <Link
-                      to={
-                        isAuthenticated
-                          ? (isAdmin ? '/admin' : '/profile')
-                          : '/login'
-                      }
-                      className="btn btn-outline-light navbar-login-button"
-                    >
-                      {isAuthenticated
-                        ? (isAdmin ? 'Dashboard' : 'Profile')
-                        : 'Login'}
-                    </Link>
-                  </li>
-
-                  <li className="nav-item">
-                    {!isAuthenticated
-                      ? <Link to="register" className="btn btn-gold border-0 navbar-signup-button">
-                        Sign Up
-                        <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                      </Link>
-                      : <button 
-                      onclick = { handleLogout }
-                      className="btn btn-gold border-0 navbar-signup-button"
-                      >Sign Out</button>}
-                  </li>
-                </>
               )}
+
             </ul>
           </div>
-
         </div>
       </nav>
 
       {/* Mobile Overlay */}
       <div
-        className={`codesphere-menu-overlay ${isMenuOpen ? 'active' : ''
-          }`}
+        className={`codesphere-menu-overlay ${
+          isMenuOpen ? 'active' : ''
+        }`}
         onClick={closeMenu}
         aria-hidden="true"
       />
 
-      {/* Right-Side Mobile Drawer */}
+      {/* Mobile Drawer */}
       <aside
         id="codesphere-mobile-menu"
-        className={`codesphere-mobile-menu ${isMenuOpen ? 'active' : ''
-          }`}
+        className={`codesphere-mobile-menu ${
+          isMenuOpen ? 'active' : ''
+        }`}
         aria-label="Mobile navigation"
         aria-hidden={!isMenuOpen}
         inert={!isMenuOpen}
@@ -247,10 +277,16 @@ const Navbar = () => {
           <Link
             to="/"
             className="mobile-menu-brand"
-            onClick={closeMenu}
+            onClick={() => {
+              closeMenu();
+              window.scrollTo({
+                top: 0,
+                left: 0,
+                behavior: 'auto',
+              });
+            }}
           >
             <img src={logo} alt="CodeSphere Logo" />
-
           </Link>
 
           <button
@@ -263,10 +299,7 @@ const Navbar = () => {
           </button>
         </div>
 
-        {/* Drawer Label */}
-        <p className="mobile-menu-caption">
-          EXPLORE CODESPHERE
-        </p>
+        <p className="mobile-menu-caption">EXPLORE CODESPHERE</p>
 
         {/* Navigation Links */}
         <ul className="mobile-menu-links">
@@ -281,82 +314,69 @@ const Navbar = () => {
                   {link.label}
                 </span>
 
-                <i
-                  className="bi bi-arrow-up-right"
-                  aria-hidden="true"
-                />
+                <i className="bi bi-arrow-up-right" aria-hidden="true" />
               </Link>
             </li>
           ))}
         </ul>
 
-        {/* Drawer Footer */}
+        {/* Mobile Account Footer */}
         <div className="mobile-menu-footer">
           <p>Learn. Build. Grow.</p>
 
-          {/* <Link
-            className="btn btn-gold mobile-menu-join"
-            to={
-              isAuthenticated
-                ? (isAdmin ? '/admin' : '/profile')
-                : '/login'
-            }
-            onClick={closeMenu}
-          >
-            <span>
-              <i
-                className={`bi ${isAuthenticated
-                  ? (isAdmin ? 'bi-speedometer2' : 'bi-person-circle')
-                  : 'bi-box-arrow-in-right'
-                  } me-3`}
-                aria-hidden="true"
-              />
-              {isAuthenticated
-                ? (isAdmin ? 'Admin Dashboard' : 'Profile')
-                : 'Sign In'}
-            </span>
+          {isAuthenticated && !isAdmin ? (
+            <div className="mobile-account-card">
+              <div className="mobile-account-user">
+                <span className="profile-trigger-avatar">
+                  {profileInitial}
+                </span>
 
-            <i className="bi bi-arrow-up-right" aria-hidden="true" />
-          </Link> */}
+                <div className="mobile-account-info">
+                  <strong>{userName}</strong>
+                  <span>{userEmail}</span>
+                </div>
+              </div>
 
-          {isAuthenticated ? (
+              <Link
+                to="/profile"
+                className="mobile-account-link"
+                onClick={closeMenu}
+              >
+                <i className="bi bi-person-circle" />
+                View Profile
+                <i className="bi bi-arrow-up-right ms-auto" />
+              </Link>
+
+              <button
+                type="button"
+                className="mobile-account-link mobile-logout-link"
+                onClick={handleLogout}
+              >
+                <i className="bi bi-box-arrow-right" />
+                Logout
+              </button>
+            </div>
+          ) : (
             <Link
-              className="btn navbar-account-button mobile-menu-join"
-              to={isAdmin ? '/admin' : '/profile'}
+              className="btn btn-gold mobile-menu-join"
+              to={accountLink}
               onClick={closeMenu}
             >
               <span>
                 <i
-                  className={`bi ${isAdmin ? 'bi-speedometer2' : 'bi-person-circle'
-                    } me-2`}
+                  className={`bi ${
+                    isAuthenticated
+                      ? 'bi-speedometer2'
+                      : 'bi-box-arrow-in-right'
+                  } me-3`}
                   aria-hidden="true"
                 />
-                {isAdmin ? 'Admin Dashboard' : 'Profile'}
+                {accountLabel}
               </span>
 
               <i className="bi bi-arrow-up-right" aria-hidden="true" />
             </Link>
-          ) : (
-            <div className="mobile-auth-buttons d-flex flex-column gap-3">
-              <Link
-                className="btn mobile-login-btn navbar-login-button"
-                to="/login"
-                onClick={closeMenu}
-              >
-                Login
-              </Link>
-
-              <Link
-                className="btn btn-gold navbar-auth-button navbar-signup-button"
-                to="/register"
-                onClick={closeMenu}
-              >
-                Sign Up
-                <i className="bi bi-arrow-right" aria-hidden="true" />
-              </Link>
-            </div>
           )}
-
 
           <span className="mobile-menu-tagline">
             BUILD SOMETHING AMAZING.

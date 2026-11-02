@@ -8,6 +8,7 @@ export default function Login() {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
@@ -33,7 +34,7 @@ export default function Login() {
         { replace: true }
       );
     } catch (err) {
-      setError(err.message);
+      setError(err.message || 'Unable to sign in. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -48,6 +49,7 @@ export default function Login() {
 
         <p className="auth-eyebrow">WELCOME BACK</p>
         <h1>Sign in to CodeSphere</h1>
+
         <p className="auth-subtitle">
           Continue your journey with the community.
         </p>
@@ -65,20 +67,40 @@ export default function Login() {
           autoComplete="email"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          placeholder="you@example.com"
+          placeholder="Enter your registered email"
           required
         />
 
         <label htmlFor="login-password">Password</label>
-        <input
-          id="login-password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(event) => setPassword(event.target.value)}
-          placeholder="Enter your password"
-          required
-        />
+
+        <div className="password-input-wrap">
+          <input
+            id="login-password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            value={password}
+            onChange={(event) => setPassword(event.target.value)}
+            placeholder="Enter your password"
+            required
+          />
+
+          <button
+            type="button"
+            className="password-toggle"
+            onClick={() => setShowPassword((prev) => !prev)}
+            aria-label={showPassword ? 'Hide password' : 'Show password'}
+            aria-pressed={showPassword}
+          >
+            <i
+              className={`bi ${showPassword ? 'bi-eye-slash' : 'bi-eye'}`}
+              aria-hidden="true"
+            />
+          </button>
+        </div>
+
+        <div className="login-forgot">
+          <Link to="/reset-password">Forgot password?</Link>
+        </div>
 
         <button
           className="auth-submit"
