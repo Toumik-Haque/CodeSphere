@@ -1,6 +1,5 @@
 
 import { useEffect, useMemo, useState } from 'react';
-import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
@@ -13,7 +12,7 @@ function isValidDate(value) {
 
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
-  const [activeTab, setActiveTab] = useState('upcoming');
+  const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -36,46 +35,44 @@ export default function EventsPage() {
     }
 
     loadEvents();
+
     return () => {
       cancelled = true;
     };
   }, []);
 
-  const { upcoming, past } = useMemo(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+  const visibleEvents = useMemo(() => {
+    const query = searchQuery.trim().toLowerCase();
 
-    const upcomingEvents = [];
-    const pastEvents = [];
+    return [...events]
+      .filter((event) => {
+        if (!query) return true;
 
-    events.forEach((event) => {
-      if (!isValidDate(event.date)) {
-        // Events without a valid date are not assigned to either tab.
-        return;
-      }
+        const searchableText = [
+          event.title,
+          event.description,
+          event.venue,
+          event.location,
+          event.category,
+        ]
+          .filter(Boolean)
+          .join(' ')
+          .toLowerCase();
 
-      const eventDate = new Date(event.date);
-      eventDate.setHours(0, 0, 0, 0);
+        return searchableText.includes(query);
+      })
+      .sort((a, b) => {
+        const dateA = isValidDate(a.date)
+          ? new Date(a.date).getTime()
+          : 0;
 
-      if (eventDate >= today) {
-        upcomingEvents.push(event);
-      } else {
-        pastEvents.push(event);
-      }
-    });
+        const dateB = isValidDate(b.date)
+          ? new Date(b.date).getTime()
+          : 0;
 
-    upcomingEvents.sort(
-      (a, b) => new Date(a.date) - new Date(b.date)
-    );
-
-    pastEvents.sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
-    );
-
-    return { upcoming: upcomingEvents, past: pastEvents };
-  }, [events]);
-
-  const visibleEvents = activeTab === 'upcoming' ? upcoming : past;
+        return dateB - dateA;
+      });
+  }, [events, searchQuery]);
 
   return (
     <>
@@ -84,7 +81,6 @@ export default function EventsPage() {
       <main className="events-page">
         <div className="container">
           <header className="events-page-heading">
-
             <span className="section-eyebrow">
               <span className="section-eyebrow-line" />
               THE CODESPHERE EXPERIENCE
@@ -95,32 +91,41 @@ export default function EventsPage() {
             </h1>
 
             <p className="events-subtitle">
-              Discover upcoming experiences or revisit the moments
-              our community has shared.
+              Discover all the events and experiences shared by
+              our CodeSphere community.
             </p>
           </header>
 
-          <div className="events-tabs" role="tablist" aria-label="Events">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'upcoming'}
-              className={`events-tab ${activeTab === 'upcoming' ? 'active' : ''}`}
-              onClick={() => setActiveTab('upcoming')}
-            >
-              Upcoming <span>({upcoming.length})</span>
-            </button>
+          <div className="events-search-wrapper">
+            <i className="bi bi-search" aria-hidden="true" />
 
-            <button
-              type="button"
-              role="tab"
-              aria-selected={activeTab === 'past'}
-              className={`events-tab ${activeTab === 'past' ? 'active' : ''}`}
-              onClick={() => setActiveTab('past')}
-            >
-              Past Events <span>({past.length})</span>
-            </button>
+            <input
+              type="text"
+              className="events-search-input"
+              placeholder="Search events by title, venue, or keyword..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              aria-label="Search events"
+            />
+
+            {searchQuery && (
+              <button
+                type="button"
+                className="events-search-clear"
+                onClick={() => setSearchQuery('')}
+                aria-label="Clear search"
+              >
+                <i className="bi bi-x-lg" />
+              </button>
+            )}
           </div>
+
+          {!loading && !error && (
+            <div className="events-results-count">
+              {visibleEvents.length}{' '}
+              {visibleEvents.length === 1 ? 'event' : 'events'} found
+            </div>
+          )}
 
           {loading ? (
             <p className="events-status">Loading events...</p>
@@ -128,13 +133,22 @@ export default function EventsPage() {
             <p className="events-status">{error}</p>
           ) : visibleEvents.length === 0 ? (
             <div className="events-page-empty">
-              <i className="bi bi-calendar2-x" aria-hidden="true" />
+              <i
+                className="bi bi-calendar2-x"
+                aria-hidden="true"
+              />
+
               <h2>
-                {activeTab === 'upcoming'
-                  ? 'No upcoming events yet'
-                  : 'No past events yet'}
+                {searchQuery
+                  ? 'No matching events found'
+                  : 'No events available yet'}
               </h2>
-              <p>Check back soon for more from the CodeSphere community.</p>
+
+              <p>
+                {searchQuery
+                  ? 'Try searching with a different title or keyword.'
+                  : 'Check back soon for more from the CodeSphere community.'}
+              </p>
             </div>
           ) : (
             <div className="events-cards-grid events-page-grid">
