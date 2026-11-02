@@ -1,5 +1,5 @@
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
@@ -52,6 +52,59 @@ const emptyProfile = {
   achievements: [],
   activities: [],
 };
+
+const IMAGE_SIZE_LIMIT = 1 * 1024 * 1024;
+
+const getStorageKey = (type, user) => {
+  const identity = user?._id || user?.id || user?.email || 'default';
+  return `codesphere_${type}_${encodeURIComponent(identity)}`;
+};
+
+const readStorage = (key, fallback) => {
+  try {
+    const value = localStorage.getItem(key);
+    return value ? JSON.parse(value) : fallback;
+  } catch {
+    return fallback;
+  }
+};
+
+const saveStorage = (key, value) => {
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+    return true;
+  } catch (error) {
+    console.error('Local storage save failed:', error);
+    return false;
+  }
+};
+
+const normalizeProfile = (source = {}) => ({
+  ...emptyProfile,
+  ...source,
+  skills: Array.isArray(source.skills) ? source.skills : [],
+  codingProfiles: Array.isArray(source.codingProfiles) ? source.codingProfiles : [],
+  projects: Array.isArray(source.projects) ? source.projects : [],
+  achievements: Array.isArray(source.achievements) ? source.achievements : [],
+  activities: Array.isArray(source.activities) ? source.activities : [],
+});
+
+const readImage = (key) => {
+  try {
+    return localStorage.getItem(key) || '';
+  } catch {
+    return '';
+  }
+};
+
+const readImageFile = (file) =>
+  new Promise((resolve, reject) => {
+    const reader = new FileReader();
+
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(new Error('Unable to read this image.'));
+    reader.readAsDataURL(file);
+  });
 
 const sectionConfig = [
   {
@@ -122,6 +175,89 @@ const sectionConfig = [
   },
 ];
 
+function Toast({ toast, onClose }) {
+  if (!toast) return null;
+
+  const styles = {
+    success: {
+      icon: 'bi-check-circle-fill',
+      color: '#16834a',
+      background: '#edf9f1',
+      border: '#b9e6c9',
+    },
+    error: {
+      icon: 'bi-x-circle-fill',
+      color: '#c0392b',
+      background: '#fff0ef',
+      border: '#f2c4c0',
+    },
+    warning: {
+      icon: 'bi-exclamation-triangle-fill',
+      color: '#a66a00',
+      background: '#fff8e8',
+      border: '#f0dba8',
+    },
+    info: {
+      icon: 'bi-info-circle-fill',
+      color: '#245b83',
+      background: '#edf6fc',
+      border: '#c7dfef',
+    },
+  };
+
+  const style = styles[toast.type] || styles.info;
+
+  return (
+    <div
+      role="status"
+      aria-live="polite"
+      style={{
+        position: 'fixed',
+        right: '24px',
+        bottom: '24px',
+        zIndex: 99999,
+        width: 'min(390px, calc(100vw - 32px))',
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        padding: '15px 16px',
+        border: `1px solid ${style.border}`,
+        borderRadius: '12px',
+        background: style.background,
+        color: '#243447',
+        boxShadow: '0 8px 30px rgba(15, 35, 55, 0.16)',
+        animation: 'codesphereToastIn 220ms ease-out',
+      }}
+    >
+      <i
+        className={`bi ${style.icon}`}
+        style={{ color: style.color, fontSize: '21px', flexShrink: 0 }}
+      />
+
+      <span style={{ flex: 1, fontSize: '14px', lineHeight: 1.5 }}>
+        {toast.message}
+      </span>
+
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Dismiss notification"
+        style={{
+          border: 0,
+          background: 'transparent',
+          color: '#64748b',
+          cursor: 'pointer',
+          padding: '3px',
+          fontSize: '18px',
+          lineHeight: 1,
+        }}
+      >
+        <i className="bi bi-x-lg" />
+      </button>
+    </div>
+  );
+}
+
 function Field({ field, value, onChange }) {
   const common = {
     id: field.name,
@@ -145,16 +281,19 @@ function Field({ field, value, onChange }) {
       ) : field.type === 'textarea' ? (
         <textarea {...common} rows={4} />
       ) : (
-        <input
-          {...common}
-          type={field.type === 'url' ? 'url' : 'text'}
-        />
+        <input {...common} type={field.type === 'url' ? 'url' : 'text'} />
       )}
     </div>
   );
 }
 
-function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
+function ProfileSection({
+  section,
+  profile,
+  onSave,
+  onAdd,
+  onDelete,
+}) {
   const [expanded, setExpanded] = useState(false);
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
@@ -256,6 +395,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                 >
                   Cancel
                 </button>
+
                 <button
                   type="submit"
                   className="profile-action-button profile-primary-button"
@@ -277,6 +417,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                             item.category || item.technologies || item.issuer ||
                             'Added to your profile'}
                         </p>
+
                         {(item.url || item.github || item.demo || item.link) && (
                           <div className="profile-entry-links">
                             {[
@@ -303,6 +444,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                         >
                           <i className="bi bi-pencil" />
                         </button>
+
                         <button
                           type="button"
                           className="profile-icon-button profile-delete-button"
@@ -331,6 +473,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                       <strong>{value || 'Not added yet'}</strong>
                     </div>
                   ))}
+
                   {profile.bio && (
                     <div className="profile-bio-display">
                       <span>About me</span>
@@ -386,28 +529,141 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
 export default function Profile({ preview = false }) {
   const { user } = useAuth();
 
-  const [profile, setProfile] = useState(() => (
-    preview
-      ? {
-          ...emptyProfile,
-          ...previewUser,
-          skills: ['Java', 'Python', 'HTML', 'CSS', 'JavaScript'],
-        }
-      : { ...emptyProfile, ...(user || {}) }
-  ));
+  const profileStorageKey = getStorageKey('profile', user);
+  const photoStorageKey = getStorageKey('profile_image', user);
+  const bannerStorageKey = getStorageKey('banner_image', user);
 
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(!preview);
-  const [skillSearch, setSkillSearch] = useState('');
-  const [skillLevel, setSkillLevel] = useState('Intermediate');
-
-  useEffect(() => {
+  const [profile, setProfile] = useState(() => {
     if (preview) {
-      setProfile({
-        ...emptyProfile,
+      return normalizeProfile({
         ...previewUser,
         skills: ['Java', 'Python', 'HTML', 'CSS', 'JavaScript'],
       });
+    }
+
+    const savedDraft = readStorage(profileStorageKey, {});
+    return normalizeProfile({ ...(user || {}), ...savedDraft });
+  });
+
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(!preview);
+  const [saveStatus, setSaveStatus] = useState('');
+  const [toast, setToast] = useState(null);
+  const [skillSearch, setSkillSearch] = useState('');
+  const [skillLevel, setSkillLevel] = useState('Intermediate');
+
+  const [profileImage, setProfileImage] = useState(() =>
+    preview ? '' : readImage(photoStorageKey)
+  );
+
+  const [bannerImage, setBannerImage] = useState(() =>
+    preview ? '' : readImage(bannerStorageKey)
+  );
+
+  const photoInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
+  const toastTimerRef = useRef(null);
+
+  const showToast = (message, type = 'success') => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+
+    setToast({
+      id: Date.now(),
+      message,
+      type,
+    });
+
+    toastTimerRef.current = setTimeout(() => {
+      setToast(null);
+    }, 3500);
+  };
+
+  const closeToast = () => {
+    if (toastTimerRef.current) {
+      clearTimeout(toastTimerRef.current);
+    }
+    setToast(null);
+  };
+
+  useEffect(() => {
+    return () => {
+      if (toastTimerRef.current) {
+        clearTimeout(toastTimerRef.current);
+      }
+    };
+  }, []);
+
+  const persistProfile = (updatedProfile, successMessage) => {
+    if (preview) {
+      setProfile(updatedProfile);
+      showToast('Preview updated. Changes are temporary.', 'info');
+      return;
+    }
+
+    const saved = saveStorage(profileStorageKey, updatedProfile);
+
+    if (saved) {
+      setProfile(updatedProfile);
+      setSaveStatus('Your changes have been saved in this browser.');
+      showToast(successMessage);
+    } else {
+      showToast(
+        'Unable to save changes. Your browser storage may be full.',
+        'error'
+      );
+    }
+  };
+
+  const handleImageChange = async (event, setImage, storageKey, imageLabel) => {
+    const file = event.target.files?.[0];
+
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      showToast('Please select a valid image file.', 'warning');
+      event.target.value = '';
+      return;
+    }
+
+    if (file.size > IMAGE_SIZE_LIMIT) {
+      showToast('Please select an image smaller than 1 MB.', 'warning');
+      event.target.value = '';
+      return;
+    }
+
+    try {
+      const imageData = await readImageFile(file);
+
+      if (!preview) {
+        localStorage.setItem(storageKey, imageData);
+      }
+
+      setImage(imageData);
+      setError('');
+      showToast(
+        preview
+          ? `${imageLabel} updated in preview.`
+          : `${imageLabel} updated successfully!`
+      );
+    } catch (err) {
+      console.error(err);
+      showToast(
+        'Unable to save this image. Please try a smaller image.',
+        'error'
+      );
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  useEffect(() => {
+    if (preview) {
+      setProfile(normalizeProfile({
+        ...previewUser,
+        skills: ['Java', 'Python', 'HTML', 'CSS', 'JavaScript'],
+      }));
       setLoading(false);
       return;
     }
@@ -415,23 +671,28 @@ export default function Profile({ preview = false }) {
     let active = true;
 
     async function loadProfile() {
+      setLoading(true);
+      setError('');
+
       try {
         const data = await apiRequest('/auth/me');
 
         if (active && data.user) {
-          setProfile((previous) => ({
-            ...emptyProfile,
-            ...previous,
+          const savedDraft = readStorage(profileStorageKey, {});
+          const mergedProfile = normalizeProfile({
             ...data.user,
-            skills: Array.isArray(data.user.skills) ? data.user.skills : [],
-            codingProfiles: Array.isArray(data.user.codingProfiles) ? data.user.codingProfiles : [],
-            projects: Array.isArray(data.user.projects) ? data.user.projects : [],
-            achievements: Array.isArray(data.user.achievements) ? data.user.achievements : [],
-            activities: Array.isArray(data.user.activities) ? data.user.activities : [],
-          }));
+            ...savedDraft,
+          });
+
+          setProfile(mergedProfile);
         }
       } catch (err) {
-        if (active) setError(err.message || 'Unable to load your profile.');
+        if (active) {
+          setError(
+            err.message ||
+            'Unable to load your profile. Please check your connection.'
+          );
+        }
       } finally {
         if (active) setLoading(false);
       }
@@ -442,7 +703,7 @@ export default function Profile({ preview = false }) {
     return () => {
       active = false;
     };
-  }, [preview]);
+  }, [preview, user, profileStorageKey]);
 
   const currentUser = preview ? profile : { ...user, ...profile };
   const name = currentUser?.name || 'CodeSphere Member';
@@ -472,52 +733,90 @@ export default function Profile({ preview = false }) {
       Array.isArray(profile.activities) && profile.activities.length > 0,
     ];
 
-    return Math.round((checks.filter(Boolean).length / checks.length) * 100);
+    return Math.round(
+      (checks.filter(Boolean).length / checks.length) * 100
+    );
   }, [profile]);
 
   const updateSimpleSection = (_section, values) => {
-    setProfile((previous) => ({ ...previous, ...values }));
+    persistProfile(
+      { ...profile, ...values },
+      'Your profile details were saved successfully!'
+    );
   };
 
   const addEntry = (section, item) => {
-    setProfile((previous) => ({
-      ...previous,
-      [section]: [...(previous[section] || []), item],
-    }));
+    const messages = {
+      codingProfiles: 'Coding profile added successfully!',
+      projects: 'Project added successfully!',
+      achievements: 'Achievement added successfully!',
+      activities: 'Club activity added successfully!',
+    };
+
+    persistProfile(
+      {
+        ...profile,
+        [section]: [...(profile[section] || []), item],
+      },
+      messages[section] || 'Entry added successfully!'
+    );
   };
 
   const updateEntry = (section, index, item) => {
-    setProfile((previous) => ({
-      ...previous,
-      [section]: (previous[section] || []).map((entry, i) =>
-        i === index ? item : entry
-      ),
-    }));
+    persistProfile(
+      {
+        ...profile,
+        [section]: (profile[section] || []).map((entry, i) =>
+          i === index ? item : entry
+        ),
+      },
+      'Entry updated successfully!'
+    );
   };
 
   const deleteEntry = (section, index) => {
-    setProfile((previous) => ({
-      ...previous,
-      [section]: (previous[section] || []).filter((_, i) => i !== index),
-    }));
+    persistProfile(
+      {
+        ...profile,
+        [section]: (profile[section] || []).filter((_, i) => i !== index),
+      },
+      'Entry removed from your profile.'
+    );
   };
 
   const addSkill = (skill) => {
-    if (!skill || profile.skills.some((item) => (item.name || item) === skill)) return;
+    if (!skill || profile.skills.some((item) => (item.name || item) === skill)) {
+      if (skill) {
+        showToast('This skill is already in your profile.', 'warning');
+      }
+      return;
+    }
 
-    setProfile((previous) => ({
-      ...previous,
-      skills: [...previous.skills, { name: skill, level: skillLevel }],
-    }));
+    persistProfile(
+      {
+        ...profile,
+        skills: [
+          ...profile.skills,
+          { name: skill, level: skillLevel },
+        ],
+      },
+      `${skill} added to your skills!`
+    );
 
     setSkillSearch('');
   };
 
   const removeSkill = (index) => {
-    setProfile((previous) => ({
-      ...previous,
-      skills: previous.skills.filter((_, i) => i !== index),
-    }));
+    const removedSkill = profile.skills[index];
+    const skillName = removedSkill?.name || removedSkill || 'Skill';
+
+    persistProfile(
+      {
+        ...profile,
+        skills: profile.skills.filter((_, i) => i !== index),
+      },
+      `${skillName} removed from your skills.`
+    );
   };
 
   const filteredSkills = skillOptions.filter((skill) =>
@@ -544,6 +843,23 @@ export default function Profile({ preview = false }) {
     <>
       <Navbar />
 
+      <style>
+        {`
+          @keyframes codesphereToastIn {
+            from {
+              opacity: 0;
+              transform: translateY(12px);
+            }
+            to {
+              opacity: 1;
+              transform: translateY(0);
+            }
+          }
+        `}
+      </style>
+
+      <Toast toast={toast} onClose={closeToast} />
+
       <main className="student-profile-page">
         <div className="student-profile-container">
           {preview && (
@@ -565,24 +881,93 @@ export default function Profile({ preview = false }) {
               <h1>My Profile</h1>
               <p>Showcase your skills, projects and coding journey.</p>
             </div>
+
             <Link to="/" className="profile-back-link">
               <i className="bi bi-arrow-left" /> Back to website
             </Link>
           </div>
 
-          {loading && <div className="profile-message">Loading your profile...</div>}
+          {loading && (
+            <div className="profile-message" role="status">
+              <i className="bi bi-arrow-repeat" /> Loading your profile...
+            </div>
+          )}
 
           {error && (
             <div className="profile-message profile-message-error" role="alert">
-              {error}
+              <i className="bi bi-exclamation-circle" /> {error}
+            </div>
+          )}
+
+          {saveStatus && !error && (
+            <div className="profile-message" role="status">
+              <i className="bi bi-check-circle" /> {saveStatus}
             </div>
           )}
 
           <div className="student-profile-layout">
             <aside className="student-profile-sidebar">
               <section className="student-identity-card">
-                <div className="student-cover" />
-                <div className="student-avatar">{initial}</div>
+                <div
+                  className="student-cover"
+                  style={bannerImage ? { backgroundImage: `url(${bannerImage})` } : {}}
+                >
+                  <input
+                    ref={bannerInputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(event) =>
+                      handleImageChange(
+                        event,
+                        setBannerImage,
+                        bannerStorageKey,
+                        'Banner image'
+                      )
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    className="profile-image-upload-button profile-banner-upload-button"
+                    onClick={() => bannerInputRef.current?.click()}
+                  >
+                    <i className="bi bi-camera" /> Add banner
+                  </button>
+                </div>
+
+                <div className="student-avatar">
+                  {profileImage ? (
+                    <img src={profileImage} alt="Profile" />
+                  ) : (
+                    initial
+                  )}
+
+                  <input
+                    ref={photoInputRef}
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    onChange={(event) =>
+                      handleImageChange(
+                        event,
+                        setProfileImage,
+                        photoStorageKey,
+                        'Profile photo'
+                      )
+                    }
+                  />
+
+                  <button
+                    type="button"
+                    className="profile-image-upload-button profile-photo-upload-button"
+                    onClick={() => photoInputRef.current?.click()}
+                    aria-label="Add profile photo"
+                    title="Add profile photo"
+                  >
+                    <i className="bi bi-camera" />
+                  </button>
+                </div>
 
                 <div className="student-identity-content">
                   <h2>{name}</h2>
@@ -600,10 +985,12 @@ export default function Profile({ preview = false }) {
 
               <section className="profile-sidebar-card">
                 <h3>Profile completion</h3>
+
                 <div className="profile-completion-top">
                   <span>Complete your profile</span>
                   <strong>{completion}%</strong>
                 </div>
+
                 <div
                   className="profile-progress-track"
                   role="progressbar"
@@ -612,8 +999,12 @@ export default function Profile({ preview = false }) {
                   aria-valuemax="100"
                   aria-label="Profile completion"
                 >
-                  <div className="profile-progress-fill" style={{ width: `${completion}%` }} />
+                  <div
+                    className="profile-progress-fill"
+                    style={{ width: `${completion}%` }}
+                  />
                 </div>
+
                 <p>A complete profile helps the community discover your work.</p>
               </section>
             </aside>
@@ -625,6 +1016,7 @@ export default function Profile({ preview = false }) {
                   <h2>Welcome, {name.split(' ')[0]}!</h2>
                   <p>Showcase your skills, projects and achievements to the community.</p>
                 </div>
+
                 <div className="profile-welcome-icon">
                   <i className="bi bi-code-square" />
                 </div>
@@ -636,6 +1028,7 @@ export default function Profile({ preview = false }) {
                     <h2>Build your profile</h2>
                     <p>Open a section to add or update your information.</p>
                   </div>
+
                   <span className="profile-section-icon">
                     <i className="bi bi-person-gear" />
                   </span>
@@ -658,6 +1051,7 @@ export default function Profile({ preview = false }) {
                     <span className="profile-builder-icon">
                       <i className="bi bi-code-slash" />
                     </span>
+
                     <span className="profile-builder-heading-text">
                       <strong>Technical skills</strong>
                       <small>{profile.skills.length} skills added</small>
@@ -667,9 +1061,13 @@ export default function Profile({ preview = false }) {
                   <div className="profile-builder-content">
                     <div className="profile-skills-list">
                       {profile.skills.map((skill, index) => (
-                        <span className="profile-skill-tag" key={`${skill.name || skill}-${index}`}>
+                        <span
+                          className="profile-skill-tag"
+                          key={`${skill.name || skill}-${index}`}
+                        >
                           {skill.name || skill}
                           {skill.level && <small>{skill.level}</small>}
+
                           <button
                             type="button"
                             onClick={() => removeSkill(index)}
@@ -679,6 +1077,7 @@ export default function Profile({ preview = false }) {
                           </button>
                         </span>
                       ))}
+
                       {profile.skills.length === 0 && (
                         <p className="profile-no-skills">No skills added yet.</p>
                       )}
@@ -687,6 +1086,7 @@ export default function Profile({ preview = false }) {
                     <div className="profile-skill-adder">
                       <div className="profile-form-field">
                         <label htmlFor="skill-search">Search or select a skill</label>
+
                         <input
                           id="skill-search"
                           list="codesphere-skills"
@@ -694,6 +1094,7 @@ export default function Profile({ preview = false }) {
                           onChange={(event) => setSkillSearch(event.target.value)}
                           placeholder="Start typing, e.g. Java..."
                         />
+
                         <datalist id="codesphere-skills">
                           {filteredSkills.map((skill) => (
                             <option key={skill} value={skill} />
@@ -703,6 +1104,7 @@ export default function Profile({ preview = false }) {
 
                       <div className="profile-form-field">
                         <label htmlFor="skill-level">Proficiency</label>
+
                         <select
                           id="skill-level"
                           value={skillLevel}
@@ -743,6 +1145,7 @@ export default function Profile({ preview = false }) {
                   <h3>Need help?</h3>
                   <p>Questions about your account? Our team is here to help.</p>
                 </div>
+
                 <Link to="/team">
                   Meet the team <i className="bi bi-arrow-up-right" />
                 </Link>
@@ -752,6 +1155,7 @@ export default function Profile({ preview = false }) {
                 <span>
                   <i className="bi bi-shield-lock" /> Your profile is part of the CodeSphere community.
                 </span>
+
                 <Link to="/">Explore CodeSphere</Link>
               </div>
             </div>
