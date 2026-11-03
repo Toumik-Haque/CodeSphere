@@ -76,7 +76,7 @@ async function deleteCloudinaryImage(publicId) {
   });
 }
 
-// Validate an optional LinkedIn or Instagram URL.
+// Validate an optional LinkedIn, Instagram, or GitHub URL.
 function validateOptionalUrl(value, label) {
   if (typeof value !== 'string') {
     return `${label} must be a valid URL.`;
@@ -132,6 +132,13 @@ function validateMember(body) {
 
   if (instagramError) return instagramError;
 
+  const githubError = validateOptionalUrl(
+    body.githubLink ?? '',
+    'GitHub profile link'
+  );
+
+  if (githubError) return githubError;
+
   return null;
 }
 
@@ -184,6 +191,7 @@ router.post(
         role: req.body.role.trim(),
         linkedinLink: (req.body.linkedinLink || '').trim(),
         instagramLink: (req.body.instagramLink || '').trim(),
+        githubLink: (req.body.githubLink || '').trim(),
         order: 0,
         image: {
           url: uploadedImage.secure_url,
@@ -242,6 +250,7 @@ router.patch(
         role: req.body.role ?? member.role,
         linkedinLink: req.body.linkedinLink ?? member.linkedinLink ?? '',
         instagramLink: req.body.instagramLink ?? member.instagramLink ?? '',
+        githubLink: req.body.githubLink ?? member.githubLink ?? '',
       };
 
       const validationError = validateMember(candidate);
@@ -262,6 +271,7 @@ router.patch(
       member.role = candidate.role.trim();
       member.linkedinLink = candidate.linkedinLink.trim();
       member.instagramLink = candidate.instagramLink.trim();
+      member.githubLink = candidate.githubLink.trim();
 
       const shouldRemoveImage =
         !req.file && req.body.removeImage === 'true';

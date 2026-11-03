@@ -42,7 +42,7 @@
   border: 1px solid rgba(21, 54, 83, .10);
   border-radius: 20px;
   background: rgba(255, 255, 255, .9);
-  box-shadow: var(--shadow-sm);
+  box-shadow: 0 18px 45px rgba(16, 36, 58, 0.16);
 }
 
 .contact-card-eyebrow,
@@ -303,77 +303,3 @@
   }
 }
 
-/* Let's Connect — CodeSphere Coral Theme */
-.contact-info-card {
-  background: linear-gradient(
-    145deg,
-    #D94324 0%,
-    #F05A36 55%,
-    #FF8568 100%
-  );
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 36px;
-  color: #FFFFFF;
-  box-shadow: 0 14px 35px rgba(217, 67, 36, 0.2);
-  position: relative;
-  overflow: hidden;
-}
-
-/* Soft coral highlight */
-.contact-info-card::before {
-  content: "";
-  position: absolute;
-  width: 210px;
-  height: 210px;
-  top: -100px;
-  right: -75px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.13);
-  pointer-events: none;
-}
-
-.contact-info-card h2 {
-  color: #FFFFFF;
-}
-
-.contact-info-card .contact-card-eyebrow {
-  color: #FFE2D9;
-}
-
-/* Description */
-.contact-info-card .contact-info-description {
-  color: #FFF0EB;
-}
-
-/* Contact icons */
-.contact-info-card .contact-info-icon {
-  background: rgba(255, 255, 255, 0.16);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  color: #FFFFFF;
-}
-
-/* Labels and supporting text */
-.contact-info-card .contact-info-item strong {
-  color: #FFFFFF;
-}
-
-.contact-info-card .contact-info-item span,
-.contact-info-card .contact-info-link {
-  color: #FFF0EB;
-}
-
-/* Link hover */
-.contact-info-card .contact-info-link:hover {
-  color: #FFFFFF;
-}
-
-/* Footer */
-.contact-info-card .contact-info-footer {
-  border-top: 1px solid rgba(255, 255, 255, 0.25);
-  color: #FFF0EB;
-}
-
-.contact-info-card .contact-info-footer i {
-  color: #FFFFFF;
-}
