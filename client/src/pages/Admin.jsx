@@ -30,6 +30,7 @@ const initialForm = {
 const initialCoreMemberForm = {
   name: '',
   role: '',
+  githubLink: '',
   linkedinLink: '',
   instagramLink: '',
 };
@@ -566,6 +567,7 @@ export default function Admin() {
     setCoreMemberForm({
       name: member.name || '',
       role: member.role || '',
+      githubLink: member.githubLink || '',
       linkedinLink: member.linkedinLink || '',
       instagramLink: member.instagramLink || '',
     });
@@ -639,6 +641,7 @@ export default function Admin() {
     }
 
     const optionalLinks = [
+      ['GitHub profile link', coreMemberForm.githubLink],
       ['LinkedIn profile link', coreMemberForm.linkedinLink],
       ['Instagram profile link', coreMemberForm.instagramLink],
     ];
@@ -657,6 +660,7 @@ export default function Admin() {
 
       formData.append('name', coreMemberForm.name.trim());
       formData.append('role', coreMemberForm.role.trim());
+      formData.append('githubLink', coreMemberForm.githubLink.trim());
       formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
       formData.append('instagramLink', coreMemberForm.instagramLink.trim());
 
@@ -2100,6 +2104,22 @@ export default function Admin() {
                       </div>
 
                       <div className="admin-form-field mt-3">
+                        <label htmlFor="core-member-github">
+                          GitHub profile
+                        </label>
+
+                        <input
+                          id="core-member-github"
+                          name="githubLink"
+                          type="url"
+                          value={coreMemberForm.githubLink}
+                          onChange={updateCoreMemberField}
+                          maxLength={500}
+                          placeholder="https://github.com/username"
+                        />
+                      </div>
+
+                      <div className="admin-form-field mt-3">
                         <label htmlFor="core-member-linkedin">
                           LinkedIn profile
                         </label>
@@ -2233,6 +2253,18 @@ export default function Admin() {
                               </p>
 
                               <div className="admin-core-member-social-links">
+
+                                {member.githubLink && (
+                                  <a
+                                    href={member.githubLink}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    aria-label={`GitHub profile of ${member.name}`}
+                                  >
+                                    <i className="bi bi-github" />
+                                    <span>GitHub</span>
+                                  </a>
+                                )}
 
                                 {member.linkedinLink && (
                                   <a

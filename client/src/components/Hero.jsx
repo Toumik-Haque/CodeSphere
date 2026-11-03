@@ -2,6 +2,24 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import '../css/Hero.css';
 
+const socialLinks = [
+  {
+    name: 'LinkedIn',
+    icon: 'bi-linkedin',
+    url: 'https://www.linkedin.com/company/codesphereagemc/',
+  },
+  {
+    name: 'Instagram',
+    icon: 'bi-instagram',
+    url: 'https://www.instagram.com/codesphereagemc/',
+  },
+  {
+    name: 'GitHub',
+    icon: 'bi-github',
+    url: 'https://github.com/codesphere-agemc',
+  },
+];
+
 const Hero = () => {
   return (
     <section className="hero-section" id="home">
@@ -51,39 +69,19 @@ const Hero = () => {
           {/* Social media links */}
           <div className="hero-socials" aria-label="Follow CodeSphere">
             <span className="hero-socials-label">FOLLOW US</span>
-
-            <a
-              href="https://github.com/YOUR-USERNAME"
-              className="hero-social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="GitHub"
-            >
-              <i className="bi bi-github" aria-hidden="true" />
-            </a>
-
-            <a
-              href="https://www.linkedin.com/company/YOUR-PAGE"
-              className="hero-social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="LinkedIn"
-            >
-              <i className="bi bi-linkedin" aria-hidden="true" />
-            </a>
-
-            <a
-              href="https://www.instagram.com/YOUR-USERNAME"
-              className="hero-social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-              aria-label="Instagram"
-            >
-              <i className="bi bi-instagram" aria-hidden="true" />
-            </a>
+            {socialLinks.map((social) => (
+              <a
+                key={social.name}
+                href={social.url}
+                className="hero-social-link"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={social.name}
+              >
+                <i className={`bi ${social.icon}`} aria-hidden="true" />
+              </a>
+            ))}
           </div>
-
-
         </div>
 
         {/* Bottom scroll indicator */}

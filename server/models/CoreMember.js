@@ -27,6 +27,13 @@ const coreMemberSchema = new mongoose.Schema(
       },
     },
 
+    githubLink: {
+      type: String,
+      trim: true,
+      default: '',
+      maxlength: 500,
+    },
+
     linkedinLink: {
       type: String,
       trim: true,

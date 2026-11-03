@@ -53,7 +53,7 @@ export default function TeamCarousel() {
     };
   }, []);
 
-  // Automatically scroll horizontally in one direction.
+  // Automatically scroll horizontally in a seamless continuous loop.
   useEffect(() => {
     const track = trackRef.current;
 
@@ -71,18 +71,22 @@ export default function TeamCarousel() {
     const animate = (time) => {
       if (!previousTime) previousTime = time;
 
-      const deltaTime = Math.min((time - previousTime) / 1000, 0.05);
+      const deltaTime = previousTime
+        ? Math.min((time - previousTime) / 1000, 0.1)
+        : 0;
+
       previousTime = time;
 
       if (!isPausedRef.current) {
-        const maxScroll = track.scrollWidth - track.clientWidth;
+        // Width of the original set of cards, including the gap.
+        const loopWidth = track.scrollWidth / 2;
 
-        if (maxScroll > 0) {
+        if (loopWidth > 0) {
           track.scrollLeft += speed * deltaTime;
 
-          // Return to the beginning after reaching the last card.
-          if (track.scrollLeft >= maxScroll) {
-            track.scrollLeft = 0;
+          // Seamlessly restart from the beginning of the duplicated set.
+          if (track.scrollLeft >= loopWidth) {
+            track.scrollLeft -= loopWidth;
           }
         }
       }
@@ -195,9 +199,8 @@ export default function TeamCarousel() {
             title={isAutoScrolling ? 'Pause scrolling' : 'Resume scrolling'}
           >
             <i
-              className={`bi ${
-                isAutoScrolling ? 'bi-pause-fill' : 'bi-play-fill'
-              }`}
+              className={`bi ${isAutoScrolling ? 'bi-pause-fill' : 'bi-play-fill'
+                }`}
               aria-hidden="true"
             />
           </button>
@@ -222,38 +225,27 @@ export default function TeamCarousel() {
           }
         }}
       >
-        {members.map((member) => (
-          <article className="core-member-slide" key={member._id}>
+        {[...members, ...members].map((member, index) => (
+          <article
+            className="core-member-slide"
+            key={`${member._id}-${index}`}
+            aria-hidden={index >= members.length ? 'true' : undefined}
+          >
             <div className="core-member-photo-wrap">
               {member.image?.url ? (
                 <img
                   className="core-member-photo"
                   src={member.image.url}
-                  alt={member.name}
+                  alt={index < members.length ? member.name : ''}
                   loading="lazy"
                 />
               ) : (
-                <div
-                  className="core-member-photo-fallback"
-                  aria-hidden="true"
-                >
+                <div className="core-member-photo-fallback" aria-hidden="true">
                   {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
 
               <div className="core-member-socials">
-                {member.instagramLink && (
-                  <a
-                    href={member.instagramLink}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    aria-label={`${member.name} on Instagram`}
-                    title="Instagram"
-                  >
-                    <i className="bi bi-instagram" aria-hidden="true" />
-                  </a>
-                )}
-
                 {member.linkedinLink && (
                   <a
                     href={member.linkedinLink}
@@ -261,8 +253,35 @@ export default function TeamCarousel() {
                     rel="noopener noreferrer"
                     aria-label={`${member.name} on LinkedIn`}
                     title="LinkedIn"
+                    tabIndex={index >= members.length ? -1 : undefined}
                   >
                     <i className="bi bi-linkedin" aria-hidden="true" />
+                  </a>
+                )}
+
+                {member.instagramLink && (
+                  <a
+                    href={member.instagramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on Instagram`}
+                    title="Instagram"
+                    tabIndex={index >= members.length ? -1 : undefined}
+                  >
+                    <i className="bi bi-instagram" aria-hidden="true" />
+                  </a>
+                )}
+
+                {member.githubLink && (
+                  <a
+                    href={member.githubLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={`${member.name} on GitHub`}
+                    title="GitHub"
+                    tabIndex={index >= members.length ? -1 : undefined}
+                  >
+                    <i className="bi bi-github" aria-hidden="true" />
                   </a>
                 )}
               </div>
