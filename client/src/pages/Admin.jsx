@@ -11,6 +11,7 @@ import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import logo from '../assets/logo.svg';
 import '../css/Admin.css';
+import { Editor } from '@tinymce/tinymce-react';
 
 const initialForm = {
   title: '',
@@ -732,6 +733,32 @@ export default function Admin() {
   }, [coreMembers, coreMemberSearch]);
 
   // --------------------------------------------------
+  // USERS
+  // --------------------------------------------------
+
+  const [users, setUsers] = useState([]);
+  const [usersLoading, setUsersLoading] = useState(false);
+  const [userSearch, setUserSearch] = useState('');
+
+  const loadUsers = useCallback(async () => {
+    setUsersLoading(true);
+
+    try {
+      const query = userSearch.trim()
+        ? `?search=${encodeURIComponent(userSearch.trim())}`
+        : '';
+
+      const data = await apiRequest(`/users/admin/all${query}`);
+
+      setUsers(Array.isArray(data.users) ? data.users : []);
+    } catch (err) {
+      setError(err.message || 'Unable to load registered users.');
+    } finally {
+      setUsersLoading(false);
+    }
+  }, [userSearch]);
+
+  // --------------------------------------------------
   // ATTENDANCE
   // --------------------------------------------------
 
@@ -846,6 +873,12 @@ export default function Admin() {
   useEffect(() => {
     loadEvents();
   }, [loadEvents]);
+
+  useEffect(() => {
+    if (activeSection === 'users') {
+      loadUsers();
+    }
+  }, [activeSection, loadUsers]);
 
   useEffect(() => {
     if (activeSection === 'home' || activeSection === 'coreMembers') {
@@ -971,6 +1004,7 @@ export default function Admin() {
           ? 'Edit Event'
           : 'Create Event'
         : 'Events',
+    users: 'Users',
     attendance: 'Attendance',
     coreMembers: showCoreMemberForm
       ? editingCoreMemberId
@@ -987,7 +1021,6 @@ export default function Admin() {
         {/* ================================================
           DESKTOP SIDEBAR
          ================================================ */}
-
         <aside className="admin-sidebar">
           <Link to="/">
             <img src={logo} alt="Codesphere Logo" />
@@ -1013,6 +1046,13 @@ export default function Admin() {
               icon="bi bi-calendar-event"
             >
               Events
+            </NavigationButton>
+
+            <NavigationButton
+              section="users"
+              icon="bi bi-person-lines-fill"
+            >
+              Users
             </NavigationButton>
 
             <NavigationButton
@@ -1056,7 +1096,6 @@ export default function Admin() {
         {/* ================================================
           MAIN WORKSPACE
       ================================================ */}
-
         <div className="admin-main">
 
           <div className="admin-container">
@@ -1075,9 +1114,8 @@ export default function Admin() {
             )}
 
             {/* ============================================
-              DASHBOARD
-          ============================================ */}
-
+                DASHBOARD
+            ============================================ */}
             {activeSection === 'home' && (
               <section className="admin-home">
 
@@ -1132,7 +1170,7 @@ export default function Admin() {
                       <i className="bi bi-people" aria-hidden="true" />
                     </div>
 
-                    <p>Registered Members</p>
+                    <p>Registered Users</p>
                     <strong>{summary.totalMembers}</strong>
                   </article>
 
@@ -1257,8 +1295,8 @@ export default function Admin() {
             )}
 
             {/* ============================================
-              EVENTS
-          ============================================ */}
+                EVENTS
+            ============================================ */}
             {activeSection === 'events' && (
               <section className="admin-events-section">
 
@@ -1323,20 +1361,24 @@ export default function Admin() {
                   >
 
                     <div className="admin-event-filters">
-                      <select
-                        className="admin-form-select"
-                        value={eventCategory}
-                        onChange={(event) => setEventCategory(event.target.value)}
-                        aria-label="Filter events by category"
-                      >
-                        <option value="all">All categories</option>
+                      <div className="admin-event-category">
+                        <i className="bi bi-filter" aria-hidden="true" />
 
-                        {categories.map((category) => (
-                          <option key={category} value={category}>
-                            {category}
-                          </option>
-                        ))}
-                      </select>
+                        <select
+                          className="admin-form-select"
+                          value={eventCategory}
+                          onChange={(event) => setEventCategory(event.target.value)}
+                          aria-label="Filter events by category"
+                        >
+                          <option value="all">All categories</option>
+
+                          {categories.map((category) => (
+                            <option key={category} value={category}>
+                              {category}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
 
                       <label className="admin-event-search">
                         <i className="bi bi-search" />
@@ -1565,16 +1607,82 @@ export default function Admin() {
                           Description *
                         </label>
 
-                        <textarea
-                          id="event-description"
-                          name="description"
+                        <Editor
+                          apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
                           value={form.description}
-                          onChange={updateField}
-                          maxLength={5000}
-                          rows={5}
-                          placeholder="Describe the event..."
-                          required
+                          onEditorChange={(content) => {
+                            updateField({
+                              target: {
+                                name: 'description',
+                                value: content,
+                              },
+                            });
+                          }}
+                          init={{
+                            height: 350,
+                            menubar: false,
+                            branding: false,
+                            promotion: false,
+                            statusbar: true,
+                            resize: true,
+
+                            plugins: [
+                              'lists',
+                              'link',
+                              'table',
+                              'wordcount',
+                              'code',
+                            ],
+
+                            toolbar:
+                              'undo redo | blocks | ' +
+                              'bold italic underline strikethrough | ' +
+                              'forecolor backcolor | ' +
+                              'alignleft aligncenter alignright alignjustify | ' +
+                              'bullist numlist | ' +
+                              'link table blockquote | ' +
+                              'removeformat',
+
+                            color_map: [
+                              '#F07868', 'CodeSphere Coral',
+                              '#142D45', 'Navy',
+                              '#183047', 'Dark Text',
+                              '#647589', 'Muted',
+                              '#FFFFFF', 'White',
+                              '#000000', 'Black',
+                              '#FF0000', 'Red',
+                              '#008000', 'Green',
+                              '#0000FF', 'Blue',
+                              '#FFFF00', 'Yellow',
+                              '#800080', 'Purple',
+                            ],
+
+                            custom_colors: true,
+
+                            content_style: `
+                             body {
+                               font-family: Arial, sans-serif;
+                               font-size: 14px;
+                               color: #183047;
+                               line-height: 1.7;
+                               padding: 8px;
+                             }
+                     
+                             h1, h2, h3 {
+                               color: #142D45;
+                             }
+                     
+                             a {
+                               color: #F07868;
+                             }
+                           `,
+                          }}
                         />
+
+                        <small>
+                          Format your event description using headings, colours, highlights,
+                          lists, links and other formatting options.
+                        </small>
                       </div>
 
                       {form.mode !== 'Online' && (
@@ -1651,7 +1759,6 @@ export default function Admin() {
                       </div>
 
                       {/* EVENT BANNER */}
-
                       <div className="admin-form-field admin-field-full">
                         <label htmlFor="bannerImage">
                           Event banner
@@ -1767,8 +1874,107 @@ export default function Admin() {
             )}
 
             {/* ============================================
-              ATTENDANCE
-          ============================================ */}
+                USERS
+            ============================================ */}
+            {activeSection === 'users' && (
+              <section className="admin-members-panel">
+
+                <div className="admin-section-heading">
+                  <div>
+                    <h2>Registered Users</h2>
+
+                    <p className="admin-panel-subtitle">
+                      View and manage all registered CodeSphere accounts.
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    className="admin-secondary-button"
+                    onClick={loadUsers}
+                    disabled={usersLoading}
+                  >
+                    <i className="bi bi-arrow-clockwise" />
+                    Refresh
+                  </button>
+                </div>
+
+                {/* SEARCH */}
+                <div className="admin-event-filters">
+                  <label className="admin-event-search">
+                    <i className="bi bi-search" aria-hidden="true" />
+
+                    <input
+                      type="search"
+                      value={userSearch}
+                      onChange={(event) => setUserSearch(event.target.value)}
+                      placeholder="Search by name, email, college or year..."
+                      aria-label="Search registered users"
+                    />
+                  </label>
+                </div>
+
+                {/* USER LIST */}
+                {usersLoading ? (
+                  <p className="admin-empty">
+                    Loading registered users...
+                  </p>
+                ) : users.length === 0 ? (
+                  <div className="admin-empty">
+                    <i className="bi bi-people" />
+
+                    <p>No registered users found.</p>
+                  </div>
+                ) : (
+                  <div className="admin-member-list">
+
+                    {users.map((registeredUser) => (
+                      <article
+                        className="admin-member-item admin-user-item"
+                        key={registeredUser._id}
+                      >
+
+                        <div className="admin-member-info">
+                          <div className="admin-member-avatar">
+                            {getInitial(registeredUser.name)}
+                          </div>
+
+                          <div className="admin-member-details">
+                            <h3>{registeredUser.name}</h3>
+
+                            <p>{registeredUser.email}</p>
+
+                            <div className="admin-user-meta">
+                              <span>
+                                <i className="bi bi-building" />
+                                {registeredUser.collegeName || 'College not specified'}
+                              </span>
+
+                              <span>
+                                <i className="bi bi-mortarboard" />
+                                {registeredUser.yearOfStudy || 'Year not specified'}
+                              </span>
+
+                              <span>
+                                <i className="bi bi-calendar3" />
+                                Joined {formatDate(registeredUser.createdAt)}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+
+                      </article>
+                    ))}
+
+                  </div>
+                )}
+
+              </section>
+            )}
+
+            {/* ============================================
+                ATTENDANCE
+            ============================================ */}
             {activeSection === 'attendance' && (
               <section className="admin-members-panel">
 
@@ -1975,7 +2181,6 @@ export default function Admin() {
             {/* ============================================
               CORE MEMBERS
           ============================================ */}
-
             {activeSection === 'coreMembers' && (
               <>
                 <section className="admin-events-section">
@@ -2329,7 +2534,6 @@ export default function Admin() {
         {/* ================================================
           MOBILE BOTTOM NAVIGATION
       ================================================ */}
-
         <nav
           className="admin-mobile-nav"
           aria-label="Mobile admin navigation"
@@ -2352,6 +2556,16 @@ export default function Admin() {
           >
             <i className="bi bi-calendar-event" />
             <span>Events</span>
+          </button>
+
+          <button
+            type="button"
+            className={activeSection === 'users' ? 'active' : ''}
+            onClick={() => goToSection('users')}
+            aria-current={activeSection === 'users' ? 'page' : undefined}
+          >
+            <i className="bi bi-person-lines-fill" />
+            <span>Users</span>
           </button>
 
           <button

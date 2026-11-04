@@ -5,6 +5,8 @@ const multer = require('multer');
 const imagekit = require('../config/imagekit');
 const { toFile } = require('@imagekit/nodejs');
 
+const sanitizeDescription = require('../utils/sanitizeDescription');
+
 const Event = require('../models/Event');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
@@ -116,6 +118,18 @@ function isValidOptionalUrl(value) {
   }
 }
 
+function getPlainText(html = '') {
+  return html
+    .replace(/<[^>]*>/g, '')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&lt;/gi, '<')
+    .replace(/&gt;/gi, '>')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .trim();
+}
+
 function validateEvent(body) {
   const {
     title,
@@ -138,8 +152,9 @@ function validateEvent(body) {
     title.trim().length > 120 ||
     !categories.includes(category) ||
     typeof description !== 'string' ||
-    !description.trim() ||
-    description.trim().length > 5000 ||
+    !getPlainText(description) ||
+    description.length > 30000 ||
+    getPlainText(description).length > 5000 ||
     typeof date !== 'string' ||
     !Number.isFinite(Date.parse(date)) ||
     !['In-person', 'Online', 'Hybrid'].includes(mode) ||
@@ -271,7 +286,14 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
   let uploadedBanner = null;
 
   try {
-    const validationError = validateEvent(req.body);
+    const sanitizedDescription = sanitizeDescription(
+      req.body.description || ''
+    );
+
+    const validationError = validateEvent({
+      ...req.body,
+      description: sanitizedDescription,
+    });
 
     if (validationError) {
       return res.status(400).json({
@@ -292,7 +314,7 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
       title: req.body.title.trim(),
       slug,
       category: req.body.category,
-      description: req.body.description.trim(),
+      description: sanitizedDescription,
       date: new Date(req.body.date),
       endDate: req.body.endDate
         ? new Date(req.body.endDate)
@@ -310,10 +332,10 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
       status: req.body.status || 'draft',
       bannerImage: uploadedBanner
         ? {
-            url: uploadedBanner.url,
-            publicId: uploadedBanner.publicId,
-            provider: uploadedBanner.provider,
-          }
+          url: uploadedBanner.url,
+          publicId: uploadedBanner.publicId,
+          provider: uploadedBanner.provider,
+        }
         : undefined,
       createdBy: req.user._id,
     });
@@ -365,7 +387,7 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
     const candidate = {
       title: req.body.title ?? existing.title,
       category: req.body.category ?? existing.category,
-      description: req.body.description ?? existing.description,
+      description: sanitizeDescription(req.body.description ?? existing.description),
       date: req.body.date ?? existing.date.toISOString(),
       endDate: req.body.endDate === undefined
         ? existing.endDate?.toISOString() || ''

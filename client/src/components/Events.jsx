@@ -90,6 +90,14 @@ export default function Events() {
   );
 }
 
+function getDescriptionPreview(html = '') {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  return (doc.body.textContent || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function EventCard({ event }) {
   return (
     <Link
@@ -157,7 +165,8 @@ export function EventCard({ event }) {
           <h3 title={event.title}>{event.title}</h3>
 
           <p className="published-event-description">
-            {event.description || 'More details coming soon.'}
+            {getDescriptionPreview(event.description) ||
+              'More details coming soon.'}
           </p>
 
           <div className="published-event-bottom d-flex align-items-end justify-content-between">
