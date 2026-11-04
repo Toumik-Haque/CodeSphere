@@ -5,6 +5,7 @@ import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
+import DOMPurify from 'dompurify';
 import '../css/EventDetails.css';
 import brand from '../assets/brand.svg';
 
@@ -176,7 +177,12 @@ export default function EventDetails() {
 
                   <h1 className="event-view-title">{event.title}</h1>
 
-                  <p className="event-view-description">{event.description}</p>
+                  <div
+                    className="event-view-description"
+                    dangerouslySetInnerHTML={{
+                      __html: DOMPurify.sanitize(event.description || ''),
+                    }}
+                  />
 
                   <div className="event-view-banner">
                     {event.bannerImage?.url && (

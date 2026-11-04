@@ -13,6 +13,7 @@ function isValidDate(value) {
 export default function EventsPage() {
   const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
@@ -46,6 +47,12 @@ export default function EventsPage() {
 
     return [...events]
       .filter((event) => {
+        const matchesCategory =
+          selectedCategory === 'All' ||
+          event.category === selectedCategory;
+
+        if (!matchesCategory) return false;
+
         if (!query) return true;
 
         const searchableText = [
@@ -72,7 +79,7 @@ export default function EventsPage() {
 
         return dateB - dateA;
       });
-  }, [events, searchQuery]);
+  }, [events, searchQuery, selectedCategory]);
 
   return (
     <>
@@ -96,28 +103,51 @@ export default function EventsPage() {
             </p>
           </header>
 
-          <div className="events-search-wrapper">
-            <i className="bi bi-search" aria-hidden="true" />
+          <div className="events-toolbar">
+            <div className="events-category-wrapper">
+              <i className="bi bi-filter" aria-hidden="true" />
 
-            <input
-              type="text"
-              className="events-search-input"
-              placeholder="Search events by title, venue, or keyword..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              aria-label="Search events"
-            />
-
-            {searchQuery && (
-              <button
-                type="button"
-                className="events-search-clear"
-                onClick={() => setSearchQuery('')}
-                aria-label="Clear search"
+              <select
+                className="events-category-select"
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                aria-label="Filter events by category"
               >
-                <i className="bi bi-x-lg" />
-              </button>
-            )}
+                <option value="All">All Categories</option>
+                <option value="Workshop">Workshop</option>
+                <option value="Hackathon">Hackathon</option>
+                <option value="Community Meetup">Community Meetup</option>
+              </select>
+
+              <i
+                className="bi bi-chevron-down events-category-arrow"
+                aria-hidden="true"
+              />
+            </div>
+
+            <div className="events-search-wrapper m-0">
+              <i className="bi bi-search" aria-hidden="true" />
+
+              <input
+                type="text"
+                className="events-search-input"
+                placeholder="Search events by title, venue, or keyword..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                aria-label="Search events"
+              />
+
+              {searchQuery && (
+                <button
+                  type="button"
+                  className="events-search-clear"
+                  onClick={() => setSearchQuery('')}
+                  aria-label="Clear search"
+                >
+                  <i className="bi bi-x-lg" />
+                </button>
+              )}
+            </div>
           </div>
 
           {!loading && !error && (
@@ -139,14 +169,14 @@ export default function EventsPage() {
               />
 
               <h2>
-                {searchQuery
+                {searchQuery || selectedCategory !== 'All'
                   ? 'No matching events found'
                   : 'No events available yet'}
               </h2>
 
               <p>
-                {searchQuery
-                  ? 'Try searching with a different title or keyword.'
+                {searchQuery || selectedCategory !== 'All'
+                  ? 'Try changing your category or search keyword.'
                   : 'Check back soon for more from the CodeSphere community.'}
               </p>
             </div>
