@@ -29,6 +29,7 @@ const Navbar = () => {
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const profileRef = useRef(null);
+  const menuToggleRef = useRef(null);
   const { user, logout } = useAuth();
 
   const isAuthenticated = Boolean(user);
@@ -125,6 +126,11 @@ const Navbar = () => {
 
   // Close all menus.
   const closeMenu = () => {
+    // Move focus out of the drawer before it becomes inert.
+    const drawer = document.getElementById('codesphere-mobile-menu');
+    if (drawer?.contains(document.activeElement)) {
+      menuToggleRef.current?.focus();
+    }
     setIsMenuOpen(false);
     setIsDropdownOpen(false);
   };
@@ -270,6 +276,7 @@ const Navbar = () => {
 
           {/* Mobile Hamburger */}
           <button
+            ref={menuToggleRef}
             className="navbar-toggler border-0 shadow-none p-0 d-lg-none codesphere-menu-toggle"
             type="button"
             onClick={() => setIsMenuOpen(true)}
@@ -320,7 +327,6 @@ const Navbar = () => {
           isMenuOpen ? 'active' : ''
         }`}
         aria-label="Mobile navigation"
-        aria-hidden={!isMenuOpen}
         inert={!isMenuOpen}
       >
         {/* Drawer Header */}

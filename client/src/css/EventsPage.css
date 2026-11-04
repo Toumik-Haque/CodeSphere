@@ -1,7 +1,8 @@
 .events-page {
   min-height: 75vh;
   padding: 120px 0 80px;
-  background: radial-gradient(ellipse at 85% 15%, rgba(215, 236, 249, .8), transparent 40%), linear-gradient(180deg, #f7fbfe, #fff 60%);
+  /* Transparent so the background video shows through */
+  background: transparent;
 }
 
 .events-page-heading {

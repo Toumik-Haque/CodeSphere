@@ -2,7 +2,7 @@ import { useEffect, useRef } from 'react';
 import '../css/VideoBackground.css';
 import campusVideo from '../assets/campusVideo.mp4';
 
-const VideoBackground = () => {
+const VideoBackground = ({ src = campusVideo }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -19,6 +19,7 @@ const VideoBackground = () => {
       aria-hidden="true"
     >
       <video
+        key={src}
         ref={videoRef}
         autoPlay
         loop
@@ -27,7 +28,7 @@ const VideoBackground = () => {
         preload="auto"
         className="video-background-media"
       >
-        <source src={campusVideo} type="video/mp4" />
+        <source src={src} type="video/mp4" />
       </video>
 
       <div className="video-background-overlay position-absolute top-0 start-0 w-100 h-100" />

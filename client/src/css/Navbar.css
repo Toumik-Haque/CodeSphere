@@ -8,15 +8,20 @@
   left: 0;
   width: 100%;
   z-index: 1030;
+  background: transparent;
   transition: background-color .25s ease,
               border-color .25s ease,
-              box-shadow .25s ease;
+              box-shadow .25s ease,
+              backdrop-filter .25s ease;
 }
 
+/* Stay see-through over the video; a light frosted blur keeps links readable */
 .codesphere-navbar.navbar-scrolled {
-  background: rgba(255, 255, 255, 0.98);
-  border-bottom-color: rgba(16, 36, 58, 0.12);
-  box-shadow: 0 6px 24px rgba(16, 36, 58, 0.08);
+  background: rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.18);
+  box-shadow: none;
+  backdrop-filter: blur(10px) saturate(140%);
+  -webkit-backdrop-filter: blur(10px) saturate(140%);
 }
 
 /* Logo */
