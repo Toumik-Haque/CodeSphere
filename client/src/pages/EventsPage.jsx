@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import VideoBackground from '../components/VideoBackground';
 import { apiRequest } from '../lib/api';
 import { EventCard } from '../components/Events';
 import '../css/EventsPage.css';
@@ -83,6 +84,7 @@ export default function EventsPage() {
 
   return (
     <>
+      <VideoBackground src="/VID_20261105_010923.mp4" />
       <Navbar />
 
       <main className="events-page">

@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.svg';
@@ -26,9 +26,7 @@ const Navbar = () => {
   // Separate refs for desktop and mobile dropdowns.
   const desktopDropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
-  const [isProfileOpen, setIsProfileOpen] = useState(false);
-
-  const profileRef = useRef(null);
+  const menuToggleRef = useRef(null);
   const { user, logout } = useAuth();
 
   const isAuthenticated = Boolean(user);
@@ -36,9 +34,6 @@ const Navbar = () => {
 
   const dashboardPath = isAdmin ? '/admin' : '/profile';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
-
-  const userName = user?.name || 'Student';
-  const userEmail = user?.email || '';
 
   // Navbar scroll effect
   useEffect(() => {
@@ -75,32 +70,18 @@ const Navbar = () => {
     };
   }, []);
 
-  // Close the mobile drawer with Escape and prevent background scrolling.
+  // Close menus with Escape.
   useEffect(() => {
-    const handleOutsideClick = (event) => {
-      if (
-        profileRef.current &&
-        !profileRef.current.contains(event.target)
-      ) {
-        setIsProfileOpen(false);
-      }
-    };
-
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
-        setIsProfileOpen(false);
         setIsMenuOpen(false);
         setIsDropdownOpen(false);
       }
     };
 
-    document.addEventListener('mousedown', handleOutsideClick);
-    document.addEventListener('touchstart', handleOutsideClick);
     document.addEventListener('keydown', handleKeyDown);
 
     return () => {
-      document.removeEventListener('mousedown', handleOutsideClick);
-      document.removeEventListener('touchstart', handleOutsideClick);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, []);
@@ -117,14 +98,22 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
-  // Close dropdown and mobile drawer after navigation.
-  useEffect(() => {
+  // Close dropdown and mobile drawer after navigation
+  // (adjusting state during render avoids an extra effect pass).
+  const [lastPathname, setLastPathname] = useState(location.pathname);
+  if (lastPathname !== location.pathname) {
+    setLastPathname(location.pathname);
     setIsDropdownOpen(false);
     setIsMenuOpen(false);
-  }, [location.pathname]);
+  }
 
   // Close all menus.
   const closeMenu = () => {
+    // Move focus out of the drawer before it becomes inert.
+    const drawer = document.getElementById('codesphere-mobile-menu');
+    if (drawer?.contains(document.activeElement)) {
+      menuToggleRef.current?.focus();
+    }
     setIsMenuOpen(false);
     setIsDropdownOpen(false);
   };
@@ -141,7 +130,7 @@ const Navbar = () => {
   };
 
   // Authentication menu for desktop and mobile.
-  const AuthMenu = ({ mobile = false }) => {
+  const renderAuthMenu = (mobile = false) => {
     // Not logged in: Show Sign In.
     if (!isAuthenticated) {
       return (
@@ -270,6 +259,7 @@ const Navbar = () => {
 
           {/* Mobile Hamburger */}
           <button
+            ref={menuToggleRef}
             className="navbar-toggler border-0 shadow-none p-0 d-lg-none codesphere-menu-toggle"
             type="button"
             onClick={() => setIsMenuOpen(true)}
@@ -297,7 +287,7 @@ const Navbar = () => {
           <div className="desktop-navigation d-none d-lg-flex">
             <ul className="navbar-nav align-items-center">
               <li className="nav-item ms-lg-2">
-                <AuthMenu />
+                {renderAuthMenu()}
               </li>
             </ul>
           </div>
@@ -320,7 +310,6 @@ const Navbar = () => {
           isMenuOpen ? 'active' : ''
         }`}
         aria-label="Mobile navigation"
-        aria-hidden={!isMenuOpen}
         inert={!isMenuOpen}
       >
         {/* Drawer Header */}
@@ -386,7 +375,7 @@ const Navbar = () => {
           <p>Learn. Build. Grow.</p>
 
           {/* Mobile Authentication Dropdown */}
-          <AuthMenu mobile />
+          {renderAuthMenu(true)}
 
           <span className="mobile-menu-tagline">
             BUILD SOMETHING AMAZING.
