@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.svg';
 import '../css/Navbar.css';
@@ -14,16 +14,28 @@ const navLinks = [
 ];
 
 const Navbar = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  const isAdminPage = location.pathname.startsWith('/admin');
+
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+
+  // Separate refs for desktop and mobile dropdowns.
+  const desktopDropdownRef = useRef(null);
+  const mobileDropdownRef = useRef(null);
   const [isProfileOpen, setIsProfileOpen] = useState(false);
 
   const profileRef = useRef(null);
   const { user, logout } = useAuth();
-  const navigate = useNavigate();
 
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
+
+  const dashboardPath = isAdmin ? '/admin' : '/profile';
+  const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
   const userName = user?.name || 'Student';
   const userEmail = user?.email || '';
@@ -40,7 +52,30 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close profile dropdown when clicking outside or pressing Escape
+  // Close dropdown when clicking outside both desktop and mobile menus.
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      const clickedInsideDesktop =
+        desktopDropdownRef.current?.contains(event.target);
+
+      const clickedInsideMobile =
+        mobileDropdownRef.current?.contains(event.target);
+
+      if (!clickedInsideDesktop && !clickedInsideMobile) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, []);
+
+  // Close the mobile drawer with Escape and prevent background scrolling.
   useEffect(() => {
     const handleOutsideClick = (event) => {
       if (
@@ -55,6 +90,7 @@ const Navbar = () => {
       if (event.key === 'Escape') {
         setIsProfileOpen(false);
         setIsMenuOpen(false);
+        setIsDropdownOpen(false);
       }
     };
 
@@ -81,24 +117,125 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
-  const closeMenu = () => setIsMenuOpen(false);
+  // Close dropdown and mobile drawer after navigation.
+  useEffect(() => {
+    setIsDropdownOpen(false);
+    setIsMenuOpen(false);
+  }, [location.pathname]);
 
-  const handleLogout = () => {
-    logout();
-    setIsProfileOpen(false);
-    closeMenu();
-    navigate('/login', { replace: true });
+  // Close all menus.
+  const closeMenu = () => {
+    setIsMenuOpen(false);
+    setIsDropdownOpen(false);
   };
 
-  const profileInitial = userName.charAt(0).toUpperCase();
+  // Logout handler.
+  const handleLogout = async () => {
+    try {
+      await logout();
+      closeMenu();
+      navigate('/login', { replace: true });
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
-  const accountLink = isAuthenticated
-    ? (isAdmin ? '/admin' : '/profile')
-    : '/login';
+  // Authentication menu for desktop and mobile.
+  const AuthMenu = ({ mobile = false }) => {
+    // Not logged in: Show Sign In.
+    if (!isAuthenticated) {
+      return (
+        <Link
+          to="/login"
+          className={`btn btn-gold ${
+            mobile ? 'mobile-menu-join' : 'navbar-login-button'
+          }`}
+          onClick={mobile ? closeMenu : undefined}
+        >
+          <span>
+            <i
+              className="bi bi-box-arrow-in-right me-2"
+              aria-hidden="true"
+            />
+            Sign In
+          </span>
 
-  const accountLabel = isAuthenticated
-    ? (isAdmin ? 'Admin Dashboard' : 'Profile')
-    : 'Sign In';
+          {!mobile && (
+            <i
+              className="bi bi-arrow-up-right"
+              aria-hidden="true"
+            />
+          )}
+        </Link>
+      );
+    }
+
+    return (
+      <div
+        className={`navbar-user-dropdown ${
+          mobile ? 'mobile-user-dropdown' : ''
+        }`}
+        ref={mobile ? mobileDropdownRef : desktopDropdownRef}
+      >
+        {/* Account Dropdown Button */}
+        <button
+          type="button"
+          className={`btn btn-gold navbar-user-button ${
+            mobile ? 'mobile-menu-join' : 'navbar-login-button'
+          }`}
+          onClick={() => setIsDropdownOpen((prev) => !prev)}
+          aria-expanded={isDropdownOpen}
+          aria-haspopup="true"
+        >
+          <span>
+            <i
+              className={`bi ${
+                isAdmin ? 'bi-shield-lock' : 'bi-person-circle'
+              } me-2`}
+              aria-hidden="true"
+            />
+            {isAdmin ? 'Admin' : 'My Account'}
+          </span>
+
+          <i
+            className={`bi bi-chevron-down dropdown-chevron ${
+              isDropdownOpen ? 'rotated' : ''
+            }`}
+            aria-hidden="true"
+          />
+        </button>
+
+        {/* Dropdown Items */}
+        {isDropdownOpen && (
+          <div className="navbar-dropdown-menu">
+            <Link
+              to={dashboardPath}
+              className="navbar-dropdown-item"
+              onClick={closeMenu}
+            >
+              <i
+                className="bi bi-speedometer2"
+                aria-hidden="true"
+              />
+              <span>{dashboardLabel}</span>
+            </Link>
+
+            <button
+              type="button"
+              className="navbar-dropdown-item navbar-dropdown-logout"
+              onClick={handleLogout}
+            >
+              <i
+                className="bi bi-box-arrow-right"
+                aria-hidden="true"
+              />
+              <span>Logout</span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  };
 
   return (
     <>
@@ -108,7 +245,7 @@ const Navbar = () => {
         }`}
         aria-label="Main navigation"
       >
-        <div className="container">
+        <div className={isAdminPage ? 'container-fluid navbar-admin-container' : 'container'}>
 
           {/* Brand */}
           <Link
@@ -116,6 +253,7 @@ const Navbar = () => {
             to="/"
             onClick={() => {
               closeMenu();
+
               window.scrollTo({
                 top: 0,
                 left: 0,
@@ -142,7 +280,7 @@ const Navbar = () => {
             <i className="bi bi-filter-right" aria-hidden="true" />
           </button>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Navigation Links */}
           <div className="desktop-navigation d-none d-lg-flex">
             <ul className="navbar-nav align-items-center gap-4">
               {navLinks.map((link) => (
@@ -155,99 +293,12 @@ const Navbar = () => {
             </ul>
           </div>
 
-          {/* Desktop Account Area */}
+          {/* Desktop Authentication */}
           <div className="desktop-navigation d-none d-lg-flex">
-            <ul className="navbar-nav align-items-center gap-4">
-
-              {isAuthenticated && !isAdmin ? (
-                <li
-                  className="nav-item profile-dropdown-wrapper"
-                  ref={profileRef}
-                  onMouseEnter={() => setIsProfileOpen(true)}
-                  onMouseLeave={() => setIsProfileOpen(false)}
-                >
-                  <button
-                    type="button"
-                    className={`profile-trigger ${
-                      isProfileOpen ? 'active' : ''
-                    }`}
-                    onClick={() => setIsProfileOpen((prev) => !prev)}
-                    aria-expanded={isProfileOpen}
-                    aria-haspopup="true"
-                  >
-                    <span className="profile-trigger-avatar">
-                      {profileInitial}
-                    </span>
-
-                    <span className="profile-trigger-name">
-                      {userName}
-                    </span>
-
-                    <i
-                      className={`bi bi-chevron-down profile-chevron ${
-                        isProfileOpen ? 'rotated' : ''
-                      }`}
-                      aria-hidden="true"
-                    />
-                  </button>
-
-                  <div
-                    className={`profile-dropdown ${
-                      isProfileOpen ? 'show' : ''
-                    }`}
-                  >
-                    <div className="profile-dropdown-user">
-                      <span className="profile-dropdown-avatar">
-                        {profileInitial}
-                      </span>
-
-                      <div className="profile-dropdown-user-info">
-                        <strong>{userName}</strong>
-                        <span>{userEmail}</span>
-                      </div>
-                    </div>
-
-                    <div className="profile-dropdown-divider" />
-
-                    <Link
-                      to="/profile"
-                      className="profile-dropdown-link"
-                      onClick={() => setIsProfileOpen(false)}
-                    >
-                      <i className="bi bi-person-circle" />
-                      <span>View Profile</span>
-                      <i className="bi bi-arrow-up-right profile-link-arrow" />
-                    </Link>
-
-                    <button
-                      type="button"
-                      className="profile-dropdown-link logout-link"
-                      onClick={handleLogout}
-                    >
-                      <i className="bi bi-box-arrow-right" />
-                      <span>Logout</span>
-                    </button>
-                  </div>
-                </li>
-              ) : (
-                <li className="nav-item ms-lg-2">
-                  <Link
-                    to={accountLink}
-                    className="btn btn-gold navbar-login-button"
-                  >
-                    {accountLabel}
-                    <i
-                      className={`bi ${
-                        isAuthenticated
-                          ? 'bi-speedometer2'
-                          : 'bi-arrow-up-right'
-                      }`}
-                      aria-hidden="true"
-                    />
-                  </Link>
-                </li>
-              )}
-
+            <ul className="navbar-nav align-items-center">
+              <li className="nav-item ms-lg-2">
+                <AuthMenu />
+              </li>
             </ul>
           </div>
         </div>
@@ -262,7 +313,7 @@ const Navbar = () => {
         aria-hidden="true"
       />
 
-      {/* Mobile Drawer */}
+      {/* Mobile Side Navigation Drawer */}
       <aside
         id="codesphere-mobile-menu"
         className={`codesphere-mobile-menu ${
@@ -279,6 +330,7 @@ const Navbar = () => {
             className="mobile-menu-brand"
             onClick={() => {
               closeMenu();
+
               window.scrollTo({
                 top: 0,
                 left: 0,
@@ -286,7 +338,10 @@ const Navbar = () => {
               });
             }}
           >
-            <img src={logo} alt="CodeSphere Logo" />
+            <img
+              src={logo}
+              alt="CodeSphere Logo"
+            />
           </Link>
 
           <button
@@ -295,7 +350,10 @@ const Navbar = () => {
             onClick={closeMenu}
             aria-label="Close navigation menu"
           >
-            <i className="bi bi-x-lg" aria-hidden="true" />
+            <i
+              className="bi bi-x-lg"
+              aria-hidden="true"
+            />
           </button>
         </div>
 
@@ -305,7 +363,10 @@ const Navbar = () => {
         <ul className="mobile-menu-links">
           {navLinks.map((link, index) => (
             <li key={link.label}>
-              <Link to={link.path} onClick={closeMenu}>
+              <Link
+                to={link.path}
+                onClick={closeMenu}
+              >
                 <span className="mobile-menu-number">
                   {String(index + 1).padStart(2, '0')}
                 </span>
@@ -324,59 +385,8 @@ const Navbar = () => {
         <div className="mobile-menu-footer">
           <p>Learn. Build. Grow.</p>
 
-          {isAuthenticated && !isAdmin ? (
-            <div className="mobile-account-card">
-              <div className="mobile-account-user">
-                <span className="profile-trigger-avatar">
-                  {profileInitial}
-                </span>
-
-                <div className="mobile-account-info">
-                  <strong>{userName}</strong>
-                  <span>{userEmail}</span>
-                </div>
-              </div>
-
-              <Link
-                to="/profile"
-                className="mobile-account-link"
-                onClick={closeMenu}
-              >
-                <i className="bi bi-person-circle" />
-                View Profile
-                <i className="bi bi-arrow-up-right ms-auto" />
-              </Link>
-
-              <button
-                type="button"
-                className="mobile-account-link mobile-logout-link"
-                onClick={handleLogout}
-              >
-                <i className="bi bi-box-arrow-right" />
-                Logout
-              </button>
-            </div>
-          ) : (
-            <Link
-              className="btn btn-gold mobile-menu-join"
-              to={accountLink}
-              onClick={closeMenu}
-            >
-              <span>
-                <i
-                  className={`bi ${
-                    isAuthenticated
-                      ? 'bi-speedometer2'
-                      : 'bi-box-arrow-in-right'
-                  } me-3`}
-                  aria-hidden="true"
-                />
-                {accountLabel}
-              </span>
-
-              <i className="bi bi-arrow-up-right" aria-hidden="true" />
-            </Link>
-          )}
+          {/* Mobile Authentication Dropdown */}
+          <AuthMenu mobile />
 
           <span className="mobile-menu-tagline">
             BUILD SOMETHING AMAZING.

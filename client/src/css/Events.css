@@ -1,3 +1,4 @@
+
 /* ========================================
    CodeSphere — Events
    Pale Blue / White / Navy / Orange
@@ -529,5 +530,92 @@
   .events-cards-grid > a:focus-visible .published-event-banner-image,
   .events-view-all-link:hover {
     transform: none;
+  }
+}
+
+/* ========================================
+   Events Filter and Search Toolbar
+======================================== */
+
+.events-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+/* Category filter */
+
+.events-category-wrapper {
+  position: relative;
+  display: flex;
+  flex: 0 0 220px;
+  align-items: center;
+  min-width: 0;
+  height: 48px;
+}
+
+.events-category-wrapper > .bi-filter {
+  position: absolute;
+  left: 16px;
+  z-index: 1;
+  pointer-events: none;
+  margin-top: 3px;
+  font-size: 20px;
+}
+
+.events-category-select {
+  width: 100%;
+  height: 48px;
+  min-height: 0;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 1px solid var(--event-border);
+  border-radius: 10px;
+  background: #ffffff;
+  color: var(--event-text);
+  padding: 0 42px 0 44px;
+  font: inherit;
+  font-size: 0.88rem;
+  cursor: pointer;
+  outline: none;
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.events-category-select:focus {
+  border-color: var(--event-accent);
+  box-shadow: 0 0 0 3px rgba(240, 90, 54, 0.12);
+}
+
+.events-category-arrow {
+  position: absolute;
+  right: 16px;
+  pointer-events: none;
+  font-size: 12px;
+}
+
+/* Search box */
+
+.events-toolbar .events-search-wrapper {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+
+/* Mobile toolbar */
+
+@media (max-width: 600px) {
+  .events-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .events-category-wrapper {
+    flex: none;
+    width: 100%;
   }
 }

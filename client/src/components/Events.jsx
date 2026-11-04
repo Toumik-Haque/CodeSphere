@@ -1,33 +1,9 @@
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import '../css/Events.css';
 import brand from '../assets/brand.svg';
-
-function getPublishedTime(event) {
-  const value = event.publishedAt || event.createdAt;
-
-  if (value) {
-    const time = new Date(value).getTime();
-    if (Number.isFinite(time)) return time;
-  }
-
-  // Fallback for MongoDB ObjectIds containing a creation timestamp.
-  const id = String(event._id || '');
-  if (/^[a-f\d]{24}$/i.test(id)) {
-    return parseInt(id.slice(0, 8), 16) * 1000;
-  }
-
-  return 0;
-}
-
-// function slugify(title) {
-//   return title
-//     .toLowerCase()
-//     .trim()
-//     .replace(/[^a-z0-9]+/g, '-')
-//     .replace(/^-|-$/g, '');
-// }
 
 export default function Events() {
   const [events, setEvents] = useState([]);
@@ -45,7 +21,7 @@ export default function Events() {
         if (!cancelled) {
           setEvents(
             [...list].sort(
-              (a, b) => getPublishedTime(b) - getPublishedTime(a)
+              (a, b) => new Date(b.date) - new Date(a.date)
             )
           );
         }
@@ -59,6 +35,7 @@ export default function Events() {
     }
 
     loadEvents();
+
     return () => {
       cancelled = true;
     };
@@ -113,20 +90,35 @@ export default function Events() {
   );
 }
 
+function getDescriptionPreview(html = '') {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+
+  return (doc.body.textContent || '')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
 export function EventCard({ event }) {
   return (
     <Link
       to={`/events/${event.slug}`}
       aria-label={`View ${event.title}`}
     >
-
       <article className="published-event-card">
         <div className="published-event-banner">
           <div className="published-event-banner-date-badge">
-            <p className="month m-0">{new Date(event.date).toLocaleString('en-GB', { month: 'short' })}</p>
-            <p className="day m-0">{new Date(event.date).toLocaleString('en-GB', { day: '2-digit' })}</p>
-          </div>
+            <p className="month m-0">
+              {new Date(event.date).toLocaleString('en-GB', {
+                month: 'short',
+              })}
+            </p>
 
+            <p className="day m-0">
+              {new Date(event.date).toLocaleString('en-GB', {
+                day: '2-digit',
+              })}
+            </p>
+          </div>
 
           {event.bannerImage?.url && (
             <img
@@ -156,12 +148,13 @@ export function EventCard({ event }) {
 
           <div
             className="published-event-banner-fallback"
-            style={{ display: event.bannerImage?.url ? 'none' : 'flex' }}
+            style={{
+              display: event.bannerImage?.url ? 'none' : 'flex',
+            }}
           >
             <img src={brand} alt="CodeSphere logo" />
             <span>{event.category || 'CodeSphere Event'}</span>
           </div>
-
         </div>
 
         <div className="published-event-body">
@@ -172,7 +165,8 @@ export function EventCard({ event }) {
           <h3 title={event.title}>{event.title}</h3>
 
           <p className="published-event-description">
-            {event.description || 'More details coming soon.'}
+            {getDescriptionPreview(event.description) ||
+              'More details coming soon.'}
           </p>
 
           <div className="published-event-bottom d-flex align-items-end justify-content-between">
@@ -185,16 +179,16 @@ export function EventCard({ event }) {
                   year: '2-digit',
                   hour: '2-digit',
                   minute: '2-digit',
-                  hour12: true
+                  hour12: true,
                 })}
               </span>
 
-              {event.venue && (
-                <span title={event.venue}>
-                  <i className="bi bi-geo-alt" aria-hidden="true" />
-                  {event.venue || event.mode}
-                </span>
-              )}
+
+              <span title={event.venue || event.mode}>
+                <i className="bi bi-geo-alt" aria-hidden="true" />
+                {event.venue || event.mode}
+              </span>
+
             </div>
 
             <div className="published-event-arrow">

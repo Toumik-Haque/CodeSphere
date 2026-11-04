@@ -5,6 +5,10 @@ require('dotenv').config();
 
 const app = express();
 
+const imagekit = require("./config/imagekit");
+
+console.log("ImageKit client initialized:", !!imagekit);
+
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
 }));
@@ -19,11 +23,13 @@ app.get('/api/health', (req, res) => {
 
 const authRoutes = require('./routes/authRoutes');
 const eventRoutes = require('./routes/eventRoutes');
+const userRoutes = require('./routes/userRoutes');
 const coreMemberRoutes = require('./routes/coreMemberRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/core-members', coreMemberRoutes);
 app.use('/api/contact', contactRoutes);
 

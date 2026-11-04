@@ -96,6 +96,18 @@ export default function Team() {
                       )}
 
                       <div className="core-member-socials">
+                        {member.linkedinLink && (
+                          <a
+                            href={member.linkedinLink}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={`${member.name} on LinkedIn`}
+                            title="LinkedIn"
+                          >
+                            <i className="bi bi-linkedin" aria-hidden="true" />
+                          </a>
+                        )}
+
                         {member.instagramLink && (
                           <a
                             href={member.instagramLink}
@@ -108,15 +120,15 @@ export default function Team() {
                           </a>
                         )}
 
-                        {member.linkedinLink && (
+                        {member.githubLink && (
                           <a
-                            href={member.linkedinLink}
+                            href={member.githubLink}
                             target="_blank"
                             rel="noopener noreferrer"
-                            aria-label={`${member.name} on LinkedIn`}
-                            title="LinkedIn"
+                            aria-label={`${member.name} on GitHub`}
+                            title="GitHub"
                           >
-                            <i className="bi bi-linkedin" aria-hidden="true" />
+                            <i className="bi bi-github" aria-hidden="true" />
                           </a>
                         )}
                       </div>

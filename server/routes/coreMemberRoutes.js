@@ -1,10 +1,10 @@
-
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const { Readable } = require('stream');
 
-const cloudinary = require('../config/cloudinary');
+const imagekit = require('../config/imagekit');
+const { toFile } = require('@imagekit/nodejs');
+
 const CoreMember = require('../models/CoreMember');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
@@ -49,34 +49,29 @@ function handleImageUpload(req, res, next) {
   });
 }
 
-// Upload a profile image to Cloudinary.
-function uploadToCloudinary(fileBuffer) {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'codesphere/core-members',
-        resource_type: 'image',
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-
-    Readable.from(fileBuffer).pipe(stream);
+// Upload a profile image to ImageKit.
+async function uploadToImageKit(fileBuffer, originalName) {
+  const uploadedFile = await imagekit.files.upload({
+    file: await toFile(fileBuffer, originalName),
+    fileName: originalName,
+    folder: '/codesphere/core-members',
   });
+
+  return {
+    url: uploadedFile.url,
+    publicId: uploadedFile.fileId,
+    provider: 'imagekit',
+  };
 }
 
-// Delete an image from Cloudinary.
-async function deleteCloudinaryImage(publicId) {
-  if (!publicId) return;
+// Delete an image from ImageKit.
+async function deleteStoredImage(image) {
+  if (!image?.publicId) return;
 
-  await cloudinary.uploader.destroy(publicId, {
-    resource_type: 'image',
-  });
+  await imagekit.files.delete(image.publicId);
 }
 
-// Validate an optional LinkedIn or Instagram URL.
+// Validate an optional LinkedIn, Instagram, or GitHub URL.
 function validateOptionalUrl(value, label) {
   if (typeof value !== 'string') {
     return `${label} must be a valid URL.`;
@@ -132,6 +127,13 @@ function validateMember(body) {
 
   if (instagramError) return instagramError;
 
+  const githubError = validateOptionalUrl(
+    body.githubLink ?? '',
+    'GitHub profile link'
+  );
+
+  if (githubError) return githubError;
+
   return null;
 }
 
@@ -177,17 +179,22 @@ router.post(
         });
       }
 
-      uploadedImage = await uploadToCloudinary(req.file.buffer);
+      uploadedImage = await uploadToImageKit(
+        req.file.buffer,
+        req.file.originalname
+      );
 
       const member = await CoreMember.create({
         name: req.body.name.trim(),
         role: req.body.role.trim(),
         linkedinLink: (req.body.linkedinLink || '').trim(),
         instagramLink: (req.body.instagramLink || '').trim(),
+        githubLink: (req.body.githubLink || '').trim(),
         order: 0,
         image: {
-          url: uploadedImage.secure_url,
-          publicId: uploadedImage.public_id,
+          url: uploadedImage.url,
+          publicId: uploadedImage.publicId,
+          provider: uploadedImage.provider,
         },
       });
 
@@ -198,11 +205,15 @@ router.post(
     } catch (error) {
       console.error('Create core member error:', error);
 
-      if (uploadedImage?.public_id) {
+      // If database creation fails, delete the newly uploaded image.
+      if (uploadedImage?.publicId) {
         try {
-          await deleteCloudinaryImage(uploadedImage.public_id);
+          await imagekit.files.delete(uploadedImage.publicId);
         } catch (cleanupError) {
-          console.error('Image cleanup error:', cleanupError.message);
+          console.error(
+            'ImageKit cleanup error:',
+            cleanupError.message
+          );
         }
       }
 
@@ -242,6 +253,7 @@ router.patch(
         role: req.body.role ?? member.role,
         linkedinLink: req.body.linkedinLink ?? member.linkedinLink ?? '',
         instagramLink: req.body.instagramLink ?? member.instagramLink ?? '',
+        githubLink: req.body.githubLink ?? member.githubLink ?? '',
       };
 
       const validationError = validateMember(candidate);
@@ -252,40 +264,54 @@ router.patch(
         });
       }
 
-      if (req.file) {
-        uploadedImage = await uploadToCloudinary(req.file.buffer);
-      }
+      // Preserve the original image details before changing anything.
+      const oldImage = {
+        publicId: member.image?.publicId,
+      };
 
-      const oldPublicId = member.image?.publicId;
+      // Upload replacement image to ImageKit if provided.
+      if (req.file) {
+        uploadedImage = await uploadToImageKit(
+          req.file.buffer,
+          req.file.originalname
+        );
+      }
 
       member.name = candidate.name.trim();
       member.role = candidate.role.trim();
       member.linkedinLink = candidate.linkedinLink.trim();
       member.instagramLink = candidate.instagramLink.trim();
+      member.githubLink = candidate.githubLink.trim();
 
       const shouldRemoveImage =
         !req.file && req.body.removeImage === 'true';
 
       if (uploadedImage) {
         member.image = {
-          url: uploadedImage.secure_url,
-          publicId: uploadedImage.public_id,
+          url: uploadedImage.url,
+          publicId: uploadedImage.publicId,
+          provider: uploadedImage.provider,
         };
       } else if (shouldRemoveImage) {
         member.image = {
           url: '',
           publicId: '',
+          provider: '',
         };
       }
 
+      // Save database changes before deleting the previous image.
       await member.save();
 
-      // Delete the previous image only after the database update succeeds.
-      if ((uploadedImage || shouldRemoveImage) && oldPublicId) {
+      // Delete the old image only after the database update succeeds.
+      if ((uploadedImage || shouldRemoveImage) && oldImage.publicId) {
         try {
-          await deleteCloudinaryImage(oldPublicId);
+          await deleteStoredImage(oldImage);
         } catch (cleanupError) {
-          console.error('Old image cleanup error:', cleanupError.message);
+          console.error(
+            'Old image cleanup error:',
+            cleanupError.message
+          );
         }
       }
 
@@ -296,11 +322,15 @@ router.patch(
     } catch (error) {
       console.error('Update core member error:', error);
 
-      if (uploadedImage?.public_id) {
+      // If the database update fails, clean up the new ImageKit image.
+      if (uploadedImage?.publicId) {
         try {
-          await deleteCloudinaryImage(uploadedImage.public_id);
+          await imagekit.files.delete(uploadedImage.publicId);
         } catch (cleanupError) {
-          console.error('New image cleanup error:', cleanupError.message);
+          console.error(
+            'New ImageKit image cleanup error:',
+            cleanupError.message
+          );
         }
       }
 
@@ -328,9 +358,10 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
       });
     }
 
+    // Delete the profile image from ImageKit.
     if (member.image?.publicId) {
       try {
-        await deleteCloudinaryImage(member.image.publicId);
+        await deleteStoredImage(member.image);
       } catch (cleanupError) {
         console.error(
           'Deleted member image cleanup error:',

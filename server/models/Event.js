@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const eventSchema = new mongoose.Schema(
@@ -9,6 +10,11 @@ const eventSchema = new mongoose.Schema(
       },
       publicId: {
         type: String,
+        default: '',
+      },
+      provider: {
+        type: String,
+        enum: ['imagekit', ''],
         default: '',
       },
     },
@@ -33,7 +39,7 @@ const eventSchema = new mongoose.Schema(
       type: String,
       required: true,
       trim: true,
-      maxlength: 5000,
+      maxlength: 30000,
     },
     date: {
       type: Date,
