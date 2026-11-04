@@ -18,7 +18,7 @@ const userSchema = new mongoose.Schema(
     yearOfStudy: {
       type: String,
       required: true,
-      enum: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year'],
+      enum: ['1st Year', '2nd Year', '3rd Year', '4th Year'],
     },
     email: {
       type: String,

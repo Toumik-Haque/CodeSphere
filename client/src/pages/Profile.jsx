@@ -63,7 +63,7 @@ const sectionConfig = [
       { name: 'collegeName', label: 'College / University', placeholder: 'Enter your college name', full: true },
       { name: 'degree', label: 'Degree', type: 'select', options: ['B.Tech', 'B.E.', 'BCA', 'B.Sc', 'M.Tech', 'MCA', 'M.Sc', 'Diploma', 'Other'] },
       { name: 'department', label: 'Department / Branch', type: 'select', options: departments },
-      { name: 'yearOfStudy', label: 'Current year', type: 'select', options: ['1st Year', '2nd Year', '3rd Year', '4th Year', '5th Year', 'Graduated'] },
+      { name: 'yearOfStudy', label: 'Current year', type: 'select', options: ['1st Year', '2nd Year', '3rd Year', '4th Year'] },
       { name: 'graduationYear', label: 'Expected graduation year', type: 'select', options: Array.from({ length: 9 }, (_, i) => String(new Date().getFullYear() + i)) },
     ],
   },

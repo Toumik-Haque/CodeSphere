@@ -5,6 +5,10 @@ require('dotenv').config();
 
 const app = express();
 
+const imagekit = require("./config/imagekit");
+
+console.log("ImageKit client initialized:", !!imagekit);
+
 app.use(cors({
   origin: process.env.CLIENT_URL || 'http://localhost:5173',
 }));

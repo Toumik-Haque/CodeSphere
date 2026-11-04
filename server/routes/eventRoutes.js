@@ -1,8 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
-const cloudinary = require('../config/cloudinary');
-const { Readable } = require('stream');
+
+const imagekit = require('../config/imagekit');
+const { toFile } = require('@imagekit/nodejs');
+
 const Event = require('../models/Event');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
@@ -46,29 +48,26 @@ function handleBannerUpload(req, res, next) {
   });
 }
 
-function uploadToCloudinary(fileBuffer) {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'codesphere/events',
-        resource_type: 'image',
-      },
-      (error, result) => {
-        if (error) return reject(error);
-        resolve(result);
-      }
-    );
-
-    Readable.from(fileBuffer).pipe(stream);
+// Upload new event banners to ImageKit.
+async function uploadToImageKit(fileBuffer, originalName) {
+  const uploadedFile = await imagekit.files.upload({
+    file: await toFile(fileBuffer, originalName),
+    fileName: originalName,
+    folder: '/codesphere/events',
   });
+
+  return {
+    url: uploadedFile.url,
+    publicId: uploadedFile.fileId,
+    provider: 'imagekit',
+  };
 }
 
-async function deleteCloudinaryImage(publicId) {
-  if (!publicId) return;
+// Delete an image from ImageKit.
+async function deleteStoredImage(image) {
+  if (!image?.publicId) return;
 
-  await cloudinary.uploader.destroy(publicId, {
-    resource_type: 'image',
-  });
+  await imagekit.files.delete(image.publicId);
 }
 
 const categories = [
@@ -281,7 +280,10 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
     }
 
     if (req.file) {
-      uploadedBanner = await uploadToCloudinary(req.file.buffer);
+      uploadedBanner = await uploadToImageKit(
+        req.file.buffer,
+        req.file.originalname
+      );
     }
 
     const slug = await makeUniqueSlug(req.body.title.trim());
@@ -308,9 +310,10 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
       status: req.body.status || 'draft',
       bannerImage: uploadedBanner
         ? {
-          url: uploadedBanner.secure_url,
-          publicId: uploadedBanner.public_id,
-        }
+            url: uploadedBanner.url,
+            publicId: uploadedBanner.publicId,
+            provider: uploadedBanner.provider,
+          }
         : undefined,
       createdBy: req.user._id,
     });
@@ -323,9 +326,9 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
     console.error('Create event error:', error);
 
     // Clean up the upload if event creation fails.
-    if (uploadedBanner?.public_id) {
+    if (uploadedBanner?.publicId) {
       try {
-        await deleteCloudinaryImage(uploadedBanner.public_id);
+        await imagekit.files.delete(uploadedBanner.publicId);
       } catch (cleanupError) {
         console.error(
           'Banner cleanup error:',
@@ -338,8 +341,7 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
       message: 'Unable to create event.',
     });
   }
-}
-);
+});
 
 // Admin: edit an event and optionally replace its banner.
 router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) => {
@@ -395,10 +397,16 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
     }
 
     if (req.file) {
-      uploadedBanner = await uploadToCloudinary(req.file.buffer);
+      uploadedBanner = await uploadToImageKit(
+        req.file.buffer,
+        req.file.originalname
+      );
     }
 
-    const oldPublicId = existing.bannerImage?.publicId;
+    // Keep the old banner details before changing the document.
+    const oldBanner = {
+      publicId: existing.bannerImage?.publicId,
+    };
 
     Object.assign(existing, {
       title: candidate.title.trim(),
@@ -422,22 +430,24 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
 
     if (uploadedBanner) {
       existing.bannerImage = {
-        url: uploadedBanner.secure_url,
-        publicId: uploadedBanner.public_id,
+        url: uploadedBanner.url,
+        publicId: uploadedBanner.publicId,
+        provider: uploadedBanner.provider,
       };
     } else if (shouldRemoveBanner) {
       existing.bannerImage = {
         url: '',
         publicId: '',
+        provider: '',
       };
     }
 
     await existing.save();
 
     // Delete the previous image only after the update succeeds.
-    if ((uploadedBanner || shouldRemoveBanner) && oldPublicId) {
+    if ((uploadedBanner || shouldRemoveBanner) && oldBanner.publicId) {
       try {
-        await deleteCloudinaryImage(oldPublicId);
+        await deleteStoredImage(oldBanner);
       } catch (cleanupError) {
         console.error(
           'Old banner cleanup error:',
@@ -453,9 +463,10 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
   } catch (error) {
     console.error('Update event error:', error);
 
-    if (uploadedBanner?.public_id) {
+    // Clean up the newly uploaded ImageKit banner if the update fails.
+    if (uploadedBanner?.publicId) {
       try {
-        await deleteCloudinaryImage(uploadedBanner.public_id);
+        await imagekit.files.delete(uploadedBanner.publicId);
       } catch (cleanupError) {
         console.error(
           'New banner cleanup error:',
@@ -468,8 +479,7 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
       message: 'Unable to update event.',
     });
   }
-}
-);
+});
 
 // Admin: delete an event.
 router.delete('/:id', protect, adminOnly, async (req, res) => {
@@ -488,7 +498,7 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
 
     if (event.bannerImage?.publicId) {
       try {
-        await deleteCloudinaryImage(event.bannerImage.publicId);
+        await deleteStoredImage(event.bannerImage);
       } catch (cleanupError) {
         console.error(
           'Deleted event banner cleanup error:',
@@ -503,7 +513,6 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
     return res.status(500).json({ message: 'Unable to delete event.' });
   }
 });
-
 
 // Admin: dashboard summary.
 router.get('/admin/summary', protect, adminOnly, async (req, res) => {

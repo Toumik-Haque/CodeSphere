@@ -10,7 +10,6 @@ const STUDY_YEARS = [
   '2nd Year',
   '3rd Year',
   '4th Year',
-  '5th Year',
 ];
 
 export default function Register() {
@@ -240,7 +239,7 @@ export default function Register() {
               ))}
             </select>
 
-            <label htmlFor="register-email">Email address</label>
+            <label htmlFor="register-email">Email address (college email preferred)</label>
             <input
               id="register-email"
               type="email"
