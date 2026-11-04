@@ -25,6 +25,11 @@ const coreMemberSchema = new mongoose.Schema(
         type: String,
         default: '',
       },
+      provider: {
+        type: String,
+        enum: ['imagekit', ''],
+        default: '',
+      },
     },
 
     githubLink: {

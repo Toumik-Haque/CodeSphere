@@ -1,3 +1,4 @@
+
 const mongoose = require('mongoose');
 
 const eventSchema = new mongoose.Schema(
@@ -9,6 +10,11 @@ const eventSchema = new mongoose.Schema(
       },
       publicId: {
         type: String,
+        default: '',
+      },
+      provider: {
+        type: String,
+        enum: ['imagekit', ''],
         default: '',
       },
     },

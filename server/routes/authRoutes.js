@@ -19,7 +19,6 @@ const STUDY_YEARS = [
   '2nd Year',
   '3rd Year',
   '4th Year',
-  '5th Year',
 ];
 
 const OTP_EXPIRY_MINUTES = 5;
