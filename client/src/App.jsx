@@ -28,6 +28,7 @@ import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
 import Team from './pages/Team';
 import Contact from './pages/Contact';
+import OpenSource from './pages/OpenSource';
 
 function HomePage() {
   return (
@@ -91,6 +92,7 @@ function AppRoutes() {
       <Route path="/events/:slug" element={<EventDetails />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/open-source" element={<OpenSource />} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />

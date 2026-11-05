@@ -8,6 +8,7 @@ const navLinks = [
   { label: 'Home', path: '/' },
   { label: 'Events', path: '/events' },
   { label: 'Materials', path: '/materials' },
+  { label: 'Open Source', path: '/open-source' },
   { label: 'Team', path: '/team' },
   { label: 'Contact Us', path: '/contact' },
 ];
@@ -68,7 +69,7 @@ const Footer = () => {
             </Link>
 
             <p className="footer-tagline">
-              Learn together. Build together. Grow together.
+              Learn together. Build together.Grow together.
             </p>
 
             <p className="footer-description">
@@ -77,24 +78,24 @@ const Footer = () => {
               ideas into reality.
             </p>
 
-            <div className='footer-email-location'>
-            <a
-              href="mailto:codesphere@agemc.ac.in"
-              className="footer-email"
-            >
-              <i className="bi bi-envelope" aria-hidden="true" />
-              codesphere@agemc.ac.in
-            </a>
+            <div className="footer-email-location">
+              <a
+                href="mailto:codesphere@agemc.ac.in"
+                className="footer-email"
+              >
+                <i className="bi bi-envelope" aria-hidden="true" />
+                codesphere@agemc.ac.in
+              </a>
 
-            <a
-              className="footer-location"
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <i className="bi bi-geo-alt" aria-hidden="true" />
-              {CONTACT_LOCATION}
-            </a>
+              <a
+                className="footer-location"
+                href={mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i className="bi bi-geo-alt" aria-hidden="true" />
+                {CONTACT_LOCATION}
+              </a>
             </div>
           </div>
 
@@ -122,7 +123,7 @@ const Footer = () => {
             <h3>Be Part of Our Community</h3>
 
             <p>
-              Connect with fellow developers, exchange ideas,
+              Connect with fellow developers,exchange ideas,
               collaborate on projects, and grow together
               with CodeSphere.
             </p>
