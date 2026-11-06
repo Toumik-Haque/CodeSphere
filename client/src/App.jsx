@@ -37,6 +37,9 @@ import Forum from './pages/Forum';
 import ForumNew from './pages/ForumNew';
 import ForumThread from './pages/ForumThread';
 import AdminForum from './pages/AdminForum';
+import ReverseCoding from './pages/ReverseCoding';
+import ReverseChallenge from './pages/ReverseChallenge';
+import AdminReverse from './pages/AdminReverse';
 
 function HomePage() {
   return (
@@ -109,6 +112,9 @@ function AppRoutes() {
       <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
       <Route path="/forum/:id" element={<ForumThread />} />
       <Route path="/admin/forum" element={<ProtectedRoute adminOnly><AdminForum /></ProtectedRoute>} />
+      <Route path="/reverse-coding" element={<ReverseCoding />} />
+      <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
+      <Route path="/admin/reverse-coding" element={<ProtectedRoute adminOnly><AdminReverse /></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />

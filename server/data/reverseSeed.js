@@ -4,7 +4,7 @@
 
 const py = (s) => s.replace(/^\n/, '');
 
-module.exports = [
+const CHALLENGES = [
   {
     slug: 'hello-codesphere',
     title: 'Hello, CodeSphere',
@@ -48,7 +48,7 @@ print(2026)
       { input: '-5 12', output: '7', explanation: 'Negative numbers work too.' },
     ],
     hints: ['Read the line with input() and split it.', 'Convert each part with int() before adding.'],
-    editorial: 'a, b = map(int, input().split())\nprint(a + b)',
+    editorial: '```\na, b = map(int, input().split())\nprint(a + b)\n```',
     tests: [
       { input: '3 4', output: '7', hidden: false },
       { input: '-5 12', output: '7', hidden: false },
@@ -270,7 +270,7 @@ for i in range(1, n + 1):
       { input: '3\n5 5 5', output: '-1', explanation: 'All values are equal, so there is no second largest.' },
     ],
     hints: ['Remove duplicates first.', 'You need two distinct values for an answer.'],
-    editorial: 'n = int(input())\nvalues = sorted(set(map(int, input().split())))\nprint(values[-2] if len(values) >= 2 else -1)',
+    editorial: '```\nn = int(input())\nvalues = sorted(set(map(int, input().split())))\nprint(values[-2] if len(values) >= 2 else -1)\n```',
     tests: [
       { input: '5\n4 9 2 9 7', output: '7', hidden: false },
       { input: '3\n5 5 5', output: '-1', hidden: false },
@@ -408,3 +408,13 @@ print("".join(out))
 `),
   },
 ];
+
+// Editorials are written as plain text; put code paragraphs in fences so
+// they display as code blocks.
+const looksLikeCode = (para) => /(print\(|input\(|^\w+(, \w+)* = |^for |^if )/m.test(para.split('\n')[0]);
+const fence = (text) => (text.includes('```') ? text : text
+  .split('\n\n')
+  .map((para) => (looksLikeCode(para) ? `\`\`\`\n${para}\n\`\`\`` : para))
+  .join('\n\n'));
+
+module.exports = CHALLENGES.map((c) => ({ ...c, editorial: fence(c.editorial) }));
