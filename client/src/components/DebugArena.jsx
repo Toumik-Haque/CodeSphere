@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
+import { celebrateBadges } from '../lib/badges';
 import '../css/DebugArena.css';
 
 const LETTERS = ['A', 'B', 'C', 'D'];
@@ -185,6 +186,7 @@ const DebugArena = () => {
       });
       setData(result);
       setJustSubmitted(true);
+      celebrateBadges(result.newBadges);
     } catch (err) {
       setError(err.message);
     } finally {

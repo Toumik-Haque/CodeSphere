@@ -11,6 +11,7 @@ import {
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import VideoBackground from './components/VideoBackground';
+import BadgeCelebration from './components/BadgeCelebration';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Events from './components/Events';
@@ -152,6 +153,7 @@ export default function App() {
 
       <AuthProvider>
         <AppRoutes />
+        <BadgeCelebration />
       </AuthProvider>
     </BrowserRouter>
   );
