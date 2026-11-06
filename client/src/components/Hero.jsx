@@ -1,6 +1,5 @@
-
-import React from 'react';
 import { Link } from 'react-router-dom';
+import CodeTypingWindow from './CodeTypingWindow';
 import '../css/Hero.css';
 
 const socialLinks = [
@@ -88,6 +87,29 @@ const Hero = () => {
           </div>
         </div>
 
+        {/* Playground preview, visible at first glance */}
+        <aside className="hero-playground" aria-label="CodeSphere Playground">
+          <div className="hero-playground-head">
+            <span className="hero-playground-badge">
+              <span className="hero-playground-live" /> NEW · PLAYGROUND
+            </span>
+            <span className="hero-playground-meta">70+ languages · 0 installs</span>
+          </div>
+
+          <CodeTypingWindow compact />
+
+          <div className="hero-playground-actions">
+            <Link to="/playground" className="hero-playground-cta">
+              Code in your browser
+              <i className="bi bi-arrow-up-right" aria-hidden="true" />
+            </Link>
+            <Link to="/playground#debugging-arena" className="hero-playground-bug">
+              <span aria-hidden="true">🐞</span> Today's bug
+            </Link>
+          </div>
+        </aside>
+
+        {/* Bottom scroll indicator */}
         <a
           className="hero-scroll-indicator"
           href="#about"
