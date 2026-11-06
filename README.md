@@ -201,7 +201,7 @@ It asks for a name, email and password (8–12 characters).
 
 Students earn **XP** from the daily Debugging Arena bug and the coding challenges, which decides their **level** (🥚 Newbie to 👑 CodeSphere Legend) and their place on the Leaderboard.
 
-**Badges** (41 in 9 groups) reward progress. They are saved the moment they're earned and are never taken away, so missing a day never costs a student anything.
+**Badges** (40 in 9 groups) reward progress. They are saved the moment they're earned and are never taken away, so missing a day never costs a student anything.
 
 | Type | How it's earned |
 | --- | --- |
