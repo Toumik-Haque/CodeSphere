@@ -183,6 +183,7 @@ It asks for a name, email and password (8–12 characters).
 | `server` | `npm run dev` | Start the API with auto-restart (nodemon) |
 | `server` | `npm start` | Start the API without auto-restart |
 | `server` | `node scripts/generateDebugBugs.js` | Rebuild the Debugging Arena question bank (`server/data/debugBugsGenerated.json`) |
+| `server` | `node scripts/syncBadges.js` | Award existing students the badges they already qualify for (safe to re-run) |
 
 ### Troubleshooting
 
@@ -193,6 +194,25 @@ It asks for a name, email and password (8–12 characters).
 | OTP fails with `undefined` errors | A variable is missing from `server/.env`. Compare it with `server/.env.example`. |
 | Frontend can't reach the API | Make sure the server is running and `VITE_API_URL` in `client/.env` points to it, then restart the client. |
 | Push rejected: `Push cannot contain secrets` | A commit contains a key. Remove it from the commit (not just in a later commit), and change the key in the provider's dashboard. |
+
+---
+
+## XP, Badges & Levels
+
+Students earn **XP** from the daily Debugging Arena bug and the coding challenges, which decides their **level** (🥚 Newbie to 👑 CodeSphere Legend) and their place on the Leaderboard.
+
+**Badges** (41 in 9 groups) reward progress. They are saved the moment they're earned and are never taken away, so missing a day never costs a student anything.
+
+| Type | How it's earned |
+| --- | --- |
+| Automatic | Tracked activity: bugs fixed, best streak, XP, events attended (marked by admins) |
+| Self-reported | Coding challenges (while answer checking is off) and a 100% profile, labelled as such |
+| Community | Awarded by admins from the Admin dashboard (Mentor, Builder, Collaborator, Speaker, Designer) |
+| Coming soon | Open-source badges, shown locked until pull requests are tracked |
+
+Students see their level, badges, progress and a showcase of up to 3 pinned badges on their **Profile**, and a toast pops up whenever they unlock one.
+
+**Adding a badge:** add an entry to `server/data/badges.js`. For automatic badges, use a `metric` from `buildStats()` in `server/utils/badges.js` (or add one there) and a `target`. Never change an existing badge `id`, because earned badges are stored by id. Then run `node scripts/syncBadges.js` to award it to students who already qualify.
 
 ---
 
