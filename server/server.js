@@ -31,6 +31,7 @@ const debugRoutes = require('./routes/debugRoutes');
 // one, students mark challenges done themselves.
 const challengeRoutes = require('./routes/challengeRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
+const badgeRoutes = require('./routes/badgeRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -40,6 +41,7 @@ app.use('/api/contact', contactRoutes);
 app.use('/api/debug', debugRoutes);
 app.use('/api/challenges', challengeRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/badges', badgeRoutes);
 
 const PORT = process.env.PORT || 5000;
 

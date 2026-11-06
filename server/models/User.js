@@ -37,6 +37,16 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    // Self-reported by the Profile page when the profile reaches 100%.
+    profileComplete: {
+      type: Boolean,
+      default: false,
+    },
+    // Up to 3 earned badge ids the student pins to their profile.
+    badgeShowcase: {
+      type: [String],
+      default: [],
+    },
   },
   { timestamps: true }
 );
