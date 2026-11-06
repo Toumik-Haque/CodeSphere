@@ -485,6 +485,20 @@ func main() {
 `,
 };
 
+// Practice challenges. Solved status is marked by the student and kept in
+// the browser. (With Judge0 enabled these come from the server instead:
+// server/data/codingChallenges.js holds the same list plus expected outputs.)
+export const CHALLENGES = [
+  { id: 'even-odd', title: 'Even or Odd?', level: 'Beginner', xp: 10, description: 'For each number from 1 to 10, print "<n> is even" or "<n> is odd", one per line.', example: '1 is odd\n2 is even\n3 is odd\n...\n10 is even', hint: 'Use the modulo operator: n % 2 == 0 means even.' },
+  { id: 'sum-digits', title: 'Sum of Digits', level: 'Beginner', xp: 10, description: 'Print the sum of the digits of 98765 (just the number).', example: '35', hint: 'Repeatedly take n % 10 for the last digit, then n / 10 to drop it.' },
+  { id: 'palindrome', title: 'Palindrome Checker', level: 'Easy', xp: 20, description: 'Check "racecar", then "codesphere". Print true or false for each, on separate lines.', example: 'true\nfalse', hint: 'Compare characters from both ends moving inwards, or reverse the string.' },
+  { id: 'primes', title: 'Prime Hunter', level: 'Easy', xp: 20, description: 'Print every prime number below 50, separated by spaces.', example: '2 3 5 7 11 ...', hint: 'A number is prime if nothing from 2 up to its square root divides it.' },
+  { id: 'vowels', title: 'Vowel Counter', level: 'Easy', xp: 20, description: 'Print how many vowels are in "Learn together, build together".', example: 'a single number', hint: 'Loop through each character and check if it is in "aeiouAEIOU".' },
+  { id: 'anagram', title: 'Anagram Detective', level: 'Medium', xp: 30, description: 'Print true if "listen" and "silent" are anagrams, otherwise false.', example: 'true or false', hint: 'Sort the letters of both words and compare, or count each letter.' },
+  { id: 'matrix', title: 'Matrix Transpose', level: 'Medium', xp: 30, description: 'Transpose [[1,2,3],[4,5,6],[7,8,9]] and print it, one row per line, numbers separated by spaces.', example: '1 2 3      1 4 7\n4 5 6  ->  2 5 8\n7 8 9      3 6 9', hint: 'The element at row i, column j moves to row j, column i.' },
+  { id: 'brackets', title: 'Balanced Brackets', level: 'Hard', xp: 50, description: 'Check "{[()()]}", then "{[(])}". Print true or false for each, on separate lines.', example: 'true\nfalse', hint: 'Push opening brackets onto a stack; each closing bracket must match the top.' },
+];
+
 export const TIPS = [
   'Stuck? Explain your code line by line to a friend, or a rubber duck. 🦆',
   'Read the error message from the top. It usually tells you the exact line.',
