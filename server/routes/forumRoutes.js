@@ -13,6 +13,7 @@ const {
 const { protect, adminOnly, optionalAuth } = require('../middleware/authMiddleware');
 const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
+const { syncBadgesQuietly } = require('../utils/badges');
 const {
   FORUM_CATEGORIES,
   POST_TYPES,
@@ -283,7 +284,8 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
 
     const thread = await ForumThread.create({ ...value, author: req.user._id });
     await ForumFollow.create({ user: req.user._id, thread: thread._id });
-    return res.status(201).json({ id: String(thread._id) });
+    const newBadges = await syncBadgesQuietly(req.user._id);
+    return res.status(201).json({ id: String(thread._id), newBadges });
   } catch (error) {
     console.error('Forum create error:', error);
     return res.status(500).json({ message: 'Could not create your discussion.' });
@@ -456,7 +458,8 @@ router.post('/threads/:id/replies', protect, limitReplies, async (req, res) => {
       link: `/forum/${thread._id}#reply-${reply._id}`,
     });
 
-    return res.status(201).json({ id: String(reply._id) });
+    const newBadges = await syncBadgesQuietly(req.user._id);
+    return res.status(201).json({ id: String(reply._id), newBadges });
   } catch (error) {
     console.error('Forum reply error:', error);
     return res.status(500).json({ message: 'Could not post your reply.' });
@@ -524,6 +527,11 @@ router.post('/threads/:id/accept', protect, async (req, res) => {
       thread.acceptedReply = reply._id;
     }
     await thread.save();
+    // The helper (not the asker) may have earned a "helpful answer" badge.
+    if (thread.acceptedReply) {
+      const reply = await ForumReply.findById(thread.acceptedReply).select('author').lean();
+      if (reply) await syncBadgesQuietly(reply.author);
+    }
     return res.json({ acceptedReply: thread.acceptedReply ? String(thread.acceptedReply) : null });
   } catch (error) {
     console.error('Forum accept error:', error);

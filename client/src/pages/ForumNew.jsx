@@ -6,6 +6,7 @@ import SafeText from '../components/SafeText';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig } from '../lib/forum';
+import { celebrateBadges } from '../lib/badges';
 import '../css/Forum.css';
 
 export default function ForumNew() {
@@ -53,6 +54,7 @@ export default function ForumNew() {
           tags: form.tags.split(/[,\s]+/).filter(Boolean),
         }),
       });
+      celebrateBadges(result.newBadges);
       navigate(`/forum/${result.id}`);
     } catch (err) {
       setError(err.message);

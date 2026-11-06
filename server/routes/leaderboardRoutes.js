@@ -4,6 +4,7 @@ const DebugProgress = require('../models/DebugProgress');
 const ChallengeProgress = require('../models/ChallengeProgress');
 const UserBadge = require('../models/UserBadge');
 const { badgesById, levelFor } = require('../utils/badges');
+const { reverseSummary, forumSummary } = require('../utils/activity');
 const { optionalAuth } = require('../middleware/authMiddleware');
 const { BUGS } = require('../data/debugBugs');
 const {
@@ -74,6 +75,7 @@ router.get('/', optionalAuth, async (req, res) => {
       ChallengeProgress.find().select('user solved').lean(),
       UserBadge.find().select('user badgeId').lean(),
     ]);
+    const [reverseByUser, forumByUser] = await Promise.all([reverseSummary(), forumSummary()]);
 
     // Earned badge ids per student (only badges that still exist).
     const badgesByUser = new Map();
@@ -108,7 +110,10 @@ router.get('/', optionalAuth, async (req, res) => {
           year: user.yearOfStudy,
           college: user.collegeName,
           memberSince: user.createdAt,
-          xp: debugXp + challengeXp,
+          xp: debugXp + challengeXp + (reverseByUser.get(id)?.xp || 0),
+          reverseXp: reverseByUser.get(id)?.xp || 0,
+          reverseSolved: reverseByUser.get(id)?.solved || 0,
+          acceptedAnswers: forumByUser.get(id)?.acceptedAnswers || 0,
           debugXp,
           challengeXp,
           streak: liveStreak(debug, today),

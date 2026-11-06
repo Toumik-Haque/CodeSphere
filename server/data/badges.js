@@ -18,6 +18,7 @@ const BADGE_GROUPS = [
   { id: 'consistency', label: 'Consistency', icon: 'bi-calendar-check' },
   { id: 'growth', label: 'Growth', icon: 'bi-graph-up-arrow' },
   { id: 'events', label: 'Events', icon: 'bi-calendar-event' },
+  { id: 'reverse', label: 'Reverse Coding', icon: 'bi-arrow-repeat' },
   { id: 'opensource', label: 'Open source', icon: 'bi-github' },
   { id: 'community', label: 'Community', icon: 'bi-people' },
 ];
@@ -68,11 +69,21 @@ const BADGES = [
   { id: 'hackathon-hero', group: 'events', emoji: '🏆', name: 'Hackathon Hero', type: 'auto', metric: 'hackathons', target: 1, how: 'Take part in a hackathon.' },
   { id: 'community-member', group: 'events', emoji: '🤝', name: 'Community Member', type: 'auto', metric: 'meetups', target: 1, how: 'Attend a community meetup.' },
 
+  // Reverse Coding (accepted submissions, checked by the server)
+  { id: 'reverse-engineer', group: 'reverse', emoji: '🔄', name: 'Reverse Engineer', tier: 'bronze', type: 'auto', metric: 'reverseSolved', target: 1, how: 'Solve your first Reverse Coding challenge.' },
+  { id: 'code-archaeologist', group: 'reverse', emoji: '🧬', name: 'Code Archaeologist', tier: 'silver', type: 'auto', metric: 'reverseSolved', target: 5, how: 'Solve 5 Reverse Coding challenges.' },
+  { id: 'master-reconstructor', group: 'reverse', emoji: '🏛️', name: 'Master Reconstructor', tier: 'gold', type: 'auto', metric: 'reverseSolved', target: 10, how: 'Solve 10 Reverse Coding challenges.' },
+
   // Open source (not tracked yet)
   { id: 'first-merge', group: 'opensource', emoji: '🌟', name: 'First Merge', type: 'coming-soon', how: 'Get your first pull request merged into CodeSphere.' },
   { id: 'maintainers-friend', group: 'opensource', emoji: '🔧', name: "Maintainer's Friend", type: 'coming-soon', how: 'Get 5 pull requests merged into CodeSphere.' },
   { id: 'docs-hero', group: 'opensource', emoji: '📚', name: 'Docs Hero', type: 'coming-soon', how: 'Get a documentation pull request merged.' },
   { id: 'git-master', group: 'opensource', emoji: '🐙', name: 'Git Master', type: 'coming-soon', how: 'Complete the Git & GitHub learning path.' },
+
+  // Community: forum (rewards helpful answers, not post volume)
+  { id: 'conversation-starter', group: 'community', emoji: '💬', name: 'Conversation Starter', type: 'auto', metric: 'forumPosts', target: 1, how: 'Start a discussion or reply in the forum.' },
+  { id: 'helpful-hand', group: 'community', emoji: '🤲', name: 'Helpful Hand', type: 'auto', metric: 'acceptedAnswers', target: 1, how: 'Have one of your forum replies accepted as the answer to someone else\'s question.' },
+  { id: 'go-to-helper', group: 'community', emoji: '🌟', name: 'Go-To Helper', tier: 'gold', type: 'auto', metric: 'acceptedAnswers', target: 5, how: 'Have 5 of your forum replies accepted as answers.' },
 
   // Community (given by admins)
   { id: 'community-mentor', group: 'community', emoji: '🧑‍🏫', name: 'Community Mentor', type: 'admin', how: 'Help other students learn. Given by an admin.' },

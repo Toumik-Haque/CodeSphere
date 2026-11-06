@@ -352,7 +352,7 @@ function Rules({ catalog }) {
 
       <details>
         <summary><span>2</span> How XP is calculated</summary>
-        <p><strong>Total XP = Daily bug XP + Coding challenge XP</strong></p>
+        <p><strong>Total XP = Daily bug XP + Coding challenge XP + Reverse Coding points</strong></p>
         <h4>Daily bug</h4>
         <p>
           A <strong>correct</strong> fix earns XP for the bug&apos;s difficulty <strong>plus a streak bonus</strong> of
@@ -376,6 +376,11 @@ function Rules({ catalog }) {
         </table>
         <p className="lb-example">
           Example: on day 4 of your streak you fix a Medium bug → 20 + (4 × {STREAK_BONUS_PER_DAY}) = <strong>28 XP</strong>.
+        </p>
+        <h4>Reverse Coding</h4>
+        <p>
+          Solving a <Link to="/reverse-coding">Reverse Coding</Link> challenge earns its points (10–30). Passing only some
+          hidden tests earns up to half. Only your best score for each challenge counts, and hints never cost points.
         </p>
         <h4>Coding challenges</h4>
         <p>
@@ -565,6 +570,10 @@ const Leaderboard = () => {
               <li>
                 <i className="bi bi-code-square" aria-hidden="true" />
                 <span><strong>Coding challenges</strong> +10–50 XP each</span>
+              </li>
+              <li>
+                <i className="bi bi-arrow-repeat" aria-hidden="true" />
+                <span><strong>Reverse Coding</strong> challenge points (best score counts)</span>
               </li>
               <li>
                 <i className="bi bi-fire" aria-hidden="true" />

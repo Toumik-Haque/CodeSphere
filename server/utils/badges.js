@@ -12,6 +12,7 @@ const Attendance = require('../models/Attendance');
 const { BUGS } = require('../data/debugBugs');
 const { BADGES, BADGE_GROUPS, LEVELS, MAX_SHOWCASE } = require('../data/badges');
 const { debugXpTotal, challengeXpTotal } = require('./progress');
+const { reverseSummary, forumSummary } = require('./activity');
 
 const bugsById = new Map(BUGS.map((bug) => [bug.id, bug]));
 const badgesById = new Map(BADGES.map((badge) => [badge.id, badge]));
@@ -37,9 +38,10 @@ function levelFor(xp) {
 
 /**
  * debug: DebugProgress doc (or null), challenge: ChallengeProgress doc (or
- * null), attendance: [{ category }] for events attended, user: { profileComplete }.
+ * null), attendance: [{ category }] for events attended, user: { profileComplete },
+ * reverse: { xp, solved } (Reverse Coding), forum: { posts, acceptedAnswers }.
  */
-function buildStats({ debug, challenge, attendance = [], user = {} }) {
+function buildStats({ debug, challenge, attendance = [], user = {}, reverse = {}, forum = {} }) {
   const completed = debug?.completed || [];
   const fixed = completed.filter((e) => e.correct);
   const levelOf = (bugId) => bugsById.get(bugId)?.level;
@@ -78,10 +80,16 @@ function buildStats({ debug, challenge, attendance = [], user = {} }) {
   const debugXp = debugXpTotal(debug, levelOf);
   const challengeXp = challengeXpTotal(challenge);
 
+  const reverseXp = reverse.xp || 0;
+
   return {
-    xp: debugXp + challengeXp,
+    xp: debugXp + challengeXp + reverseXp,
     debugXp,
     challengeXp,
+    reverseXp,
+    reverseSolved: reverse.solved || 0,
+    forumPosts: forum.posts || 0,
+    acceptedAnswers: forum.acceptedAnswers || 0,
     bugsFixed: fixed.length,
     bugsAnswered: answered,
     accuracy,
@@ -138,17 +146,21 @@ function evaluateBadges(stats, savedBadges) {
 
 async function loadStats(userId) {
   const id = new mongoose.Types.ObjectId(String(userId));
-  const [debug, challenge, attendance, user] = await Promise.all([
+  const [debug, challenge, attendance, user, reverse, forum] = await Promise.all([
     DebugProgress.findOne({ user: id }).lean(),
     ChallengeProgress.findOne({ user: id }).lean(),
     Attendance.find({ user: id, status: 'present' }).populate('event', 'category').lean(),
     User.findById(id).select('profileComplete').lean(),
+    reverseSummary([id]),
+    forumSummary([id]),
   ]);
   return buildStats({
     debug,
     challenge,
     attendance: attendance.filter((a) => a.event).map((a) => ({ category: a.event.category })),
     user: user || {},
+    reverse: reverse.get(String(id)) || {},
+    forum: forum.get(String(id)) || {},
   });
 }
 

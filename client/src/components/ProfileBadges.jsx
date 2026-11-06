@@ -210,6 +210,7 @@ export default function ProfileBadges({ preview = false, completion = 0 }) {
         <div className="bdg-stats">
           <div><strong>{stats.bugsFixed}</strong><span>🐞 bugs fixed</span></div>
           <div><strong>{stats.challengesSolved}</strong><span>💻 challenges</span></div>
+          <div><strong>{stats.reverseSolved}</strong><span>🔄 reverse solved</span></div>
           <div><strong>{stats.eventsAttended}</strong><span>🎟️ events</span></div>
           <div><strong>{stats.bestStreak}</strong><span>🔥 best streak</span></div>
           <div><strong>{data.earnedCount}/{data.totalCount}</strong><span>🏅 badges</span></div>

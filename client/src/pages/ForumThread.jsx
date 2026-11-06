@@ -6,6 +6,7 @@ import SafeText from '../components/SafeText';
 import { AuthorBadge } from './Forum';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig, REACTIONS } from '../lib/forum';
+import { celebrateBadges } from '../lib/badges';
 import { timeAgo } from '../lib/time';
 import '../css/Forum.css';
 
@@ -114,6 +115,7 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
         body: JSON.stringify({ body, parentReply: parentReply?.id }),
       });
       setBody('');
+      celebrateBadges(result.newBadges);
       onPosted(result.id);
     } catch (err) {
       setError(err.message);
