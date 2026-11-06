@@ -35,7 +35,7 @@ import Leaderboard from './pages/Leaderboard';
 function HomePage() {
   return (
     <>
-      <VideoBackground />
+      <VideoBackground src="/VID_20261105_010923.mp4" rotate="left" />
       <Navbar />
 
       <main>
