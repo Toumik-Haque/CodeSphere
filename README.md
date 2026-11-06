@@ -19,6 +19,8 @@ Contributions from anyone are welcome: students, first-time open source contribu
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
 - [Getting Started](#getting-started)
+- [Community Modules](#community-modules)
+- [XP, Badges & Levels](#xp-badges--levels)
 - [Contributing](#contributing)
 - [Code of Conduct](#code-of-conduct)
 - [Security](#security)
@@ -129,6 +131,8 @@ cp client/.env.example client/.env
 | `CONTACT_RECEIVER_EMAIL` | Inbox that receives contact-form messages |
 | `JUDGE0_URL` | Judge0 API used to check Playground challenge answers (default: RapidAPI's Judge0 CE; or your self-hosted Judge0) |
 | `JUDGE0_API_KEY` | RapidAPI key for Judge0 (leave empty for a self-hosted Judge0 without auth) |
+| `NEWS_FETCH_HOURS` | How often (hours) active Tech News feeds are fetched (default `24`) |
+| `NEWS_SCHEDULER` | Set to `off` to disable automatic feed fetching and scheduled digest announcements |
 
 **`client/.env`**
 
@@ -184,6 +188,8 @@ It asks for a name, email and password (8–12 characters).
 | `server` | `npm start` | Start the API without auto-restart |
 | `server` | `node scripts/generateDebugBugs.js` | Rebuild the Debugging Arena question bank (`server/data/debugBugsGenerated.json`) |
 | `server` | `node scripts/syncBadges.js` | Award existing students the badges they already qualify for (safe to re-run) |
+| `server` | `node scripts/seedReverseChallenges.js` | Load the 12 starter Reverse Coding challenges (add `--draft` to keep them unpublished) |
+| `server` | `node scripts/seedNewsSources.js` | Add the suggested Tech News sources (inactive until an editor tests and enables them) |
 
 ### Troubleshooting
 
@@ -197,11 +203,29 @@ It asks for a name, email and password (8–12 characters).
 
 ---
 
+## Community Modules
+
+| Module | Students | Staff page |
+| --- | --- | --- |
+| **Discussion Forum** (`/forum`) | Ask, share and discuss in 8 categories; replies, reactions, accepted answers, follow, save, report | `/admin/forum`: report queue, hide/remove/lock/pin/move, pause posting, audit trail |
+| **Reverse Coding** (`/reverse-coding`) | Read a program's behaviour, write code that reproduces it, Run on samples, Submit against hidden tests | `/admin/reverse-coding`: author challenges, validate the reference solution, publish or schedule |
+| **Weekly Tech News** (`/news`) | A curated weekly digest with original summaries and links to sources; search, archive, save | `/admin/news`: sources, review queue, approve stories, build and publish digests |
+
+All three use your normal CodeSphere account, send in-app notifications (bell icon; students can mute types) and feed XP and badges.
+
+**Good to know**
+- **Reverse Coding needs Judge0.** Student code only ever runs in the Judge0 sandbox, never on the web server. Until `JUDGE0_API_KEY` (or a self-hosted `JUDGE0_URL`) is set, students can read challenges and draft code, but Run, Submit and Validate are disabled.
+- **Tech News is human-reviewed.** Feeds only create candidates; a story is published only after an editor writes a summary and approves it inside a digest. Test each suggested source and check the publisher's terms before enabling it.
+- **Forum content is plain text.** Posts are stored as text and shown with a small safe formatting set (code blocks, inline code, bold, links), so user content can never inject HTML.
+- **Staff roles:** for now, admins act as moderators, news editors and challenge editors.
+
+---
+
 ## XP, Badges & Levels
 
-Students earn **XP** from the daily Debugging Arena bug and the coding challenges, which decides their **level** (🥚 Newbie to 👑 CodeSphere Legend) and their place on the Leaderboard.
+Students earn **XP** from the daily Debugging Arena bug, the coding challenges and Reverse Coding, which decides their **level** (🥚 Newbie to 👑 CodeSphere Legend) and their place on the Leaderboard.
 
-**Badges** (40 in 9 groups) reward progress. They are saved the moment they're earned and are never taken away, so missing a day never costs a student anything.
+**Badges** (46 in 10 groups) reward progress. They are saved the moment they're earned and are never taken away, so missing a day never costs a student anything.
 
 | Type | How it's earned |
 | --- | --- |
