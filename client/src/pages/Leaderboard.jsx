@@ -3,6 +3,8 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
+import { loadBadgeCatalog } from '../lib/badges';
+import OpenSourceContributors from '../components/OpenSourceContributors';
 import '../css/Leaderboard.css';
 
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
@@ -18,19 +20,6 @@ const BUG_XP = [
 ];
 const STREAK_BONUS_PER_DAY = 2;
 const STREAK_BONUS_CAP = 20;
-
-// Badges are earned from leaderboard stats.
-const BADGES = [
-  { id: 'first-fix', emoji: '🐞', name: 'First Fix', rule: 'Fix your first daily bug', earned: (r) => r.bugsFixed >= 1 },
-  { id: 'on-fire', emoji: '🔥', name: 'On Fire', rule: 'Reach a 3-day streak', earned: (r) => r.bestStreak >= 3 },
-  { id: 'week', emoji: '⚡', name: 'Week Warrior', rule: 'Reach a 7-day streak', earned: (r) => r.bestStreak >= 7 },
-  { id: 'month', emoji: '🏅', name: 'Month Master', rule: 'Reach a 30-day streak', earned: (r) => r.bestStreak >= 30 },
-  { id: 'sharp', emoji: '🎯', name: 'Sharpshooter', rule: '80%+ accuracy over 10+ daily bugs', earned: (r) => r.bugsAnswered >= 10 && r.accuracy >= 80 },
-  { id: 'solver', emoji: '🧩', name: 'Problem Solver', rule: 'Solve 3 coding challenges', earned: (r) => r.challengesSolved >= 3 },
-  { id: 'master', emoji: '👑', name: 'Challenge Master', rule: 'Solve all 8 coding challenges', earned: (r) => r.challengesSolved >= 8 },
-  { id: 'century', emoji: '💯', name: 'Century', rule: 'Earn 100 XP', earned: (r) => r.xp >= 100 },
-  { id: 'rocket', emoji: '🚀', name: 'XP Rocket', rule: 'Earn 500 XP', earned: (r) => r.xp >= 500 },
-];
 
 function avatarColor(text) {
   let hash = 0;
@@ -56,6 +45,21 @@ function Avatar({ row, size = 'md' }) {
   );
 }
 
+// Up to 3 pinned badges, shown as emojis after a student's name.
+function Showcase({ row, catalog }) {
+  if (!catalog || !row.showcase?.length) return null;
+  const byId = new Map(catalog.badges.map((b) => [b.id, b]));
+  const pins = row.showcase.map((id) => byId.get(id)).filter(Boolean);
+  if (!pins.length) return null;
+  return (
+    <span className="lb-showcase">
+      {pins.map((badge) => (
+        <span key={badge.id} title={badge.name} role="img" aria-label={badge.name}>{badge.emoji}</span>
+      ))}
+    </span>
+  );
+}
+
 function Metric({ sort, row }) {
   return sort === 'streak' ? (
     <>
@@ -70,7 +74,7 @@ function Metric({ sort, row }) {
   );
 }
 
-function Podium({ rows, sort, onOpen }) {
+function Podium({ rows, sort, onOpen, catalog }) {
   // Visual order: 2nd, 1st, 3rd.
   const order = [rows[1], rows[0], rows[2]].filter(Boolean);
   return (
@@ -86,7 +90,8 @@ function Podium({ rows, sort, onOpen }) {
           <span className="lb-medal" aria-hidden="true">{MEDALS[row.rank] || `#${row.rank}`}</span>
           <Avatar row={row} size="lg" />
           <strong className="lb-podium-name">{row.name}</strong>
-          <span className="lb-podium-year">{row.year}</span>
+          <span className="lb-podium-year">{row.level?.emoji} {row.year}</span>
+          <Showcase row={row} catalog={catalog} />
           <div className="lb-podium-metric">
             <Metric sort={sort} row={row} />
           </div>
@@ -138,7 +143,7 @@ function Spotlight({ spotlight, onOpen }) {
   );
 }
 
-function ProfileModal({ row, onClose }) {
+function ProfileModal({ row, onClose, catalog }) {
   const closeRef = useRef(null);
 
   useEffect(() => {
@@ -153,7 +158,12 @@ function ProfileModal({ row, onClose }) {
     };
   }, [onClose]);
 
-  const earned = BADGES.filter((b) => b.earned(row));
+  const byId = new Map((catalog?.badges || []).map((b) => [b.id, b]));
+  const earned = (row.badges || []).map((id) => byId.get(id)).filter(Boolean);
+  const pinned = new Set(row.showcase || []);
+  // Pinned badges first.
+  earned.sort((a, b) => Number(pinned.has(b.id)) - Number(pinned.has(a.id)));
+  const totalBadges = (catalog?.badges || []).filter((b) => b.type !== 'coming-soon').length;
   const bugShare = row.xp ? Math.round((row.debugXp / row.xp) * 100) : 0;
 
   return (
@@ -176,6 +186,9 @@ function ProfileModal({ row, onClose }) {
               {row.name}
               {row.isMe && <span className="lb-you">You</span>}
             </h2>
+            {row.level && (
+              <p className="lb-modal-level">{row.level.emoji} {row.level.name}</p>
+            )}
             <p>{row.year} · {row.college}</p>
             <p className="lb-modal-since">
               <i className="bi bi-calendar3" aria-hidden="true" /> Member since {memberSince(row.memberSince)}
@@ -214,12 +227,13 @@ function ProfileModal({ row, onClose }) {
         </div>
 
         <div className="lb-modal-badges">
-          <h3>Badges <span>{earned.length}/{BADGES.length}</span></h3>
+          <h3>Badges <span>{earned.length}/{totalBadges}</span></h3>
           {earned.length ? (
             <ul>
               {earned.map((badge) => (
-                <li key={badge.id} title={badge.rule}>
+                <li key={badge.id} title={badge.how} className={pinned.has(badge.id) ? 'is-pinned' : ''}>
                   <span aria-hidden="true">{badge.emoji}</span> {badge.name}
+                  {pinned.has(badge.id) && <i className="bi bi-pin-angle-fill" aria-label="Pinned" />}
                 </li>
               ))}
             </ul>
@@ -316,7 +330,7 @@ function YearDropdown({ value, onChange }) {
   );
 }
 
-function Rules() {
+function Rules({ catalog }) {
   return (
     <section className="lb-rules-guide" aria-labelledby="lb-rules-title">
       <h2 id="lb-rules-title">
@@ -338,7 +352,7 @@ function Rules() {
 
       <details>
         <summary><span>2</span> How XP is calculated</summary>
-        <p><strong>Total XP = Daily bug XP + Coding challenge XP</strong></p>
+        <p><strong>Total XP = Daily bug XP + Coding challenge XP + Reverse Coding points</strong></p>
         <h4>Daily bug</h4>
         <p>
           A <strong>correct</strong> fix earns XP for the bug&apos;s difficulty <strong>plus a streak bonus</strong> of
@@ -362,6 +376,11 @@ function Rules() {
         </table>
         <p className="lb-example">
           Example: on day 4 of your streak you fix a Medium bug → 20 + (4 × {STREAK_BONUS_PER_DAY}) = <strong>28 XP</strong>.
+        </p>
+        <h4>Reverse Coding</h4>
+        <p>
+          Solving a <Link to="/reverse-coding">Reverse Coding</Link> challenge earns its points (10–30). Passing only some
+          hidden tests earns up to half. Only your best score for each challenge counts, and hints never cost points.
         </p>
         <h4>Coding challenges</h4>
         <p>
@@ -393,15 +412,34 @@ function Rules() {
       </details>
 
       <details>
-        <summary><span>5</span> Badges</summary>
-        <ul className="lb-badge-list">
-          {BADGES.map((badge) => (
-            <li key={badge.id}>
-              <span aria-hidden="true">{badge.emoji}</span>
-              <strong>{badge.name}</strong> {badge.rule}
+        <summary><span>5</span> Badges &amp; levels</summary>
+        <p>
+          Badges are saved the moment you earn them and are <strong>never taken away</strong>,
+          even if a streak ends. Pin up to 3 on your profile to show them here.
+        </p>
+        <h4>Developer levels (by total XP)</h4>
+        <ul className="lb-level-list">
+          {(catalog?.levels || []).map((level) => (
+            <li key={level.name}>
+              <span aria-hidden="true">{level.emoji}</span> <strong>{level.name}</strong> {level.minXp}+ XP
             </li>
           ))}
         </ul>
+        {(catalog?.groups || []).map((group) => (
+          <div key={group.id}>
+            <h4><i className={`bi ${group.icon}`} aria-hidden="true" /> {group.label}</h4>
+            <ul className="lb-badge-list">
+              {catalog.badges.filter((b) => b.group === group.id).map((badge) => (
+                <li key={badge.id}>
+                  <span aria-hidden="true">{badge.emoji}</span>
+                  <strong>{badge.name}</strong> {badge.how}
+                  {badge.type === 'coming-soon' && <em> (coming soon)</em>}
+                  {badge.type === 'self' && <em> (self-reported)</em>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </details>
 
       <details>
@@ -417,12 +455,36 @@ function Rules() {
   );
 }
 
+const BOARD_FROM_HASH = { '#students': 'students', '#open-source': 'opensource' };
+const HASH_FOR_BOARD = { students: '#students', opensource: '#open-source' };
+const COMPACT_ROWS = 10;
+
 const Leaderboard = () => {
   const [sort, setSort] = useState('xp');
   const [year, setYear] = useState('');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [profile, setProfile] = useState(null);
+  const [catalog, setCatalog] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadBadgeCatalog()
+      .then((result) => !cancelled && setCatalog(result))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  // Which board: both side by side (default), students only, or open
+  // source only. /leaderboard#students and #open-source open one directly.
+  const [board, setBoard] = useState(() => BOARD_FROM_HASH[window.location.hash] || 'both');
+
+  const switchBoard = (next) => {
+    setBoard(next);
+    window.history.replaceState(null, '', HASH_FOR_BOARD[next] || window.location.pathname);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
   const closeProfile = useCallback(() => setProfile(null), []);
 
   useEffect(() => {
@@ -459,6 +521,42 @@ const Leaderboard = () => {
             <h1 className="lb-title">
               The <span className="gold-text">Leaderboard.</span>
             </h1>
+
+            <div className="lb-board-switch" role="tablist" aria-label="Choose a leaderboard">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={board === 'both'}
+                className={board === 'both' ? 'active' : ''}
+                onClick={() => switchBoard('both')}
+              >
+                <i className="bi bi-layout-split" aria-hidden="true" /> Both
+                <small>Side by side</small>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={board === 'students'}
+                className={board === 'students' ? 'active' : ''}
+                onClick={() => switchBoard('students')}
+              >
+                <i className="bi bi-mortarboard-fill" aria-hidden="true" /> Students
+                <small>XP &amp; streaks</small>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={board === 'opensource'}
+                className={board === 'opensource' ? 'active' : ''}
+                onClick={() => switchBoard('opensource')}
+              >
+                <i className="bi bi-github" aria-hidden="true" /> Open Source
+                <small>GitHub contributors</small>
+              </button>
+            </div>
+
+            {board !== 'opensource' && (
+            <>
             <p className="lb-subtitle">
               Fix the daily bug, solve coding challenges, keep your streak alive.
               Every day counts.
@@ -474,6 +572,10 @@ const Leaderboard = () => {
                 <span><strong>Coding challenges</strong> +10–50 XP each</span>
               </li>
               <li>
+                <i className="bi bi-arrow-repeat" aria-hidden="true" />
+                <span><strong>Reverse Coding</strong> challenge points (best score counts)</span>
+              </li>
+              <li>
                 <i className="bi bi-fire" aria-hidden="true" />
                 <span><strong>Streak</strong> = days in a row you fixed the daily bug</span>
               </li>
@@ -481,8 +583,126 @@ const Leaderboard = () => {
             <a href="#rules" className="lb-rules-link">
               <i className="bi bi-info-circle" aria-hidden="true" /> Read all the rules
             </a>
+            </>
+            )}
           </header>
 
+          {board === 'opensource' && <OpenSourceContributors />}
+
+          {board === 'both' && (
+            <>
+              <div className="lb-split">
+                <section className="lb-panel" aria-labelledby="lb-panel-students">
+                  <div className="lb-panel-head">
+                    <h2 id="lb-panel-students">
+                      <i className="bi bi-mortarboard-fill" aria-hidden="true" /> Students
+                    </h2>
+                    <span>XP &amp; daily-bug streaks</span>
+                  </div>
+
+                  <div className="lb-panel-controls">
+                    <div className="lb-tabs lb-tabs-sm" role="tablist" aria-label="Rank students by">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={sort === 'xp'}
+                        className={sort === 'xp' ? 'active' : ''}
+                        onClick={() => setSort('xp')}
+                      >
+                        <i className="bi bi-trophy-fill" aria-hidden="true" /> Top XP
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={sort === 'streak'}
+                        className={sort === 'streak' ? 'active' : ''}
+                        onClick={() => setSort('streak')}
+                      >
+                        <i className="bi bi-fire" aria-hidden="true" /> Streak
+                      </button>
+                    </div>
+                    <YearDropdown value={year} onChange={setYear} />
+                  </div>
+
+                  {data?.me && (
+                    <button type="button" className="lb-panel-me" onClick={() => setProfile(data.me)}>
+                      <span>Your rank</span>
+                      <strong>#{data.me.rank}</strong>
+                      <span>{data.me.xp} XP · {data.me.streak} 🔥</span>
+                      <i className="bi bi-chevron-right" aria-hidden="true" />
+                    </button>
+                  )}
+
+                  {error && <p className="lb-panel-empty" role="alert">{error}</p>}
+
+                  {loading && (
+                    <div className="lb-list" aria-busy="true">
+                      {Array.from({ length: 4 }, (_, i) => (
+                        <div key={i} className="lb-row lb-skeleton" />
+                      ))}
+                    </div>
+                  )}
+
+                  {data && rows.length === 0 && (
+                    <div className="lb-panel-empty">
+                      <span aria-hidden="true">🏁</span>
+                      <p>No students ranked yet. Fix today&apos;s bug to be first!</p>
+                      <Link to="/playground#debugging-arena" className="btn btn-gold">Today&apos;s bug</Link>
+                    </div>
+                  )}
+
+                  {rows.length > 0 && (
+                    <ol className="lb-list lb-list-compact">
+                      {rows.slice(0, COMPACT_ROWS).map((row, i) => (
+                        <li key={`${i}-${row.name}`}>
+                          <button
+                            type="button"
+                            className={`lb-row ${row.isMe ? 'is-me' : ''}`}
+                            onClick={() => setProfile(row)}
+                            aria-label={`View ${row.name}'s profile, rank ${row.rank}`}
+                          >
+                            <span className="lb-rank">{MEDALS[row.rank] || `#${row.rank}`}</span>
+                            <Avatar row={row} />
+                            <span className="lb-who">
+                              <strong>
+                                {row.name}
+                                {row.isMe && <span className="lb-you">You</span>}
+                                <Showcase row={row} catalog={catalog} />
+                              </strong>
+                              <span>{row.level?.emoji} {row.level?.name} · {row.year}</span>
+                            </span>
+                            <span className="lb-metric">
+                              <Metric sort={sort} row={row} />
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+
+                  <button type="button" className="lb-panel-more" onClick={() => switchBoard('students')}>
+                    View full student board
+                    {data?.totalPlayers > COMPACT_ROWS && ` (${data.totalPlayers} players)`}
+                    <i className="bi bi-arrow-right" aria-hidden="true" />
+                  </button>
+                </section>
+
+                <section className="lb-panel" aria-label="Open-source contributors">
+                  <OpenSourceContributors compact />
+                  <button type="button" className="lb-panel-more" onClick={() => switchBoard('opensource')}>
+                    View full open-source board <i className="bi bi-arrow-right" aria-hidden="true" />
+                  </button>
+                </section>
+              </div>
+
+              <div id="rules">
+                <Rules catalog={catalog} />
+              </div>
+            </>
+          )}
+
+          {board === 'students' && (
+          <>
           {data && <Spotlight spotlight={data.spotlight} onOpen={setProfile} />}
 
           {/* Controls */}
@@ -573,7 +793,7 @@ const Leaderboard = () => {
             </div>
           )}
 
-          {podium.length > 0 && <Podium rows={podium} sort={sort} onOpen={setProfile} />}
+          {podium.length > 0 && <Podium rows={podium} sort={sort} onOpen={setProfile} catalog={catalog} />}
 
           {rest.length > 0 && (
             <ol className="lb-list">
@@ -591,12 +811,14 @@ const Leaderboard = () => {
                       <strong>
                         {row.name}
                         {row.isMe && <span className="lb-you">You</span>}
+                        <Showcase row={row} catalog={catalog} />
                       </strong>
-                      <span>{row.year}</span>
+                      <span>{row.level?.emoji} {row.level?.name} · {row.year}</span>
                     </span>
                     <span className="lb-detail">
                       <span title="Bugs fixed"><i className="bi bi-bug" aria-hidden="true" /> {row.bugsFixed}</span>
                       <span title="Challenges solved"><i className="bi bi-code-square" aria-hidden="true" /> {row.challengesSolved}</span>
+                      <span title="Badges earned">🏅 {row.badgeCount || 0}</span>
                     </span>
                     <span className="lb-metric">
                       <Metric sort={sort} row={row} />
@@ -612,12 +834,14 @@ const Leaderboard = () => {
           )}
 
           <div id="rules">
-            <Rules />
+            <Rules catalog={catalog} />
           </div>
+          </>
+          )}
         </div>
       </main>
 
-      {profile && <ProfileModal row={profile} onClose={closeProfile} />}
+      {profile && <ProfileModal row={profile} onClose={closeProfile} catalog={catalog} />}
 
       <Footer />
     </>

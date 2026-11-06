@@ -1,7 +1,8 @@
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ContributionGuide from '../components/ContributionGuide';
 import '../css/OpenSource.css';
 
 const GITHUB_REPO = 'https://github.com/Toumik-Haque/CodeSphere';
@@ -9,7 +10,7 @@ const GITHUB_REPO = 'https://github.com/Toumik-Haque/CodeSphere';
 const programs = [
   {
     id: 'gsoc',
-    number: '01',
+    level: 'advanced',
     shortName: 'GSoC',
     name: 'Google Summer of Code',
     category: 'GLOBAL MENTORSHIP PROGRAM',
@@ -34,7 +35,7 @@ const programs = [
   },
   {
     id: 'jwoc',
-    number: '02',
+    level: 'intermediate',
     shortName: 'JWoC',
     name: 'JGEC Winter of Code',
     category: 'COMMUNITY-DRIVEN PROGRAM',
@@ -58,7 +59,7 @@ const programs = [
   },
   {
     id: 'gssoc',
-    number: '03',
+    level: 'intermediate',
     shortName: 'GSSoC',
     name: 'GirlScript Summer of Code',
     category: 'OPEN-SOURCE INITIATIVE',
@@ -83,7 +84,7 @@ const programs = [
   },
   {
     id: 'swoc',
-    number: '04',
+    level: 'intermediate',
     shortName: 'SWoC',
     name: 'Social Winter of Code',
     category: 'WINTER CONTRIBUTION PROGRAM',
@@ -107,12 +108,82 @@ const programs = [
   },
 ];
 
-const contributors = [
-  { name: 'Alex Morgan', handle: '@alexmorgan-dev', initials: 'AM', mergedPRs: 18, points: 950 },
-  { name: 'Jamie Wilson', handle: '@jamiewilson', initials: 'JW', mergedPRs: 14, points: 820 },
-  { name: 'Taylor Smith', handle: '@taylorsmith-dev', initials: 'TS', mergedPRs: 11, points: 710 },
-  { name: 'Jordan Lee', handle: '@jordanlee', initials: 'JL', mergedPRs: 8, points: 560 },
-  { name: 'Casey Brown', handle: '@caseybrown', initials: 'CB', mergedPRs: 6, points: 430 },
+// Levels for the "Explore the world of open source" section. Featured
+// programs (above) are placed into these levels by their `level` field.
+const LEVELS = [
+  {
+    id: 'beginner',
+    label: 'Beginner',
+    tagline: 'Find your first contribution',
+    icon: 'bi-flower1',
+    platforms: [
+      { name: 'First Contributions', shortName: 'FC', url: 'https://github.com/firstcontributions/first-contributions', icon: 'bi-signpost-split', description: 'A practice repo that walks you through fork, clone, branch and your first pull request.' },
+      { name: 'Good First Issue', shortName: 'GFI', url: 'https://goodfirstissue.dev', icon: 'bi-flag', description: 'Curated beginner-friendly issues from popular open-source projects.' },
+      { name: 'Up For Grabs', shortName: 'UFG', url: 'https://up-for-grabs.net', icon: 'bi-hand-index-thumb', description: 'Projects with tasks set aside specifically for newcomers.' },
+      { name: 'First Timers Only', shortName: 'FTO', url: 'https://www.firsttimersonly.com', icon: 'bi-1-circle', description: 'Issues reserved for people making their very first pull request.' },
+      { name: 'CodeTriage', shortName: 'CT', url: 'https://www.codetriage.com', icon: 'bi-envelope-open', description: 'Get a few open issues from repos you choose by email, and learn to read real code.' },
+      { name: 'GitHub issue search', shortName: 'GH', url: 'https://github.com/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22', icon: 'bi-github', description: 'Search open issues labelled "good first issue" across all of GitHub.' },
+    ],
+  },
+  {
+    id: 'intermediate',
+    label: 'Intermediate',
+    tagline: 'Structured events and programs',
+    icon: 'bi-lightning-charge',
+    platforms: [
+      { name: 'Hacktoberfest', shortName: 'HF', url: 'https://hacktoberfest.com', icon: 'bi-calendar-event', description: 'Every October: get pull requests accepted in participating repositories.' },
+      { name: 'MLH Fellowship', shortName: 'MLH', url: 'https://fellowship.mlh.io', icon: 'bi-mortarboard', description: 'A remote fellowship contributing to open source in a small team, with stipends.' },
+      { name: 'Season of KDE', shortName: 'SoK', url: 'https://season.kde.org', icon: 'bi-window-desktop', description: 'Mentored projects in the KDE desktop and apps ecosystem.' },
+      { name: 'Open Source Friday', shortName: 'OSF', url: 'https://opensourcefriday.com', icon: 'bi-calendar-week', description: 'A weekly habit: contribute something to open source every Friday.' },
+      { name: 'FOSSASIA Codeheat', shortName: 'FA', url: 'https://codeheat.org', icon: 'bi-fire', description: 'Contribute to FOSSASIA projects, with recognition for top contributors.' },
+    ],
+  },
+  {
+    id: 'advanced',
+    label: 'Advanced',
+    tagline: 'Paid, competitive mentorships',
+    icon: 'bi-rocket-takeoff',
+    platforms: [
+      { name: 'LFX Mentorship', shortName: 'LFX', url: 'https://mentorship.lfx.linuxfoundation.org', icon: 'bi-hdd-network', description: 'Paid mentorships on Linux Foundation projects such as Kubernetes and CNCF tools.' },
+      { name: 'Outreachy', shortName: 'OUT', url: 'https://www.outreachy.org', icon: 'bi-heart', description: 'Paid internships for people underrepresented in tech.' },
+      { name: 'Summer of Bitcoin', shortName: 'SoB', url: 'https://www.summerofbitcoin.org', icon: 'bi-currency-bitcoin', description: 'Paid open-source work on Bitcoin and Lightning projects.' },
+      { name: 'Google Season of Docs', shortName: 'GSoD', url: 'https://developers.google.com/season-of-docs', icon: 'bi-file-earmark-text', description: 'Paid technical writing for open-source projects.' },
+    ],
+  },
+];
+
+const LEVEL_TONES = { beginner: 'green', intermediate: 'amber', advanced: 'orange' };
+
+// Every card in the section, grouped by level: featured programs first.
+const CARDS_BY_LEVEL = LEVELS.map((level) => ({
+  ...level,
+  cards: [
+    ...programs.filter((program) => program.level === level.id),
+    ...level.platforms.map((platform) => ({
+      id: platform.name,
+      shortName: platform.shortName,
+      name: platform.name,
+      category: level.tagline.toUpperCase(),
+      tone: LEVEL_TONES[level.id],
+      icon: platform.icon,
+      description: platform.description,
+      resources: [{ label: 'Official website', url: platform.url }],
+    })),
+  ],
+}));
+
+const JOURNEY = [
+  { title: 'Start', text: 'Do the First Contributions repo, then 2–3 "good first issue" pull requests.' },
+  { title: 'Practise', text: 'Join Hacktoberfest, GSSoC or SWoC to get used to reviews and deadlines.' },
+  { title: 'Commit', text: 'Pick one organisation and contribute to it regularly for 2–3 months.' },
+  { title: 'Apply', text: 'Apply to GSoC, LFX or Outreachy with a proposal for that same organisation.' },
+];
+
+// The developers who built this site (same as the footer).
+const developers = [
+  { name: 'Toumik Haque', github: 'Toumik-Haque', initials: 'TH' },
+  { name: 'Sayan Singha', github: 'Sayan16-code', initials: 'SS' },
+  { name: 'Arnab Kumar Dey', github: 'arnab9957', initials: 'AD' },
 ];
 
 function SectionEyebrow({ children }) {
@@ -163,6 +234,9 @@ function CodeSphereHero() {
               <i className="bi bi-github" />
               <span>Contribute to our website</span>
               <i className="bi bi-arrow-up-right" />
+            </a>
+            <a className="os-hero-guide-link" href="#how-to-contribute">
+              <i className="bi bi-play-circle" /> New to open source? Watch the step-by-step guide
             </a>
             <span className="os-hero-action-note">
               Our college coding club, built in the open.
@@ -277,7 +351,10 @@ function CodeSphereHero() {
 }
 
 function ContributorTicker() {
-  const tickerItems = [...contributors, ...contributors];
+  // The track scrolls by half its width, so both halves must match and be
+  // wider than the screen: repeat the short list 4 times per half.
+  const half = Array.from({ length: 4 }, () => developers).flat();
+  const tickerItems = [...half, ...half];
 
   return (
     <section className="os-recognition-section">
@@ -297,21 +374,34 @@ function ContributorTicker() {
       <div className="os-ticker-shell" aria-label="Community contributor highlights">
         <div className="os-ticker-track">
           {tickerItems.map((person, index) => (
-            <div className="os-ticker-person" key={`${person.handle}-${index}`}>
-              <span className="os-ticker-avatar">{person.initials}</span>
+            <a
+              className="os-ticker-person"
+              key={`${person.github}-${index}`}
+              href={`https://github.com/${person.github}`}
+              target="_blank"
+              rel="noreferrer"
+              // Only the first copy is reachable by keyboard / screen readers.
+              tabIndex={index < developers.length ? 0 : -1}
+              aria-hidden={index < developers.length ? undefined : true}
+            >
+              <span className="os-ticker-avatar">
+                {person.initials}
+                <img
+                  src={`https://github.com/${person.github}.png?size=96`}
+                  alt=""
+                  loading="lazy"
+                  onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                />
+              </span>
               <span>
                 <strong>{person.name}</strong>
-                <small>{person.handle}</small>
+                <small>@{person.github}</small>
               </span>
-              <i className="bi bi-stars" />
-            </div>
+              <i className="bi bi-github" />
+            </a>
           ))}
         </div>
       </div>
-      <p className="os-demo-caption">
-        <i className="bi bi-info-circle" /> Contributor names and figures shown
-        on this preview page are illustrative sample data.
-      </p>
     </section>
   );
 }
@@ -384,11 +474,11 @@ function GuideModal({ program, onClose }) {
   );
 }
 
-function ProgramCard({ program, onOpenGuide }) {
+function ProgramCard({ program, number, onOpenGuide }) {
   return (
-    <article className={`os-program-card os-tone-${program.tone}`}>
+    <article className={`os-program-card is-compact os-tone-${program.tone}`}>
       <div className="os-program-card-top">
-        <span className="os-program-number">{program.number}</span>
+        <span className="os-program-number">{String(number).padStart(2, '0')}</span>
         <span className="os-program-mark">{program.shortName}</span>
       </div>
 
@@ -404,15 +494,20 @@ function ProgramCard({ program, onOpenGuide }) {
         <a href={program.resources[0].url} target="_blank" rel="noreferrer">
           Official website <i className="bi bi-arrow-up-right" />
         </a>
-        <button onClick={() => onOpenGuide(program)}>
-          Contribution guide <i className="bi bi-arrow-right" />
-        </button>
+        {program.steps && (
+          <button onClick={() => onOpenGuide(program)}>
+            Contribution guide <i className="bi bi-arrow-right" />
+          </button>
+        )}
       </div>
     </article>
   );
 }
 
 function ProgramsSection({ onOpenGuide }) {
+  const [level, setLevel] = useState('all');
+  const shown = level === 'all' ? CARDS_BY_LEVEL : CARDS_BY_LEVEL.filter((l) => l.id === level);
+
   return (
     <section className="os-programs-section" id="programs">
       <div className="os-section-heading">
@@ -423,19 +518,65 @@ function ProgramsSection({ onOpenGuide }) {
           <span>of open source.</span>
         </h2>
         <p>
-          Discover well-known contribution programs, find your starting point
-          and learn how to become part of the open-source community.
+          Discover well-known contribution programs and platforms, find your
+          starting point and learn how to become part of the open-source
+          community. Dates and eligibility change every year, so always check
+          the official site.
         </p>
       </div>
 
-      <div className="os-programs-grid">
-        {programs.map((program) => (
-          <ProgramCard
-            key={program.id}
-            program={program}
-            onOpenGuide={onOpenGuide}
-          />
+      <div className="os-level-tabs" role="tablist" aria-label="Filter by level">
+        {[{ id: 'all', label: 'All levels', icon: 'bi-grid' }, ...LEVELS].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={level === item.id}
+            className={`os-level-tab os-level-${item.id} ${level === item.id ? 'active' : ''}`}
+            onClick={() => setLevel(item.id)}
+          >
+            <i className={`bi ${item.icon}`} aria-hidden="true" /> {item.label}
+          </button>
         ))}
+      </div>
+
+      {shown.map((group) => (
+        <div className={`os-level-group os-level-${group.id}`} key={group.id}>
+          <div className="os-level-divider">
+            <span className="os-level-badge">
+              <i className={`bi ${group.icon}`} aria-hidden="true" /> {group.label}
+            </span>
+            <span className="os-level-tagline">{group.tagline}</span>
+            <span className="os-level-line" aria-hidden="true" />
+            <span className="os-level-count">{group.cards.length} programs</span>
+          </div>
+
+          <div className="os-programs-grid is-compact">
+            {group.cards.map((program, index) => (
+              <ProgramCard
+                key={program.id}
+                program={program}
+                number={index + 1}
+                onOpenGuide={onOpenGuide}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div className="os-journey">
+        <h3>
+          <i className="bi bi-map" aria-hidden="true" /> A suggested path for CodeSphere members
+        </h3>
+        <ol>
+          {JOURNEY.map((step, index) => (
+            <li key={step.title}>
+              <span className="os-journey-num">{index + 1}</span>
+              <strong>{step.title}</strong>
+              <p>{step.text}</p>
+            </li>
+          ))}
+        </ol>
       </div>
 
       <div className="os-program-bottom-note">
@@ -452,182 +593,6 @@ function ProgramsSection({ onOpenGuide }) {
   );
 }
 
-function ContributorAvatar({ person, rank }) {
-  return (
-    <div className={`os-leader-avatar os-avatar-${rank <= 3 ? rank : 'other'}`}>
-      {person.initials}
-    </div>
-  );
-}
-
-function PodiumCard({ person, rank }) {
-  const rankLabels = {
-    1: 'TOP CONTRIBUTOR',
-    2: 'SECOND PLACE',
-    3: 'THIRD PLACE',
-  };
-
-  return (
-    <article className={`os-podium-card os-podium-rank-${rank}`}>
-      <div className="os-podium-medal">
-        {rank === 1 ? <i className="bi bi-trophy-fill" /> : <i className="bi bi-award-fill" />}
-      </div>
-      <ContributorAvatar person={person} rank={rank} />
-      <span className="os-podium-rank-label">{rankLabels[rank]}</span>
-      <h3>{person.name}</h3>
-      <span className="os-podium-handle">{person.handle}</span>
-      <strong className="os-podium-points">{person.points.toLocaleString('en-IN')}</strong>
-      <span className="os-podium-points-label">POINTS</span>
-      <span className="os-podium-prs">
-        <i className="bi bi-git-pull-request" /> {person.mergedPRs} merged PRs
-      </span>
-    </article>
-  );
-}
-
-function Leaderboard() {
-  const [search, setSearch] = useState('');
-
-  const rankedContributors = useMemo(
-    () => [...contributors].sort((a, b) => b.points - a.points),
-    []
-  );
-
-  const podium = rankedContributors.slice(0, 3);
-  const remaining = rankedContributors.slice(3);
-
-  const filteredRemaining = remaining.filter((person) => {
-    const query = search.trim().toLowerCase();
-    return (
-      person.name.toLowerCase().includes(query) ||
-      person.handle.toLowerCase().includes(query)
-    );
-  });
-
-  const filteredPodium = podium.filter((person) => {
-    const query = search.trim().toLowerCase();
-    return (
-      person.name.toLowerCase().includes(query) ||
-      person.handle.toLowerCase().includes(query)
-    );
-  });
-
-  return (
-    <section className="os-leaderboard-section" id="leaderboard">
-      <div className="os-leaderboard-heading">
-        <SectionEyebrow>COMMUNITY RECOGNITION</SectionEyebrow>
-        <h2>
-          The CodeSphere
-          <br />
-          <span>Hall of Contributors.</span>
-        </h2>
-        <p>
-          Celebrating the people who turn ideas into improvements and make
-          our community stronger.
-        </p>
-        <span className="os-leaderboard-demo-label">
-          <i className="bi bi-info-circle" /> Preview leaderboard · Sample data
-        </span>
-      </div>
-
-      <div className="os-leaderboard-summary">
-        <div>
-          <span className="os-summary-icon"><i className="bi bi-people" /></span>
-          <span><strong>{contributors.length}</strong><small>Sample contributors</small></span>
-        </div>
-        <div>
-          <span className="os-summary-icon"><i className="bi bi-git-pull-request" /></span>
-          <span><strong>{contributors.reduce((sum, person) => sum + person.mergedPRs, 0)}</strong><small>Sample merged PRs</small></span>
-        </div>
-        <div>
-          <span className="os-summary-icon"><i className="bi bi-stars" /></span>
-          <span><strong>{contributors.reduce((sum, person) => sum + person.points, 0).toLocaleString('en-IN')}</strong><small>Sample points</small></span>
-        </div>
-      </div>
-
-      <div className="os-podium">
-        {podium[1] && <PodiumCard person={podium[1]} rank={2} />}
-        {podium[0] && <PodiumCard person={podium[0]} rank={1} />}
-        {podium[2] && <PodiumCard person={podium[2]} rank={3} />}
-      </div>
-
-      <div className="os-ranked-list">
-        <div className="os-ranked-list-heading">
-          <div>
-            <span className="os-ranked-kicker">THE FULL RANKING</span>
-            <h3>More contributors. More impact.</h3>
-          </div>
-          <label className="os-leaderboard-search">
-            <i className="bi bi-search" />
-            <input
-              type="search"
-              placeholder="Search contributors..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              aria-label="Search contributors"
-            />
-          </label>
-        </div>
-
-        <div className="os-ranked-table">
-          <div className="os-ranked-table-head">
-            <span>RANK</span>
-            <span>CONTRIBUTOR</span>
-            <span>MERGED PRs</span>
-            <span>POINTS</span>
-          </div>
-
-          {filteredPodium.map((person) => {
-            const rank = rankedContributors.indexOf(person) + 1;
-            return (
-              <div className="os-ranked-row os-ranked-podium-row" key={person.handle}>
-                <span className="os-ranked-position">#{rank}</span>
-                <span className="os-ranked-person">
-                  <ContributorAvatar person={person} rank={rank} />
-                  <span><strong>{person.name}</strong><small>{person.handle}</small></span>
-                </span>
-                <span className="os-ranked-prs">{person.mergedPRs}</span>
-                <strong className="os-ranked-points">{person.points.toLocaleString('en-IN')}</strong>
-              </div>
-            );
-          })}
-
-          {filteredRemaining.map((person) => {
-            const rank = rankedContributors.indexOf(person) + 1;
-            return (
-              <div className="os-ranked-row" key={person.handle}>
-                <span className="os-ranked-position">#{rank}</span>
-                <span className="os-ranked-person">
-                  <ContributorAvatar person={person} rank={rank} />
-                  <span><strong>{person.name}</strong><small>{person.handle}</small></span>
-                </span>
-                <span className="os-ranked-prs">{person.mergedPRs}</span>
-                <strong className="os-ranked-points">{person.points.toLocaleString('en-IN')}</strong>
-              </div>
-            );
-          })}
-
-          {filteredPodium.length === 0 && filteredRemaining.length === 0 && (
-            <div className="os-ranked-empty">
-              No contributors match “{search}”.
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="os-leaderboard-footnote">
-        <i className="bi bi-shield-check" />
-        <p>
-          This is a design preview, not live GitHub data. A production
-          leaderboard can rank verified contributions using merged pull
-          requests, review quality, documentation, tests and maintainer
-          approval—not just raw PR volume.
-        </p>
-      </div>
-    </section>
-  );
-}
-
 export default function OpenSource() {
   const [selectedProgram, setSelectedProgram] = useState(null);
 
@@ -638,9 +603,9 @@ export default function OpenSource() {
         <div className="os-page-background" aria-hidden="true" />
         <div className="os-page-container">
           <CodeSphereHero />
+          <ContributionGuide repoUrl={GITHUB_REPO} Eyebrow={SectionEyebrow} />
           <ContributorTicker />
           <ProgramsSection onOpenGuide={setSelectedProgram} />
-          <Leaderboard />
         </div>
       </main>
       <Footer />

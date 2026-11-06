@@ -8,6 +8,7 @@ import '../css/Profile.css';
 
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import ProfileBadges from '../components/ProfileBadges';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -1555,6 +1556,8 @@ export default function Profile({ preview = false }) {
                   <i className="bi bi-code-square" />
                 </div>
               </section>
+
+              <ProfileBadges preview={preview} completion={completion} />
 
               <ResumeUpload
                 profile={profile}

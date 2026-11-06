@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import DebugArena from '../components/DebugArena';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
+import { celebrateBadges } from '../lib/badges';
 import { LANGUAGES, EXAMPLES, STARTERS, CHALLENGES, TIPS } from '../data/playground';
 import '../css/Playground.css';
 
@@ -321,6 +322,7 @@ const Playground = () => {
         body: JSON.stringify({ language: language.id }),
       });
       setSolved(data.solved.map((item) => item.challengeId));
+      celebrateBadges(data.newBadges);
       if (!isSolved) {
         const xp = challenges.find((c) => c.id === id)?.xp;
         showToast(`Nice! +${xp} XP added to your account`);

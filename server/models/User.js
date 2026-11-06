@@ -37,6 +37,26 @@ const userSchema = new mongoose.Schema(
       enum: ['user', 'admin'],
       default: 'user',
     },
+    // Self-reported by the Profile page when the profile reaches 100%.
+    profileComplete: {
+      type: Boolean,
+      default: false,
+    },
+    // Up to 3 earned badge ids the student pins to their profile.
+    badgeShowcase: {
+      type: [String],
+      default: [],
+    },
+    // Notification types the student has muted (see utils/notify.js).
+    mutedNotifications: {
+      type: [String],
+      default: [],
+    },
+    // Set by forum moderators: no forum posting until this date.
+    forumMutedUntil: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );

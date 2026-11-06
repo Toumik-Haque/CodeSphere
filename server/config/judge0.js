@@ -82,21 +82,28 @@ function languageIds() {
 const decode = (value) => (value ? Buffer.from(value, 'base64').toString('utf8') : '');
 
 /**
- * Runs `code` and resolves to { status, stdout, error }.
+ * Runs `code` and resolves to { status, stdout, error, timeMs, memoryKb }.
  * status: 'ok' | 'compile-error' | 'runtime-error' | 'timeout' | 'service-error'
+ * options: { stdin, cpuTimeLimit (s), memoryLimitKb } (Judge0 sandbox limits;
+ * Judge0 runs code without network access by default).
  */
-async function runCode(language, code) {
+async function runCode(language, code, options = {}) {
   const ids = await languageIds();
   const languageId = ids[language];
   if (!languageId) throw new Error(`Unsupported language: ${language}`);
 
-  const url = `${baseUrl()}/submissions?base64_encoded=true&wait=true&fields=stdout,stderr,compile_output,status,message`;
+  const url = `${baseUrl()}/submissions?base64_encoded=true&wait=true&fields=stdout,stderr,compile_output,status,message,time,memory`;
   const response = await fetch(url, {
     method: 'POST',
     headers: headers(),
     body: JSON.stringify({
       language_id: languageId,
       source_code: Buffer.from(code, 'utf8').toString('base64'),
+      stdin: Buffer.from(options.stdin || '', 'utf8').toString('base64'),
+      ...(options.cpuTimeLimit ? { cpu_time_limit: options.cpuTimeLimit, wall_time_limit: options.cpuTimeLimit * 3 } : {}),
+      ...(options.memoryLimitKb ? { memory_limit: options.memoryLimitKb } : {}),
+      // Cap output so a runaway print loop can't flood the response.
+      max_file_size: 1024,
     }),
     signal: AbortSignal.timeout(TIMEOUT_MS),
   });
@@ -115,16 +122,18 @@ async function runCode(language, code) {
 
   const result = await response.json();
   const statusId = result.status?.id;
-  const stdout = decode(result.stdout);
+  const stdout = decode(result.stdout).slice(0, 20000);
+  const usage = { timeMs: result.time ? Math.round(Number(result.time) * 1000) : null, memoryKb: result.memory || null };
 
   // Judge0 status ids: 3 accepted, 5 time limit, 6 compile error, 7-12 runtime errors.
-  if (statusId === 3) return { status: 'ok', stdout, error: '' };
-  if (statusId === 5) return { status: 'timeout', stdout, error: 'Your code took too long to run.' };
-  if (statusId === 6) return { status: 'compile-error', stdout, error: decode(result.compile_output) };
+  if (statusId === 3) return { status: 'ok', stdout, error: '', ...usage };
+  if (statusId === 5) return { status: 'timeout', stdout, error: 'Your code took too long to run.', ...usage };
+  if (statusId === 6) return { status: 'compile-error', stdout, error: decode(result.compile_output), ...usage };
   if (statusId >= 7 && statusId <= 12) {
-    return { status: 'runtime-error', stdout, error: decode(result.stderr) || result.status.description };
+    return { status: 'runtime-error', stdout, error: decode(result.stderr) || result.status.description, ...usage };
   }
   return {
+    ...usage,
     status: 'service-error',
     stdout,
     error: decode(result.message) || result.status?.description || 'Unknown error',
