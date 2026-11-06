@@ -47,6 +47,16 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Notification types the student has muted (see utils/notify.js).
+    mutedNotifications: {
+      type: [String],
+      default: [],
+    },
+    // Set by forum moderators: no forum posting until this date.
+    forumMutedUntil: {
+      type: Date,
+      default: null,
+    },
   },
   { timestamps: true }
 );
