@@ -1291,3 +1291,373 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* =========================================
+   RESUME & CV UPLOAD
+========================================= */
+
+.resume-upload-card {
+  overflow: hidden;
+}
+
+.resume-upload-area {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  padding: 22px;
+  border: 1px dashed #e9c6b7;
+  border-radius: 12px;
+  background: linear-gradient(115deg, #fffaf7, #fff4ee);
+}
+
+.resume-upload-icon {
+  display: grid;
+  width: 55px;
+  height: 55px;
+  flex: 0 0 55px;
+  place-items: center;
+  border: 1px solid #f1d8cc;
+  border-radius: 14px;
+  background: #fff;
+  color: var(--profile-orange);
+  font-size: 25px;
+}
+
+.resume-upload-copy {
+  min-width: 0;
+  flex: 1;
+}
+
+.resume-upload-copy h3 {
+  margin: 0 0 6px;
+  color: var(--profile-navy);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.resume-upload-copy p {
+  margin: 0 0 7px;
+  color: var(--profile-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.resume-upload-copy small {
+  color: #9a7b6e;
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.resume-file-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 15px;
+  padding: 12px 14px;
+  border: 1px solid var(--profile-border);
+  border-radius: 10px;
+  background: #fcfdfe;
+}
+
+.resume-file-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 9px;
+  background: var(--profile-peach);
+  color: var(--profile-orange);
+  font-size: 18px;
+}
+
+.resume-file-info {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.resume-file-info strong {
+  overflow: hidden;
+  color: var(--profile-navy);
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.resume-file-info small {
+  color: var(--profile-muted);
+  font-size: 10px;
+}
+
+.resume-processing {
+  margin-top: 17px;
+  padding: 15px;
+  border: 1px solid var(--profile-border);
+  border-radius: 10px;
+  background: #fbfcfd;
+}
+
+.resume-processing-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 10px;
+  color: var(--profile-navy);
+  font-size: 11px;
+}
+
+.resume-processing-heading span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.resume-processing-heading strong {
+  color: var(--profile-orange);
+}
+
+.resume-progress-track {
+  overflow: hidden;
+  height: 7px;
+  border-radius: 20px;
+  background: #e9edf1;
+}
+
+.resume-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #e99a72, var(--profile-orange));
+  transition: width 0.25s ease;
+}
+
+.resume-processing > small {
+  display: block;
+  margin-top: 9px;
+  color: var(--profile-muted);
+  font-size: 10px;
+}
+
+.resume-review {
+  margin-top: 19px;
+  padding: 18px;
+  border: 1px solid #f0ded4;
+  border-radius: 12px;
+  background: #fffdfb;
+}
+
+.resume-review-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 15px;
+  margin-bottom: 18px;
+}
+
+.resume-review-label {
+  display: block;
+  margin-bottom: 6px;
+  color: var(--profile-orange);
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.2px;
+}
+
+.resume-review-heading h3 {
+  margin: 0;
+  color: var(--profile-navy);
+  font-size: 16px;
+  font-weight: 800;
+}
+
+.resume-review-heading p {
+  margin: 6px 0 0;
+  color: var(--profile-muted);
+  font-size: 11px;
+  line-height: 1.6;
+}
+
+.resume-found-count {
+  flex: 0 0 auto;
+  padding: 6px 9px;
+  border: 1px solid #f0ded4;
+  border-radius: 20px;
+  background: var(--profile-peach-soft);
+  color: var(--profile-orange-dark);
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.resume-review-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 13px;
+}
+
+.resume-review-field,
+.resume-review-skills {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.resume-review-field input,
+.resume-review-field select {
+  width: 100%;
+  min-width: 0;
+  min-height: 39px;
+  padding: 9px 10px;
+  border: 1px solid #dfe6ec;
+  border-radius: 8px;
+  outline: none;
+  background: #fff;
+  color: var(--profile-text);
+  font-family: inherit;
+  font-size: 11px;
+}
+
+.resume-review-field input:focus,
+.resume-review-field select:focus {
+  border-color: var(--profile-orange);
+  box-shadow: 0 0 0 3px rgba(223, 84, 47, 0.08);
+}
+
+.resume-review-check {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--profile-navy);
+  font-size: 11px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.resume-review-check input {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--profile-orange);
+  cursor: pointer;
+}
+
+.resume-review-skills {
+  grid-column: 1 / -1;
+  padding-top: 13px;
+  border-top: 1px solid var(--profile-border);
+}
+
+.resume-detected-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.resume-detected-skills span {
+  padding: 6px 10px;
+  border: 1px solid #f0ded4;
+  border-radius: 30px;
+  background: var(--profile-peach-soft);
+  color: var(--profile-navy);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.resume-review-actions {
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 19px;
+  padding-top: 15px;
+  border-top: 1px solid var(--profile-border);
+}
+
+.resume-privacy-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 15px;
+  color: var(--profile-muted);
+  font-size: 10px;
+  line-height: 1.6;
+}
+
+.resume-privacy-note i {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--profile-orange);
+  font-size: 13px;
+}
+
+/* Resume upload accessibility */
+
+.resume-upload-card button:focus-visible,
+.resume-review input:focus-visible,
+.resume-review select:focus-visible {
+  outline: 2px solid var(--profile-orange);
+  outline-offset: 3px;
+}
+
+/* =========================================
+   RESUME — RESPONSIVE
+========================================= */
+
+@media (max-width: 700px) {
+  .resume-upload-area {
+    align-items: flex-start;
+    flex-wrap: wrap;
+    padding: 17px;
+  }
+
+  .resume-upload-copy {
+    flex-basis: calc(100% - 75px);
+  }
+
+  .resume-upload-area > button {
+    width: 100%;
+  }
+
+  .resume-review {
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .resume-upload-area {
+    gap: 12px;
+  }
+
+  .resume-upload-icon {
+    width: 45px;
+    height: 45px;
+    flex-basis: 45px;
+    font-size: 21px;
+  }
+
+  .resume-upload-copy {
+    flex-basis: calc(100% - 60px);
+  }
+
+  .resume-review-fields {
+    grid-template-columns: 1fr;
+  }
+
+  .resume-review-skills {
+    grid-column: auto;
+  }
+
+  .resume-review-heading {
+    flex-direction: column;
+  }
+
+  .resume-review-actions {
+    flex-direction: column-reverse;
+  }
+
+  .resume-review-actions button {
+    width: 100%;
+  }
+}
