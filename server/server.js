@@ -34,6 +34,7 @@ const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const badgeRoutes = require('./routes/badgeRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const forumRoutes = require('./routes/forumRoutes');
+const reverseRoutes = require('./routes/reverseRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -46,6 +47,7 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/forum', forumRoutes);
+app.use('/api/reverse', reverseRoutes);
 
 const PORT = process.env.PORT || 5000;
 
