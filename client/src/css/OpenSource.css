@@ -2512,3 +2512,26 @@
     transition: none;
   }
 }
+
+/* Ticker: real developers with GitHub photos (initials show if the photo fails) */
+.os-ticker-person {
+  color: inherit;
+  text-decoration: none;
+}
+
+.os-ticker-person:hover strong {
+  color: var(--os-orange);
+}
+
+.os-ticker-avatar {
+  position: relative;
+  overflow: hidden;
+}
+
+.os-ticker-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}

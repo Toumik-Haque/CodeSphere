@@ -159,6 +159,13 @@ const JOURNEY = [
   { title: 'Apply', text: 'Apply to GSoC, LFX or Outreachy with a proposal for that same organisation.' },
 ];
 
+// The developers who built this site (same as the footer).
+const developers = [
+  { name: 'Toumik Haque', github: 'Toumik-Haque', initials: 'TH' },
+  { name: 'Sayan Singha', github: 'Sayan16-code', initials: 'SS' },
+  { name: 'Arnab Kumar Dey', github: 'arnab9957', initials: 'AD' },
+];
+
 const contributors = [
   { name: 'Alex Morgan', handle: '@alexmorgan-dev', initials: 'AM', mergedPRs: 18, points: 950 },
   { name: 'Jamie Wilson', handle: '@jamiewilson', initials: 'JW', mergedPRs: 14, points: 820 },
@@ -332,7 +339,10 @@ function CodeSphereHero() {
 }
 
 function ContributorTicker() {
-  const tickerItems = [...contributors, ...contributors];
+  // The track scrolls by half its width, so both halves must match and be
+  // wider than the screen: repeat the short list 4 times per half.
+  const half = Array.from({ length: 4 }, () => developers).flat();
+  const tickerItems = [...half, ...half];
 
   return (
     <section className="os-recognition-section">
@@ -352,21 +362,34 @@ function ContributorTicker() {
       <div className="os-ticker-shell" aria-label="Community contributor highlights">
         <div className="os-ticker-track">
           {tickerItems.map((person, index) => (
-            <div className="os-ticker-person" key={`${person.handle}-${index}`}>
-              <span className="os-ticker-avatar">{person.initials}</span>
+            <a
+              className="os-ticker-person"
+              key={`${person.github}-${index}`}
+              href={`https://github.com/${person.github}`}
+              target="_blank"
+              rel="noreferrer"
+              // Only the first copy is reachable by keyboard / screen readers.
+              tabIndex={index < developers.length ? 0 : -1}
+              aria-hidden={index < developers.length ? undefined : true}
+            >
+              <span className="os-ticker-avatar">
+                {person.initials}
+                <img
+                  src={`https://github.com/${person.github}.png?size=96`}
+                  alt=""
+                  loading="lazy"
+                  onError={(event) => { event.currentTarget.style.display = 'none'; }}
+                />
+              </span>
               <span>
                 <strong>{person.name}</strong>
-                <small>{person.handle}</small>
+                <small>@{person.github}</small>
               </span>
-              <i className="bi bi-stars" />
-            </div>
+              <i className="bi bi-github" />
+            </a>
           ))}
         </div>
       </div>
-      <p className="os-demo-caption">
-        <i className="bi bi-info-circle" /> Contributor names and figures shown
-        on this preview page are illustrative sample data.
-      </p>
     </section>
   );
 }
