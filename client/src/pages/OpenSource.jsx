@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ContributionGuide from '../components/ContributionGuide';
@@ -184,14 +184,6 @@ const developers = [
   { name: 'Toumik Haque', github: 'Toumik-Haque', initials: 'TH' },
   { name: 'Sayan Singha', github: 'Sayan16-code', initials: 'SS' },
   { name: 'Arnab Kumar Dey', github: 'arnab9957', initials: 'AD' },
-];
-
-const contributors = [
-  { name: 'Alex Morgan', handle: '@alexmorgan-dev', initials: 'AM', mergedPRs: 18, points: 950 },
-  { name: 'Jamie Wilson', handle: '@jamiewilson', initials: 'JW', mergedPRs: 14, points: 820 },
-  { name: 'Taylor Smith', handle: '@taylorsmith-dev', initials: 'TS', mergedPRs: 11, points: 710 },
-  { name: 'Jordan Lee', handle: '@jordanlee', initials: 'JL', mergedPRs: 8, points: 560 },
-  { name: 'Casey Brown', handle: '@caseybrown', initials: 'CB', mergedPRs: 6, points: 430 },
 ];
 
 function SectionEyebrow({ children }) {
@@ -601,182 +593,6 @@ function ProgramsSection({ onOpenGuide }) {
   );
 }
 
-function ContributorAvatar({ person, rank }) {
-  return (
-    <div className={`os-leader-avatar os-avatar-${rank <= 3 ? rank : 'other'}`}>
-      {person.initials}
-    </div>
-  );
-}
-
-function PodiumCard({ person, rank }) {
-  const rankLabels = {
-    1: 'TOP CONTRIBUTOR',
-    2: 'SECOND PLACE',
-    3: 'THIRD PLACE',
-  };
-
-  return (
-    <article className={`os-podium-card os-podium-rank-${rank}`}>
-      <div className="os-podium-medal">
-        {rank === 1 ? <i className="bi bi-trophy-fill" /> : <i className="bi bi-award-fill" />}
-      </div>
-      <ContributorAvatar person={person} rank={rank} />
-      <span className="os-podium-rank-label">{rankLabels[rank]}</span>
-      <h3>{person.name}</h3>
-      <span className="os-podium-handle">{person.handle}</span>
-      <strong className="os-podium-points">{person.points.toLocaleString('en-IN')}</strong>
-      <span className="os-podium-points-label">POINTS</span>
-      <span className="os-podium-prs">
-        <i className="bi bi-git-pull-request" /> {person.mergedPRs} merged PRs
-      </span>
-    </article>
-  );
-}
-
-function Leaderboard() {
-  const [search, setSearch] = useState('');
-
-  const rankedContributors = useMemo(
-    () => [...contributors].sort((a, b) => b.points - a.points),
-    []
-  );
-
-  const podium = rankedContributors.slice(0, 3);
-  const remaining = rankedContributors.slice(3);
-
-  const filteredRemaining = remaining.filter((person) => {
-    const query = search.trim().toLowerCase();
-    return (
-      person.name.toLowerCase().includes(query) ||
-      person.handle.toLowerCase().includes(query)
-    );
-  });
-
-  const filteredPodium = podium.filter((person) => {
-    const query = search.trim().toLowerCase();
-    return (
-      person.name.toLowerCase().includes(query) ||
-      person.handle.toLowerCase().includes(query)
-    );
-  });
-
-  return (
-    <section className="os-leaderboard-section" id="leaderboard">
-      <div className="os-leaderboard-heading">
-        <SectionEyebrow>COMMUNITY RECOGNITION</SectionEyebrow>
-        <h2>
-          The CodeSphere
-          <br />
-          <span>Hall of Contributors.</span>
-        </h2>
-        <p>
-          Celebrating the people who turn ideas into improvements and make
-          our community stronger.
-        </p>
-        <span className="os-leaderboard-demo-label">
-          <i className="bi bi-info-circle" /> Preview leaderboard · Sample data
-        </span>
-      </div>
-
-      <div className="os-leaderboard-summary">
-        <div>
-          <span className="os-summary-icon"><i className="bi bi-people" /></span>
-          <span><strong>{contributors.length}</strong><small>Sample contributors</small></span>
-        </div>
-        <div>
-          <span className="os-summary-icon"><i className="bi bi-git-pull-request" /></span>
-          <span><strong>{contributors.reduce((sum, person) => sum + person.mergedPRs, 0)}</strong><small>Sample merged PRs</small></span>
-        </div>
-        <div>
-          <span className="os-summary-icon"><i className="bi bi-stars" /></span>
-          <span><strong>{contributors.reduce((sum, person) => sum + person.points, 0).toLocaleString('en-IN')}</strong><small>Sample points</small></span>
-        </div>
-      </div>
-
-      <div className="os-podium">
-        {podium[1] && <PodiumCard person={podium[1]} rank={2} />}
-        {podium[0] && <PodiumCard person={podium[0]} rank={1} />}
-        {podium[2] && <PodiumCard person={podium[2]} rank={3} />}
-      </div>
-
-      <div className="os-ranked-list">
-        <div className="os-ranked-list-heading">
-          <div>
-            <span className="os-ranked-kicker">THE FULL RANKING</span>
-            <h3>More contributors. More impact.</h3>
-          </div>
-          <label className="os-leaderboard-search">
-            <i className="bi bi-search" />
-            <input
-              type="search"
-              placeholder="Search contributors..."
-              value={search}
-              onChange={(event) => setSearch(event.target.value)}
-              aria-label="Search contributors"
-            />
-          </label>
-        </div>
-
-        <div className="os-ranked-table">
-          <div className="os-ranked-table-head">
-            <span>RANK</span>
-            <span>CONTRIBUTOR</span>
-            <span>MERGED PRs</span>
-            <span>POINTS</span>
-          </div>
-
-          {filteredPodium.map((person) => {
-            const rank = rankedContributors.indexOf(person) + 1;
-            return (
-              <div className="os-ranked-row os-ranked-podium-row" key={person.handle}>
-                <span className="os-ranked-position">#{rank}</span>
-                <span className="os-ranked-person">
-                  <ContributorAvatar person={person} rank={rank} />
-                  <span><strong>{person.name}</strong><small>{person.handle}</small></span>
-                </span>
-                <span className="os-ranked-prs">{person.mergedPRs}</span>
-                <strong className="os-ranked-points">{person.points.toLocaleString('en-IN')}</strong>
-              </div>
-            );
-          })}
-
-          {filteredRemaining.map((person) => {
-            const rank = rankedContributors.indexOf(person) + 1;
-            return (
-              <div className="os-ranked-row" key={person.handle}>
-                <span className="os-ranked-position">#{rank}</span>
-                <span className="os-ranked-person">
-                  <ContributorAvatar person={person} rank={rank} />
-                  <span><strong>{person.name}</strong><small>{person.handle}</small></span>
-                </span>
-                <span className="os-ranked-prs">{person.mergedPRs}</span>
-                <strong className="os-ranked-points">{person.points.toLocaleString('en-IN')}</strong>
-              </div>
-            );
-          })}
-
-          {filteredPodium.length === 0 && filteredRemaining.length === 0 && (
-            <div className="os-ranked-empty">
-              No contributors match “{search}”.
-            </div>
-          )}
-        </div>
-      </div>
-
-      <div className="os-leaderboard-footnote">
-        <i className="bi bi-shield-check" />
-        <p>
-          This is a design preview, not live GitHub data. A production
-          leaderboard can rank verified contributions using merged pull
-          requests, review quality, documentation, tests and maintainer
-          approval—not just raw PR volume.
-        </p>
-      </div>
-    </section>
-  );
-}
-
 export default function OpenSource() {
   const [selectedProgram, setSelectedProgram] = useState(null);
 
@@ -790,7 +606,6 @@ export default function OpenSource() {
           <ContributionGuide repoUrl={GITHUB_REPO} Eyebrow={SectionEyebrow} />
           <ContributorTicker />
           <ProgramsSection onOpenGuide={setSelectedProgram} />
-          <Leaderboard />
         </div>
       </main>
       <Footer />

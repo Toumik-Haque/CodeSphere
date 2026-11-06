@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
+import OpenSourceContributors from '../components/OpenSourceContributors';
 import '../css/Leaderboard.css';
 
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
@@ -423,6 +424,14 @@ const Leaderboard = () => {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [profile, setProfile] = useState(null);
+  // Which board: student XP/streak, or open-source contributors.
+  // /leaderboard#open-source opens the open-source board directly.
+  const [board, setBoard] = useState(() => (window.location.hash === '#open-source' ? 'opensource' : 'students'));
+
+  const switchBoard = (next) => {
+    setBoard(next);
+    window.history.replaceState(null, '', next === 'opensource' ? '#open-source' : window.location.pathname);
+  };
   const closeProfile = useCallback(() => setProfile(null), []);
 
   useEffect(() => {
@@ -459,6 +468,32 @@ const Leaderboard = () => {
             <h1 className="lb-title">
               The <span className="gold-text">Leaderboard.</span>
             </h1>
+
+            <div className="lb-board-switch" role="tablist" aria-label="Choose a leaderboard">
+              <button
+                type="button"
+                role="tab"
+                aria-selected={board === 'students'}
+                className={board === 'students' ? 'active' : ''}
+                onClick={() => switchBoard('students')}
+              >
+                <i className="bi bi-mortarboard-fill" aria-hidden="true" /> Students
+                <small>XP &amp; streaks</small>
+              </button>
+              <button
+                type="button"
+                role="tab"
+                aria-selected={board === 'opensource'}
+                className={board === 'opensource' ? 'active' : ''}
+                onClick={() => switchBoard('opensource')}
+              >
+                <i className="bi bi-github" aria-hidden="true" /> Open Source
+                <small>GitHub contributors</small>
+              </button>
+            </div>
+
+            {board === 'students' && (
+            <>
             <p className="lb-subtitle">
               Fix the daily bug, solve coding challenges, keep your streak alive.
               Every day counts.
@@ -481,8 +516,14 @@ const Leaderboard = () => {
             <a href="#rules" className="lb-rules-link">
               <i className="bi bi-info-circle" aria-hidden="true" /> Read all the rules
             </a>
+            </>
+            )}
           </header>
 
+          {board === 'opensource' && <OpenSourceContributors />}
+
+          {board === 'students' && (
+          <>
           {data && <Spotlight spotlight={data.spotlight} onOpen={setProfile} />}
 
           {/* Controls */}
@@ -614,6 +655,8 @@ const Leaderboard = () => {
           <div id="rules">
             <Rules />
           </div>
+          </>
+          )}
         </div>
       </main>
 
