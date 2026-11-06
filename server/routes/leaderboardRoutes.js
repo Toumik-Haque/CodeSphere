@@ -27,6 +27,18 @@ const SORTS = {
     || a.name.localeCompare(b.name),
 };
 
+// Competition ranking (1, 1, 3): rows sorted by `key`; ties on the main
+// metric share a rank.
+function assignRanks(sortedRows, key) {
+  let previous = null;
+  sortedRows.forEach((row, index) => {
+    const value = row[key];
+    const rank = previous && previous.value === value ? previous.rank : index + 1;
+    row.ranks = { ...row.ranks, [key]: rank };
+    previous = { value, rank };
+  });
+}
+
 function initials(name) {
   return name
     .split(/\s+/)
@@ -54,7 +66,7 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const [users, debugDocs, challengeDocs] = await Promise.all([
       User.find({ role: 'user', ...(year ? { yearOfStudy: year } : {}) })
-        .select('name yearOfStudy')
+        .select('name yearOfStudy collegeName createdAt')
         .lean(),
       DebugProgress.find().select('user completed streak bestStreak lastCompletedDate').lean(),
       ChallengeProgress.find().select('user solved').lean(),
@@ -71,29 +83,36 @@ router.get('/', optionalAuth, async (req, res) => {
         const debugXp = debugXpTotal(debug, levelOf);
         const challengeXp = challengeXpTotal(challenge);
 
+        const answered = debug ? debug.completed.length : 0;
+        const fixed = debug ? debug.completed.filter((e) => e.correct).length : 0;
+
         return {
           id,
           name: user.name,
           year: user.yearOfStudy,
+          college: user.collegeName,
+          memberSince: user.createdAt,
           xp: debugXp + challengeXp,
           debugXp,
           challengeXp,
           streak: liveStreak(debug, today),
           bestStreak: debug?.bestStreak || 0,
-          bugsFixed: debug ? debug.completed.filter((e) => e.correct).length : 0,
+          bugsFixed: fixed,
+          bugsAnswered: answered,
+          accuracy: answered ? Math.round((fixed / answered) * 100) : 0,
           challengesSolved: challenge ? challenge.solved.length : 0,
         };
       })
       // Only students who have played appear on the board.
-      .filter((row) => row.xp > 0 || row.bestStreak > 0)
-      .sort(SORTS[sort]);
+      .filter((row) => row.xp > 0 || row.bestStreak > 0);
 
-    // Competition ranking (1, 1, 3): ties on the main metric share a rank.
-    let previous = null;
-    rows.forEach((row, index) => {
-      const value = row[sort];
-      row.rank = previous && previous.value === value ? previous.rank : index + 1;
-      previous = { value, rank: row.rank };
+    // Rank on both boards so profiles can show both; then order by `sort`.
+    for (const key of Object.keys(SORTS)) {
+      assignRanks(rows.sort(SORTS[key]), key);
+    }
+    rows.sort(SORTS[sort]);
+    rows.forEach((row) => {
+      row.rank = row.ranks[sort];
     });
 
     const publicRow = (row) => ({
@@ -106,6 +125,17 @@ router.get('/', optionalAuth, async (req, res) => {
 
     const meRow = req.user ? rows.find((row) => row.id === String(req.user._id)) : null;
 
+    // Spotlight: the top student for each title (first in sort order wins ties).
+    const top = (compare) => (rows.length ? [...rows].sort(compare)[0] : null);
+    const champion = top(SORTS.xp);
+    const streakLeader = top(SORTS.streak);
+    const bestStreak = top((a, b) => b.bestStreak - a.bestStreak || SORTS.xp(a, b));
+    const spotlight = {
+      xp: champion?.xp ? publicRow(champion) : null,
+      streak: streakLeader?.streak ? publicRow(streakLeader) : null,
+      bestStreak: bestStreak?.bestStreak ? publicRow(bestStreak) : null,
+    };
+
     return res.json({
       sort,
       year,
@@ -113,6 +143,7 @@ router.get('/', optionalAuth, async (req, res) => {
       totalPlayers: rows.length,
       rows: rows.slice(0, MAX_ROWS).map(publicRow),
       me: meRow ? publicRow(meRow) : null,
+      spotlight,
       signedIn: !isGuest,
     });
   } catch (error) {
