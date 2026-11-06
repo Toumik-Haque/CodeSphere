@@ -107,6 +107,57 @@ const programs = [
   },
 ];
 
+// More places to contribute, by experience level. (GSoC, JWoC, GSSoC and
+// SWoC are featured with full guides in the programs section above.)
+const LEVELS = [
+  {
+    id: 'beginner',
+    label: 'Beginner',
+    tagline: 'Find your first contribution',
+    icon: 'bi-flower1',
+    platforms: [
+      { name: 'First Contributions', url: 'https://github.com/firstcontributions/first-contributions', icon: 'bi-signpost-split', description: 'A practice repo that walks you through fork, clone, branch and your first pull request.' },
+      { name: 'Good First Issue', url: 'https://goodfirstissue.dev', icon: 'bi-flag', description: 'Curated beginner-friendly issues from popular open-source projects.' },
+      { name: 'Up For Grabs', url: 'https://up-for-grabs.net', icon: 'bi-hand-index-thumb', description: 'Projects with tasks set aside specifically for newcomers.' },
+      { name: 'First Timers Only', url: 'https://www.firsttimersonly.com', icon: 'bi-1-circle', description: 'Issues reserved for people making their very first pull request.' },
+      { name: 'CodeTriage', url: 'https://www.codetriage.com', icon: 'bi-envelope-open', description: 'Get a few open issues from repos you choose by email, and learn to read real code.' },
+      { name: 'GitHub issue search', url: 'https://github.com/issues?q=is%3Aopen+is%3Aissue+label%3A%22good+first+issue%22', icon: 'bi-github', description: 'Search open issues labelled "good first issue" across all of GitHub.' },
+    ],
+  },
+  {
+    id: 'intermediate',
+    label: 'Intermediate',
+    tagline: 'Structured events and programs',
+    icon: 'bi-lightning-charge',
+    platforms: [
+      { name: 'Hacktoberfest', url: 'https://hacktoberfest.com', icon: 'bi-calendar-event', description: 'Every October: get pull requests accepted in participating repositories.' },
+      { name: 'MLH Fellowship', url: 'https://fellowship.mlh.io', icon: 'bi-mortarboard', description: 'A remote fellowship contributing to open source in a small team, with stipends.' },
+      { name: 'Season of KDE', url: 'https://season.kde.org', icon: 'bi-window-desktop', description: 'Mentored projects in the KDE desktop and apps ecosystem.' },
+      { name: 'Open Source Friday', url: 'https://opensourcefriday.com', icon: 'bi-calendar-week', description: 'A weekly habit: contribute something to open source every Friday.' },
+      { name: 'FOSSASIA Codeheat', url: 'https://codeheat.org', icon: 'bi-fire', description: 'Contribute to FOSSASIA projects, with recognition for top contributors.' },
+    ],
+  },
+  {
+    id: 'advanced',
+    label: 'Advanced',
+    tagline: 'Paid, competitive mentorships',
+    icon: 'bi-rocket-takeoff',
+    platforms: [
+      { name: 'LFX Mentorship', url: 'https://mentorship.lfx.linuxfoundation.org', icon: 'bi-hdd-network', description: 'Paid mentorships on Linux Foundation projects such as Kubernetes and CNCF tools.' },
+      { name: 'Outreachy', url: 'https://www.outreachy.org', icon: 'bi-heart', description: 'Paid internships for people underrepresented in tech.' },
+      { name: 'Summer of Bitcoin', url: 'https://www.summerofbitcoin.org', icon: 'bi-currency-bitcoin', description: 'Paid open-source work on Bitcoin and Lightning projects.' },
+      { name: 'Google Season of Docs', url: 'https://developers.google.com/season-of-docs', icon: 'bi-file-earmark-text', description: 'Paid technical writing for open-source projects.' },
+    ],
+  },
+];
+
+const JOURNEY = [
+  { title: 'Start', text: 'Do the First Contributions repo, then 2–3 "good first issue" pull requests.' },
+  { title: 'Practise', text: 'Join Hacktoberfest, GSSoC or SWoC to get used to reviews and deadlines.' },
+  { title: 'Commit', text: 'Pick one organisation and contribute to it regularly for 2–3 months.' },
+  { title: 'Apply', text: 'Apply to GSoC, LFX or Outreachy with a proposal for that same organisation.' },
+];
+
 const contributors = [
   { name: 'Alex Morgan', handle: '@alexmorgan-dev', initials: 'AM', mergedPRs: 18, points: 950 },
   { name: 'Jamie Wilson', handle: '@jamiewilson', initials: 'JW', mergedPRs: 14, points: 820 },
@@ -452,6 +503,93 @@ function ProgramsSection({ onOpenGuide }) {
   );
 }
 
+function PlatformsSection() {
+  const [level, setLevel] = useState('all');
+  const shown = level === 'all' ? LEVELS : LEVELS.filter((l) => l.id === level);
+
+  return (
+    <section className="os-platforms-section" id="platforms">
+      <div className="os-section-heading">
+        <SectionEyebrow>MORE PLACES TO CONTRIBUTE</SectionEyebrow>
+        <h2>
+          Open-source platforms,
+          <br />
+          <span>beginner to advanced.</span>
+        </h2>
+        <p>
+          Not sure where to begin? Pick your level and explore platforms that
+          match it. Dates and eligibility change every year, so always check the
+          official site.
+        </p>
+      </div>
+
+      <div className="os-level-tabs" role="tablist" aria-label="Filter by level">
+        {[{ id: 'all', label: 'All levels', icon: 'bi-grid' }, ...LEVELS].map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={level === item.id}
+            className={`os-level-tab os-level-${item.id} ${level === item.id ? 'active' : ''}`}
+            onClick={() => setLevel(item.id)}
+          >
+            <i className={`bi ${item.icon}`} aria-hidden="true" /> {item.label}
+          </button>
+        ))}
+      </div>
+
+      {shown.map((group) => (
+        <div className={`os-level-group os-level-${group.id}`} key={group.id}>
+          <div className="os-level-head">
+            <span className="os-level-badge">
+              <i className={`bi ${group.icon}`} aria-hidden="true" /> {group.label}
+            </span>
+            <span className="os-level-tagline">{group.tagline}</span>
+          </div>
+
+          <div className="os-platform-grid">
+            {group.platforms.map((platform) => (
+              <a
+                key={platform.name}
+                className="os-platform-card"
+                href={platform.url}
+                target="_blank"
+                rel="noreferrer"
+              >
+                <span className="os-platform-icon">
+                  <i className={`bi ${platform.icon}`} aria-hidden="true" />
+                </span>
+                <span className="os-platform-body">
+                  <strong>
+                    {platform.name}
+                    <i className="bi bi-arrow-up-right" aria-hidden="true" />
+                  </strong>
+                  <span>{platform.description}</span>
+                </span>
+              </a>
+            ))}
+          </div>
+        </div>
+      ))}
+
+      <div className="os-journey">
+        <h3>
+          <i className="bi bi-map" aria-hidden="true" /> A suggested path for CodeSphere members
+        </h3>
+        <ol>
+          {JOURNEY.map((step, index) => (
+            <li key={step.title}>
+              <span className="os-journey-num">{index + 1}</span>
+              <strong>{step.title}</strong>
+              <p>{step.text}</p>
+            </li>
+          ))}
+        </ol>
+      </div>
+    </section>
+  );
+}
+
 function ContributorAvatar({ person, rank }) {
   return (
     <div className={`os-leader-avatar os-avatar-${rank <= 3 ? rank : 'other'}`}>
@@ -640,6 +778,7 @@ export default function OpenSource() {
           <CodeSphereHero />
           <ContributorTicker />
           <ProgramsSection onOpenGuide={setSelectedProgram} />
+          <PlatformsSection />
           <Leaderboard />
         </div>
       </main>
