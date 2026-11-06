@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
+import { loadBadgeCatalog } from '../lib/badges';
 import OpenSourceContributors from '../components/OpenSourceContributors';
 import '../css/Leaderboard.css';
 
@@ -19,19 +20,6 @@ const BUG_XP = [
 ];
 const STREAK_BONUS_PER_DAY = 2;
 const STREAK_BONUS_CAP = 20;
-
-// Badges are earned from leaderboard stats.
-const BADGES = [
-  { id: 'first-fix', emoji: '🐞', name: 'First Fix', rule: 'Fix your first daily bug', earned: (r) => r.bugsFixed >= 1 },
-  { id: 'on-fire', emoji: '🔥', name: 'On Fire', rule: 'Reach a 3-day streak', earned: (r) => r.bestStreak >= 3 },
-  { id: 'week', emoji: '⚡', name: 'Week Warrior', rule: 'Reach a 7-day streak', earned: (r) => r.bestStreak >= 7 },
-  { id: 'month', emoji: '🏅', name: 'Month Master', rule: 'Reach a 30-day streak', earned: (r) => r.bestStreak >= 30 },
-  { id: 'sharp', emoji: '🎯', name: 'Sharpshooter', rule: '80%+ accuracy over 10+ daily bugs', earned: (r) => r.bugsAnswered >= 10 && r.accuracy >= 80 },
-  { id: 'solver', emoji: '🧩', name: 'Problem Solver', rule: 'Solve 3 coding challenges', earned: (r) => r.challengesSolved >= 3 },
-  { id: 'master', emoji: '👑', name: 'Challenge Master', rule: 'Solve all 8 coding challenges', earned: (r) => r.challengesSolved >= 8 },
-  { id: 'century', emoji: '💯', name: 'Century', rule: 'Earn 100 XP', earned: (r) => r.xp >= 100 },
-  { id: 'rocket', emoji: '🚀', name: 'XP Rocket', rule: 'Earn 500 XP', earned: (r) => r.xp >= 500 },
-];
 
 function avatarColor(text) {
   let hash = 0;
@@ -57,6 +45,21 @@ function Avatar({ row, size = 'md' }) {
   );
 }
 
+// Up to 3 pinned badges, shown as emojis after a student's name.
+function Showcase({ row, catalog }) {
+  if (!catalog || !row.showcase?.length) return null;
+  const byId = new Map(catalog.badges.map((b) => [b.id, b]));
+  const pins = row.showcase.map((id) => byId.get(id)).filter(Boolean);
+  if (!pins.length) return null;
+  return (
+    <span className="lb-showcase">
+      {pins.map((badge) => (
+        <span key={badge.id} title={badge.name} role="img" aria-label={badge.name}>{badge.emoji}</span>
+      ))}
+    </span>
+  );
+}
+
 function Metric({ sort, row }) {
   return sort === 'streak' ? (
     <>
@@ -71,7 +74,7 @@ function Metric({ sort, row }) {
   );
 }
 
-function Podium({ rows, sort, onOpen }) {
+function Podium({ rows, sort, onOpen, catalog }) {
   // Visual order: 2nd, 1st, 3rd.
   const order = [rows[1], rows[0], rows[2]].filter(Boolean);
   return (
@@ -87,7 +90,8 @@ function Podium({ rows, sort, onOpen }) {
           <span className="lb-medal" aria-hidden="true">{MEDALS[row.rank] || `#${row.rank}`}</span>
           <Avatar row={row} size="lg" />
           <strong className="lb-podium-name">{row.name}</strong>
-          <span className="lb-podium-year">{row.year}</span>
+          <span className="lb-podium-year">{row.level?.emoji} {row.year}</span>
+          <Showcase row={row} catalog={catalog} />
           <div className="lb-podium-metric">
             <Metric sort={sort} row={row} />
           </div>
@@ -139,7 +143,7 @@ function Spotlight({ spotlight, onOpen }) {
   );
 }
 
-function ProfileModal({ row, onClose }) {
+function ProfileModal({ row, onClose, catalog }) {
   const closeRef = useRef(null);
 
   useEffect(() => {
@@ -154,7 +158,12 @@ function ProfileModal({ row, onClose }) {
     };
   }, [onClose]);
 
-  const earned = BADGES.filter((b) => b.earned(row));
+  const byId = new Map((catalog?.badges || []).map((b) => [b.id, b]));
+  const earned = (row.badges || []).map((id) => byId.get(id)).filter(Boolean);
+  const pinned = new Set(row.showcase || []);
+  // Pinned badges first.
+  earned.sort((a, b) => Number(pinned.has(b.id)) - Number(pinned.has(a.id)));
+  const totalBadges = (catalog?.badges || []).filter((b) => b.type !== 'coming-soon').length;
   const bugShare = row.xp ? Math.round((row.debugXp / row.xp) * 100) : 0;
 
   return (
@@ -177,6 +186,9 @@ function ProfileModal({ row, onClose }) {
               {row.name}
               {row.isMe && <span className="lb-you">You</span>}
             </h2>
+            {row.level && (
+              <p className="lb-modal-level">{row.level.emoji} {row.level.name}</p>
+            )}
             <p>{row.year} · {row.college}</p>
             <p className="lb-modal-since">
               <i className="bi bi-calendar3" aria-hidden="true" /> Member since {memberSince(row.memberSince)}
@@ -215,12 +227,13 @@ function ProfileModal({ row, onClose }) {
         </div>
 
         <div className="lb-modal-badges">
-          <h3>Badges <span>{earned.length}/{BADGES.length}</span></h3>
+          <h3>Badges <span>{earned.length}/{totalBadges}</span></h3>
           {earned.length ? (
             <ul>
               {earned.map((badge) => (
-                <li key={badge.id} title={badge.rule}>
+                <li key={badge.id} title={badge.how} className={pinned.has(badge.id) ? 'is-pinned' : ''}>
                   <span aria-hidden="true">{badge.emoji}</span> {badge.name}
+                  {pinned.has(badge.id) && <i className="bi bi-pin-angle-fill" aria-label="Pinned" />}
                 </li>
               ))}
             </ul>
@@ -317,7 +330,7 @@ function YearDropdown({ value, onChange }) {
   );
 }
 
-function Rules() {
+function Rules({ catalog }) {
   return (
     <section className="lb-rules-guide" aria-labelledby="lb-rules-title">
       <h2 id="lb-rules-title">
@@ -394,15 +407,34 @@ function Rules() {
       </details>
 
       <details>
-        <summary><span>5</span> Badges</summary>
-        <ul className="lb-badge-list">
-          {BADGES.map((badge) => (
-            <li key={badge.id}>
-              <span aria-hidden="true">{badge.emoji}</span>
-              <strong>{badge.name}</strong> {badge.rule}
+        <summary><span>5</span> Badges &amp; levels</summary>
+        <p>
+          Badges are saved the moment you earn them and are <strong>never taken away</strong>,
+          even if a streak ends. Pin up to 3 on your profile to show them here.
+        </p>
+        <h4>Developer levels (by total XP)</h4>
+        <ul className="lb-level-list">
+          {(catalog?.levels || []).map((level) => (
+            <li key={level.name}>
+              <span aria-hidden="true">{level.emoji}</span> <strong>{level.name}</strong> {level.minXp}+ XP
             </li>
           ))}
         </ul>
+        {(catalog?.groups || []).map((group) => (
+          <div key={group.id}>
+            <h4><i className={`bi ${group.icon}`} aria-hidden="true" /> {group.label}</h4>
+            <ul className="lb-badge-list">
+              {catalog.badges.filter((b) => b.group === group.id).map((badge) => (
+                <li key={badge.id}>
+                  <span aria-hidden="true">{badge.emoji}</span>
+                  <strong>{badge.name}</strong> {badge.how}
+                  {badge.type === 'coming-soon' && <em> (coming soon)</em>}
+                  {badge.type === 'self' && <em> (self-reported)</em>}
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
       </details>
 
       <details>
@@ -428,6 +460,17 @@ const Leaderboard = () => {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [profile, setProfile] = useState(null);
+  const [catalog, setCatalog] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    loadBadgeCatalog()
+      .then((result) => !cancelled && setCatalog(result))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
   // Which board: both side by side (default), students only, or open
   // source only. /leaderboard#students and #open-source open one directly.
   const [board, setBoard] = useState(() => BOARD_FROM_HASH[window.location.hash] || 'both');
@@ -615,8 +658,9 @@ const Leaderboard = () => {
                               <strong>
                                 {row.name}
                                 {row.isMe && <span className="lb-you">You</span>}
+                                <Showcase row={row} catalog={catalog} />
                               </strong>
-                              <span>{row.year}</span>
+                              <span>{row.level?.emoji} {row.level?.name} · {row.year}</span>
                             </span>
                             <span className="lb-metric">
                               <Metric sort={sort} row={row} />
@@ -643,7 +687,7 @@ const Leaderboard = () => {
               </div>
 
               <div id="rules">
-                <Rules />
+                <Rules catalog={catalog} />
               </div>
             </>
           )}
@@ -740,7 +784,7 @@ const Leaderboard = () => {
             </div>
           )}
 
-          {podium.length > 0 && <Podium rows={podium} sort={sort} onOpen={setProfile} />}
+          {podium.length > 0 && <Podium rows={podium} sort={sort} onOpen={setProfile} catalog={catalog} />}
 
           {rest.length > 0 && (
             <ol className="lb-list">
@@ -758,12 +802,14 @@ const Leaderboard = () => {
                       <strong>
                         {row.name}
                         {row.isMe && <span className="lb-you">You</span>}
+                        <Showcase row={row} catalog={catalog} />
                       </strong>
-                      <span>{row.year}</span>
+                      <span>{row.level?.emoji} {row.level?.name} · {row.year}</span>
                     </span>
                     <span className="lb-detail">
                       <span title="Bugs fixed"><i className="bi bi-bug" aria-hidden="true" /> {row.bugsFixed}</span>
                       <span title="Challenges solved"><i className="bi bi-code-square" aria-hidden="true" /> {row.challengesSolved}</span>
+                      <span title="Badges earned">🏅 {row.badgeCount || 0}</span>
                     </span>
                     <span className="lb-metric">
                       <Metric sort={sort} row={row} />
@@ -779,14 +825,14 @@ const Leaderboard = () => {
           )}
 
           <div id="rules">
-            <Rules />
+            <Rules catalog={catalog} />
           </div>
           </>
           )}
         </div>
       </main>
 
-      {profile && <ProfileModal row={profile} onClose={closeProfile} />}
+      {profile && <ProfileModal row={profile} onClose={closeProfile} catalog={catalog} />}
 
       <Footer />
     </>
