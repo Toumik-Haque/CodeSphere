@@ -33,6 +33,10 @@ import Contact from './pages/Contact';
 import OpenSource from './pages/OpenSource';
 import Playground from './pages/Playground';
 import Leaderboard from './pages/Leaderboard';
+import Forum from './pages/Forum';
+import ForumNew from './pages/ForumNew';
+import ForumThread from './pages/ForumThread';
+import AdminForum from './pages/AdminForum';
 
 function HomePage() {
   return (
@@ -55,7 +59,8 @@ function HomePage() {
 }
 
 // Protect routes that require authentication.
-function ProtectedRoute({ children, adminOnly = false }) {
+// anyRole: any signed-in user (students and admins), e.g. forum posting.
+function ProtectedRoute({ children, adminOnly = false, anyRole = false }) {
   const { user, token } = useAuth();
 
   if (!user || !token) {
@@ -66,7 +71,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
     return <Navigate to="/profile" replace />;
   }
 
-  if (!adminOnly && user.role === 'admin') {
+  if (!adminOnly && !anyRole && user.role === 'admin') {
     return <Navigate to="/admin" replace />;
   }
 
@@ -100,6 +105,10 @@ function AppRoutes() {
       <Route path="/open-source" element={<OpenSource />} />
       <Route path="/playground" element={<Playground />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
+      <Route path="/forum" element={<Forum />} />
+      <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
+      <Route path="/forum/:id" element={<ForumThread />} />
+      <Route path="/admin/forum" element={<ProtectedRoute adminOnly><AdminForum /></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />
