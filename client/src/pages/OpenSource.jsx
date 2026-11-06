@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import ContributionGuide from '../components/ContributionGuide';
 import '../css/OpenSource.css';
 
 const GITHUB_REPO = 'https://github.com/Toumik-Haque/CodeSphere';
@@ -214,6 +215,9 @@ function CodeSphereHero() {
               <i className="bi bi-github" />
               <span>Contribute to our website</span>
               <i className="bi bi-arrow-up-right" />
+            </a>
+            <a className="os-hero-guide-link" href="#how-to-contribute">
+              <i className="bi bi-play-circle" /> New to open source? Watch the step-by-step guide
             </a>
             <span className="os-hero-action-note">
               Our college coding club, built in the open.
@@ -776,6 +780,7 @@ export default function OpenSource() {
         <div className="os-page-background" aria-hidden="true" />
         <div className="os-page-container">
           <CodeSphereHero />
+          <ContributionGuide repoUrl={GITHUB_REPO} Eyebrow={SectionEyebrow} />
           <ContributorTicker />
           <ProgramsSection onOpenGuide={setSelectedProgram} />
           <PlatformsSection />
