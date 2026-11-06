@@ -3,6 +3,7 @@ const ChallengeProgress = require('../models/ChallengeProgress');
 const { protect } = require('../middleware/authMiddleware');
 const { CHALLENGES } = require('../data/codingChallenges');
 const { runCode, isConfigured, SUPPORTED_LANGUAGES } = require('../config/judge0');
+const { challengeXpTotal } = require('../utils/progress');
 
 const router = express.Router();
 
@@ -45,7 +46,12 @@ router.get('/', (req, res) => {
 router.get('/progress', protect, async (req, res) => {
   try {
     const progress = await ChallengeProgress.findOne({ user: req.user._id }).lean();
-    res.json({ solved: progress?.solved || [] });
+    res.json({
+      solved: progress?.solved || [],
+      xp: challengeXpTotal(progress),
+      // Manual "Done" marking is allowed only while Judge0 isn't set up.
+      manualMode: !isConfigured(),
+    });
   } catch (error) {
     console.error('Challenge progress error:', error);
     res.status(500).json({ message: 'Could not load your progress.' });
@@ -121,6 +127,53 @@ router.post('/:id/check', protect, async (req, res) => {
         ? 'The code checker took too long to respond. Try again.'
         : 'Could not check your code right now.',
     });
+  }
+});
+
+// Manual marking (honour system), used while Judge0 isn't configured.
+// Once JUDGE0_API_KEY / JUDGE0_URL is set, only /check can solve challenges.
+function manualModeOnly(req, res, next) {
+  if (isConfigured()) {
+    return res.status(403).json({ message: 'Use Check answer to solve this challenge.' });
+  }
+  return next();
+}
+
+// POST /api/challenges/:id/done: mark a challenge solved.
+router.post('/:id/done', protect, manualModeOnly, async (req, res) => {
+  try {
+    if (!challengesById.has(req.params.id)) {
+      return res.status(404).json({ message: 'Challenge not found.' });
+    }
+    const language = SUPPORTED_LANGUAGES.includes(req.body?.language) ? req.body.language : 'any';
+    const progress = await ChallengeProgress.findOneAndUpdate(
+      { user: req.user._id },
+      { $setOnInsert: { user: req.user._id } },
+      { new: true, upsert: true },
+    );
+    if (!progress.solved.some((s) => s.challengeId === req.params.id)) {
+      progress.solved.push({ challengeId: req.params.id, language });
+      await progress.save();
+    }
+    return res.json({ solved: progress.solved, xp: challengeXpTotal(progress) });
+  } catch (error) {
+    console.error('Challenge done error:', error);
+    return res.status(500).json({ message: 'Could not save your progress.' });
+  }
+});
+
+// DELETE /api/challenges/:id/done: unmark a challenge.
+router.delete('/:id/done', protect, manualModeOnly, async (req, res) => {
+  try {
+    const progress = await ChallengeProgress.findOneAndUpdate(
+      { user: req.user._id },
+      { $pull: { solved: { challengeId: req.params.id } } },
+      { new: true },
+    );
+    return res.json({ solved: progress?.solved || [], xp: challengeXpTotal(progress) });
+  } catch (error) {
+    console.error('Challenge undo error:', error);
+    return res.status(500).json({ message: 'Could not save your progress.' });
   }
 });
 

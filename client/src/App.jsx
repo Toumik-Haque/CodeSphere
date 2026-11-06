@@ -30,6 +30,7 @@ import EventDetails from './pages/EventDetails';
 import Team from './pages/Team';
 import Contact from './pages/Contact';
 import Playground from './pages/Playground';
+import Leaderboard from './pages/Leaderboard';
 
 function HomePage() {
   return (
@@ -95,6 +96,7 @@ function AppRoutes() {
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/playground" element={<Playground />} />
+      <Route path="/leaderboard" element={<Leaderboard />} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />

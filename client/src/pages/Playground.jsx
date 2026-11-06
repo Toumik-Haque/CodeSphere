@@ -4,9 +4,8 @@ import { useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DebugArena from '../components/DebugArena';
-// Judge0 checker:
-// import { useAuth } from '../context/AuthContext';
-// import { apiRequest } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
+import { apiRequest } from '../lib/api';
 import { LANGUAGES, EXAMPLES, STARTERS, CHALLENGES, TIPS } from '../data/playground';
 import '../css/Playground.css';
 
@@ -78,14 +77,17 @@ const Playground = () => {
   const [tipIndex, setTipIndex] = useState(0);
   const challenges = CHALLENGES;
   const [solved, setSolved] = useState(loadSolved);
+
+  // Signed-in students' solved challenges live on their account (they count
+  // on the leaderboard); guests keep them in this browser.
+  const { user, token } = useAuth();
+  const isLoggedIn = Boolean(user && token);
   const [openHint, setOpenHint] = useState(null);
   const [highlighted, setHighlighted] = useState(null);
   const [activeChallenge, setActiveChallenge] = useState(null);
   // Judge0 checker:
   // const [checking, setChecking] = useState(false);
   // const [checkResult, setCheckResult] = useState(null);
-  // const { user, token } = useAuth();
-  // const isLoggedIn = Boolean(user && token);
 
   const iframeRef = useRef(null);
   const workspaceRef = useRef(null);
@@ -201,10 +203,20 @@ const Playground = () => {
     // };
   // }, [isLoggedIn]);
 
-  // Solved challenges are kept in this browser.
   useEffect(() => {
-    localStorage.setItem(SOLVED_KEY, JSON.stringify(solved));
-  }, [solved]);
+    if (!isLoggedIn) return undefined;
+    let cancelled = false;
+    apiRequest('/challenges/progress')
+      .then((data) => !cancelled && setSolved(data.solved.map((item) => item.challengeId)))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn]);
+
+  useEffect(() => {
+    if (!isLoggedIn) localStorage.setItem(SOLVED_KEY, JSON.stringify(solved));
+  }, [solved, isLoggedIn]);
 
   const switchLanguage = (next) => {
     if (next.id === language.id) return;
@@ -293,10 +305,29 @@ const Playground = () => {
     // }
   // };
 
-  const toggleSolved = (id) => {
-    setSolved((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+  const toggleSolved = async (id) => {
+    if (!isLoggedIn) {
+      setSolved((prev) =>
+        prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+      );
+      showToast('Sign in to save your XP to the leaderboard');
+      return;
+    }
+
+    const isSolved = solved.includes(id);
+    try {
+      const data = await apiRequest(`/challenges/${id}/done`, {
+        method: isSolved ? 'DELETE' : 'POST',
+        body: JSON.stringify({ language: language.id }),
+      });
+      setSolved(data.solved.map((item) => item.challengeId));
+      if (!isSolved) {
+        const xp = challenges.find((c) => c.id === id)?.xp;
+        showToast(`Nice! +${xp} XP added to your account`);
+      }
+    } catch (err) {
+      showToast(err.message);
+    }
   };
 
   const surpriseMe = () => {

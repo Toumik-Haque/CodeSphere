@@ -2,29 +2,19 @@ const express = require('express');
 const DebugProgress = require('../models/DebugProgress');
 const { protect } = require('../middleware/authMiddleware');
 const { BUGS, BUG_CATEGORIES } = require('../data/debugBugs');
+const {
+  dateInIndia,
+  shiftDate,
+  nextUnlockAt,
+  bugXp,
+  liveStreak,
+  debugXpTotal,
+} = require('../utils/progress');
 
 const router = express.Router();
 
-// The daily challenge rolls over at midnight India time.
-const TIME_ZONE = 'Asia/Kolkata';
-const UTC_OFFSET = '+05:30';
-
 const bugsById = new Map(BUGS.map((bug) => [bug.id, bug]));
-
-function dateInIndia(date = new Date()) {
-  // en-CA formats as YYYY-MM-DD.
-  return new Intl.DateTimeFormat('en-CA', { timeZone: TIME_ZONE }).format(date);
-}
-
-function shiftDate(dateString, days) {
-  const date = new Date(`${dateString}T12:00:00${UTC_OFFSET}`);
-  date.setUTCDate(date.getUTCDate() + days);
-  return dateInIndia(date);
-}
-
-function nextUnlockAt(today) {
-  return new Date(`${shiftDate(today, 1)}T00:00:00${UTC_OFFSET}`).toISOString();
-}
+const levelOf = (bugId) => bugsById.get(bugId)?.level;
 
 function categoryLabel(id) {
   return BUG_CATEGORIES.find((c) => c.id === id)?.label || id;
@@ -52,14 +42,8 @@ function revealedBug(bug, entry) {
     picked: entry.picked,
     correct: entry.correct,
     date: entry.date,
+    xp: entry.correct ? entry.xp ?? bugXp(bug.level, 0) : 0,
   };
-}
-
-// A streak survives only if the last completion was today or yesterday.
-function liveStreak(progress, today) {
-  const last = progress.lastCompletedDate;
-  if (last === today || last === shiftDate(today, -1)) return progress.streak;
-  return 0;
 }
 
 function stats(progress, today) {
@@ -70,7 +54,9 @@ function stats(progress, today) {
     completedCount: completed.length,
     correctCount: completed.filter((entry) => entry.correct).length,
     totalBugs: BUGS.length,
-    activeDates: [...new Set(completed.map((entry) => entry.date))],
+    xp: debugXpTotal(progress, levelOf),
+    // Days the bug was fixed (these build the streak).
+    activeDates: [...new Set(completed.filter((e) => e.correct).map((e) => e.date))],
   };
 }
 
@@ -155,9 +141,15 @@ router.post('/submit', protect, async (req, res) => {
       });
     }
 
-    const entry = { bugId, picked, correct: picked === bug.answer, date: today };
+    // Only a correct fix extends the streak and earns XP (base XP for the
+    // bug's level + a streak bonus). A wrong answer still uses up the day.
+    const correct = picked === bug.answer;
     const continued = progress.lastCompletedDate === shiftDate(today, -1);
-    const streak = continued ? progress.streak + 1 : 1;
+    const streak = correct ? (continued ? progress.streak + 1 : 1) : progress.streak;
+    const entry = { bugId, picked, correct, date: today, xp: correct ? bugXp(bug.level, streak) : 0 };
+    const streakUpdate = correct
+      ? { streak, bestStreak: Math.max(progress.bestStreak, streak), lastCompletedDate: today }
+      : {};
 
     // Only succeeds if today's challenge is still unanswered, so a double
     // submit can't count twice.
@@ -166,11 +158,7 @@ router.post('/submit', protect, async (req, res) => {
       {
         $push: { completed: entry },
         $unset: { current: '' },
-        $set: {
-          streak,
-          bestStreak: Math.max(progress.bestStreak, streak),
-          lastCompletedDate: today,
-        },
+        $set: streakUpdate,
       },
       { new: true },
     );

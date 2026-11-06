@@ -27,8 +27,10 @@ const userRoutes = require('./routes/userRoutes');
 const coreMemberRoutes = require('./routes/coreMemberRoutes');
 const contactRoutes = require('./routes/contactRoutes');
 const debugRoutes = require('./routes/debugRoutes');
-// Judge0 answer checking: disabled until a RapidAPI key is set up.
-// const challengeRoutes = require('./routes/challengeRoutes');
+// Challenge progress. Answer checking (/check) needs a Judge0 key; without
+// one, students mark challenges done themselves.
+const challengeRoutes = require('./routes/challengeRoutes');
+const leaderboardRoutes = require('./routes/leaderboardRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -36,7 +38,8 @@ app.use('/api/users', userRoutes);
 app.use('/api/core-members', coreMemberRoutes);
 app.use('/api/contact', contactRoutes);
 app.use('/api/debug', debugRoutes);
-// app.use('/api/challenges', challengeRoutes); // Judge0 checker
+app.use('/api/challenges', challengeRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
 
 const PORT = process.env.PORT || 5000;
 

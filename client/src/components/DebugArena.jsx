@@ -113,7 +113,7 @@ function Feedback({ result }) {
       <div className="debug-arena-feedback-text">
         <h4>
           {result.correct
-            ? '✅ Bug squashed!'
+            ? `✅ Bug squashed! +${result.xp} XP`
             : `❌ Not quite. The answer is ${LETTERS[result.answer]}.`}
         </h4>
         <p>{result.explanation}</p>
@@ -220,8 +220,8 @@ const DebugArena = () => {
           Find the Bug! <span aria-hidden="true">🐞</span>
         </h2>
         <p className="playground-muted">
-          One new bug every day. Solve it to keep your streak alive.
-          Solved bugs move to your completed list.
+          One new bug every day. Fix it correctly to earn XP and keep your
+          streak alive. Solved bugs move to your completed list.
         </p>
       </div>
 
@@ -232,8 +232,8 @@ const DebugArena = () => {
             <span>day streak</span>
           </div>
           <div>
-            <strong>{data.stats.bestStreak}</strong>
-            <span>best streak</span>
+            <strong>{data.stats.xp}</strong>
+            <span>bug XP</span>
           </div>
           <div>
             <strong>{data.stats.completedCount}/{data.stats.totalBugs}</strong>
@@ -335,7 +335,7 @@ const DebugArena = () => {
                 <i className="bi bi-send" aria-hidden="true" />
               </button>
               <p className="debug-arena-keys playground-muted">
-                One attempt per day. Press <kbd>A</kbd>–<kbd>D</kbd> to pick, <kbd>Enter</kbd> to submit.
+                One attempt per day. A correct fix earns XP and extends your streak. Press <kbd>A</kbd>–<kbd>D</kbd> to pick, <kbd>Enter</kbd> to submit.
               </p>
             </div>
           </div>

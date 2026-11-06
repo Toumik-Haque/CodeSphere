@@ -7,6 +7,9 @@ const completedSchema = new mongoose.Schema(
     bugId: { type: String, required: true },
     picked: { type: Number, required: true },
     correct: { type: Boolean, required: true },
+    // XP earned for this bug (0 if wrong). No default on purpose: entries
+    // saved before XP existed are scored by level (utils/progress.js).
+    xp: { type: Number },
     date: { type: String, required: true },
     completedAt: { type: Date, default: Date.now },
   },
@@ -30,8 +33,10 @@ const debugProgressSchema = new mongoose.Schema(
       type: [completedSchema],
       default: [],
     },
+    // Streak = consecutive days with a correctly fixed bug.
     streak: { type: Number, default: 0 },
     bestStreak: { type: Number, default: 0 },
+    // Last day the bug was fixed correctly.
     lastCompletedDate: { type: String, default: null },
   },
   { timestamps: true },
