@@ -35,6 +35,8 @@ const badgeRoutes = require('./routes/badgeRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
 const forumRoutes = require('./routes/forumRoutes');
 const reverseRoutes = require('./routes/reverseRoutes');
+const newsRoutes = require('./routes/newsRoutes');
+const { startNewsScheduler } = require('./utils/newsIngest');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -48,6 +50,7 @@ app.use('/api/badges', badgeRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/reverse', reverseRoutes);
+app.use('/api/news', newsRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -59,6 +62,9 @@ async function startServer() {
 
     await mongoose.connect(process.env.MONGODB_URI);
     console.log('MongoDB connected successfully');
+
+    // Daily feed fetching + scheduled digest announcements (NEWS_SCHEDULER=off to disable).
+    startNewsScheduler();
 
     app.listen(PORT, () => {
       console.log(`CodeSphere API running on port ${PORT}`);
