@@ -40,6 +40,8 @@ import AdminForum from './pages/AdminForum';
 import ReverseCoding from './pages/ReverseCoding';
 import ReverseChallenge from './pages/ReverseChallenge';
 import AdminReverse from './pages/AdminReverse';
+import News from './pages/News';
+import AdminNews from './pages/AdminNews';
 
 function HomePage() {
   return (
@@ -115,6 +117,9 @@ function AppRoutes() {
       <Route path="/reverse-coding" element={<ReverseCoding />} />
       <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
       <Route path="/admin/reverse-coding" element={<ProtectedRoute adminOnly><AdminReverse /></ProtectedRoute>} />
+      <Route path="/news" element={<News />} />
+      <Route path="/news/:slug" element={<News />} />
+      <Route path="/admin/news" element={<ProtectedRoute adminOnly><AdminNews /></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />
