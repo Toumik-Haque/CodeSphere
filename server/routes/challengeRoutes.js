@@ -4,6 +4,7 @@ const { protect } = require('../middleware/authMiddleware');
 const { CHALLENGES } = require('../data/codingChallenges');
 const { runCode, isConfigured, SUPPORTED_LANGUAGES } = require('../config/judge0');
 const { challengeXpTotal } = require('../utils/progress');
+const { syncBadgesQuietly } = require('../utils/badges');
 
 const router = express.Router();
 
@@ -111,8 +112,11 @@ router.post('/:id/check', protect, async (req, res) => {
       }
     }
 
+    const newBadges = passed ? await syncBadgesQuietly(req.user._id) : [];
+
     return res.json({
       passed,
+      newBadges,
       alreadySolved,
       status: run.status,
       output: run.stdout.slice(0, 4000),
@@ -155,7 +159,8 @@ router.post('/:id/done', protect, manualModeOnly, async (req, res) => {
       progress.solved.push({ challengeId: req.params.id, language });
       await progress.save();
     }
-    return res.json({ solved: progress.solved, xp: challengeXpTotal(progress) });
+    const newBadges = await syncBadgesQuietly(req.user._id);
+    return res.json({ solved: progress.solved, xp: challengeXpTotal(progress), newBadges });
   } catch (error) {
     console.error('Challenge done error:', error);
     return res.status(500).json({ message: 'Could not save your progress.' });

@@ -11,6 +11,7 @@ const Event = require('../models/Event');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { syncBadgesQuietly } = require('../utils/badges');
 
 const router = express.Router();
 
@@ -726,6 +727,9 @@ router.patch(
           setDefaultsOnInsert: true,
         }
       );
+
+      // Event badges: the student sees any new ones next time they visit.
+      if (status === 'present') await syncBadgesQuietly(userId);
 
       res.json({
         message: 'Attendance updated successfully.',

@@ -2,6 +2,8 @@ const express = require('express');
 const User = require('../models/User');
 const DebugProgress = require('../models/DebugProgress');
 const ChallengeProgress = require('../models/ChallengeProgress');
+const UserBadge = require('../models/UserBadge');
+const { badgesById, levelFor } = require('../utils/badges');
 const { optionalAuth } = require('../middleware/authMiddleware');
 const { BUGS } = require('../data/debugBugs');
 const {
@@ -64,13 +66,22 @@ router.get('/', optionalAuth, async (req, res) => {
     const isGuest = !req.user;
     const today = dateInIndia();
 
-    const [users, debugDocs, challengeDocs] = await Promise.all([
+    const [users, debugDocs, challengeDocs, badgeDocs] = await Promise.all([
       User.find({ role: 'user', ...(year ? { yearOfStudy: year } : {}) })
-        .select('name yearOfStudy collegeName createdAt')
+        .select('name yearOfStudy collegeName createdAt badgeShowcase')
         .lean(),
       DebugProgress.find().select('user completed streak bestStreak lastCompletedDate').lean(),
       ChallengeProgress.find().select('user solved').lean(),
+      UserBadge.find().select('user badgeId').lean(),
     ]);
+
+    // Earned badge ids per student (only badges that still exist).
+    const badgesByUser = new Map();
+    badgeDocs.forEach((doc) => {
+      if (!badgesById.has(doc.badgeId)) return;
+      const key = String(doc.user);
+      badgesByUser.set(key, [...(badgesByUser.get(key) || []), doc.badgeId]);
+    });
 
     const debugByUser = new Map(debugDocs.map((doc) => [String(doc.user), doc]));
     const challengeByUser = new Map(challengeDocs.map((doc) => [String(doc.user), doc]));
@@ -86,8 +97,13 @@ router.get('/', optionalAuth, async (req, res) => {
         const answered = debug ? debug.completed.length : 0;
         const fixed = debug ? debug.completed.filter((e) => e.correct).length : 0;
 
+        const badges = badgesByUser.get(id) || [];
+
         return {
           id,
+          badges,
+          badgeCount: badges.length,
+          showcase: (user.badgeShowcase || []).filter((b) => badges.includes(b)),
           name: user.name,
           year: user.yearOfStudy,
           college: user.collegeName,
@@ -102,6 +118,10 @@ router.get('/', optionalAuth, async (req, res) => {
           accuracy: answered ? Math.round((fixed / answered) * 100) : 0,
           challengesSolved: challenge ? challenge.solved.length : 0,
         };
+      })
+      .map((row) => {
+        const level = levelFor(row.xp);
+        return { ...row, level: { name: level.name, emoji: level.emoji } };
       })
       // Only students who have played appear on the board.
       .filter((row) => row.xp > 0 || row.bestStreak > 0);

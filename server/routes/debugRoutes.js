@@ -10,6 +10,7 @@ const {
   liveStreak,
   debugXpTotal,
 } = require('../utils/progress');
+const { syncBadgesQuietly } = require('../utils/badges');
 
 const router = express.Router();
 
@@ -167,6 +168,8 @@ router.post('/submit', protect, async (req, res) => {
       return res.status(409).json({ message: 'You already answered today\'s challenge.' });
     }
 
+    const newBadges = await syncBadgesQuietly(req.user._id);
+
     return res.json({
       status: 'done',
       today,
@@ -174,6 +177,7 @@ router.post('/submit', protect, async (req, res) => {
       result: revealedBug(bug, entry),
       stats: stats(updated, today),
       history: history(updated),
+      newBadges,
     });
   } catch (error) {
     console.error('Debug submit error:', error);
