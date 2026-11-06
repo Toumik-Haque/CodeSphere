@@ -3,18 +3,93 @@ import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.svg';
+import NotificationBell from './NotificationBell';
 import '../css/Navbar.css';
 
-const navLinks = [
+// Top-level links and grouped sections (Learn / Discover / Community).
+const navItems = [
   { label: 'Home', path: '/' },
-  { label: 'Events', path: '/events' },
-  { label: 'Playground', path: '/playground' },
-  { label: 'Leaderboard', path: '/leaderboard' },
-  { label: 'Materials', path: '/materials' },
-  { label: 'Open Source', path: '/open-source' },
-  { label: 'Team', path: '/team' },
+  {
+    label: 'Learn',
+    children: [
+      { label: 'Coding Playground', path: '/playground', icon: 'bi-terminal', description: 'Code in 70+ languages in your browser' },
+      { label: 'Reverse Coding', path: '/reverse-coding', icon: 'bi-arrow-repeat', description: 'See the output, rebuild the code' },
+      { label: 'Materials', path: '/materials', icon: 'bi-journal-bookmark', description: 'Study guides and resources' },
+    ],
+  },
+  {
+    label: 'Discover',
+    children: [
+      { label: 'Events', path: '/events', icon: 'bi-calendar-event', description: 'Workshops, hackathons and meetups' },
+      { label: 'Tech News', path: '/news', icon: 'bi-newspaper', description: 'The weekly CodeSphere Tech Brief' },
+      { label: 'Open Source', path: '/open-source', icon: 'bi-github', description: 'Contribute and find programs' },
+    ],
+  },
+  {
+    label: 'Community',
+    children: [
+      { label: 'Discussion Forum', path: '/forum', icon: 'bi-chat-dots', description: 'Ask, share and discuss anything' },
+      { label: 'Leaderboard', path: '/leaderboard', icon: 'bi-trophy', description: 'XP, streaks and badges' },
+      { label: 'Team', path: '/team', icon: 'bi-people', description: 'The people behind CodeSphere' },
+    ],
+  },
   { label: 'Contact Us', path: '/contact' },
 ];
+
+// Mobile drawer: group headings followed by their links.
+const mobileEntries = navItems.flatMap((item) => (item.children
+  ? [{ heading: item.label }, ...item.children]
+  : [item]));
+
+// Desktop dropdown for a group of links.
+function NavGroup({ item, pathname }) {
+  const [open, setOpen] = useState(false);
+  const ref = useRef(null);
+  const active = item.children.some((c) => pathname.startsWith(c.path));
+
+  useEffect(() => {
+    if (!open) return undefined;
+    const onClick = (e) => !ref.current?.contains(e.target) && setOpen(false);
+    const onKey = (e) => e.key === 'Escape' && setOpen(false);
+    document.addEventListener('mousedown', onClick);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onClick);
+      document.removeEventListener('keydown', onKey);
+    };
+  }, [open]);
+
+  return (
+    <li
+      className={`nav-item nav-group ${open ? 'is-open' : ''}`}
+      ref={ref}
+      onMouseEnter={() => setOpen(true)}
+      onMouseLeave={() => setOpen(false)}
+    >
+      <button
+        type="button"
+        className={`nav-link nav-group-toggle ${active ? 'active' : ''}`}
+        aria-expanded={open}
+        onClick={() => setOpen((o) => !o)}
+      >
+        {item.label} <i className="bi bi-chevron-down" aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="nav-group-menu">
+          {item.children.map((child) => (
+            <NavLink key={child.path} to={child.path} className="nav-group-link" onClick={() => setOpen(false)}>
+              <i className={`bi ${child.icon}`} aria-hidden="true" />
+              <span>
+                <strong>{child.label}</strong>
+                <small>{child.description}</small>
+              </span>
+            </NavLink>
+          ))}
+        </div>
+      )}
+    </li>
+  );
+}
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -97,11 +172,14 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
-  // Close open menus whenever the current route changes.
-  useEffect(() => {
+  // Close open menus whenever the current route changes (adjusting state
+  // during render avoids an extra effect pass).
+  const [lastPathname, setLastPathname] = useState(location.pathname);
+  if (lastPathname !== location.pathname) {
+    setLastPathname(location.pathname);
     setIsDropdownOpen(false);
     setIsMenuOpen(false);
-  }, [location.pathname]);
+  }
 
   const closeMenu = () => {
     const drawer = document.getElementById('codesphere-mobile-menu');
@@ -242,6 +320,12 @@ const Navbar = () => {
             />
           </Link>
 
+          {isAuthenticated && (
+            <div className="d-lg-none ms-auto me-2">
+              <NotificationBell compact />
+            </div>
+          )}
+
           <button
             ref={menuToggleRef}
             className="navbar-toggler border-0 shadow-none p-0 d-lg-none codesphere-menu-toggle"
@@ -256,22 +340,29 @@ const Navbar = () => {
 
           <div className="desktop-navigation d-none d-lg-flex">
             <ul className="navbar-nav align-items-center gap-4">
-              {navLinks.map((link) => (
-                <li className="nav-item" key={link.label}>
+              {navItems.map((item) => (item.children ? (
+                <NavGroup key={`${item.label}-${location.pathname}`} item={item} pathname={location.pathname} />
+              ) : (
+                <li className="nav-item" key={item.label}>
                   <NavLink
                     className="nav-link"
-                    to={link.path}
-                    end={link.path === '/'}
+                    to={item.path}
+                    end={item.path === '/'}
                   >
-                    {link.label}
+                    {item.label}
                   </NavLink>
                 </li>
-              ))}
+              )))}
             </ul>
           </div>
 
           <div className="desktop-navigation d-none d-lg-flex">
             <ul className="navbar-nav align-items-center">
+              {isAuthenticated && (
+                <li className="nav-item">
+                  <NotificationBell />
+                </li>
+              )}
               <li className="nav-item ms-lg-2">
                 {renderAuthMenu()}
               </li>
@@ -325,15 +416,17 @@ const Navbar = () => {
         <p className="mobile-menu-caption">EXPLORE CODESPHERE</p>
 
         <ul className="mobile-menu-links">
-          {navLinks.map((link, index) => (
-            <li key={link.label}>
+          {mobileEntries.map((link) => (link.heading ? (
+            <li key={`heading-${link.heading}`} className="mobile-menu-group">{link.heading}</li>
+          ) : (
+            <li key={link.path}>
               <NavLink
                 to={link.path}
                 end={link.path === '/'}
                 onClick={closeMenu}
               >
                 <span className="mobile-menu-number">
-                  {String(index + 1).padStart(2, '0')}
+                  <i className={`bi ${link.icon || (link.path === '/' ? 'bi-house' : 'bi-envelope')}`} aria-hidden="true" />
                 </span>
 
                 <span className="mobile-menu-link-label">
@@ -343,7 +436,7 @@ const Navbar = () => {
                 <i className="bi bi-arrow-up-right" aria-hidden="true" />
               </NavLink>
             </li>
-          ))}
+          )))}
         </ul>
 
         <div className="mobile-menu-footer">

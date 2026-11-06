@@ -2068,3 +2068,52 @@
     gap: 7px;
   }
 }
+/* Community tools: links to the forum, news and reverse coding staff pages */
+.admin-tools {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(240px, 100%), 1fr));
+  gap: 12px;
+  margin: 18px 0 24px;
+}
+
+.admin-tool {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  border: 1px solid rgba(16, 36, 58, .1);
+  border-radius: 16px;
+  background: #fff;
+  color: #10243A;
+  text-decoration: none;
+  box-shadow: 0 6px 18px rgba(16, 36, 58, .06);
+  transition: transform .2s ease, border-color .2s ease;
+}
+
+.admin-tool:hover {
+  transform: translateY(-2px);
+  border-color: #F05A36;
+  color: #10243A;
+}
+
+.admin-tool > i {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: #FFF1EC;
+  color: #F05A36;
+  font-size: 1.2rem;
+}
+
+.admin-tool strong,
+.admin-tool small {
+  display: block;
+}
+
+.admin-tool small {
+  color: #617287;
+  font-size: .8rem;
+}
