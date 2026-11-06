@@ -10,14 +10,8 @@
   padding: clamp(4.5rem, 8vw, 7rem) 0;
   color: #153653;
 
-  /* Light surface that gently fades in from the video above */
-  background: linear-gradient(
-    to bottom,
-    rgba(239, 247, 253, 0.82) 0%,
-    rgba(248, 251, 254, 0.96) 15%,
-    #f8fbfe 42%,
-    #ffffff 100%
-  );
+  /* Fully transparent so the page's background video shows through */
+  background: transparent;
 }
 
 /* Soft ambient accents */
@@ -32,6 +26,8 @@
   pointer-events: none;
   filter: blur(75px);
   opacity: 0.35;
+  /* Hidden: the section is transparent over the video */
+  display: none;
 }
 
 .about-section::before {
