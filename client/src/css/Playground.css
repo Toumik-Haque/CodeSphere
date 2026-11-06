@@ -787,3 +787,155 @@
     animation: none;
   }
 }
+
+/* --------------------------------------------------
+   Challenge checker (above the editor)
+-------------------------------------------------- */
+
+.playground-check {
+  padding: 12px 14px;
+  border-bottom: 1px solid rgba(255, 255, 255, .08);
+  background: linear-gradient(90deg, rgba(240, 90, 54, .18), rgba(240, 90, 54, .04));
+  color: #E6EDF3;
+}
+
+.playground-check-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.playground-check-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  font-weight: 800;
+}
+
+.playground-check-title i {
+  color: var(--gold-light);
+}
+
+.playground-check-title span {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.2;
+}
+
+.playground-check-title small {
+  color: #9FB1C4;
+  font-size: .68rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.playground-check-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.playground-check-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 10px;
+  background: #16A34A;
+  color: #fff !important;
+  font-weight: 800;
+  text-decoration: none;
+  transition: background .2s ease;
+}
+
+.playground-check-btn:hover {
+  background: #128A3E;
+}
+
+.playground-check-btn:disabled {
+  opacity: .75;
+}
+
+.playground-check-exit {
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border: 1px solid rgba(255, 255, 255, .15);
+  border-radius: 10px;
+  background: transparent;
+  color: #DCE6F0;
+}
+
+.playground-check-exit:hover {
+  background: rgba(255, 255, 255, .1);
+}
+
+.playground-check-note {
+  margin: 8px 0 0;
+  color: #B9C7D6;
+  font-size: .82rem;
+}
+
+.playground-check-result {
+  margin-top: 10px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: .9rem;
+  animation: playground-fade .3s ease;
+}
+
+.playground-check-result.pass {
+  background: rgba(22, 163, 74, .2);
+  color: #BBF7D0;
+}
+
+.playground-check-result.fail {
+  background: rgba(220, 38, 38, .18);
+  color: #FECACA;
+}
+
+.playground-check-result p {
+  margin: 4px 0 0;
+  color: #DCE6F0;
+}
+
+.playground-check-result pre {
+  max-height: 160px;
+  margin: 8px 0 0;
+  padding: 8px 10px;
+  overflow: auto;
+  border-radius: 8px;
+  background: rgba(0, 0, 0, .35);
+  color: #E6EDF3;
+  font-size: .78rem;
+  white-space: pre-wrap;
+}
+
+.playground-done {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 13px;
+  border-radius: 10px;
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+@media (max-width: 575.98px) {
+  .playground-check-actions {
+    width: 100%;
+  }
+
+  .playground-check-btn {
+    flex: 1;
+    justify-content: center;
+  }
+}

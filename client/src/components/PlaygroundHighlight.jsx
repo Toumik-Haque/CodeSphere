@@ -1,12 +1,11 @@
 import { Link } from 'react-router-dom';
-import { CHALLENGES } from '../data/playground';
 import CodeTypingWindow from './CodeTypingWindow';
 import '../css/PlaygroundHighlight.css';
 
 const FEATURES = [
   ['bi-cloud-check', 'Zero setup', 'No installs, no .exe, no admin rights. Just open and code.'],
   ['bi-collection', '70+ languages', 'Python, C, C++, Java, JS, Go, Rust, SQL and many more.'],
-  ['bi-trophy', `${CHALLENGES.length} challenges`, 'Earn XP from beginner puzzles to stack problems.'],
+  ['bi-trophy', 'Auto-checked challenges', 'Run your code, pass the test, earn XP. From beginner to stack problems.'],
   ['bi-bug', 'Daily Debugging Arena', 'A new bug every day. Find it, keep your streak alive.'],
 ];
 

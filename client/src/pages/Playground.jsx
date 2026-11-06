@@ -1,15 +1,15 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DebugArena from '../components/DebugArena';
-import { LANGUAGES, EXAMPLES, CHALLENGES, TIPS } from '../data/playground';
+import { useAuth } from '../context/AuthContext';
+import { apiRequest } from '../lib/api';
+import { LANGUAGES, EXAMPLES, STARTERS, TIPS } from '../data/playground';
 import '../css/Playground.css';
 
 const EDITOR_ORIGIN = 'https://onecompiler.com';
 const SAVE_KEY = (lang) => `codesphere_playground_${lang}`;
-const SOLVED_KEY = 'codesphere_playground_solved';
-const TOTAL_XP = CHALLENGES.reduce((sum, c) => sum + c.xp, 0);
 
 function editorUrl(language, theme) {
   const params = new URLSearchParams({
@@ -29,12 +29,32 @@ function commentPrefix(language) {
   return '//';
 }
 
-function loadSolved() {
-  try {
-    return JSON.parse(localStorage.getItem(SOLVED_KEY)) || [];
-  } catch {
-    return [];
+function challengeTemplate(challenge, language) {
+  const c = commentPrefix(language);
+  return (
+    `${c} Challenge: ${challenge.title} (${challenge.level}, +${challenge.xp} XP)\n` +
+    `${c} ${challenge.description}\n` +
+    `${c} Expected output:\n` +
+    challenge.example.split('\n').map((line) => `${c}   ${line}`).join('\n') +
+    `\n\n${STARTERS[language] || ''}`
+  );
+}
+
+const FAIL_HEADLINES = {
+  'compile-error': '❌ Your code didn\'t compile.',
+  'runtime-error': '❌ Your code crashed while running.',
+  timeout: '⏱️ Your code took too long.',
+  'service-error': '⚠️ The checker had a problem.',
+  'request-error': '⚠️ Couldn\'t check your code.',
+};
+
+function resultHeadline(result) {
+  if (result.passed) {
+    return result.alreadySolved
+      ? '✅ Correct! You already solved this one.'
+      : `✅ Correct! +${result.xp} XP earned.`;
   }
+  return FAIL_HEADLINES[result.status] || '❌ Not quite. The output doesn\'t match yet.';
 }
 
 const Playground = () => {
@@ -44,9 +64,16 @@ const Playground = () => {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [toast, setToast] = useState('');
   const [tipIndex, setTipIndex] = useState(0);
-  const [solved, setSolved] = useState(loadSolved);
+  const [challenges, setChallenges] = useState([]);
+  const [solved, setSolved] = useState([]);
   const [openHint, setOpenHint] = useState(null);
   const [highlighted, setHighlighted] = useState(null);
+  const [activeChallenge, setActiveChallenge] = useState(null);
+  const [checking, setChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState(null);
+
+  const { user, token } = useAuth();
+  const isLoggedIn = Boolean(user && token);
 
   const iframeRef = useRef(null);
   const workspaceRef = useRef(null);
@@ -55,9 +82,10 @@ const Playground = () => {
   const toastTimer = useRef(null);
 
   const examples = EXAMPLES[language.id] || [];
+  const totalXp = useMemo(() => challenges.reduce((sum, c) => sum + c.xp, 0), [challenges]);
   const earnedXp = useMemo(
-    () => CHALLENGES.filter((c) => solved.includes(c.id)).reduce((s, c) => s + c.xp, 0),
-    [solved],
+    () => challenges.filter((c) => solved.includes(c.id)).reduce((s, c) => s + c.xp, 0),
+    [challenges, solved],
   );
 
   const showToast = useCallback((message) => {
@@ -85,6 +113,7 @@ const Playground = () => {
   const handleEditorLoad = () => {
     const code =
       codeRef.current ||
+      (activeChallenge ? challengeTemplate(activeChallenge, language.id) : '') ||
       localStorage.getItem(SAVE_KEY(language.id)) ||
       examples[0]?.code ||
       '';
@@ -137,9 +166,27 @@ const Playground = () => {
     };
   }, [isFullscreen]);
 
+  // Challenges are public; solved status comes from the student's account.
   useEffect(() => {
-    localStorage.setItem(SOLVED_KEY, JSON.stringify(solved));
-  }, [solved]);
+    let cancelled = false;
+    apiRequest('/challenges')
+      .then((data) => !cancelled && setChallenges(data.challenges))
+      .catch(() => !cancelled && setChallenges([]));
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isLoggedIn) return undefined;
+    let cancelled = false;
+    apiRequest('/challenges/progress')
+      .then((data) => !cancelled && setSolved(data.solved.map((item) => item.challengeId)))
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoggedIn]);
 
   const switchLanguage = (next) => {
     if (next.id === language.id) return;
@@ -192,28 +239,45 @@ const Playground = () => {
   };
 
   const solveChallenge = (challenge) => {
-    const c = commentPrefix(language.id);
-    const starter = examples[0]?.code || '';
-    const template =
-      `${c} Challenge: ${challenge.title} (${challenge.level}, +${challenge.xp} XP)\n` +
-      `${c} ${challenge.description}\n` +
-      `${c} Expected output:\n` +
-      challenge.example.split('\n').map((line) => `${c}   ${line}`).join('\n') +
-      `\n\n${starter}`;
-    sendToEditor(template);
+    setActiveChallenge(challenge);
+    setCheckResult(null);
+    sendToEditor(challengeTemplate(challenge, language.id));
     workspaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     showToast(`Challenge loaded in ${language.label}. Go!`);
   };
 
-  const toggleSolved = (id) => {
-    setSolved((prev) =>
-      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
-    );
+  const exitChallenge = () => {
+    setActiveChallenge(null);
+    setCheckResult(null);
+  };
+
+  // The server runs the code and marks the challenge solved only if the
+  // output is correct.
+  const checkAnswer = async () => {
+    if (!activeChallenge || checking) return;
+    setChecking(true);
+    setCheckResult(null);
+    try {
+      const result = await apiRequest(`/challenges/${activeChallenge.id}/check`, {
+        method: 'POST',
+        body: JSON.stringify({ language: language.id, code: codeRef.current }),
+      });
+      setCheckResult(result);
+      if (result.passed) {
+        setSolved((prev) => (prev.includes(activeChallenge.id) ? prev : [...prev, activeChallenge.id]));
+        showToast(result.alreadySolved ? 'Correct again! Already solved.' : `Solved! +${result.xp} XP 🎉`);
+      }
+    } catch (err) {
+      setCheckResult({ passed: false, status: 'request-error', error: err.message, output: '' });
+    } finally {
+      setChecking(false);
+    }
   };
 
   const surpriseMe = () => {
-    const pending = CHALLENGES.filter((c) => !solved.includes(c.id));
-    const pool = pending.length ? pending : CHALLENGES;
+    if (!challenges.length) return;
+    const pending = challenges.filter((c) => !solved.includes(c.id));
+    const pool = pending.length ? pending : challenges;
     const pick = pool[Math.floor(Math.random() * pool.length)];
     setHighlighted(pick.id);
     document
@@ -254,7 +318,7 @@ const Playground = () => {
               <span>downloads</span>
             </div>
             <div>
-              <strong>{CHALLENGES.length}</strong>
+              <strong>{challenges.length || 8}</strong>
               <span>challenges</span>
             </div>
             <div>
@@ -327,6 +391,69 @@ const Playground = () => {
           </aside>
 
           <div className="playground-editor">
+            {activeChallenge && (
+              <div className="playground-check" aria-live="polite">
+                <div className="playground-check-head">
+                  <div className="playground-check-title">
+                    <i className="bi bi-flag-fill" aria-hidden="true" />
+                    <span>
+                      <small>Solving</small>
+                      {activeChallenge.title}
+                    </span>
+                  </div>
+
+                  <div className="playground-check-actions">
+                    {isLoggedIn ? (
+                      <button
+                        type="button"
+                        className="playground-check-btn"
+                        onClick={checkAnswer}
+                        disabled={checking}
+                      >
+                        {checking ? (
+                          <><span className="spinner-border spinner-border-sm" aria-hidden="true" /> Checking…</>
+                        ) : (
+                          <><i className="bi bi-check2-circle" aria-hidden="true" /> Check answer</>
+                        )}
+                      </button>
+                    ) : (
+                      <Link to="/login" className="playground-check-btn">
+                        <i className="bi bi-box-arrow-in-right" aria-hidden="true" /> Sign in to check
+                      </Link>
+                    )}
+                    <button
+                      type="button"
+                      className="playground-check-exit"
+                      onClick={exitChallenge}
+                      aria-label="Exit challenge"
+                      title="Exit challenge"
+                    >
+                      <i className="bi bi-x-lg" aria-hidden="true" />
+                    </button>
+                  </div>
+                </div>
+
+                {!checkResult && !checking && (
+                  <p className="playground-check-note">
+                    Write your solution, press Run to test it, then Check answer.
+                    It&apos;s marked solved only if the output is correct.
+                  </p>
+                )}
+
+                {checkResult && (
+                  <div className={`playground-check-result ${checkResult.passed ? 'pass' : 'fail'}`}>
+                    <strong>{resultHeadline(checkResult)}</strong>
+                    {!checkResult.passed && checkResult.status === 'ok' && (
+                      <p>Compare your output with the expected output in the challenge.</p>
+                    )}
+                    {(checkResult.error || checkResult.output) && (
+                      <pre>{checkResult.error || checkResult.output}</pre>
+                    )}
+                  </div>
+                )}
+              </div>
+            )}
+
             <div className="playground-toolbar">
               <div className="playground-file">
                 <span className="playground-dots" aria-hidden="true">
@@ -401,27 +528,28 @@ const Playground = () => {
               </span>
               <h2>Coding Challenges</h2>
               <p className="playground-muted">
-                Solve them in any language. Mark a challenge done to earn XP.
+                Solve them in any featured language. Your code is run and checked
+                automatically; correct answers earn XP.
               </p>
             </div>
 
             <div className="playground-progress">
               <div className="playground-progress-label">
                 <span>
-                  <i className="bi bi-trophy-fill" aria-hidden="true" /> {earnedXp} / {TOTAL_XP} XP
+                  <i className="bi bi-trophy-fill" aria-hidden="true" /> {earnedXp} / {totalXp} XP
                 </span>
                 <span>
-                  {solved.length}/{CHALLENGES.length} solved
+                  {solved.length}/{challenges.length} solved
                 </span>
               </div>
               <div
                 className="playground-progress-bar"
                 role="progressbar"
                 aria-valuemin={0}
-                aria-valuemax={TOTAL_XP}
+                aria-valuemax={totalXp}
                 aria-valuenow={earnedXp}
               >
-                <span style={{ width: `${(earnedXp / TOTAL_XP) * 100}%` }} />
+                <span style={{ width: `${totalXp ? (earnedXp / totalXp) * 100 : 0}%` }} />
               </div>
               <button type="button" className="btn btn-gold playground-surprise" onClick={surpriseMe}>
                 <i className="bi bi-shuffle" aria-hidden="true" /> Surprise me
@@ -430,7 +558,7 @@ const Playground = () => {
           </div>
 
           <div className="playground-challenge-grid">
-            {CHALLENGES.map((challenge) => {
+            {challenges.map((challenge) => {
               const isSolved = solved.includes(challenge.id);
               return (
                 <article
@@ -459,7 +587,7 @@ const Playground = () => {
 
                   <div className="playground-challenge-actions">
                     <button type="button" className="playground-solve" onClick={() => solveChallenge(challenge)}>
-                      <i className="bi bi-code-slash" aria-hidden="true" /> Solve it
+                      <i className="bi bi-code-slash" aria-hidden="true" /> {isSolved ? 'Solve again' : 'Solve it'}
                     </button>
                     <button
                       type="button"
@@ -469,15 +597,11 @@ const Playground = () => {
                     >
                       Hint
                     </button>
-                    <button
-                      type="button"
-                      className={`playground-ghost playground-done ${isSolved ? 'active' : ''}`}
-                      onClick={() => toggleSolved(challenge.id)}
-                      aria-pressed={isSolved}
-                    >
-                      <i className={`bi ${isSolved ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" />
-                      {isSolved ? 'Solved' : 'Done?'}
-                    </button>
+                    {isSolved && (
+                      <span className="playground-done active">
+                        <i className="bi bi-check-circle-fill" aria-hidden="true" /> Solved
+                      </span>
+                    )}
                   </div>
                 </article>
               );

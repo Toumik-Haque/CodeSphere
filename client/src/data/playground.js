@@ -436,81 +436,54 @@ GROUP BY type;
   ],
 };
 
-// Language-agnostic practice challenges. Progress is stored in the browser.
-export const CHALLENGES = [
-  {
-    id: 'even-odd',
-    title: 'Even or Odd?',
-    level: 'Beginner',
-    xp: 10,
-    description: 'Print whether each number from 1 to 10 is even or odd.',
-    example: '1 is odd\n2 is even\n...',
-    hint: 'Use the modulo operator: n % 2 == 0 means even.',
-  },
-  {
-    id: 'sum-digits',
-    title: 'Sum of Digits',
-    level: 'Beginner',
-    xp: 10,
-    description: 'Find the sum of the digits of 98765.',
-    example: '35',
-    hint: 'Repeatedly take n % 10 for the last digit, then n / 10 to drop it.',
-  },
-  {
-    id: 'palindrome',
-    title: 'Palindrome Checker',
-    level: 'Easy',
-    xp: 20,
-    description: 'Check whether "racecar" and "codesphere" read the same backwards.',
-    example: 'racecar -> true\ncodesphere -> false',
-    hint: 'Compare characters from both ends moving inwards, or reverse the string.',
-  },
-  {
-    id: 'primes',
-    title: 'Prime Hunter',
-    level: 'Easy',
-    xp: 20,
-    description: 'Print all prime numbers below 50.',
-    example: '2 3 5 7 11 13 ...',
-    hint: 'A number is prime if nothing from 2 up to its square root divides it.',
-  },
-  {
-    id: 'vowels',
-    title: 'Vowel Counter',
-    level: 'Easy',
-    xp: 20,
-    description: 'Count the vowels in "Learn together, build together".',
-    example: '10',
-    hint: 'Loop through each character and check if it is in "aeiouAEIOU".',
-  },
-  {
-    id: 'anagram',
-    title: 'Anagram Detective',
-    level: 'Medium',
-    xp: 30,
-    description: 'Check whether "listen" and "silent" are anagrams.',
-    example: 'true',
-    hint: 'Sort the letters of both words and compare, or count each letter.',
-  },
-  {
-    id: 'matrix',
-    title: 'Matrix Transpose',
-    level: 'Medium',
-    xp: 30,
-    description: 'Flip a 3x3 matrix over its diagonal.',
-    example: '1 2 3      1 4 7\n4 5 6  ->  2 5 8\n7 8 9      3 6 9',
-    hint: 'The element at row i, column j moves to row j, column i.',
-  },
-  {
-    id: 'brackets',
-    title: 'Balanced Brackets',
-    level: 'Hard',
-    xp: 50,
-    description: 'Check whether "{[()()]}" has correctly matched brackets.',
-    example: '{[()()]} -> true\n{[(])} -> false',
-    hint: 'Push opening brackets onto a stack; each closing bracket must match the top.',
-  },
-];
+// Empty skeletons loaded when a student starts a challenge.
+// (The challenges themselves live on the server with their expected output.)
+export const STARTERS = {
+  python: `# Write your solution below
+`,
+  c: `#include <stdio.h>
+
+int main() {
+    // Write your solution here
+
+    return 0;
+}
+`,
+  cpp: `#include <iostream>
+using namespace std;
+
+int main() {
+    // Write your solution here
+
+    return 0;
+}
+`,
+  java: `public class Main {
+    public static void main(String[] args) {
+        // Write your solution here
+
+    }
+}
+`,
+  javascript: `// Write your solution below
+`,
+  go: `package main
+
+import "fmt"
+
+func main() {
+    // Write your solution here
+    fmt.Print("")
+}
+`,
+  rust: `fn main() {
+    // Write your solution here
+
+}
+`,
+  mysql: `-- Write your query below
+`,
+};
 
 export const TIPS = [
   'Stuck? Explain your code line by line to a friend, or a rubber duck. 🦆',
