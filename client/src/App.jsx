@@ -29,6 +29,7 @@ import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
 import Team from './pages/Team';
 import Contact from './pages/Contact';
+import OpenSource from './pages/OpenSource';
 import Playground from './pages/Playground';
 import Leaderboard from './pages/Leaderboard';
 
@@ -95,6 +96,7 @@ function AppRoutes() {
       <Route path="/events/:slug" element={<EventDetails />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/open-source" element={<OpenSource />} />
       <Route path="/playground" element={<Playground />} />
       <Route path="/leaderboard" element={<Leaderboard />} />
 

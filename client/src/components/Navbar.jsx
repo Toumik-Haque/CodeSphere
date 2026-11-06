@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useRef } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.svg';
 import '../css/Navbar.css';
@@ -11,6 +11,7 @@ const navLinks = [
   { label: 'Playground', path: '/playground' },
   { label: 'Leaderboard', path: '/leaderboard' },
   { label: 'Materials', path: '/materials' },
+  { label: 'Open Source', path: '/open-source' },
   { label: 'Team', path: '/team' },
   { label: 'Contact Us', path: '/contact' },
 ];
@@ -25,10 +26,10 @@ const Navbar = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
-  // Separate refs for desktop and mobile dropdowns.
   const desktopDropdownRef = useRef(null);
   const mobileDropdownRef = useRef(null);
   const menuToggleRef = useRef(null);
+
   const { user, logout } = useAuth();
 
   const isAuthenticated = Boolean(user);
@@ -37,7 +38,6 @@ const Navbar = () => {
   const dashboardPath = isAdmin ? '/admin' : '/profile';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
-  // Navbar scroll effect
   useEffect(() => {
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 20);
@@ -49,7 +49,6 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Close dropdown when clicking outside both desktop and mobile menus.
   useEffect(() => {
     const handleClickOutside = (event) => {
       const clickedInsideDesktop =
@@ -72,7 +71,6 @@ const Navbar = () => {
     };
   }, []);
 
-  // Close menus with Escape.
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
@@ -88,7 +86,6 @@ const Navbar = () => {
     };
   }, []);
 
-  // Mobile drawer scroll lock
   useEffect(() => {
     if (!isMenuOpen) return;
 
@@ -100,27 +97,23 @@ const Navbar = () => {
     };
   }, [isMenuOpen]);
 
-  // Close dropdown and mobile drawer after navigation
-  // (adjusting state during render avoids an extra effect pass).
-  const [lastPathname, setLastPathname] = useState(location.pathname);
-  if (lastPathname !== location.pathname) {
-    setLastPathname(location.pathname);
+  // Close open menus whenever the current route changes.
+  useEffect(() => {
     setIsDropdownOpen(false);
     setIsMenuOpen(false);
-  }
+  }, [location.pathname]);
 
-  // Close all menus.
   const closeMenu = () => {
-    // Move focus out of the drawer before it becomes inert.
     const drawer = document.getElementById('codesphere-mobile-menu');
+
     if (drawer?.contains(document.activeElement)) {
       menuToggleRef.current?.focus();
     }
+
     setIsMenuOpen(false);
     setIsDropdownOpen(false);
   };
 
-  // Logout handler.
   const handleLogout = async () => {
     try {
       await logout();
@@ -131,9 +124,7 @@ const Navbar = () => {
     }
   };
 
-  // Authentication menu for desktop and mobile.
   const renderAuthMenu = (mobile = false) => {
-    // Not logged in: Show Sign In.
     if (!isAuthenticated) {
       return (
         <Link
@@ -152,10 +143,7 @@ const Navbar = () => {
           </span>
 
           {!mobile && (
-            <i
-              className="bi bi-arrow-up-right"
-              aria-hidden="true"
-            />
+            <i className="bi bi-arrow-up-right" aria-hidden="true" />
           )}
         </Link>
       );
@@ -168,7 +156,6 @@ const Navbar = () => {
         }`}
         ref={mobile ? mobileDropdownRef : desktopDropdownRef}
       >
-        {/* Account Dropdown Button */}
         <button
           type="button"
           className={`btn btn-gold navbar-user-button ${
@@ -196,7 +183,6 @@ const Navbar = () => {
           />
         </button>
 
-        {/* Dropdown Items */}
         {isDropdownOpen && (
           <div className="navbar-dropdown-menu">
             <Link
@@ -204,10 +190,7 @@ const Navbar = () => {
               className="navbar-dropdown-item"
               onClick={closeMenu}
             >
-              <i
-                className="bi bi-speedometer2"
-                aria-hidden="true"
-              />
+              <i className="bi bi-speedometer2" aria-hidden="true" />
               <span>{dashboardLabel}</span>
             </Link>
 
@@ -216,10 +199,7 @@ const Navbar = () => {
               className="navbar-dropdown-item navbar-dropdown-logout"
               onClick={handleLogout}
             >
-              <i
-                className="bi bi-box-arrow-right"
-                aria-hidden="true"
-              />
+              <i className="bi bi-box-arrow-right" aria-hidden="true" />
               <span>Logout</span>
             </button>
           </div>
@@ -236,15 +216,18 @@ const Navbar = () => {
         }`}
         aria-label="Main navigation"
       >
-        <div className={isAdminPage ? 'container-fluid navbar-admin-container' : 'container'}>
-
-          {/* Brand */}
+        <div
+          className={
+            isAdminPage
+              ? 'container-fluid navbar-admin-container'
+              : 'container'
+          }
+        >
           <Link
             className="navbar-brand d-flex align-items-center"
             to="/"
             onClick={() => {
               closeMenu();
-
               window.scrollTo({
                 top: 0,
                 left: 0,
@@ -259,7 +242,6 @@ const Navbar = () => {
             />
           </Link>
 
-          {/* Mobile Hamburger */}
           <button
             ref={menuToggleRef}
             className="navbar-toggler border-0 shadow-none p-0 d-lg-none codesphere-menu-toggle"
@@ -272,20 +254,22 @@ const Navbar = () => {
             <i className="bi bi-filter-right" aria-hidden="true" />
           </button>
 
-          {/* Desktop Navigation Links */}
           <div className="desktop-navigation d-none d-lg-flex">
             <ul className="navbar-nav align-items-center gap-4">
               {navLinks.map((link) => (
                 <li className="nav-item" key={link.label}>
-                  <Link className="nav-link" to={link.path}>
+                  <NavLink
+                    className="nav-link"
+                    to={link.path}
+                    end={link.path === '/'}
+                  >
                     {link.label}
-                  </Link>
+                  </NavLink>
                 </li>
               ))}
             </ul>
           </div>
 
-          {/* Desktop Authentication */}
           <div className="desktop-navigation d-none d-lg-flex">
             <ul className="navbar-nav align-items-center">
               <li className="nav-item ms-lg-2">
@@ -296,7 +280,6 @@ const Navbar = () => {
         </div>
       </nav>
 
-      {/* Mobile Overlay */}
       <div
         className={`codesphere-menu-overlay ${
           isMenuOpen ? 'active' : ''
@@ -305,7 +288,6 @@ const Navbar = () => {
         aria-hidden="true"
       />
 
-      {/* Mobile Side Navigation Drawer */}
       <aside
         id="codesphere-mobile-menu"
         className={`codesphere-mobile-menu ${
@@ -314,14 +296,12 @@ const Navbar = () => {
         aria-label="Mobile navigation"
         inert={!isMenuOpen}
       >
-        {/* Drawer Header */}
         <div className="mobile-menu-header">
           <Link
             to="/"
             className="mobile-menu-brand"
             onClick={() => {
               closeMenu();
-
               window.scrollTo({
                 top: 0,
                 left: 0,
@@ -329,10 +309,7 @@ const Navbar = () => {
               });
             }}
           >
-            <img
-              src={logo}
-              alt="CodeSphere Logo"
-            />
+            <img src={logo} alt="CodeSphere Logo" />
           </Link>
 
           <button
@@ -341,21 +318,18 @@ const Navbar = () => {
             onClick={closeMenu}
             aria-label="Close navigation menu"
           >
-            <i
-              className="bi bi-x-lg"
-              aria-hidden="true"
-            />
+            <i className="bi bi-x-lg" aria-hidden="true" />
           </button>
         </div>
 
         <p className="mobile-menu-caption">EXPLORE CODESPHERE</p>
 
-        {/* Navigation Links */}
         <ul className="mobile-menu-links">
           {navLinks.map((link, index) => (
             <li key={link.label}>
-              <Link
+              <NavLink
                 to={link.path}
+                end={link.path === '/'}
                 onClick={closeMenu}
               >
                 <span className="mobile-menu-number">
@@ -367,16 +341,14 @@ const Navbar = () => {
                 </span>
 
                 <i className="bi bi-arrow-up-right" aria-hidden="true" />
-              </Link>
+              </NavLink>
             </li>
           ))}
         </ul>
 
-        {/* Mobile Account Footer */}
         <div className="mobile-menu-footer">
           <p>Learn. Build. Grow.</p>
 
-          {/* Mobile Authentication Dropdown */}
           {renderAuthMenu(true)}
 
           <span className="mobile-menu-tagline">

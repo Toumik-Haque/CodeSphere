@@ -23,13 +23,14 @@ const socialLinks = [
 const Hero = () => {
   return (
     <section className="hero-section" id="home">
-
-      {/* Hero content */}
       <div className="container hero-container">
         <div className="hero-content">
           <div className="hero-eyebrow">
             <span>OFFICIAL CODING COMMUNITY OF AGEMC</span>
-            <i className="bi bi-patch-check-fill verify" style={{ fontSize: '1rem' }} />
+            <i
+              className="bi bi-patch-check-fill verify"
+              style={{ fontSize: '1rem' }}
+            />
           </div>
 
           <h1 className="hero-title">
@@ -49,26 +50,28 @@ const Hero = () => {
           </p>
 
           <div className="hero-actions">
-            <Link className="hero-btn hero-btn-primary" to="/register">
-              Let's Start Now
-              <i
-                className="bi bi-arrow-up-right"
-                aria-hidden="true"
-              />
-            </Link>
-
             <a
-              className="hero-btn hero-btn-secondary"
+              className="hero-btn hero-btn-primary"
               href="#events"
             >
-              <i className="bi bi-code-slash" aria-hidden="true" />
+              <i className="bi bi-calendar-event" aria-hidden="true" />
               Explore Events
+              <i className="bi bi-arrow-up-right" aria-hidden="true" />
             </a>
+
+            <Link
+              className="hero-btn hero-btn-secondary"
+              to="/open-source"
+            >
+              <i className="bi bi-code-slash" aria-hidden="true" />
+              Contribute to Open Source
+              <i className="bi bi-arrow-up-right" aria-hidden="true" />
+            </Link>
           </div>
 
-          {/* Social media links */}
           <div className="hero-socials" aria-label="Follow CodeSphere">
             <span className="hero-socials-label">FOLLOW US</span>
+
             {socialLinks.map((social) => (
               <a
                 key={social.name}
@@ -115,7 +118,6 @@ const Hero = () => {
           <span>SCROLL TO EXPLORE</span>
           <i className="bi bi-arrow-down" aria-hidden="true" />
         </a>
-
       </div>
     </section>
   );
