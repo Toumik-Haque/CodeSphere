@@ -1418,3 +1418,261 @@
     font-size: 1.2rem;
   }
 }
+
+/* --------------------------------------------------
+   "Both": students and open source side by side
+-------------------------------------------------- */
+
+.lb-split {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: start;
+  gap: 20px;
+}
+
+.lb-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: rgba(255, 255, 255, .92);
+  box-shadow: var(--shadow-md);
+}
+
+.lb-panel-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+}
+
+.lb-panel-head h2,
+.lb-os.is-compact .lb-os-intro h2 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+}
+
+.lb-panel-head h2 i {
+  color: var(--gold);
+}
+
+.lb-panel-head span,
+.lb-os.is-compact .lb-os-intro p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: .82rem;
+}
+
+.lb-panel-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.lb-tabs-sm button {
+  padding: 7px 12px;
+  font-size: .88rem;
+}
+
+.lb-panel-controls .lb-dropdown-toggle {
+  min-width: 140px;
+  min-height: 40px;
+}
+
+.lb-panel-me {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 14px;
+  border: 0;
+  border-radius: 12px;
+  background: var(--navy);
+  color: #fff;
+  font: inherit;
+  text-align: left;
+}
+
+.lb-panel-me span {
+  color: #B9C7D6;
+  font-size: .85rem;
+}
+
+.lb-panel-me strong {
+  color: var(--gold-light);
+  font-size: 1.3rem;
+}
+
+.lb-panel-me i {
+  margin-left: auto;
+}
+
+.lb-list-compact {
+  gap: 8px;
+}
+
+.lb-list-compact .lb-row {
+  grid-template-columns: 40px 36px minmax(0, 1fr) auto;
+  gap: 10px;
+  padding: 9px 12px;
+}
+
+.lb-list-compact .lb-rank {
+  font-size: 1rem;
+  text-align: center;
+}
+
+.lb-list-compact .lb-avatar-md {
+  width: 36px;
+  height: 36px;
+  font-size: .78rem;
+}
+
+.lb-panel-empty {
+  margin: 0;
+  padding: 18px;
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-md);
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.lb-panel-empty span {
+  font-size: 2rem;
+}
+
+.lb-panel-empty p {
+  margin: 6px 0 12px;
+}
+
+.lb-panel-more {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: auto;
+  padding: 10px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  color: var(--navy);
+  font-weight: 700;
+  transition: border-color .2s ease, color .2s ease;
+}
+
+.lb-panel-more:hover {
+  border-color: var(--gold);
+  color: var(--gold);
+}
+
+/* Open-source board inside a panel */
+
+.lb-os.is-compact {
+  max-width: none;
+}
+
+.lb-os.is-compact .lb-os-intro {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 10px;
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.lb-os.is-compact .lb-os-summary {
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.lb-os.is-compact .lb-os-summary div {
+  padding: 10px 6px;
+}
+
+.lb-os.is-compact .lb-os-summary strong {
+  font-size: 1.2rem;
+}
+
+.lb-os.is-compact .lb-empty {
+  margin: 0;
+  padding: 20px 16px;
+}
+
+.lb-os.is-compact .lb-empty h2 {
+  font-size: 1.15rem;
+}
+
+.lb-os.is-compact .lb-empty p {
+  font-size: .9rem;
+}
+
+.lb-os.is-compact .lb-podium {
+  gap: 8px;
+  margin-bottom: 16px;
+}
+
+.lb-os.is-compact .lb-avatar-lg {
+  width: 48px;
+  height: 48px;
+  font-size: 1rem;
+}
+
+.lb-os.is-compact .lb-detail {
+  display: none;
+}
+
+.lb-os.is-compact .lb-row {
+  grid-template-columns: 40px 36px minmax(0, 1fr) auto;
+}
+
+/* The board switch now has three options */
+@media (max-width: 575.98px) {
+  .lb-board-switch {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .lb-board-switch button {
+    grid-template-columns: 1fr;
+    justify-items: center;
+    padding: 8px 4px;
+    text-align: center;
+  }
+
+  .lb-board-switch button i {
+    grid-row: auto;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .lb-split {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 479.98px) {
+  .lb-panel {
+    padding: 14px;
+  }
+
+  .lb-panel-controls .lb-tabs,
+  .lb-panel-controls .lb-dropdown,
+  .lb-panel-controls .lb-dropdown-toggle {
+    width: 100%;
+  }
+
+  .lb-panel-controls .lb-tabs button {
+    flex: 1;
+    justify-content: center;
+  }
+}

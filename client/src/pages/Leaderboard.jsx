@@ -418,19 +418,24 @@ function Rules() {
   );
 }
 
+const BOARD_FROM_HASH = { '#students': 'students', '#open-source': 'opensource' };
+const HASH_FOR_BOARD = { students: '#students', opensource: '#open-source' };
+const COMPACT_ROWS = 10;
+
 const Leaderboard = () => {
   const [sort, setSort] = useState('xp');
   const [year, setYear] = useState('');
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [profile, setProfile] = useState(null);
-  // Which board: student XP/streak, or open-source contributors.
-  // /leaderboard#open-source opens the open-source board directly.
-  const [board, setBoard] = useState(() => (window.location.hash === '#open-source' ? 'opensource' : 'students'));
+  // Which board: both side by side (default), students only, or open
+  // source only. /leaderboard#students and #open-source open one directly.
+  const [board, setBoard] = useState(() => BOARD_FROM_HASH[window.location.hash] || 'both');
 
   const switchBoard = (next) => {
     setBoard(next);
-    window.history.replaceState(null, '', next === 'opensource' ? '#open-source' : window.location.pathname);
+    window.history.replaceState(null, '', HASH_FOR_BOARD[next] || window.location.pathname);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
   const closeProfile = useCallback(() => setProfile(null), []);
 
@@ -473,6 +478,16 @@ const Leaderboard = () => {
               <button
                 type="button"
                 role="tab"
+                aria-selected={board === 'both'}
+                className={board === 'both' ? 'active' : ''}
+                onClick={() => switchBoard('both')}
+              >
+                <i className="bi bi-layout-split" aria-hidden="true" /> Both
+                <small>Side by side</small>
+              </button>
+              <button
+                type="button"
+                role="tab"
                 aria-selected={board === 'students'}
                 className={board === 'students' ? 'active' : ''}
                 onClick={() => switchBoard('students')}
@@ -492,7 +507,7 @@ const Leaderboard = () => {
               </button>
             </div>
 
-            {board === 'students' && (
+            {board !== 'opensource' && (
             <>
             <p className="lb-subtitle">
               Fix the daily bug, solve coding challenges, keep your streak alive.
@@ -521,6 +536,117 @@ const Leaderboard = () => {
           </header>
 
           {board === 'opensource' && <OpenSourceContributors />}
+
+          {board === 'both' && (
+            <>
+              <div className="lb-split">
+                <section className="lb-panel" aria-labelledby="lb-panel-students">
+                  <div className="lb-panel-head">
+                    <h2 id="lb-panel-students">
+                      <i className="bi bi-mortarboard-fill" aria-hidden="true" /> Students
+                    </h2>
+                    <span>XP &amp; daily-bug streaks</span>
+                  </div>
+
+                  <div className="lb-panel-controls">
+                    <div className="lb-tabs lb-tabs-sm" role="tablist" aria-label="Rank students by">
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={sort === 'xp'}
+                        className={sort === 'xp' ? 'active' : ''}
+                        onClick={() => setSort('xp')}
+                      >
+                        <i className="bi bi-trophy-fill" aria-hidden="true" /> Top XP
+                      </button>
+                      <button
+                        type="button"
+                        role="tab"
+                        aria-selected={sort === 'streak'}
+                        className={sort === 'streak' ? 'active' : ''}
+                        onClick={() => setSort('streak')}
+                      >
+                        <i className="bi bi-fire" aria-hidden="true" /> Streak
+                      </button>
+                    </div>
+                    <YearDropdown value={year} onChange={setYear} />
+                  </div>
+
+                  {data?.me && (
+                    <button type="button" className="lb-panel-me" onClick={() => setProfile(data.me)}>
+                      <span>Your rank</span>
+                      <strong>#{data.me.rank}</strong>
+                      <span>{data.me.xp} XP · {data.me.streak} 🔥</span>
+                      <i className="bi bi-chevron-right" aria-hidden="true" />
+                    </button>
+                  )}
+
+                  {error && <p className="lb-panel-empty" role="alert">{error}</p>}
+
+                  {loading && (
+                    <div className="lb-list" aria-busy="true">
+                      {Array.from({ length: 4 }, (_, i) => (
+                        <div key={i} className="lb-row lb-skeleton" />
+                      ))}
+                    </div>
+                  )}
+
+                  {data && rows.length === 0 && (
+                    <div className="lb-panel-empty">
+                      <span aria-hidden="true">🏁</span>
+                      <p>No students ranked yet. Fix today&apos;s bug to be first!</p>
+                      <Link to="/playground#debugging-arena" className="btn btn-gold">Today&apos;s bug</Link>
+                    </div>
+                  )}
+
+                  {rows.length > 0 && (
+                    <ol className="lb-list lb-list-compact">
+                      {rows.slice(0, COMPACT_ROWS).map((row, i) => (
+                        <li key={`${i}-${row.name}`}>
+                          <button
+                            type="button"
+                            className={`lb-row ${row.isMe ? 'is-me' : ''}`}
+                            onClick={() => setProfile(row)}
+                            aria-label={`View ${row.name}'s profile, rank ${row.rank}`}
+                          >
+                            <span className="lb-rank">{MEDALS[row.rank] || `#${row.rank}`}</span>
+                            <Avatar row={row} />
+                            <span className="lb-who">
+                              <strong>
+                                {row.name}
+                                {row.isMe && <span className="lb-you">You</span>}
+                              </strong>
+                              <span>{row.year}</span>
+                            </span>
+                            <span className="lb-metric">
+                              <Metric sort={sort} row={row} />
+                            </span>
+                          </button>
+                        </li>
+                      ))}
+                    </ol>
+                  )}
+
+                  <button type="button" className="lb-panel-more" onClick={() => switchBoard('students')}>
+                    View full student board
+                    {data?.totalPlayers > COMPACT_ROWS && ` (${data.totalPlayers} players)`}
+                    <i className="bi bi-arrow-right" aria-hidden="true" />
+                  </button>
+                </section>
+
+                <section className="lb-panel" aria-label="Open-source contributors">
+                  <OpenSourceContributors compact />
+                  <button type="button" className="lb-panel-more" onClick={() => switchBoard('opensource')}>
+                    View full open-source board <i className="bi bi-arrow-right" aria-hidden="true" />
+                  </button>
+                </section>
+              </div>
+
+              <div id="rules">
+                <Rules />
+              </div>
+            </>
+          )}
 
           {board === 'students' && (
           <>

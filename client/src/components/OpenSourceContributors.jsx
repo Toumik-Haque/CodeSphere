@@ -37,7 +37,8 @@ function GithubAvatar({ person, size = 'md' }) {
   );
 }
 
-export default function OpenSourceContributors() {
+// compact: smaller version for the side-by-side view on the Leaderboard page.
+export default function OpenSourceContributors({ compact = false }) {
   const [search, setSearch] = useState('');
 
   const ranked = RANKED;
@@ -51,14 +52,15 @@ export default function OpenSourceContributors() {
   const totalPoints = CONTRIBUTORS.reduce((sum, p) => sum + p.points, 0);
 
   return (
-    <section className="lb-os" aria-labelledby="lb-os-title">
+    <div className={`lb-os ${compact ? 'is-compact' : ''}`}>
       <div className="lb-os-intro">
-        <h2 id="lb-os-title">
-          <i className="bi bi-github" aria-hidden="true" /> Hall of Contributors
+        <h2>
+          <i className="bi bi-github" aria-hidden="true" /> {compact ? 'Open Source' : 'Hall of Contributors'}
         </h2>
         <p>
-          Students who improve the CodeSphere website itself through open-source
-          pull requests on GitHub.
+          {compact
+            ? 'Merged pull requests to the CodeSphere website'
+            : 'Students who improve the CodeSphere website itself through open-source pull requests on GitHub.'}
         </p>
       </div>
 
@@ -104,6 +106,7 @@ export default function OpenSourceContributors() {
             ))}
           </div>
 
+          {!compact && (
           <label className="lb-os-search">
             <i className="bi bi-search" aria-hidden="true" />
             <input
@@ -114,6 +117,7 @@ export default function OpenSourceContributors() {
               aria-label="Search contributors"
             />
           </label>
+          )}
 
           <ol className="lb-list">
             {filtered.map((person) => (
@@ -142,6 +146,7 @@ export default function OpenSourceContributors() {
         </>
       )}
 
+      {!compact && (
       <div className="lb-os-note">
         <i className="bi bi-shield-check" aria-hidden="true" />
         <p>
@@ -151,6 +156,7 @@ export default function OpenSourceContributors() {
           of PRs. Scoring rules are coming soon.
         </p>
       </div>
-    </section>
+      )}
+    </div>
   );
 }
