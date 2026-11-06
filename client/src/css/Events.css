@@ -24,11 +24,8 @@
   isolation: isolate;
   overflow: hidden;
   padding: clamp(4rem, 7vw, 6.5rem) 0;
-  background: linear-gradient(
-    180deg,
-    #e4f3ff6d 0%,
-    #f1f8ff71 45%
-  );
+  /* Fully transparent so the page's background video shows through */
+  background: transparent;
 }
 
 /* Subtle background accents */
@@ -44,6 +41,8 @@
   pointer-events: none;
   filter: blur(85px);
   opacity: 0.22;
+  /* Hidden: the section is transparent over the video */
+  display: none;
 }
 
 .events-section::before {

@@ -36,4 +36,19 @@ function adminOnly(req, res, next) {
   next();
 }
 
-module.exports = { protect, adminOnly };
+// Like protect, but lets guests through: sets req.user only if a valid
+// token is sent.
+async function optionalAuth(req, res, next) {
+  const [scheme, token] = (req.headers.authorization || '').split(' ');
+  if (scheme !== 'Bearer' || !token) return next();
+
+  try {
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    req.user = await User.findById(decoded.id);
+  } catch {
+    // Invalid or expired token: continue as a guest.
+  }
+  return next();
+}
+
+module.exports = { protect, adminOnly, optionalAuth };

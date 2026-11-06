@@ -2,7 +2,8 @@ import { useEffect, useRef } from 'react';
 import '../css/VideoBackground.css';
 import campusVideo from '../assets/campusVideo.mp4';
 
-const VideoBackground = ({ src = campusVideo }) => {
+// rotate: 'left' or 'right' turns a sideways-recorded video upright (90deg).
+const VideoBackground = ({ src = campusVideo, rotate }) => {
   const videoRef = useRef(null);
 
   useEffect(() => {
@@ -26,7 +27,7 @@ const VideoBackground = ({ src = campusVideo }) => {
         muted
         playsInline
         preload="auto"
-        className="video-background-media"
+        className={`video-background-media ${rotate ? `is-rotated-${rotate}` : ''}`}
       >
         <source src={src} type="video/mp4" />
       </video>

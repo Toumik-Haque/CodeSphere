@@ -69,6 +69,7 @@ CodeSphere/
   - [Brevo](https://www.brevo.com/) for sign-up OTP emails and the contact form
   - [ImageKit](https://imagekit.io/) for image uploads
   - [TinyMCE](https://www.tiny.cloud/) for the admin rich-text editor
+  - [Judge0 on RapidAPI](https://rapidapi.com/judge0-official/api/judge0-ce) to check Playground challenge answers
 
 ### 1. Fork and clone
 
@@ -126,6 +127,8 @@ cp client/.env.example client/.env
 | `BREVO_SENDER_NAME` | Display name for outgoing emails |
 | `OTP_HASH_SECRET` | Long random string used to hash OTP codes |
 | `CONTACT_RECEIVER_EMAIL` | Inbox that receives contact-form messages |
+| `JUDGE0_URL` | Judge0 API used to check Playground challenge answers (default: RapidAPI's Judge0 CE; or your self-hosted Judge0) |
+| `JUDGE0_API_KEY` | RapidAPI key for Judge0 (leave empty for a self-hosted Judge0 without auth) |
 
 **`client/.env`**
 
@@ -179,6 +182,7 @@ It asks for a name, email and password (8–12 characters).
 | `client` | `npm run lint` | Run ESLint |
 | `server` | `npm run dev` | Start the API with auto-restart (nodemon) |
 | `server` | `npm start` | Start the API without auto-restart |
+| `server` | `node scripts/generateDebugBugs.js` | Rebuild the Debugging Arena question bank (`server/data/debugBugsGenerated.json`) |
 
 ### Troubleshooting
 
