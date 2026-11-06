@@ -582,3 +582,119 @@
     transition: none !important;
   }
 }
+
+/* --------------------------------------------------
+   Admin: award community badges
+-------------------------------------------------- */
+
+.adm-badges {
+  width: 100%;
+  margin-top: 10px;
+}
+
+.adm-badges-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--navy);
+  font-size: .85rem;
+  font-weight: 700;
+}
+
+.adm-badges-toggle span {
+  padding: 0 7px;
+  border-radius: 999px;
+  background: #FFF6E5;
+  color: #6B4A00;
+  font-size: .75rem;
+}
+
+.adm-badges-panel {
+  margin-top: 10px;
+  padding: 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #FAFCFE;
+}
+
+.adm-badges-panel h4 {
+  margin: 0 0 8px;
+  font-size: .9rem;
+  font-weight: 800;
+}
+
+.adm-badges-panel h4:not(:first-child) {
+  margin-top: 14px;
+}
+
+.adm-badges-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.adm-badges-list li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.adm-badge-name {
+  display: flex;
+  flex: 1 1 220px;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.adm-badge-name > span:first-child {
+  font-size: 1.4rem;
+}
+
+.adm-badge-name strong,
+.adm-badge-name small {
+  display: block;
+}
+
+.adm-badge-name small {
+  color: var(--text-muted);
+  font-size: .75rem;
+}
+
+.adm-badges-list input {
+  flex: 1 1 160px;
+  min-height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font-size: .85rem;
+}
+
+.adm-badges-list button {
+  min-width: 80px;
+  min-height: 34px;
+  border: 0;
+  border-radius: 8px;
+  color: #fff;
+  font-weight: 700;
+}
+
+.adm-badges-list .is-award { background: #16A34A; }
+.adm-badges-list .is-remove { background: #DC2626; }
+
+.adm-badges-message {
+  margin: 10px 0 0;
+  color: var(--navy);
+  font-size: .85rem;
+}
