@@ -26,12 +26,14 @@ const eventRoutes = require('./routes/eventRoutes');
 const userRoutes = require('./routes/userRoutes');
 const coreMemberRoutes = require('./routes/coreMemberRoutes');
 const contactRoutes = require('./routes/contactRoutes');
+const debugRoutes = require('./routes/debugRoutes');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/users', userRoutes);
 app.use('/api/core-members', coreMemberRoutes);
 app.use('/api/contact', contactRoutes);
+app.use('/api/debug', debugRoutes);
 
 const PORT = process.env.PORT || 5000;
 

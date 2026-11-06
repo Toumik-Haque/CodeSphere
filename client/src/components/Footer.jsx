@@ -1,5 +1,5 @@
 
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import logo from '../assets/brand-dark.png';
 import '../css/Footer.css';
@@ -7,6 +7,7 @@ import '../css/Footer.css';
 const navLinks = [
   { label: 'Home', path: '/' },
   { label: 'Events', path: '/events' },
+  { label: 'Playground', path: '/playground' },
   { label: 'Materials', path: '/materials' },
   { label: 'Team', path: '/team' },
   { label: 'Contact Us', path: '/contact' },

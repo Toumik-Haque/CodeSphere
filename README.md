@@ -179,6 +179,7 @@ It asks for a name, email and password (8–12 characters).
 | `client` | `npm run lint` | Run ESLint |
 | `server` | `npm run dev` | Start the API with auto-restart (nodemon) |
 | `server` | `npm start` | Start the API without auto-restart |
+| `server` | `node scripts/generateDebugBugs.js` | Rebuild the Debugging Arena question bank (`server/data/debugBugsGenerated.json`) |
 
 ### Troubleshooting
 
