@@ -164,7 +164,7 @@ export default function TeamCarousel() {
 
   return (
     <section
-      className="core-team-section bg-info"
+      className="core-team-section"
       aria-labelledby="core-team-title"
     >
       <div className="core-team-heading">

@@ -8,6 +8,8 @@ import '../css/Navbar.css';
 const navLinks = [
   { label: 'Home', path: '/' },
   { label: 'Events', path: '/events' },
+  { label: 'Playground', path: '/playground' },
+  { label: 'Leaderboard', path: '/leaderboard' },
   { label: 'Materials', path: '/materials' },
   { label: 'Team', path: '/team' },
   { label: 'Contact Us', path: '/contact' },
