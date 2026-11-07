@@ -1,10 +1,13 @@
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
+import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
+import BadgeLeaderboard from '../components/BadgeLeaderboard';
 import '../css/Profile.css';
+import { calculateProfileCompletion } from '../lib/profileCompletion';
 
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
@@ -43,6 +46,16 @@ const skillOptions = [
   'Problem Solving', 'Figma', 'Linux',
 ];
 
+const codingPlatforms = [
+  'LeetCode',
+  'CodeChef',
+  'Codeforces',
+  'HackerRank',
+  'GeeksforGeeks',
+  'HackerEarth',
+  'Other',
+];
+
 const emptyProfile = {
   phone: '',
   city: '',
@@ -54,58 +67,73 @@ const emptyProfile = {
   department: '',
   yearOfStudy: '',
   graduationYear: '',
+  skillDetails: [],
   skills: [],
+  technicalInterests: [],
+  learningGoals: [],
   codingProfiles: [],
   projects: [],
   achievements: [],
-  activities: [],
 };
 
 const IMAGE_SIZE_LIMIT = 1 * 1024 * 1024;
 // Default profile banner (client/public), used until a student uploads one.
 const DEFAULT_BANNER = '/default-profile-banner.webp';
+const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
 const RESUME_SIZE_LIMIT = 5 * 1024 * 1024;
 
-const getStorageKey = (type, user) => {
-  const identity = user?._id || user?.id || user?.email || 'default';
-  return `codesphere_${type}_${encodeURIComponent(identity)}`;
-};
-
-const readStorage = (key, fallback) => {
-  try {
-    const value = localStorage.getItem(key);
-    return value ? JSON.parse(value) : fallback;
-  } catch {
-    return fallback;
-  }
-};
-
-const saveStorage = (key, value) => {
-  try {
-    localStorage.setItem(key, JSON.stringify(value));
-    return true;
-  } catch (error) {
-    console.error('Local storage save failed:', error);
-    return false;
-  }
-};
-
-const normalizeProfile = (source = {}) => ({
-  ...emptyProfile,
-  ...source,
-  skills: Array.isArray(source.skills) ? source.skills : [],
-  codingProfiles: Array.isArray(source.codingProfiles) ? source.codingProfiles : [],
-  projects: Array.isArray(source.projects) ? source.projects : [],
-  achievements: Array.isArray(source.achievements) ? source.achievements : [],
-  activities: Array.isArray(source.activities) ? source.activities : [],
+const normalizeProject = (project) => ({
+  ...project,
+  featured: Boolean(project.featured),
+  status: project.status || 'Completed',
+  technologies: Array.isArray(project.technologies)
+    ? project.technologies.join(', ')
+    : '',
+  github: project.githubUrl || '',
+  demo: project.liveUrl || '',
+  description: project.description || '',
 });
 
-const readImage = (key) => {
-  try {
-    return localStorage.getItem(key) || '';
-  } catch {
-    return '';
-  }
+const normalizeProfile = (source = {}) => {
+  const skillDetails = Array.isArray(source.skillDetails) ? source.skillDetails : [];
+  const skillDetailsByName = new Map(
+    skillDetails.map((skill) => [skill.name.toLowerCase(), skill])
+  );
+  const skills = Array.isArray(source.skills) ? source.skills : [];
+  const codingProfiles = Array.isArray(source.codingProfiles)
+    ? source.codingProfiles
+    : [];
+  const legacyGithubProfile = codingProfiles.find(
+    (profile) => profile.platform?.toLowerCase() === 'github'
+  );
+
+  return {
+    ...emptyProfile,
+    ...source,
+    github: source.github || legacyGithubProfile?.url || '',
+    skills: skills.map((skill) => {
+      const name = typeof skill === 'string' ? skill : skill.name;
+      const detail = skillDetailsByName.get(name.toLowerCase());
+      return {
+        name,
+        level: (typeof skill === 'object' && skill.level) ||
+          detail?.level ||
+          'Intermediate',
+      };
+    }),
+    skillDetails,
+    technicalInterests: Array.isArray(source.technicalInterests)
+      ? source.technicalInterests
+      : [],
+    learningGoals: Array.isArray(source.learningGoals) ? source.learningGoals : [],
+    codingProfiles: codingProfiles.filter(
+      (profile) => profile.platform?.toLowerCase() !== 'github'
+    ),
+    projects: Array.isArray(source.projects)
+      ? source.projects.map(normalizeProject)
+      : [],
+    achievements: Array.isArray(source.achievements) ? source.achievements : [],
+  };
 };
 
 const readImageFile = (file) =>
@@ -123,11 +151,21 @@ const sectionConfig = [
     subtitle: 'Your academic background',
     icon: 'bi-mortarboard',
     fields: [
-      { name: 'collegeName', label: 'College / University', placeholder: 'Enter your college name', full: true },
+      { name: 'collegeName', label: 'College / University', placeholder: 'Enter your college name', required: true, full: true },
       { name: 'degree', label: 'Degree', type: 'select', options: ['B.Tech', 'B.E.', 'BCA', 'B.Sc', 'M.Tech', 'MCA', 'M.Sc', 'Diploma', 'Other'] },
       { name: 'department', label: 'Department / Branch', type: 'select', options: departments },
       { name: 'yearOfStudy', label: 'Current year', type: 'select', options: ['1st Year', '2nd Year', '3rd Year', '4th Year'] },
       { name: 'graduationYear', label: 'Expected graduation year', type: 'select', options: Array.from({ length: 9 }, (_, i) => String(new Date().getFullYear() + i)) },
+    ],
+  },
+  {
+    id: 'learning',
+    title: 'Skills & Learning',
+    subtitle: 'Your interests and learning goals',
+    icon: 'bi-lightbulb',
+    fields: [
+      { name: 'technicalInterests', label: 'Technical interests', type: 'textarea', placeholder: 'Web development, AI, cybersecurity' },
+      { name: 'learningGoals', label: 'Learning goals', type: 'textarea', placeholder: 'Data structures, backend development' },
     ],
   },
   {
@@ -137,8 +175,19 @@ const sectionConfig = [
     icon: 'bi-terminal',
     collection: 'codingProfiles',
     fields: [
-      { name: 'platform', label: 'Platform', type: 'select', options: ['GitHub', 'LeetCode', 'CodeChef', 'Codeforces', 'HackerRank', 'GeeksforGeeks', 'HackerEarth', 'Other'] },
-      { name: 'url', label: 'Profile URL', type: 'url', placeholder: 'https://...' },
+      { name: 'platform', label: 'Platform', type: 'select', options: codingPlatforms },
+      { name: 'url', label: 'Profile URL', type: 'url', placeholder: 'https://...', required: true },
+    ],
+  },
+  {
+    id: 'professionalLinks',
+    title: 'Professional links',
+    subtitle: 'Connect your professional accounts',
+    icon: 'bi-link-45deg',
+    fields: [
+      { name: 'github', label: 'GitHub profile', type: 'url', placeholder: 'https://github.com/username' },
+      { name: 'linkedin', label: 'LinkedIn profile', type: 'url', placeholder: 'https://linkedin.com/in/username' },
+      { name: 'portfolio', label: 'Portfolio website', type: 'url', placeholder: 'https://yourportfolio.com' },
     ],
   },
   {
@@ -148,12 +197,14 @@ const sectionConfig = [
     icon: 'bi-kanban',
     collection: 'projects',
     fields: [
-      { name: 'title', label: 'Project title', placeholder: 'e.g. Student Management System' },
+      { name: 'title', label: 'Project title', placeholder: 'e.g. Student Management System', required: true },
       { name: 'type', label: 'Project type', type: 'select', options: ['Web Development', 'App Development', 'AI / ML', 'Data Science', 'Competitive Programming', 'Other'] },
       { name: 'technologies', label: 'Technologies used', placeholder: 'Java, React, MongoDB' },
       { name: 'github', label: 'GitHub repository', type: 'url', placeholder: 'https://github.com/...' },
       { name: 'demo', label: 'Live demo (optional)', type: 'url', placeholder: 'https://...' },
-      { name: 'description', label: 'Project description', type: 'textarea', full: true, placeholder: 'What does your project do?' },
+      { name: 'status', label: 'Project status', type: 'select', options: ['Completed', 'In Progress', 'Planning'] },
+      { name: 'featured', label: 'Feature this project on my profile', type: 'checkbox', full: true },
+      { name: 'description', label: 'Project description', type: 'textarea', full: true, placeholder: 'What does your project do?', required: true },
     ],
   },
   {
@@ -163,24 +214,11 @@ const sectionConfig = [
     icon: 'bi-trophy',
     collection: 'achievements',
     fields: [
-      { name: 'title', label: 'Achievement / Certificate title', placeholder: 'Enter title' },
+      { name: 'title', label: 'Achievement / Certificate title', placeholder: 'Enter title', required: true },
       { name: 'category', label: 'Category', type: 'select', options: ['Coding Contest', 'Hackathon', 'Certification', 'Academic Achievement', 'Award', 'Other'] },
       { name: 'issuer', label: 'Issued by', placeholder: 'Organisation / Platform' },
       { name: 'year', label: 'Year', type: 'select', options: Array.from({ length: 12 }, (_, i) => String(new Date().getFullYear() - i)) },
       { name: 'link', label: 'Certificate / proof link (optional)', type: 'url', placeholder: 'https://...' },
-    ],
-  },
-  {
-    id: 'activities',
-    title: 'Club Activities',
-    subtitle: 'Your CodeSphere participation',
-    icon: 'bi-people',
-    collection: 'activities',
-    fields: [
-      { name: 'title', label: 'Activity / Event name', placeholder: 'e.g. CodeSphere Hackathon' },
-      { name: 'role', label: 'Your role', type: 'select', options: ['Participant', 'Volunteer', 'Organizer', 'Team Lead', 'Core Team Member', 'Coordinator', 'Other'] },
-      { name: 'year', label: 'Year', type: 'select', options: Array.from({ length: 8 }, (_, i) => String(new Date().getFullYear() - i)) },
-      { name: 'description', label: 'Description (optional)', type: 'textarea', full: true, placeholder: 'What did you do or learn?' },
     ],
   },
 ];
@@ -544,7 +582,7 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
     }));
   };
 
-  const applyExtractedDetails = () => {
+  const applyExtractedDetails = async () => {
     if (!draft) return;
 
     const selected = Object.entries(selectedFields)
@@ -889,30 +927,78 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
    PROFILE FORM COMPONENTS
 ========================================= */
 
+function normalizeDateInput(value) {
+  if (typeof value !== 'string') return '';
+
+  const isoDate = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoDate) return isoDate[1];
+
+  const legacyDate = value.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (!legacyDate) return '';
+
+  const [, day, month, year] = legacyDate;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+  if (
+    date.getFullYear() !== Number(year) ||
+    date.getMonth() !== Number(month) - 1 ||
+    date.getDate() !== Number(day)
+  ) {
+    return '';
+  }
+
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
 function Field({ field, value, onChange }) {
   const common = {
     id: field.name,
     name: field.name,
     value: value || '',
-    onChange: (event) => onChange(field.name, event.target.value),
+    onChange: (event) => {
+      if (field.name === 'customPlatform') {
+        event.currentTarget.setCustomValidity('');
+      }
+      onChange(field.name, event.target.value);
+    },
     placeholder: field.placeholder || `Enter ${field.label.toLowerCase()}`,
+    required: Boolean(field.required),
   };
 
   return (
     <div className={`profile-form-field ${field.full ? 'profile-form-full' : ''}`}>
-      <label htmlFor={field.name}>{field.label}</label>
-
-      {field.type === 'select' ? (
-        <select {...common}>
-          <option value="">Select {field.label}</option>
-          {field.options.map((option) => (
-            <option key={option} value={option}>{option}</option>
-          ))}
-        </select>
-      ) : field.type === 'textarea' ? (
-        <textarea {...common} rows={4} />
+      {field.type === 'checkbox' ? (
+        <label className="profile-form-checkbox" htmlFor={field.name}>
+          <input
+            id={field.name}
+            name={field.name}
+            type="checkbox"
+            checked={Boolean(value)}
+            onChange={(event) => onChange(field.name, event.target.checked)}
+          />
+          {field.label}
+        </label>
       ) : (
-        <input {...common} type={field.type === 'url' ? 'url' : 'text'} />
+        <>
+          <label htmlFor={field.name}>{field.label}</label>
+          {field.type === 'select' ? (
+            <select {...common}>
+              <option value="">Select {field.label}</option>
+              {field.options.map((option) => (
+                <option key={option} value={option}>
+                  {field.optionLabels?.[option] || option}
+                </option>
+              ))}
+            </select>
+          ) : field.type === 'textarea' ? (
+            <textarea {...common} rows={4} />
+          ) : (
+            <input
+              {...common}
+              type={['url', 'date'].includes(field.type) ? field.type : 'text'}
+            />
+          )}
+        </>
       )}
     </div>
   );
@@ -931,9 +1017,36 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
 
   const hasEducation = section.id === 'education';
   const hasPersonal = section.id === 'personal';
-
+  const hasLearning = section.id === 'learning';
+  const hasProfessionalLinks = section.id === 'professionalLinks';
   const startEdit = (item = {}, index = null) => {
-    setForm({ ...item });
+    const form = isCollection
+      ? { ...item }
+      : Object.fromEntries(
+          section.fields.map((field) => [
+            field.name,
+            field.type === 'date'
+              ? normalizeDateInput(profile[field.name])
+              : profile[field.name] ?? '',
+          ])
+      );
+    if (section.id === 'codingProfiles') {
+      if (!codingPlatforms.includes(form.platform)) {
+      form.customPlatform = form.platform || '';
+      form.platform = 'Other';
+      } else {
+      form.customPlatform = '';
+      }
+    }
+
+    if (!isCollection) {
+      section.fields.forEach((field) => {
+        if (Array.isArray(form[field.name])) {
+          form[field.name] = form[field.name].join(', ');
+        }
+      });
+    }
+    setForm(form);
     setEditingIndex(index);
     setEditing(true);
     setExpanded(true);
@@ -945,20 +1058,30 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
     setForm({});
   };
 
-  const handleSave = (event) => {
+  const handleSave = async (event) => {
     event.preventDefault();
+    const values = { ...form };
 
-    if (isCollection) {
-      if (editingIndex === null) {
-        onAdd(section.collection, form);
-      } else {
-        onSave(section.collection, editingIndex, form);
+    if (section.id === 'codingProfiles') {
+      if (values.platform === 'Other') {
+        if (!values.customPlatform.trim()) {
+          const platformField = event.currentTarget.elements.namedItem('customPlatform');
+          platformField.setCustomValidity('Enter the coding platform name.');
+          platformField.reportValidity();
+          return;
+        }
+        values.platform = values.customPlatform.trim();
       }
-    } else {
-      onSave(section.id, form);
+      delete values.customPlatform;
     }
 
-    cancelEdit();
+    const saved = isCollection
+      ? editingIndex === null
+        ? await onAdd(section.collection, values)
+        : await onSave(section.collection, editingIndex, values)
+      : await onSave(section.id, values);
+
+    if (saved) cancelEdit();
   };
 
   const updateField = (name, value) => {
@@ -966,10 +1089,24 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
   };
 
   const summary = hasPersonal
-    ? [profile.phone, profile.city].filter(Boolean).join(' · ')
+    ? [
+        profile.username ? `@${profile.username}` : '',
+        profile.phone,
+        profile.city,
+      ].filter(Boolean).join(' · ')
     : hasEducation
       ? [profile.collegeName, profile.department, profile.yearOfStudy].filter(Boolean).join(' · ')
-      : `${savedItems.length} ${savedItems.length === 1 ? 'entry' : 'entries'} added`;
+      : hasLearning
+        ? [profile.technicalInterests?.join(', '), profile.learningGoals?.join(', ')]
+          .filter(Boolean)
+          .join(' · ')
+        : hasProfessionalLinks
+          ? [profile.github, profile.linkedin, profile.portfolio].filter(Boolean).length
+            ? `${[profile.github, profile.linkedin, profile.portfolio].filter(Boolean).length} links added`
+            : section.subtitle
+        : isCollection
+          ? `${savedItems.length} ${savedItems.length === 1 ? 'entry' : 'entries'} added`
+          : section.subtitle;
 
   return (
     <section className={`profile-builder-section ${expanded ? 'is-expanded' : ''}`}>
@@ -1002,12 +1139,27 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
           {editing ? (
             <form className="profile-edit-form" onSubmit={handleSave}>
               {section.fields.map((field) => (
-                <Field
-                  key={field.name}
-                  field={field}
-                  value={form[field.name]}
-                  onChange={updateField}
-                />
+                <Fragment key={field.name}>
+                  {section.id === 'codingProfiles' &&
+                    field.name === 'url' &&
+                    form.platform === 'Other' && (
+                      <Field
+                        field={{
+                          name: 'customPlatform',
+                          label: 'Platform name',
+                          placeholder: 'Enter the coding platform name',
+                          required: true,
+                        }}
+                        value={form.customPlatform}
+                        onChange={updateField}
+                      />
+                    )}
+                  <Field
+                    field={field}
+                    value={form[field.name]}
+                    onChange={updateField}
+                  />
+                </Fragment>
               ))}
 
               <div className="profile-form-actions">
@@ -1032,6 +1184,18 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                             item.category || item.technologies || item.issuer ||
                             'Added to your profile'}
                         </p>
+
+                        {section.id === 'projects' && (
+                          <>
+                            {item.technologies && (
+                              <small>{item.technologies}</small>
+                            )}
+                            <small>
+                              {item.status}
+                              {item.featured ? ' · Featured' : ''}
+                            </small>
+                          </>
+                        )}
 
                         {(item.url || item.github || item.demo || item.link) && (
                           <div className="profile-entry-links">
@@ -1077,6 +1241,8 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
               {!isCollection && hasPersonal && (
                 <div className="profile-information-grid">
                   {[
+                    ['Full name', profile.name],
+                    ['Username', profile.username ? `@${profile.username}` : ''],
                     ['Phone number', profile.phone],
                     ['City', profile.city],
                     ['Gender', profile.gender],
@@ -1087,12 +1253,10 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                       <strong>{value || 'Not added yet'}</strong>
                     </div>
                   ))}
-                  {profile.bio && (
-                    <div className="profile-bio-display">
-                      <span>About me</span>
-                      <strong>{profile.bio}</strong>
-                    </div>
-                  )}
+                  <div className="profile-bio-display">
+                    <span>About me</span>
+                    <strong>{profile.bio || 'Not added yet'}</strong>
+                  </div>
                 </div>
               )}
 
@@ -1108,6 +1272,36 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                     <div key={label}>
                       <span>{label}</span>
                       <strong>{value || 'Not added yet'}</strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!isCollection && hasLearning && (
+                <div className="profile-information-grid">
+                  {section.fields.map((field) => (
+                    <div key={field.name}>
+                      <span>{field.label}</span>
+                      <strong>
+                        {profile[field.name]?.join(', ') || 'Not added yet'}
+                      </strong>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {!isCollection && hasProfessionalLinks && (
+                <div className="profile-information-grid">
+                  {section.fields.map((field) => (
+                    <div key={field.name}>
+                      <span>{field.label}</span>
+                      {profile[field.name] ? (
+                        <a href={profile[field.name]} target="_blank" rel="noreferrer">
+                          {profile[field.name]}
+                        </a>
+                      ) : (
+                        <strong>Not added yet</strong>
+                      )}
                     </div>
                   ))}
                 </div>
@@ -1149,6 +1343,13 @@ export default function Profile({ preview = false }) {
   const profileStorageKey = getStorageKey('profile', user);
   const photoStorageKey = getStorageKey('profile_image', user);
   const bannerStorageKey = getStorageKey('banner_image', user);
+export default function Profile({
+  preview = false,
+  embedded = false,
+  view = 'profile',
+}) {
+  const isMilestoneView = view === 'milestone';
+  const { user, updateUser } = useAuth();
 
   const [profile, setProfile] = useState(() => {
     if (preview) {
@@ -1158,8 +1359,7 @@ export default function Profile({ preview = false }) {
       });
     }
 
-    const savedDraft = readStorage(profileStorageKey, {});
-    return normalizeProfile({ ...(user || {}), ...savedDraft });
+    return normalizeProfile(user || {});
   });
 
   const [error, setError] = useState('');
@@ -1178,7 +1378,6 @@ export default function Profile({ preview = false }) {
   );
 
   const photoInputRef = useRef(null);
-  const bannerInputRef = useRef(null);
   const toastTimerRef = useRef(null);
   const toastIdRef = useRef(0);
 
@@ -1204,24 +1403,50 @@ export default function Profile({ preview = false }) {
     };
   }, []);
 
-  const persistProfile = (updatedProfile, successMessage) => {
+  const persistProfile = async (updatedProfile, successMessage, fields) => {
     if (preview) {
       setProfile(updatedProfile);
       showToast('Preview updated. Changes are temporary.', 'info');
-      return;
+      return true;
     }
 
-    const saved = saveStorage(profileStorageKey, updatedProfile);
+    const payload = {};
+    for (const field of fields || Object.keys(updatedProfile)) {
+      if (field === 'projects') continue;
+      if (field === 'skills') {
+        payload.skills = updatedProfile.skills.map((skill) => skill.name || skill);
+        payload.skillDetails = updatedProfile.skills.map((skill) => ({
+          name: skill.name || skill,
+          level: skill.level || 'Intermediate',
+        }));
+      } else {
+        payload[field] = updatedProfile[field];
+      }
+    }
 
-    if (saved) {
-      setProfile(updatedProfile);
-      setSaveStatus('Your changes have been saved in this browser.');
+    if (Object.keys(payload).length === 0) return true;
+
+    setError('');
+    setSaveStatus('');
+
+    try {
+      const response = await apiRequest('/users/profile', {
+        method: 'PATCH',
+        body: JSON.stringify(payload),
+      });
+
+      setProfile(normalizeProfile({
+        ...response.user,
+        projects: updatedProfile.projects,
+      }));
+      updateUser(response.user);
+      setSaveStatus(successMessage);
       showToast(successMessage);
-    } else {
-      showToast(
-        'Unable to save changes. Your browser storage may be full.',
-        'error'
-      );
+      return true;
+    } catch (saveError) {
+      setError(saveError.message || 'Unable to save your profile.');
+      showToast(saveError.message || 'Unable to save your profile.', 'error');
+      return false;
     }
   };
 
@@ -1278,11 +1503,12 @@ export default function Profile({ preview = false }) {
   }, [preview, user?.avatarUrl, photoStorageKey]);
 
   const handleImageChange = async (event, setImage, storageKey, imageLabel) => {
+  const handleImageChange = async (event, imageLabel) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      showToast('Please select a valid image file.', 'warning');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      showToast('Please select a JPG, PNG, or WebP image.', 'warning');
       event.target.value = '';
       return;
     }
@@ -1293,6 +1519,8 @@ export default function Profile({ preview = false }) {
     const limit = preview ? IMAGE_SIZE_LIMIT : isBanner ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
     if (file.size > limit) {
       showToast(`Please select an image smaller than ${Math.round(limit / 1024 / 1024)} MB.`, 'warning');
+    if (file.size > IMAGE_SIZE_LIMIT) {
+      showToast('Please select an image smaller than 5 MB.', 'warning');
       event.target.value = '';
       return;
     }
@@ -1312,105 +1540,134 @@ export default function Profile({ preview = false }) {
       if (!preview) localStorage.setItem(storageKey, imageData);
 
       setImage(imageData);
+      if (preview) {
+        const imageData = await readImageFile(file);
+        setProfile((current) => ({ ...current, profileImage: { url: imageData } }));
+      } else {
+        const body = new FormData();
+        body.append('profileImage', file);
+        await apiRequest('/users/profile/image', { method: 'POST', body });
+        const refreshed = await loadProfile();
+        if (!refreshed) {
+          showToast('Image uploaded, but your profile could not be refreshed.', 'error');
+          return;
+        }
+      }
       setError('');
-      showToast(
-        preview
-          ? `${imageLabel} updated in preview.`
-          : `${imageLabel} updated successfully!`
-      );
-    } catch (err) {
-      console.error(err);
-      showToast('Unable to save this image. Please try a smaller image.', 'error');
+      showToast(`${imageLabel} updated successfully.`);
+    } catch (uploadError) {
+      setError(uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`);
+      showToast(uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`, 'error');
     } finally {
       event.target.value = '';
+    }
+  };
+
+  const loadProfile = async (signal) => {
+    setLoading(true);
+    setError('');
+
+    try {
+      const [profileResponse, projectsResponse] = await Promise.all([
+        apiRequest('/users/profile', { signal }),
+        apiRequest('/projects', { signal }),
+      ]);
+
+      setProfile(normalizeProfile({
+        ...profileResponse.user,
+        projects: projectsResponse.projects || [],
+      }));
+      return true;
+    } catch (loadError) {
+      if (signal?.aborted) return false;
+      setError(loadError.message || 'Unable to load your profile.');
+      return false;
+    } finally {
+      if (!signal?.aborted) setLoading(false);
     }
   };
 
   useEffect(() => {
     if (preview) return undefined;
 
-    let active = true;
+    const controller = new AbortController();
+    loadProfile(controller.signal);
 
-    async function loadProfile() {
-      setLoading(true);
-      setError('');
+    return () => controller.abort();
+  }, [preview, user?._id]);
 
-      try {
-        const data = await apiRequest('/auth/me');
+  const currentUser = preview ? profile : { ...user, ...profile };
+  const completion = useMemo(
+    () => calculateProfileCompletion(profile),
+    [profile]
+  );
 
-        if (active && data.user) {
-          const savedDraft = readStorage(profileStorageKey, {});
-          const mergedProfile = normalizeProfile({
-            ...data.user,
-            ...savedDraft,
-          });
-
-          setProfile(mergedProfile);
-        }
-      } catch (err) {
-        if (active) {
-          setError(
-            err.message ||
-            'Unable to load your profile. Please check your connection.'
-          );
-        }
-      } finally {
-        if (active) setLoading(false);
+  const updateSimpleSection = async (_section, values) => {
+    const updatedValues = { ...values };
+    for (const field of ['technicalInterests', 'learningGoals']) {
+      if (typeof updatedValues[field] === 'string') {
+        updatedValues[field] = updatedValues[field]
+          .split(',')
+          .map((item) => item.trim())
+          .filter(Boolean);
       }
     }
 
-    loadProfile();
-
-    return () => {
-      active = false;
-    };
-  }, [preview, user, profileStorageKey]);
-
-  const currentUser = preview ? profile : { ...user, ...profile };
-  const name = currentUser?.name || 'CodeSphere Member';
-  const email = currentUser?.email || '';
-  const initial = name.charAt(0).toUpperCase();
-
-  const joinedDate = currentUser?.createdAt
-    ? new Date(currentUser.createdAt).toLocaleDateString('en-IN', {
-        month: 'long',
-        year: 'numeric',
-      })
-    : 'CodeSphere Member';
-
-  const completion = useMemo(() => {
-    const checks = [
-      Boolean(profile.name),
-      Boolean(profile.phone),
-      Boolean(profile.city),
-      Boolean(profile.bio),
-      Boolean(profile.collegeName),
-      Boolean(profile.department),
-      Boolean(profile.yearOfStudy),
-      Array.isArray(profile.skills) && profile.skills.length > 0,
-      Array.isArray(profile.codingProfiles) && profile.codingProfiles.length > 0,
-      Array.isArray(profile.projects) && profile.projects.length > 0,
-      Array.isArray(profile.achievements) && profile.achievements.length > 0,
-      Array.isArray(profile.activities) && profile.activities.length > 0,
-    ];
-
-    return Math.round(
-      (checks.filter(Boolean).length / checks.length) * 100
-    );
-  }, [profile]);
-
-  const updateSimpleSection = (_section, values) => {
-    persistProfile(
-      { ...profile, ...values },
-      'Your profile details were saved successfully!'
+    return persistProfile(
+      { ...profile, ...updatedValues },
+      'Your profile details were saved successfully!',
+      Object.keys(updatedValues)
     );
   };
 
-  const applyResumeDetails = (updates) => {
-    persistProfile(
+  const applyResumeDetails = async (updates) => {
+    return persistProfile(
       { ...profile, ...updates },
-      'Resume details have been added to your profile!'
+      'Resume details have been added to your profile!',
+      Object.keys(updates)
     );
+  };
+
+  const saveProjectEntry = async (item, projectId) => {
+    const payload = {
+      title: (item.title || '').trim(),
+      description: (item.description || '').trim(),
+      type: (item.type || '').trim(),
+      technologies: Array.isArray(item.technologies)
+        ? item.technologies
+        : (item.technologies || '').split(',').map((technology) => technology.trim()).filter(Boolean),
+      githubUrl: (item.github || '').trim(),
+      liveUrl: (item.demo || '').trim(),
+      status: item.status || 'Completed',
+      featured: Boolean(item.featured),
+    };
+
+    try {
+      const response = await apiRequest(
+        projectId ? `/projects/${projectId}` : '/projects',
+        {
+          method: projectId ? 'PATCH' : 'POST',
+          body: JSON.stringify(payload),
+        }
+      );
+      const savedProject = normalizeProject(response.project);
+
+      setProfile((current) => {
+        const projects = projectId
+          ? current.projects.map((project) =>
+              project._id === projectId ? savedProject : project
+            )
+          : [...current.projects, savedProject];
+        return { ...current, projects };
+      });
+      setSaveStatus(response.message);
+      showToast(response.message);
+      return true;
+    } catch (saveError) {
+      setError(saveError.message || 'Unable to save this project.');
+      showToast(saveError.message || 'Unable to save this project.', 'error');
+      return false;
+    }
   };
 
   const addEntry = (section, item) => {
@@ -1418,67 +1675,99 @@ export default function Profile({ preview = false }) {
       codingProfiles: 'Coding profile added successfully!',
       projects: 'Project added successfully!',
       achievements: 'Achievement added successfully!',
-      activities: 'Club activity added successfully!',
     };
 
-    persistProfile(
+    if (section === 'projects') return saveProjectEntry(item);
+
+    return persistProfile(
       {
         ...profile,
         [section]: [...(profile[section] || []), item],
       },
-      messages[section] || 'Entry added successfully!'
+      messages[section] || 'Entry added successfully!',
+      [section]
     );
   };
 
   const updateEntry = (section, index, item) => {
-    persistProfile(
+    if (section === 'projects') {
+      return saveProjectEntry(item, profile.projects[index]?._id);
+    }
+
+    return persistProfile(
       {
         ...profile,
         [section]: (profile[section] || []).map((entry, i) =>
           i === index ? item : entry
         ),
       },
-      'Entry updated successfully!'
+      'Entry updated successfully!',
+      [section]
     );
   };
 
-  const deleteEntry = (section, index) => {
-    persistProfile(
+  const deleteEntry = async (section, index) => {
+    if (section === 'projects') {
+      const projectId = profile.projects[index]?._id;
+      if (!projectId) return false;
+
+      try {
+        const response = await apiRequest(`/projects/${projectId}`, {
+          method: 'DELETE',
+        });
+        setProfile((current) => ({
+          ...current,
+          projects: current.projects.filter((project) => project._id !== projectId),
+        }));
+        setSaveStatus(response.message);
+        showToast(response.message);
+        return true;
+      } catch (deleteError) {
+        setError(deleteError.message || 'Unable to remove this project.');
+        showToast(deleteError.message || 'Unable to remove this project.', 'error');
+        return false;
+      }
+    }
+
+    return persistProfile(
       {
         ...profile,
         [section]: (profile[section] || []).filter((_, i) => i !== index),
       },
-      'Entry removed from your profile.'
+      'Entry removed from your profile.',
+      [section]
     );
   };
 
-  const addSkill = (skill) => {
+  const addSkill = async (skill) => {
     if (!skill || profile.skills.some((item) => (item.name || item) === skill)) {
       if (skill) showToast('This skill is already in your profile.', 'warning');
       return;
     }
 
-    persistProfile(
+    const saved = await persistProfile(
       {
         ...profile,
         skills: [...profile.skills, { name: skill, level: skillLevel }],
       },
-      `${skill} added to your skills!`
+      `${skill} added to your skills!`,
+      ['skills']
     );
 
-    setSkillSearch('');
+    if (saved) setSkillSearch('');
   };
 
-  const removeSkill = (index) => {
+  const removeSkill = async (index) => {
     const removedSkill = profile.skills[index];
     const skillName = removedSkill?.name || removedSkill || 'Skill';
 
-    persistProfile(
+    return persistProfile(
       {
         ...profile,
         skills: profile.skills.filter((_, i) => i !== index),
       },
-      `${skillName} removed from your skills.`
+      `${skillName} removed from your skills.`,
+      ['skills']
     );
   };
 
@@ -1494,17 +1783,18 @@ export default function Profile({ preview = false }) {
     icon: 'bi-person-vcard',
     fields: [
       { name: 'name', label: 'Full name', placeholder: 'Enter your full name' },
+      { name: 'username', label: 'Username', placeholder: 'your-username' },
       { name: 'phone', label: 'Phone number', placeholder: 'Enter phone number' },
       { name: 'city', label: 'City', placeholder: 'Enter your city' },
       { name: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Prefer not to say', 'Other'] },
-      { name: 'dateOfBirth', label: 'Date of birth', placeholder: 'DD/MM/YYYY' },
+      { name: 'dateOfBirth', label: 'Date of birth', type: 'date' },
       { name: 'bio', label: 'About me', type: 'textarea', full: true, placeholder: 'Tell the community about yourself...' },
     ],
   };
 
   return (
     <>
-      <Navbar />
+      {!embedded && <Navbar />}
 
       <style>
         {`
@@ -1517,7 +1807,7 @@ export default function Profile({ preview = false }) {
 
       <Toast toast={toast} onClose={closeToast} />
 
-      <main className="student-profile-page">
+      <main className={`student-profile-page${embedded ? ' dashboard-profile-embed' : ''}`}>
         <div className="student-profile-container">
           {preview && (
             <div className="profile-message">
@@ -1526,22 +1816,39 @@ export default function Profile({ preview = false }) {
             </div>
           )}
 
-          <div className="student-profile-breadcrumb">
-            <Link to="/">Home</Link>
-            <i className="bi bi-chevron-right" />
-            <span>My Profile</span>
-          </div>
+          {!embedded && (
+            <div className="student-profile-breadcrumb">
+              <Link to="/">Home</Link>
+              <i className="bi bi-chevron-right" />
+              <span>{isMilestoneView ? 'My Badges' : 'My Profile'}</span>
+            </div>
+          )}
 
           <div className="student-profile-heading">
             <div>
-              <p className="student-profile-eyebrow">CODESPHERE COMMUNITY</p>
-              <h1>My Profile</h1>
-              <p>Showcase your skills, projects and coding journey.</p>
+              <p className="student-profile-eyebrow">
+                {isMilestoneView ? 'YOUR CODESPHERE JOURNEY' : 'CODESPHERE COMMUNITY'}
+              </p>
+              <h1>{isMilestoneView ? 'My Badges' : 'My Profile'}</h1>
+              <p>
+                {isMilestoneView
+                  ? 'Explore your earned badges and CodeSphere progress.'
+                  : 'Add your resume details, skills, projects and coding journey.'}
+              </p>
             </div>
 
-            <Link to="/" className="profile-back-link">
-              <i className="bi bi-arrow-left" /> Back to website
-            </Link>
+            {!isMilestoneView && currentUser?.username ? (
+              <Link
+                to={`/user/${encodeURIComponent(currentUser.username)}`}
+                className="profile-back-link profile-public-link"
+              >
+                <i className="bi bi-box-arrow-up-right" /> View Public Profile
+              </Link>
+            ) : !embedded && !isMilestoneView ? (
+              <Link to="/" className="profile-back-link">
+                <i className="bi bi-arrow-left" /> Back to website
+              </Link>
+            ) : null}
           </div>
 
           {loading && (
@@ -1644,40 +1951,36 @@ export default function Profile({ preview = false }) {
                 <div className="profile-completion-top">
                   <span>Complete your profile</span>
                   <strong>{completion}%</strong>
+          <div className={`student-profile-layout dashboard-section-layout${isMilestoneView ? ' dashboard-badges-view' : ''}`}>
+            {isMilestoneView ? (
+              <>
+                <div className="dashboard-badges-main">
+                  <ProfileBadges preview={preview} completion={completion} />
                 </div>
+                {!preview && <BadgeLeaderboard />}
+              </>
+            ) : (
+              <>
+                <DashboardProfileSidebar
+                  user={currentUser}
+                  completion={completion}
+                  photoInputRef={photoInputRef}
+                  onPhotoChange={(event) => handleImageChange(event, 'Profile photo')}
+                />
 
-                <div
-                  className="profile-progress-track"
-                  role="progressbar"
-                  aria-valuenow={completion}
-                  aria-valuemin="0"
-                  aria-valuemax="100"
-                  aria-label="Profile completion"
-                >
-                  <div
-                    className="profile-progress-fill"
-                    style={{ width: `${completion}%` }}
+                <div className="student-profile-main">
+                  <ResumeUpload
+                    profile={profile}
+                    onApply={applyResumeDetails}
+                    showToast={showToast}
                   />
-                </div>
 
-                <p>A complete profile helps the community discover your work.</p>
-              </section>
-            </aside>
-
-            <div className="student-profile-main">
-              <section className="profile-welcome-card">
-                <div>
-                  <span className="profile-welcome-label">YOUR STUDENT SPACE</span>
-                  <h2>Welcome, {name.split(' ')[0]}!</h2>
-                  <p>Showcase your skills, projects and achievements to the community.</p>
-                </div>
-
-                <div className="profile-welcome-icon">
-                  <i className="bi bi-code-square" />
-                </div>
-              </section>
-
-              <ProfileBadges preview={preview} completion={completion} />
+                  <section className="profile-section-card profile-builder-card">
+                    <div className="profile-section-heading">
+                      <div>
+                        <h2>Build your profile</h2>
+                        <p>Open a section to add or update your information.</p>
+                      </div>
 
               <ResumeUpload
                 profile={profile}
@@ -1685,144 +1988,138 @@ export default function Profile({ preview = false }) {
                 showToast={showToast}
                 preview={preview}
               />
+                      <span className="profile-section-icon">
+                        <i className="bi bi-person-gear" />
+                      </span>
+                    </div>
 
-              <section className="profile-section-card profile-builder-card">
-                <div className="profile-section-heading">
-                  <div>
-                    <h2>Build your profile</h2>
-                    <p>Open a section to add or update your information.</p>
-                  </div>
+                    <ProfileSection
+                      section={personalSection}
+                      profile={profile}
+                      onSave={updateSimpleSection}
+                    />
 
-                  <span className="profile-section-icon">
-                    <i className="bi bi-person-gear" />
-                  </span>
-                </div>
+                    <ProfileSection
+                      section={sectionConfig[0]}
+                      profile={profile}
+                      onSave={updateSimpleSection}
+                    />
 
-                <ProfileSection
-                  section={personalSection}
-                  profile={profile}
-                  onSave={updateSimpleSection}
-                />
+                    <div className="profile-builder-section">
+                      <div className="profile-builder-static-heading">
+                        <span className="profile-builder-icon">
+                          <i className="bi bi-code-slash" />
+                        </span>
 
-                <ProfileSection
-                  section={sectionConfig[0]}
-                  profile={profile}
-                  onSave={updateSimpleSection}
-                />
+                        <span className="profile-builder-heading-text">
+                          <strong>Technical skills</strong>
+                          <small>{profile.skills.length} skills added</small>
+                        </span>
+                      </div>
 
-                <div className="profile-builder-section">
-                  <div className="profile-builder-static-heading">
-                    <span className="profile-builder-icon">
-                      <i className="bi bi-code-slash" />
-                    </span>
+                      <div className="profile-builder-content">
+                        <div className="profile-skills-list">
+                          {profile.skills.map((skill, index) => (
+                            <span
+                              className="profile-skill-tag"
+                              key={`${skill.name || skill}-${index}`}
+                            >
+                              {skill.name || skill}
+                              {skill.level && <small>{skill.level}</small>}
 
-                    <span className="profile-builder-heading-text">
-                      <strong>Technical skills</strong>
-                      <small>{profile.skills.length} skills added</small>
-                    </span>
-                  </div>
+                              <button
+                                type="button"
+                                onClick={() => removeSkill(index)}
+                                aria-label={`Remove ${skill.name || skill}`}
+                              >
+                                <i className="bi bi-x" />
+                              </button>
+                            </span>
+                          ))}
 
-                  <div className="profile-builder-content">
-                    <div className="profile-skills-list">
-                      {profile.skills.map((skill, index) => (
-                        <span
-                          className="profile-skill-tag"
-                          key={`${skill.name || skill}-${index}`}
-                        >
-                          {skill.name || skill}
-                          {skill.level && <small>{skill.level}</small>}
+                          {profile.skills.length === 0 && (
+                            <p className="profile-no-skills">Not added yet</p>
+                          )}
+                        </div>
+
+                        <div className="profile-skill-adder">
+                          <div className="profile-form-field">
+                            <label htmlFor="skill-search">Search or select a skill</label>
+
+                            <input
+                              id="skill-search"
+                              list="codesphere-skills"
+                              value={skillSearch}
+                              onChange={(event) => setSkillSearch(event.target.value)}
+                              placeholder="Start typing, e.g. Java..."
+                            />
+
+                            <datalist id="codesphere-skills">
+                              {filteredSkills.map((skill) => (
+                                <option key={skill} value={skill} />
+                              ))}
+                            </datalist>
+                          </div>
+
+                          <div className="profile-form-field">
+                            <label htmlFor="skill-level">Proficiency</label>
+
+                            <select
+                              id="skill-level"
+                              value={skillLevel}
+                              onChange={(event) => setSkillLevel(event.target.value)}
+                            >
+                              <option>Beginner</option>
+                              <option>Intermediate</option>
+                              <option>Advanced</option>
+                            </select>
+                          </div>
 
                           <button
                             type="button"
-                            onClick={() => removeSkill(index)}
-                            aria-label={`Remove ${skill.name || skill}`}
+                            className="profile-action-button profile-primary-button"
+                            onClick={() => addSkill(skillSearch.trim())}
+                            disabled={!skillSearch.trim()}
                           >
-                            <i className="bi bi-x" />
+                            <i className="bi bi-plus-lg" /> Add skill
                           </button>
-                        </span>
-                      ))}
-
-                      {profile.skills.length === 0 && (
-                        <p className="profile-no-skills">No skills added yet.</p>
-                      )}
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="profile-skill-adder">
-                      <div className="profile-form-field">
-                        <label htmlFor="skill-search">Search or select a skill</label>
+                    {sectionConfig.slice(1).map((section) => (
+                      <ProfileSection
+                        key={section.id}
+                        section={section}
+                        profile={profile}
+                        onSave={updateEntry}
+                        onAdd={addEntry}
+                        onDelete={deleteEntry}
+                      />
+                    ))}
+                  </section>
 
-                        <input
-                          id="skill-search"
-                          list="codesphere-skills"
-                          value={skillSearch}
-                          onChange={(event) => setSkillSearch(event.target.value)}
-                          placeholder="Start typing, e.g. Java..."
-                        />
-
-                        <datalist id="codesphere-skills">
-                          {filteredSkills.map((skill) => (
-                            <option key={skill} value={skill} />
-                          ))}
-                        </datalist>
-                      </div>
-
-                      <div className="profile-form-field">
-                        <label htmlFor="skill-level">Proficiency</label>
-
-                        <select
-                          id="skill-level"
-                          value={skillLevel}
-                          onChange={(event) => setSkillLevel(event.target.value)}
-                        >
-                          <option>Beginner</option>
-                          <option>Intermediate</option>
-                          <option>Advanced</option>
-                        </select>
-                      </div>
-
-                      <button
-                        type="button"
-                        className="profile-action-button profile-primary-button"
-                        onClick={() => addSkill(skillSearch.trim())}
-                        disabled={!skillSearch.trim()}
-                      >
-                        <i className="bi bi-plus-lg" /> Add skill
-                      </button>
+                  <section className="profile-sidebar-card profile-help-card">
+                    <div className="profile-help-content">
+                      <h3>Need help?</h3>
+                      <p>Questions about your account? Our team is here to help.</p>
                     </div>
+
+                    <Link to="/team">
+                      Meet the team <i className="bi bi-arrow-up-right" />
+                    </Link>
+                  </section>
+
+                  <div className="profile-page-footer">
+                    <span>
+                      <i className="bi bi-shield-lock" /> Your profile is part of the CodeSphere community.
+                    </span>
+
+                    <Link to="/">Explore CodeSphere</Link>
                   </div>
                 </div>
-
-                {sectionConfig.slice(1).map((section) => (
-                  <ProfileSection
-                    key={section.id}
-                    section={section}
-                    profile={profile}
-                    onSave={updateEntry}
-                    onAdd={addEntry}
-                    onDelete={deleteEntry}
-                  />
-                ))}
-              </section>
-
-              <section className="profile-sidebar-card profile-help-card">
-                <div className="profile-help-content">
-                  <h3>Need help?</h3>
-                  <p>Questions about your account? Our team is here to help.</p>
-                </div>
-
-                <Link to="/team">
-                  Meet the team <i className="bi bi-arrow-up-right" />
-                </Link>
-              </section>
-
-              <div className="profile-page-footer">
-                <span>
-                  <i className="bi bi-shield-lock" /> Your profile is part of the CodeSphere community.
-                </span>
-
-                <Link to="/">Explore CodeSphere</Link>
-              </div>
-            </div>
+              </>
+            )}
           </div>
         </div>
       </main>

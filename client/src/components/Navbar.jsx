@@ -116,7 +116,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminPage = location.pathname.startsWith('/admin') || location.pathname.startsWith('/user');
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isHidden, setIsHidden] = useState(false);

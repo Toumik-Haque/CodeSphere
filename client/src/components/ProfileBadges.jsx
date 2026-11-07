@@ -112,7 +112,11 @@ function BadgeDetail({ badge, onClose, canPin, pinned, onTogglePin }) {
   );
 }
 
-export default function ProfileBadges({ preview = false, completion = 0 }) {
+export default function ProfileBadges({
+  preview = false,
+  completion = 0,
+  compact = false,
+}) {
   const [data, setData] = useState(null);
   const [catalog, setCatalog] = useState(null);
   const [error, setError] = useState('');
@@ -151,7 +155,7 @@ export default function ProfileBadges({ preview = false, completion = 0 }) {
     };
   }, [preview]);
 
-  // Report a 100% profile once (profile data lives in this browser).
+  // Report a 100% profile once; profile completion is persisted on the user.
   useEffect(() => {
     if (preview || !data || completion < 100 || data.stats.profileComplete) return;
     apiRequest('/badges/me/profile-complete', { method: 'POST', body: JSON.stringify({ complete: true }) })
@@ -211,6 +215,55 @@ export default function ProfileBadges({ preview = false, completion = 0 }) {
 
   const { stats, level } = data;
   const byId = new Map(badges.map((b) => [b.id, b]));
+  if (compact) {
+    return (
+      <Link
+        to="/user/milestone"
+        className="bdg-overview-link"
+        aria-label={`View My Badges. Current level ${level.name}; ${data.earnedCount} of ${data.totalCount} badges earned.`}
+      >
+        <section className="bdg-overview-preview">
+          <div className="bdg-hero">
+            <div className="bdg-overview-heading">
+              <span className="bdg-kicker">BADGE PROGRESS</span>
+              <span className="bdg-overview-view">View My Badges <i className="bi bi-arrow-up-right" aria-hidden="true" /></span>
+            </div>
+            <div className="bdg-level">
+              <span className="bdg-level-emoji" aria-hidden="true">{level.emoji}</span>
+              <div>
+                <h2>{level.name}</h2>
+                <div className="bdg-xp">
+                  <span className="bdg-bar bdg-bar-lg" aria-hidden="true">
+                    <span style={{ width: `${Math.round(level.progress * 100)}%` }} />
+                  </span>
+                  <small>
+                    {level.next
+                      ? <>{stats.xp} / {level.next.minXp} XP → {level.next.emoji} {level.next.name}</>
+                      : <>{stats.xp} XP · Highest level reached 👑</>}
+                  </small>
+                </div>
+              </div>
+            </div>
+            <div className="bdg-overview-stats">
+              <span><strong>{data.earnedCount}/{data.totalCount}</strong> badges earned</span>
+              <span><strong>{stats.eventsAttended}</strong> events attended</span>
+              <span><strong>{stats.bestStreak}</strong> best streak</span>
+            </div>
+            {recent.length > 0 && (
+              <div className="bdg-overview-recent" aria-label="Recently earned badges">
+                {recent.map((badge) => (
+                  <span className="bdg-overview-badge" key={badge.id}>
+                    <span aria-hidden="true">{badge.emoji}</span> {badge.name}
+                  </span>
+                ))}
+              </div>
+            )}
+          </div>
+        </section>
+      </Link>
+    );
+  }
+
   const groupCounts = Object.fromEntries(catalog.groups.map((g) => {
     const inGroup = badges.filter((b) => b.group === g.id);
     return [g.id, `${inGroup.filter((b) => b.earned).length}/${inGroup.length}`];

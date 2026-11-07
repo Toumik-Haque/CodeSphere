@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -63,6 +63,37 @@ export default function EventDetails() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
 
+  const [isRegistered, setIsRegistered] = useState(false);
+  const [registrationLoading, setRegistrationLoading] = useState(false);
+  const [registrationChecking, setRegistrationChecking] = useState(false);
+  const [registrationError, setRegistrationError] = useState('');
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [descriptionCanExpand, setDescriptionCanExpand] = useState(false);
+  const descriptionRef = useRef(null);
+
+  const sanitizedDescription = DOMPurify.sanitize(event?.description || '');
+
+  useEffect(() => {
+    const descriptionElement = descriptionRef.current;
+    if (!descriptionElement || descriptionExpanded) return undefined;
+
+    const checkDescriptionHeight = () => {
+      const maxHeight = Number.parseFloat(
+        window.getComputedStyle(descriptionElement).maxHeight
+      );
+      setDescriptionCanExpand(
+        Number.isFinite(maxHeight) &&
+          descriptionElement.scrollHeight > maxHeight + 1
+      );
+    };
+
+    checkDescriptionHeight();
+    const resizeObserver = new ResizeObserver(checkDescriptionHeight);
+    resizeObserver.observe(descriptionElement);
+
+    return () => resizeObserver.disconnect();
+  }, [event?.description, descriptionExpanded]);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -70,6 +101,8 @@ export default function EventDetails() {
       setLoading(true);
       setError('');
       setEvent(null);
+      setDescriptionExpanded(false);
+      setDescriptionCanExpand(false);
 
       try {
         const data = await apiRequest(`/events/slug/${encodeURIComponent(slug)}`);
@@ -96,9 +129,98 @@ export default function EventDetails() {
     };
   }, [slug]);
 
+  useEffect(() => {
+  let cancelled = false;
+
+  async function checkRegistration() {
+    // Reset the previous event/user's registration state.
+    setIsRegistered(false);
+    setRegistrationError('');
+
+    if (!event || !user || user.role !== 'user') {
+      setRegistrationChecking(false);
+      return;
+    }
+
+    setRegistrationChecking(true);
+
+    try {
+      const data = await apiRequest('/events/my-registrations');
+      const registrations = data.registrations || [];
+
+      const activeRegistration = registrations.some((registration) => {
+        const registeredEventId =
+          registration.event?._id || registration.event;
+
+        return (
+          String(registeredEventId) === String(event._id) &&
+          registration.status === 'registered'
+        );
+      });
+
+      if (!cancelled) {
+        setIsRegistered(activeRegistration);
+      }
+    } catch (err) {
+      if (!cancelled) {
+        setRegistrationError(
+          err.message || 'Unable to check registration status.'
+        );
+      }
+    } finally {
+      if (!cancelled) {
+        setRegistrationChecking(false);
+      }
+    }
+  }
+
+  checkRegistration();
+
+  return () => {
+    cancelled = true;
+  };
+}, [event, user]);
+
   const passed = event ? eventHasPassed(event) : false;
   const startTime = event ? formatTime(event.date) : '';
   const endTime = event?.endDate ? formatTime(event.endDate) : '';
+
+  async function handleRegistration() {
+    if (!event || registrationLoading) return;
+
+    setRegistrationLoading(true);
+    setRegistrationError('');
+
+    try {
+      if (isRegistered) {
+        const confirmed = window.confirm(
+          'Are you sure you want to cancel your event registration?'
+        );
+
+        if (!confirmed) return;
+
+        await apiRequest(`/events/${event._id}/register`, {
+          method: 'DELETE',
+        });
+
+        setIsRegistered(false);
+        alert('Your event registration has been cancelled.');
+      } else {
+        await apiRequest(`/events/${event._id}/register`, {
+          method: 'POST',
+        });
+
+        setIsRegistered(true);
+        alert('Successfully registered for the event!');
+      }
+    } catch (err) {
+      setRegistrationError(
+        err.message || 'Unable to process your registration.'
+      );
+    } finally {
+      setRegistrationLoading(false);
+    }
+  }
 
   async function handleShareEvent() {
     const shareData = {
@@ -126,6 +248,18 @@ export default function EventDetails() {
       }
     }
   }
+
+  console.log('REGISTRATION DEBUG:', {
+  user,
+  userRole: user?.role,
+  isAuthenticated,
+  eventTitle: event?.title,
+  eventDate: event?.date,
+  eventEndDate: event?.endDate,
+  passed,
+  registrationChecking,
+  isRegistered,
+});
 
   return (
     <>
@@ -202,7 +336,7 @@ export default function EventDetails() {
                   <div className="event-view-banner">
                     {event.bannerImage?.url && (
                       <img
-                        className="published-event-banner-blur"
+                        className="event-view-banner-blur"
                         src={event.bannerImage.url}
                         alt=""
                         aria-hidden="true"
@@ -211,7 +345,7 @@ export default function EventDetails() {
 
                     {event.bannerImage?.url && (
                       <img
-                        className="published-event-banner-image"
+                        className="event-view-banner-image"
                         src={event.bannerImage.url}
                         alt={`${event.title} banner`}
                         loading="lazy"
@@ -219,12 +353,12 @@ export default function EventDetails() {
                           e.currentTarget.style.display = 'none';
 
                           const fallback = e.currentTarget.parentElement
-                            ?.querySelector('.published-event-banner-fallback');
+                            ?.querySelector('.event-view-banner-fallback');
 
                           if (fallback) fallback.style.display = 'flex';
 
                           const blur = e.currentTarget.parentElement
-                            ?.querySelector('.published-event-banner-blur');
+                            ?.querySelector('.event-view-banner-blur');
 
                           if (blur) blur.style.display = 'none';
                         }}
@@ -232,7 +366,7 @@ export default function EventDetails() {
                     )}
 
                     <div
-                      className="published-event-banner-fallback"
+                      className="event-view-banner-fallback"
                       style={{
                         display: event.bannerImage?.url ? 'none' : 'flex',
                       }}
@@ -241,6 +375,34 @@ export default function EventDetails() {
                       <span>{event.category || 'CodeSphere Event'}</span>
                     </div>
                   </div>
+
+                  <div
+                    className={`event-view-description-wrap ${
+                      descriptionExpanded ? 'is-expanded' : 'is-collapsed'
+                    }`}
+                    ref={descriptionRef}
+                  >
+                    <div
+                      className="event-view-description"
+                      dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+                    />
+                  </div>
+                  {descriptionCanExpand && (
+                    <button
+                      className="event-view-description-toggle"
+                      type="button"
+                      onClick={() => setDescriptionExpanded((expanded) => !expanded)}
+                      aria-expanded={descriptionExpanded}
+                    >
+                      {descriptionExpanded ? 'Show less' : 'Show more'}
+                      <i
+                        className={`bi ${
+                          descriptionExpanded ? 'bi-chevron-up' : 'bi-chevron-down'
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  )}
                 </section>
 
                 <aside className="event-view-details">
@@ -287,29 +449,54 @@ export default function EventDetails() {
 
                   {!passed && (
                     <>
-                      {event.registrationLink ? (
-                        isAuthenticated ? (
-                          <a
-                            className="event-view-button text-white"
-                            href={event.registrationLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                          >
-                            Register Now
-                            <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                          </a>
-                        ) : (
-                          <Link className="event-view-button text-white" to="/login">
-                            Login to Register
-                            <i className="bi bi-arrow-right" aria-hidden="true" />
-                          </Link>
-                        )
-                      ) : (
-                        <p className="event-view-status">
-                          Registration details will be announced soon.
+                      {/* Event registration */}
+                      {user?.role === 'admin' ? null : !isAuthenticated ? (
+                        <Link className="event-view-button text-white" to="/login">
+                          Login to Register
+                          <i className="bi bi-arrow-right" aria-hidden="true" />
+                        </Link>
+                      ) : user?.role === 'user' ? (
+                        <>
+                          {registrationChecking ? (
+                            <button
+                              type="button"
+                              className="event-view-button text-white"
+                              disabled
+                            >
+                              Checking registration...
+                            </button>
+                          ) : (
+                            <button
+                              type="button"
+                              className="event-view-button text-white"
+                              onClick={handleRegistration}
+                              disabled={registrationLoading}
+                            >
+                              {registrationLoading
+                                ? 'Please wait...'
+                                : isRegistered
+                                  ? 'Cancel Registration'
+                                  : 'Register Now'}
+
+                              {!registrationLoading && (
+                                <i
+                                  className={`bi ${isRegistered ? 'bi-x-circle' : 'bi-arrow-right'
+                                    }`}
+                                  aria-hidden="true"
+                                />
+                              )}
+                            </button>
+                          )}
+                        </>
+                      ) : null}
+
+                      {registrationError && (
+                        <p className="event-view-status" role="alert">
+                          {registrationError}
                         </p>
                       )}
 
+                      {/* Meeting link */}
                       {event.meetingLink && (
                         isAuthenticated ? (
                           <a

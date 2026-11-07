@@ -20,6 +20,10 @@
   --profile-shadow: 0 8px 28px rgba(21, 54, 83, 0.055);
 }
 
+.profile-public-link {
+  flex-shrink: 0;
+}
+
 /* =========================================
    PAGE & CONTAINER
 ========================================= */
@@ -35,6 +39,17 @@
 .student-profile-container {
   width: min(1180px, calc(100% - 48px));
   margin: 0 auto;
+}
+
+.student-profile-page.dashboard-profile-embed {
+  min-height: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.dashboard-profile-embed .student-profile-container {
+  width: 100%;
+  margin: 0;
 }
 
 .profile-message {
@@ -162,6 +177,20 @@
   gap: 20px;
 }
 
+.student-profile-layout.dashboard-badges-view {
+  grid-template-columns: minmax(0, 1fr) minmax(255px, 0.34fr);
+  align-items: start;
+  gap: 20px;
+}
+
+.dashboard-badges-main {
+  min-width: 0;
+}
+
+.dashboard-badges-main .bdg-section {
+  margin-bottom: 0;
+}
+
 /* =========================================
    IDENTITY CARD
 ========================================= */
@@ -169,48 +198,32 @@
 .student-identity-card {
   position: relative;
   overflow: hidden;
+  padding-top: 24px;
   border: 1px solid var(--profile-border);
   border-radius: 15px;
   background: var(--profile-white);
   box-shadow: var(--profile-shadow);
 }
 
-.student-cover {
-  height: 108px;
-  background:
-    radial-gradient(
-      circle at 85% 20%,
-      rgba(255, 255, 255, 0.48),
-      transparent 28%
-    ),
-    linear-gradient(120deg, #f4d3c2, #fcebe2);
-}
-
 .student-avatar {
   position: relative;
   display: grid;
-  width: 76px;
-  height: 76px;
-  margin: -39px 0 0 23px;
+  width: 92px;
+  height: 92px;
+  margin: 0 auto;
   place-items: center;
-  border: 5px solid var(--profile-white);
+  border: 4px solid var(--profile-white);
   border-radius: 50%;
   background: #fff2e9;
   color: var(--profile-orange-dark);
-  font-size: 29px;
+  font-size: 34px;
   font-weight: 800;
-  box-shadow: 0 3px 12px rgba(21, 54, 83, 0.08);
+  box-shadow: 0 5px 16px rgba(21, 54, 83, 0.12);
 }
 
 /* =========================================
-   PROFILE PHOTO & BANNER UPLOAD BUTTONS
+   PROFILE PHOTO UPLOAD BUTTON
 ========================================= */
-
-.student-cover {
-  position: relative;
-  background-size: cover;
-  background-position: center;
-}
 
 .profile-image-upload-button {
   display: inline-flex;
@@ -233,13 +246,6 @@
   transform: translateY(-1px);
 }
 
-.profile-banner-upload-button {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 7px 10px;
-}
-
 .student-avatar img {
   width: 100%;
   height: 100%;
@@ -260,7 +266,8 @@
 }
 
 .student-identity-content {
-  padding: 12px 22px 19px;
+  padding: 16px 22px 20px;
+  text-align: center;
 }
 
 .student-identity-content h2 {
@@ -272,10 +279,15 @@
 }
 
 .student-identity-content > p {
-  margin: 0 0 13px;
+  margin: 0 0 7px;
   color: var(--profile-muted);
   font-size: 12px;
   overflow-wrap: anywhere;
+}
+
+.student-identity-content > p:nth-of-type(2) {
+  color: var(--profile-orange);
+  font-weight: 700;
 }
 
 .student-member-badge {
@@ -289,6 +301,7 @@
   color: var(--profile-navy);
   font-size: 10px;
   font-weight: 700;
+  margin-top: 5px;
 }
 
 .student-member-badge i {
@@ -376,25 +389,6 @@
   line-height: 1.7;
 }
 
-/* =========================================
-   WELCOME CARD
-========================================= */
-
-.profile-welcome-card {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  overflow: hidden;
-  padding: 25px 28px;
-  border: 1px solid #f1ded3;
-  border-radius: 15px;
-  background:
-    radial-gradient(circle at 90% 10%, rgba(255,255,255,.8), transparent 28%),
-    linear-gradient(115deg, #fff9f5, #fff0e8);
-}
-
 .profile-welcome-label {
   display: inline-block;
   margin-bottom: 9px;
@@ -404,34 +398,84 @@
   letter-spacing: 1.4px;
 }
 
-.profile-welcome-card h2 {
+.profile-next-steps {
+  padding: 21px 23px;
+  border: 1px solid var(--profile-border);
+  border-radius: 15px;
+  background: var(--profile-white);
+  box-shadow: var(--profile-shadow);
+}
+
+.profile-next-steps-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+
+.profile-next-steps-heading .profile-welcome-label {
+  margin-bottom: 5px;
+}
+
+.profile-next-steps-heading h2 {
   margin: 0;
   color: var(--profile-navy);
-  font-size: clamp(21px, 3vw, 26px);
+  font-size: 16px;
   font-weight: 800;
-  letter-spacing: -0.5px;
 }
 
-.profile-welcome-card p {
-  max-width: 480px;
-  margin: 8px 0 0;
-  color: #697b8b;
-  font-size: 13px;
-  line-height: 1.7;
+.profile-next-steps-heading p {
+  margin: 5px 0 0;
+  color: var(--profile-muted);
+  font-size: 11px;
+  line-height: 1.6;
 }
 
-.profile-welcome-icon {
+.profile-next-steps-link {
+  display: inline-flex;
+  min-height: 38px;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 0 12px;
+  border-radius: 8px;
+  background: var(--profile-orange);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 750;
+  text-decoration: none;
+  transition: background 160ms ease, transform 160ms ease;
+}
+
+.profile-next-steps-link:hover {
+  transform: translateY(-1px);
+  background: var(--profile-orange-dark);
+  color: #fff;
+}
+
+.profile-next-steps ul {
   display: grid;
-  width: 64px;
-  height: 64px;
-  flex: 0 0 64px;
-  place-items: center;
-  border: 1px solid #f4d9cb;
-  border-radius: 18px;
-  background: rgba(255,255,255,.8);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px 18px;
+  margin: 17px 0 0;
+  padding: 14px 0 0;
+  border-top: 1px solid var(--profile-border);
+  list-style: none;
+}
+
+.profile-next-steps li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--profile-text);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+.profile-next-steps li i {
   color: var(--profile-orange);
-  font-size: 29px;
-  transform: rotate(-5deg);
+  font-size: 10px;
 }
 
 /* =========================================
@@ -682,6 +726,21 @@
   line-height: 1.6;
 }
 
+.profile-form-checkbox {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--profile-navy);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.profile-form-checkbox input {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--profile-orange);
+}
+
 .profile-form-field input::placeholder,
 .profile-form-field textarea::placeholder {
   color: #a5b0ba;
@@ -793,6 +852,13 @@
   font-size: 11px;
   line-height: 1.6;
   overflow-wrap: anywhere;
+}
+
+.profile-saved-entry-info > small {
+  display: block;
+  margin-top: 6px;
+  color: var(--profile-muted);
+  font-size: 10px;
 }
 
 .profile-entry-links {
@@ -1035,7 +1101,8 @@
 .profile-icon-button:focus-visible,
 .profile-skill-tag button:focus-visible,
 .profile-back-link:focus-visible,
-.profile-help-card a:focus-visible {
+.profile-help-card a:focus-visible,
+.profile-next-steps-link:focus-visible {
   outline: 2px solid var(--profile-orange);
   outline-offset: 3px;
 }
@@ -1082,6 +1149,10 @@
     gap: 17px;
   }
 
+  .student-profile-layout.dashboard-badges-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .student-profile-sidebar {
     gap: 13px;
   }
@@ -1105,19 +1176,9 @@
     padding: 8px 11px;
   }
 
-  .student-identity-card {
-    display: grid;
-    grid-template-columns: 1fr;
-  }
-
-  .student-cover {
-    height: 85px;
-  }
-
   .student-avatar {
     width: 68px;
     height: 68px;
-    margin-top: -34px;
     font-size: 25px;
   }
 
@@ -1133,16 +1194,13 @@
     padding: 17px;
   }
 
-  .profile-welcome-card {
-    padding: 20px;
+  .profile-next-steps {
+    padding: 17px;
   }
 
-  .profile-welcome-icon {
-    width: 49px;
-    height: 49px;
-    flex-basis: 49px;
-    border-radius: 13px;
-    font-size: 22px;
+  .profile-next-steps-heading {
+    align-items: flex-start;
+    flex-direction: column;
   }
 
   .profile-section-card {
@@ -1208,23 +1266,9 @@
     font-size: 12px;
   }
 
-  .profile-welcome-card {
-    padding: 17px;
-  }
-
-  .profile-welcome-card h2 {
-    font-size: 21px;
-  }
-
-  .profile-welcome-card p {
-    font-size: 11px;
-  }
-
-  .profile-welcome-icon {
-    width: 42px;
-    height: 42px;
-    flex-basis: 42px;
-    font-size: 19px;
+  .profile-next-steps ul {
+    grid-template-columns: 1fr;
+    gap: 8px;
   }
 
   .profile-edit-form,

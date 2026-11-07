@@ -1,9 +1,75 @@
+
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
+import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
 import '../css/CoreMembers.css';
+
+function TeamMemberCard({ member }) {
+  return (
+    <article className="team-member-slide">
+      <div className="team-member-photo-wrap">
+        {member.image?.url ? (
+          <img
+            className="team-member-photo"
+            src={member.image.url}
+            alt={member.name}
+            loading="lazy"
+          />
+        ) : (
+          <div className="team-member-photo-fallback" aria-hidden="true">
+            {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
+          </div>
+        )}
+
+        <div className="team-member-socials">
+          {member.linkedinLink && (
+            <a
+              href={member.linkedinLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${member.name} on LinkedIn`}
+              title="LinkedIn"
+            >
+              <i className="bi bi-linkedin" aria-hidden="true" />
+            </a>
+          )}
+
+          {member.instagramLink && (
+            <a
+              href={member.instagramLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${member.name} on Instagram`}
+              title="Instagram"
+            >
+              <i className="bi bi-instagram" aria-hidden="true" />
+            </a>
+          )}
+
+          {member.githubLink && (
+            <a
+              href={member.githubLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              aria-label={`${member.name} on GitHub`}
+              title="GitHub"
+            >
+              <i className="bi bi-github" aria-hidden="true" />
+            </a>
+          )}
+        </div>
+      </div>
+
+      <div className="team-member-info">
+        <h3>{member.name}</h3>
+        <p className="team-member-role">{member.role}</p>
+      </div>
+    </article>
+  );
+}
 
 export default function Team() {
   const [members, setMembers] = useState([]);
@@ -15,7 +81,7 @@ export default function Team() {
 
     async function loadMembers() {
       try {
-        const data = await apiRequest('/core-members');
+        const data = await apiRequest('/team-members');
 
         if (active) {
           const list = Array.isArray(data)
@@ -24,13 +90,7 @@ export default function Team() {
               ? data.members
               : [];
 
-          setMembers(
-            [...list].sort(
-              (a, b) =>
-                (a.order ?? 0) - (b.order ?? 0) ||
-                (a.name || '').localeCompare(b.name || '')
-            )
-          );
+          setMembers(sortCoreMembers(list));
         }
       } catch (err) {
         if (active) {
@@ -48,100 +108,88 @@ export default function Team() {
     };
   }, []);
 
+  // Faculty Coordinators only
+  const facultyMembers = members.filter(
+    (member) => member.role === 'Faculty Coordinator'
+  );
+
+  // Everyone except Faculty Coordinators
+  const studentMembers = members.filter(
+    (member) => member.role !== 'Faculty Coordinator'
+  );
+
   return (
     <>
       <Navbar />
 
       <main className="team-page">
-        <div className='container'>
+        <div className="container">
           <header className="team-page-hero">
-            <p className="core-team-eyebrow">
-              <span className="core-team-eyebrow-line" />
+            <p className="team-eyebrow">
+              <span className="team-eyebrow-line" />
               THE PEOPLE BEHIND
             </p>
-            <h1>Meet Our <span>Core Team</span></h1>
+
+            <h1>
+              Meet Our <span>Team</span>
+            </h1>
+
             <p className="team-page-intro">
               Meet the people who collaborate, create, and help our community grow.
             </p>
           </header>
 
-          <section className="team-directory" aria-label="Core team members">
+          <section className="team-directory" aria-label="Team members">
             {loading ? (
-              <p className="core-team-status" aria-live="polite">
+              <p className="team-status" aria-live="polite">
                 Loading our team...
               </p>
             ) : error ? (
-              <p className="team-error" role="alert">{error}</p>
+              <p className="team-error" role="alert">
+                {error}
+              </p>
             ) : members.length === 0 ? (
-              <p className="core-team-status">
+              <p className="team-status">
                 Our team profiles will be available soon.
               </p>
             ) : (
-              <div className="team-directory-grid">
-                {members.map((member) => (
-                  <article className="core-member-slide" key={member._id}>
+              <>
+                {/* Faculty Members Section */}
+                {facultyMembers.length > 0 && (
+                  <div className="team-category">
+                    <h2 className="team-category-title">
+                      Faculty Members
+                    </h2>
 
-                    <div className="core-member-photo-wrap">
-                      {member.image?.url ? (
-                        <img
-                          className="core-member-photo"
-                          src={member.image.url}
-                          alt={member.name}
-                          loading="lazy"
+                    <div className="team-directory-grid">
+                      {facultyMembers.map((member) => (
+                        <TeamMemberCard
+                          key={member._id}
+                          member={member}
                         />
-                      ) : (
-                        <div className="core-member-photo-fallback" aria-hidden="true">
-                          {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
-                        </div>
-                      )}
-
-                      <div className="core-member-socials">
-                        {member.linkedinLink && (
-                          <a
-                            href={member.linkedinLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${member.name} on LinkedIn`}
-                            title="LinkedIn"
-                          >
-                            <i className="bi bi-linkedin" aria-hidden="true" />
-                          </a>
-                        )}
-
-                        {member.instagramLink && (
-                          <a
-                            href={member.instagramLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${member.name} on Instagram`}
-                            title="Instagram"
-                          >
-                            <i className="bi bi-instagram" aria-hidden="true" />
-                          </a>
-                        )}
-
-                        {member.githubLink && (
-                          <a
-                            href={member.githubLink}
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            aria-label={`${member.name} on GitHub`}
-                            title="GitHub"
-                          >
-                            <i className="bi bi-github" aria-hidden="true" />
-                          </a>
-                        )}
-                      </div>
+                      ))}
                     </div>
+                  </div>
+                )}
 
+                {/* Student Members Section */}
+                {studentMembers.length > 0 && (
+                  <div className="team-category">
+                    <h2 className="team-category-title">
+                      Student Members
+                    </h2>
 
-                    <div className="core-member-info">
-                      <h3>{member.name}</h3>
-                      <p className="core-member-role">{member.role}</p>
+                    <div className="team-directory-grid">
+                      {studentMembers.map((member) => (
+                        <TeamMemberCard
+                          key={member._id}
+                          member={member}
+                        />
+                      ))}
                     </div>
-                  </article>
-                ))}
-              </div>
+                  </div>
+                )}
+              </>
             )}
           </section>
         </div>

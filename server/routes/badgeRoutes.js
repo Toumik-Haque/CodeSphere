@@ -9,6 +9,7 @@ const {
   LEVELS,
   MAX_SHOWCASE,
   badgesById,
+  badgeLeaderboard,
   evaluateBadges,
   syncBadges,
   publicBadge,
@@ -26,6 +27,17 @@ router.get('/catalog', (req, res) => {
     badges: BADGES.map((badge) => ({ ...publicBadge(badge), type: badge.type })),
     maxShowcase: MAX_SHOWCASE,
   });
+});
+
+// GET /api/badges/leaderboard: top badge earners by XP, with the member's rank.
+router.get('/leaderboard', protect, async (req, res) => {
+  try {
+    const result = await badgeLeaderboard(req.user._id, 10);
+    return res.json(result);
+  } catch (error) {
+    console.error('Badges leaderboard error:', error);
+    return res.status(500).json({ message: 'Could not load the badge leaderboard.' });
+  }
 });
 
 // GET /api/badges/me: my stats, level, all badges with progress, showcase and
@@ -82,8 +94,8 @@ router.put('/me/showcase', protect, async (req, res) => {
   }
 });
 
-// POST /api/badges/me/profile-complete { complete }: self-reported by the
-// Profile page (its data is stored in the browser).
+// POST /api/badges/me/profile-complete { complete }: completion is calculated
+// from profile data stored on the user's database record.
 router.post('/me/profile-complete', protect, async (req, res) => {
   try {
     await User.updateOne({ _id: req.user._id }, { $set: { profileComplete: Boolean(req.body.complete) } });

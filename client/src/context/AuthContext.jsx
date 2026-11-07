@@ -3,6 +3,7 @@ import {
   useContext,
   useEffect,
   useState,
+  useEffect,
 } from 'react';
 
 import { apiRequest } from '../lib/api';
@@ -148,6 +149,7 @@ export function AuthProvider({ children }) {
         forgotPassword,
         verifyResetOtp,
         resetPassword,
+        updateUser,
         logout,
         updateUser,
       }}

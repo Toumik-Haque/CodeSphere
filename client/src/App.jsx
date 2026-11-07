@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useParams,
 } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -24,7 +25,6 @@ import Footer from './components/Footer';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
-import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
@@ -56,6 +56,8 @@ import ProjectEditor from './pages/ProjectEditor';
 import GuidedProject from './pages/GuidedProject';
 import AdminProjects from './pages/AdminProjects';
 
+import UserDashboard from './pages/UserDashboard';
+
 function HomePage() {
   return (
     <>
@@ -67,6 +69,7 @@ function HomePage() {
         <Events />
         <About />
         <PlaygroundHighlight />
+        <About />
         <TeamCarousel />
         <CTA />
       </main>
@@ -93,7 +96,7 @@ function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = 
   }
 
   if (adminOnly && user.role !== 'admin') {
-    return <Navigate to="/profile" replace />;
+    return <Navigate to="/user" replace />;
   }
 
   if (!adminOnly && !anyRole && user.role === 'admin') {
@@ -101,6 +104,29 @@ function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = 
   }
 
   return children;
+}
+
+function RoleBasedMemberProfile() {
+  const { user } = useAuth();
+  const { username } = useParams();
+  const location = useLocation();
+
+  if (!user || !username) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const dashboardPath = user.role === 'admin' ? '/admin' : '/user';
+  const targetPath = `${dashboardPath}/${encodeURIComponent(username)}`;
+
+  if (location.pathname !== targetPath) {
+    return <Navigate
+      to={targetPath}
+      replace
+      state={user.role === 'admin' ? { activeSection: 'users' } : undefined}
+    />;
+  }
+
+  return user.role === 'admin' ? <Admin /> : <UserDashboard />;
 }
 
 // Scroll to the top whenever the route changes.
@@ -119,12 +145,24 @@ function ScrollToTop() {
 }
 
 function AppRoutes() {
+  const userPages = [
+    '/user',
+    '/user/overview',
+    '/user/milestone',
+    '/user/profile',
+    '/user/activities',
+    '/user/discover',
+    '/user/projects',
+    '/user/skills',
+    '/user/badges',
+    '/user/settings',
+  ];
+
   return (
     <Routes>
       {/* Public pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
-      <Route path="/events/:slug" element={<EventDetails />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/open-source" element={<OpenSource />} />
@@ -162,29 +200,59 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Protected student profile */}
+      {/* Protected event details page */}
+      <Route
+        path="/events/:slug"
+        element={<EventDetails />}
+      />
+
+      {/* Protected user dashboard */}
       <Route
         path="/profile"
         element={
           <ProtectedRoute>
-            <Profile />
+            <Navigate to="/user/profile" replace />
           </ProtectedRoute>
         }
       />
 
-      {/* Redirect old capital-P profile URL */}
+      {/* Protected dashboard pages and member profiles */}
+      {userPages.map((path) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <ProtectedRoute>
+              <UserDashboard />
+            </ProtectedRoute>
+          }
+        />
+      ))}
       <Route
-        path="/Profile"
-        element={<Navigate to="/profile" replace />}
+        path="/user/:username"
+        element={
+          <ProtectedRoute anyRole>
+            <RoleBasedMemberProfile />
+          </ProtectedRoute>
+        }
+      />
+      <Route
+        path="/user/*"
+        element={
+          <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        }
       />
 
-      {/* Development-only profile preview (no login required) */}
-      {import.meta.env.DEV && (
-        <Route
-          path="/profile-preview"
-          element={<Profile preview />}
-        />
-      )}
+      <Route
+        path="/admin/:username"
+        element={
+          <ProtectedRoute anyRole>
+            <RoleBasedMemberProfile />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected admin dashboard */}
       <Route

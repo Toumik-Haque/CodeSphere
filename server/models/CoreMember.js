@@ -12,8 +12,13 @@ const coreMemberSchema = new mongoose.Schema(
     role: {
       type: String,
       required: [true, 'Member role is required.'],
-      trim: true,
-      maxlength: 100,
+      enum: [
+        'Faculty Coordinator',
+        'Secretary',
+        'Assistant Secretary',
+        'Student Member',
+      ],
+
     },
 
     image: {
