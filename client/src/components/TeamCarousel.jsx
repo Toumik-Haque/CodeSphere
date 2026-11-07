@@ -125,7 +125,7 @@ export default function TeamCarousel() {
 
   if (loading) {
     return (
-      <section className="team-section" aria-busy="true">
+      <section id="team" className="team-section" aria-busy="true">
         <div className="team-heading">
           <p className="team-eyebrow">
             <span className="team-eyebrow-line" />
@@ -141,7 +141,7 @@ export default function TeamCarousel() {
 
   if (error || members.length === 0) {
     return (
-      <section className="team-section">
+      <section id="team" className="team-section">
         <div className="team-heading">
           <p className="team-eyebrow">
             <span className="team-eyebrow-line" />
@@ -159,6 +159,7 @@ export default function TeamCarousel() {
 
   return (
     <section
+      id="team"
       className="team-section"
       aria-labelledby="team-title"
     >

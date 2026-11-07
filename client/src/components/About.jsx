@@ -43,9 +43,9 @@ const About = () => (
           and create.
         </p>
 
-        <a href="#events" className="about-link">
-          Discover what we do
-          <i className="bi bi-arrow-up-right" aria-hidden="true" />
+        <a href="#team" className="about-link">
+          Meet our team
+          <i className="bi bi-arrow-right" aria-hidden="true" />
         </a>
 
         <div className="about-motto">

@@ -1,5 +1,5 @@
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
@@ -44,6 +44,16 @@ const skillOptions = [
   'Problem Solving', 'Figma', 'Linux',
 ];
 
+const codingPlatforms = [
+  'LeetCode',
+  'CodeChef',
+  'Codeforces',
+  'HackerRank',
+  'GeeksforGeeks',
+  'HackerEarth',
+  'Other',
+];
+
 const emptyProfile = {
   phone: '',
   city: '',
@@ -62,7 +72,6 @@ const emptyProfile = {
   codingProfiles: [],
   projects: [],
   achievements: [],
-  profileVisibility: 'members',
 };
 
 const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
@@ -161,7 +170,7 @@ const sectionConfig = [
     icon: 'bi-terminal',
     collection: 'codingProfiles',
     fields: [
-      { name: 'platform', label: 'Platform', type: 'select', options: ['LeetCode', 'CodeChef', 'Codeforces', 'HackerRank', 'GeeksforGeeks', 'HackerEarth', 'Other'] },
+      { name: 'platform', label: 'Platform', type: 'select', options: codingPlatforms },
       { name: 'url', label: 'Profile URL', type: 'url', placeholder: 'https://...', required: true },
     ],
   },
@@ -866,12 +875,40 @@ function ResumeUpload({ profile, onApply, showToast }) {
    PROFILE FORM COMPONENTS
 ========================================= */
 
+function normalizeDateInput(value) {
+  if (typeof value !== 'string') return '';
+
+  const isoDate = value.match(/^(\d{4}-\d{2}-\d{2})/);
+  if (isoDate) return isoDate[1];
+
+  const legacyDate = value.match(/^(\d{1,2})[./-](\d{1,2})[./-](\d{4})$/);
+  if (!legacyDate) return '';
+
+  const [, day, month, year] = legacyDate;
+  const date = new Date(Number(year), Number(month) - 1, Number(day));
+
+  if (
+    date.getFullYear() !== Number(year) ||
+    date.getMonth() !== Number(month) - 1 ||
+    date.getDate() !== Number(day)
+  ) {
+    return '';
+  }
+
+  return `${year}-${month.padStart(2, '0')}-${day.padStart(2, '0')}`;
+}
+
 function Field({ field, value, onChange }) {
   const common = {
     id: field.name,
     name: field.name,
     value: value || '',
-    onChange: (event) => onChange(field.name, event.target.value),
+    onChange: (event) => {
+      if (field.name === 'customPlatform') {
+        event.currentTarget.setCustomValidity('');
+      }
+      onChange(field.name, event.target.value);
+    },
     placeholder: field.placeholder || `Enter ${field.label.toLowerCase()}`,
     required: Boolean(field.required),
   };
@@ -904,7 +941,10 @@ function Field({ field, value, onChange }) {
           ) : field.type === 'textarea' ? (
             <textarea {...common} rows={4} />
           ) : (
-            <input {...common} type={field.type === 'url' ? 'url' : 'text'} />
+            <input
+              {...common}
+              type={['url', 'date'].includes(field.type) ? field.type : 'text'}
+            />
           )}
         </>
       )}
@@ -927,12 +967,26 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
   const hasPersonal = section.id === 'personal';
   const hasLearning = section.id === 'learning';
   const hasProfessionalLinks = section.id === 'professionalLinks';
-  const visibilityLabel = profile.profileVisibility === 'private'
-    ? 'Only you'
-    : 'Signed-in members';
-
   const startEdit = (item = {}, index = null) => {
-    const form = { ...item };
+    const form = isCollection
+      ? { ...item }
+      : Object.fromEntries(
+          section.fields.map((field) => [
+            field.name,
+            field.type === 'date'
+              ? normalizeDateInput(profile[field.name])
+              : profile[field.name] ?? '',
+          ])
+      );
+    if (section.id === 'codingProfiles') {
+      if (!codingPlatforms.includes(form.platform)) {
+      form.customPlatform = form.platform || '';
+      form.platform = 'Other';
+      } else {
+      form.customPlatform = '';
+      }
+    }
+
     if (!isCollection) {
       section.fields.forEach((field) => {
         if (Array.isArray(form[field.name])) {
@@ -954,12 +1008,26 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
 
   const handleSave = async (event) => {
     event.preventDefault();
+    const values = { ...form };
+
+    if (section.id === 'codingProfiles') {
+      if (values.platform === 'Other') {
+        if (!values.customPlatform.trim()) {
+          const platformField = event.currentTarget.elements.namedItem('customPlatform');
+          platformField.setCustomValidity('Enter the coding platform name.');
+          platformField.reportValidity();
+          return;
+        }
+        values.platform = values.customPlatform.trim();
+      }
+      delete values.customPlatform;
+    }
 
     const saved = isCollection
       ? editingIndex === null
-        ? await onAdd(section.collection, form)
-        : await onSave(section.collection, editingIndex, form)
-      : await onSave(section.id, form);
+        ? await onAdd(section.collection, values)
+        : await onSave(section.collection, editingIndex, values)
+      : await onSave(section.id, values);
 
     if (saved) cancelEdit();
   };
@@ -1019,12 +1087,27 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
           {editing ? (
             <form className="profile-edit-form" onSubmit={handleSave}>
               {section.fields.map((field) => (
-                <Field
-                  key={field.name}
-                  field={field}
-                  value={form[field.name]}
-                  onChange={updateField}
-                />
+                <Fragment key={field.name}>
+                  {section.id === 'codingProfiles' &&
+                    field.name === 'url' &&
+                    form.platform === 'Other' && (
+                      <Field
+                        field={{
+                          name: 'customPlatform',
+                          label: 'Platform name',
+                          placeholder: 'Enter the coding platform name',
+                          required: true,
+                        }}
+                        value={form.customPlatform}
+                        onChange={updateField}
+                      />
+                    )}
+                  <Field
+                    field={field}
+                    value={form[field.name]}
+                    onChange={updateField}
+                  />
+                </Fragment>
               ))}
 
               <div className="profile-form-actions">
@@ -1106,24 +1189,22 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
               {!isCollection && hasPersonal && (
                 <div className="profile-information-grid">
                   {[
+                    ['Full name', profile.name],
                     ['Username', profile.username ? `@${profile.username}` : ''],
                     ['Phone number', profile.phone],
                     ['City', profile.city],
                     ['Gender', profile.gender],
                     ['Date of birth', profile.dateOfBirth],
-                    ['Profile visibility', visibilityLabel],
                   ].map(([label, value]) => (
                     <div key={label}>
                       <span>{label}</span>
                       <strong>{value || 'Not added yet'}</strong>
                     </div>
                   ))}
-                  {profile.bio && (
-                    <div className="profile-bio-display">
-                      <span>About me</span>
-                      <strong>{profile.bio}</strong>
-                    </div>
-                  )}
+                  <div className="profile-bio-display">
+                    <span>About me</span>
+                    <strong>{profile.bio || 'Not added yet'}</strong>
+                  </div>
                 </div>
               )}
 
@@ -1567,18 +1648,7 @@ export default function Profile({
       { name: 'phone', label: 'Phone number', placeholder: 'Enter phone number' },
       { name: 'city', label: 'City', placeholder: 'Enter your city' },
       { name: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female', 'Prefer not to say', 'Other'] },
-      { name: 'dateOfBirth', label: 'Date of birth', placeholder: 'DD/MM/YYYY' },
-      {
-        name: 'profileVisibility',
-        label: 'Who can view my profile?',
-        type: 'select',
-        options: ['members', 'private'],
-        optionLabels: {
-          members: 'Signed-in members',
-          private: 'Only me',
-        },
-        full: true,
-      },
+      { name: 'dateOfBirth', label: 'Date of birth', type: 'date' },
       { name: 'bio', label: 'About me', type: 'textarea', full: true, placeholder: 'Tell the community about yourself...' },
     ],
   };
@@ -1741,7 +1811,7 @@ export default function Profile({
                           ))}
 
                           {profile.skills.length === 0 && (
-                            <p className="profile-no-skills">No skills added yet.</p>
+                            <p className="profile-no-skills">Not added yet</p>
                           )}
                         </div>
 

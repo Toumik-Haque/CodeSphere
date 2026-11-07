@@ -194,14 +194,7 @@ async function syncBadges(userId) {
 }
 
 async function badgeLeaderboard(currentUserId, limit = 10) {
-  const visibilityFilter = {
-    role: 'user',
-    $or: [
-      { profileVisibility: { $ne: 'private' } },
-      { _id: currentUserId },
-    ],
-  };
-  const users = await User.find(visibilityFilter)
+  const users = await User.find({ role: 'user' })
     .select('name username profileImage')
     .lean();
   const userIds = users.map((user) => user._id);
