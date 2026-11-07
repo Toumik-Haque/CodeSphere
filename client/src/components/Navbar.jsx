@@ -93,11 +93,14 @@ function NavGroup({ item, pathname }) {
 }
 
 // Is the first solid background under (x, y), ignoring the header, dark?
-// Returns null when only media (video/image) or nothing is behind it.
+// Returns null when nothing solid is behind it.
 function isDarkAt(x, y, nav) {
   for (const el of document.elementsFromPoint(x, y)) {
     if (nav.contains(el)) continue;
-    if (['VIDEO', 'IMG', 'CANVAS', 'IFRAME'].includes(el.tagName)) return null;
+    // Elements can declare their tone (e.g. the code editor's current theme).
+    if (el.dataset?.navTone) return el.dataset.navTone === 'dark';
+    // Media (editor iframe, video, images): judge by the container behind it.
+    if (['VIDEO', 'IMG', 'CANVAS', 'IFRAME'].includes(el.tagName)) continue;
     const m = getComputedStyle(el).backgroundColor.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);
     if (!m) continue;
     const alpha = m[4] === undefined ? 1 : Number(m[4]);

@@ -565,6 +565,7 @@ const Playground = () => {
               src={editorUrl(language.id, theme)}
               onLoad={handleEditorLoad}
               className="playground-iframe"
+              data-nav-tone={theme === 'dark' ? 'dark' : 'light'}
               allow="clipboard-read; clipboard-write"
             />
 
