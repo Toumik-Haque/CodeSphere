@@ -479,3 +479,12 @@
 .hk-hosted { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 0; color: rgba(255, 255, 255, .85); }
 .hk-hosted a { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; }
 .hk-hosted a:hover { background: rgba(255, 255, 255, .25); color: #fff; }
+
+/* Headings on the dark heroes must be light (global h1 colour is navy). */
+.hk-hero h1,
+.hk-detail-hero h1 {
+  color: #FFFFFF;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .35);
+}
+
+.hk-hero h1 .gold-text { color: #FF7A55; }
