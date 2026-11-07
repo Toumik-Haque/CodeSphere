@@ -13,7 +13,8 @@ router.put('/me/avatar', protect, handleImageUpload, async (req, res) => {
   try {
     const stored = await storeImage(req.file.buffer, req.user._id, 'avatars');
     const old = req.user.avatarFileId;
-    await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: stored.url, avatarFileId: stored.fileId } });
+    // Also fill profileImage (used by the profile dashboard).
+    await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: stored.url, avatarFileId: stored.fileId, profileImage: { url: stored.url, fileId: stored.fileId } } });
     if (old) await deleteImages([{ fileId: old }]);
     res.json({ avatarUrl: stored.url });
   } catch (error) {
@@ -111,7 +112,7 @@ router.put('/me/banner', protect, (req, res, next) => bannerUploadMw.single('ima
   try {
     const stored = await storeImage(req.file.buffer, req.user._id, 'banners');
     const old = req.user.bannerFileId;
-    await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: stored.url, bannerFileId: stored.fileId } });
+    await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: stored.url, bannerFileId: stored.fileId, bannerImage: { url: stored.url, fileId: stored.fileId } } });
     if (old) await deleteImages([{ fileId: old }]);
     res.json({ bannerUrl: stored.url });
   } catch (error) {
@@ -134,13 +135,9 @@ router.delete('/me/avatar', protect, async (req, res) => {
   if (old) await deleteImages([{ fileId: old }]);
   res.json({ avatarUrl: '' });
 });
-const Project = require('../models/Project');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
-
-const router = express.Router();
-
-const imagekit = require('../config/imagekit');
-const { toFile } = require('@imagekit/nodejs');
+// ---------- Public profiles, usernames and profile editing ----------
+// (router, protect, adminOnly, imagekit and toFile are declared above)
+const Project = require('../models/PortfolioProject'); // profile portfolio, not the Project Hub
 const handleProfileUpload = require('../middleware/profileUpload');
 
 const isValidHttpUrl = (value) => {
@@ -719,6 +716,9 @@ router.post(
         url: uploadedImage.url,
         fileId: uploadedImage.fileId,
       };
+      // Keep the flat fields used by the forum / Project Hub in sync.
+      if (imageField === 'profileImage') user.avatarUrl = uploadedImage.url;
+      else user.bannerUrl = uploadedImage.url;
 
       await user.save();
 
@@ -782,6 +782,8 @@ router.delete('/profile/image', protect, async (req, res) => {
       url: '',
       fileId: '',
     };
+    if (imageField === 'profileImage') user.avatarUrl = '';
+    else user.bannerUrl = '';
 
     await user.save();
 

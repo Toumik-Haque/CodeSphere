@@ -3,7 +3,6 @@ import {
   useContext,
   useEffect,
   useState,
-  useEffect,
 } from 'react';
 
 import { apiRequest } from '../lib/api';
@@ -25,22 +24,30 @@ export function AuthProvider({ children }) {
     () => localStorage.getItem('codesphere_token')
   );
 
-  // Refresh the saved user from the server once per page load, so changes
-  // such as newly granted staff roles show up without signing in again.
+  // Refresh the saved user from the server on load and after sign-in, so
+  // changes (staff roles, photo, username, profile details) show up without
+  // signing in again. /auth/me has account data; /users/profile adds the
+  // developer profile. Both are merged into the saved user.
   useEffect(() => {
-    if (!localStorage.getItem('codesphere_token')) return undefined;
+    if (!token) return undefined;
     let cancelled = false;
-    apiRequest('/auth/me')
-      .then((data) => {
-        if (cancelled || !data?.user) return;
-        localStorage.setItem('codesphere_user', JSON.stringify(data.user));
-        setUser((current) => (current ? { ...current, ...data.user } : current));
-      })
-      .catch(() => {});
+    const merge = (data) => {
+      if (cancelled || !data?.user) return;
+      setUser((current) => {
+        if (!current) return current;
+        const next = { ...current, ...data.user };
+        localStorage.setItem('codesphere_user', JSON.stringify(next));
+        return next;
+      });
+    };
+    apiRequest('/auth/me').then(merge).catch(() => {});
+    apiRequest('/users/profile').then(merge).catch((error) => {
+      console.error('Failed to refresh user profile:', error.message);
+    });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [token]);
 
   async function sendOtp(email) {
     return apiRequest('/auth/send-otp', {
@@ -151,7 +158,6 @@ export function AuthProvider({ children }) {
         resetPassword,
         updateUser,
         logout,
-        updateUser,
       }}
     >
       {children}

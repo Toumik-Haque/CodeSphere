@@ -319,13 +319,6 @@ export default function EventDetails() {
                     </p>
                   )}
 
-                  <div
-                    className="event-view-description"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(event.description || ''),
-                    }}
-                  />
-
                   {event.rules && (
                     <div className="event-view-rules">
                       <h2>Rules &amp; guidelines</h2>

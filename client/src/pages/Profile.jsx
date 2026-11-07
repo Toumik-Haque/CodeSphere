@@ -12,7 +12,6 @@ import { calculateProfileCompletion } from '../lib/profileCompletion';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import ProfileBadges from '../components/ProfileBadges';
-import BadgeStrip from '../components/BadgeStrip';
 import { parseResumeText as parseResume, itemsToLines } from '../lib/resumeParser';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
@@ -76,10 +75,9 @@ const emptyProfile = {
   achievements: [],
 };
 
-const IMAGE_SIZE_LIMIT = 1 * 1024 * 1024;
+const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
 // Default profile banner (client/public), used until a student uploads one.
 const DEFAULT_BANNER = '/default-profile-banner.webp';
-const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
 const RESUME_SIZE_LIMIT = 5 * 1024 * 1024;
 
 const normalizeProject = (project) => ({
@@ -632,10 +630,12 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       updates.codingProfiles = [...existing, ...pickedProfiles.filter((p) => !platforms.has(p.platform))];
     }
 
-    onApply(updates);
-    setDraft(null);
-    setFileName('');
-    setSelectedFields({});
+    const saved = await onApply(updates);
+    if (saved) {
+      setDraft(null);
+      setFileName('');
+      setSelectedFields({});
+    }
   };
 
   const discardResume = () => {
@@ -1337,12 +1337,6 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
    MAIN PROFILE PAGE
 ========================================= */
 
-export default function Profile({ preview = false }) {
-  const { user, updateUser } = useAuth();
-
-  const profileStorageKey = getStorageKey('profile', user);
-  const photoStorageKey = getStorageKey('profile_image', user);
-  const bannerStorageKey = getStorageKey('banner_image', user);
 export default function Profile({
   preview = false,
   embedded = false,
@@ -1369,15 +1363,8 @@ export default function Profile({
   const [skillSearch, setSkillSearch] = useState('');
   const [skillLevel, setSkillLevel] = useState('Intermediate');
 
-  const [profileImage, setProfileImage] = useState(() =>
-    preview ? '' : user?.avatarUrl || readImage(photoStorageKey)
-  );
-
-  const [bannerImage, setBannerImage] = useState(() =>
-    preview ? '' : user?.bannerUrl || readImage(bannerStorageKey)
-  );
-
   const photoInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
   const toastTimerRef = useRef(null);
   const toastIdRef = useRef(0);
 
@@ -1450,60 +1437,7 @@ export default function Profile({
     }
   };
 
-  const uploadAvatar = async (fileOrBlob) => {
-    const form = new FormData();
-    form.append('image', fileOrBlob, fileOrBlob.name || 'avatar.png');
-    const { avatarUrl } = await apiRequest('/users/me/avatar', { method: 'PUT', body: form });
-    try {
-      localStorage.setItem(photoStorageKey, avatarUrl);
-    } catch {
-      /* storage full: the server copy is what matters */
-    }
-    updateUser({ avatarUrl });
-    return avatarUrl;
-  };
-
-  const uploadBanner = async (fileOrBlob) => {
-    const form = new FormData();
-    form.append('image', fileOrBlob, fileOrBlob.name || 'banner.png');
-    const { bannerUrl } = await apiRequest('/users/me/banner', { method: 'PUT', body: form });
-    try {
-      localStorage.setItem(bannerStorageKey, bannerUrl);
-    } catch {
-      /* the server copy is what matters */
-    }
-    updateUser({ bannerUrl });
-    return bannerUrl;
-  };
-
-  // One-time move: a banner saved only in this browser goes to the server.
-  useEffect(() => {
-    if (preview || user?.bannerUrl) return;
-    const saved = readImage(bannerStorageKey);
-    if (!saved.startsWith('data:image/')) return;
-    fetch(saved)
-      .then((r) => r.blob())
-      .then((blob) => uploadBanner(new File([blob], 'banner.png', { type: blob.type || 'image/png' })))
-      .then((url) => setBannerImage(url))
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preview, user?.bannerUrl, bannerStorageKey]);
-
-  // One-time move: photos saved only in this browser go to the server.
-  useEffect(() => {
-    if (preview || user?.avatarUrl) return;
-    const saved = readImage(photoStorageKey);
-    if (!saved.startsWith('data:image/')) return;
-    fetch(saved)
-      .then((r) => r.blob())
-      .then((blob) => uploadAvatar(new File([blob], 'avatar.png', { type: blob.type || 'image/png' })))
-      .then((url) => setProfileImage(url))
-      .catch(() => {});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preview, user?.avatarUrl, photoStorageKey]);
-
-  const handleImageChange = async (event, setImage, storageKey, imageLabel) => {
-  const handleImageChange = async (event, imageLabel) => {
+  const handleImageChange = async (event, imageLabel, kind = 'profile') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -1513,12 +1447,6 @@ export default function Profile({
       return;
     }
 
-    // Photo and banner are stored on the server (2 MB / 5 MB); the
-    // in-browser preview mode keeps the old small limit.
-    const isBanner = storageKey === bannerStorageKey;
-    const limit = preview ? IMAGE_SIZE_LIMIT : isBanner ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
-    if (file.size > limit) {
-      showToast(`Please select an image smaller than ${Math.round(limit / 1024 / 1024)} MB.`, 'warning');
     if (file.size > IMAGE_SIZE_LIMIT) {
       showToast('Please select an image smaller than 5 MB.', 'warning');
       event.target.value = '';
@@ -1526,27 +1454,13 @@ export default function Profile({
     }
 
     try {
-      if (!preview) {
-        showToast(`Uploading ${imageLabel.toLowerCase()}…`);
-        const url = isBanner ? await uploadBanner(file) : await uploadAvatar(file);
-        setImage(url);
-        setError('');
-        showToast(`${imageLabel} updated successfully!`);
-        return;
-      }
-
-      const imageData = await readImageFile(file);
-
-      if (!preview) localStorage.setItem(storageKey, imageData);
-
-      setImage(imageData);
       if (preview) {
         const imageData = await readImageFile(file);
-        setProfile((current) => ({ ...current, profileImage: { url: imageData } }));
+        setProfile((current) => ({ ...current, [kind === 'banner' ? 'bannerImage' : 'profileImage']: { url: imageData } }));
       } else {
         const body = new FormData();
         body.append('profileImage', file);
-        await apiRequest('/users/profile/image', { method: 'POST', body });
+        await apiRequest(`/users/profile/image${kind === 'banner' ? '?type=banner' : ''}`, { method: 'POST', body });
         const refreshed = await loadProfile();
         if (!refreshed) {
           showToast('Image uploaded, but your profile could not be refreshed.', 'error');
@@ -1570,7 +1484,7 @@ export default function Profile({
     try {
       const [profileResponse, projectsResponse] = await Promise.all([
         apiRequest('/users/profile', { signal }),
-        apiRequest('/projects', { signal }),
+        apiRequest('/portfolio-projects', { signal }),
       ]);
 
       setProfile(normalizeProfile({
@@ -1644,7 +1558,7 @@ export default function Profile({
 
     try {
       const response = await apiRequest(
-        projectId ? `/projects/${projectId}` : '/projects',
+        projectId ? `/portfolio-projects/${projectId}` : '/portfolio-projects',
         {
           method: projectId ? 'PATCH' : 'POST',
           body: JSON.stringify(payload),
@@ -1712,7 +1626,7 @@ export default function Profile({
       if (!projectId) return false;
 
       try {
-        const response = await apiRequest(`/projects/${projectId}`, {
+        const response = await apiRequest(`/portfolio-projects/${projectId}`, {
           method: 'DELETE',
         });
         setProfile((current) => ({
@@ -1869,88 +1783,6 @@ export default function Profile({
             </div>
           )}
 
-          <div className="student-profile-layout">
-            <aside className="student-profile-sidebar">
-              <section className="student-identity-card">
-                <div
-                  className="student-cover"
-                  // Everyone gets the CodeSphere banner until they upload their own.
-                  style={{ backgroundImage: `url(${bannerImage || DEFAULT_BANNER})` }}
-                >
-                  <input
-                    ref={bannerInputRef}
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={(event) =>
-                      handleImageChange(
-                        event,
-                        setBannerImage,
-                        bannerStorageKey,
-                        'Banner image'
-                      )
-                    }
-                  />
-
-                  <button
-                    type="button"
-                    className="profile-image-upload-button profile-banner-upload-button"
-                    onClick={() => bannerInputRef.current?.click()}
-                  >
-                    <i className="bi bi-camera" /> {bannerImage ? 'Change banner' : 'Add banner'}
-                  </button>
-                </div>
-
-                <div className="student-avatar">
-                  {profileImage ? <img src={profileImage} alt="Profile" /> : initial}
-
-                  <input
-                    ref={photoInputRef}
-                    type="file"
-                    accept="image/*"
-                    hidden
-                    onChange={(event) =>
-                      handleImageChange(
-                        event,
-                        setProfileImage,
-                        photoStorageKey,
-                        'Profile photo'
-                      )
-                    }
-                  />
-
-                  <button
-                    type="button"
-                    className="profile-image-upload-button profile-photo-upload-button"
-                    onClick={() => photoInputRef.current?.click()}
-                    aria-label="Add profile photo"
-                    title="Add profile photo"
-                  >
-                    <i className="bi bi-camera" />
-                  </button>
-                </div>
-
-                <div className="student-identity-content">
-                  <h2>{name}</h2>
-                  <p>{email}</p>
-                  <span className="student-member-badge">
-                    <i className="bi bi-patch-check-fill" /> CodeSphere Member
-                  </span>
-                  {!preview && <BadgeStrip />}
-                </div>
-
-                <div className="student-identity-footer">
-                  <span><i className="bi bi-calendar3" /> Member since</span>
-                  <strong>{joinedDate}</strong>
-                </div>
-              </section>
-
-              <section className="profile-sidebar-card">
-                <h3>Profile completion</h3>
-
-                <div className="profile-completion-top">
-                  <span>Complete your profile</span>
-                  <strong>{completion}%</strong>
           <div className={`student-profile-layout dashboard-section-layout${isMilestoneView ? ' dashboard-badges-view' : ''}`}>
             {isMilestoneView ? (
               <>
@@ -1966,6 +1798,10 @@ export default function Profile({
                   completion={completion}
                   photoInputRef={photoInputRef}
                   onPhotoChange={(event) => handleImageChange(event, 'Profile photo')}
+                  bannerInputRef={bannerInputRef}
+                  onBannerChange={(event) => handleImageChange(event, 'Banner image', 'banner')}
+                  defaultBanner={DEFAULT_BANNER}
+                  showBadges={!preview}
                 />
 
                 <div className="student-profile-main">
@@ -1973,6 +1809,7 @@ export default function Profile({
                     profile={profile}
                     onApply={applyResumeDetails}
                     showToast={showToast}
+                    preview={preview}
                   />
 
                   <section className="profile-section-card profile-builder-card">
@@ -1982,12 +1819,6 @@ export default function Profile({
                         <p>Open a section to add or update your information.</p>
                       </div>
 
-              <ResumeUpload
-                profile={profile}
-                onApply={applyResumeDetails}
-                showToast={showToast}
-                preview={preview}
-              />
                       <span className="profile-section-icon">
                         <i className="bi bi-person-gear" />
                       </span>
