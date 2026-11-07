@@ -9,6 +9,7 @@ import '../css/Profile.css';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import ProfileBadges from '../components/ProfileBadges';
+import BadgeStrip from '../components/BadgeStrip';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -478,6 +479,20 @@ function Toast({ toast, onClose }) {
 
 function ResumeUpload({ profile, onApply, showToast }) {
   const inputRef = useRef(null);
+  const [resumeOpen, setResumeOpen] = useState(() => {
+    try {
+      return localStorage.getItem('cs_profile_resume_open') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('cs_profile_resume_open', resumeOpen ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [resumeOpen]);
 
   const [fileName, setFileName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -630,16 +645,19 @@ function ResumeUpload({ profile, onApply, showToast }) {
   };
 
   return (
-    <section className="profile-section-card resume-upload-card">
-      <div className="profile-section-heading">
+    <section className={`profile-section-card resume-upload-card ${resumeOpen ? '' : 'is-collapsed'}`}>
+      <button type="button" className="profile-section-heading profile-collapse-head" onClick={() => setResumeOpen(!resumeOpen)} aria-expanded={resumeOpen}>
         <div>
           <h2>Resume & CV</h2>
           <p>Upload your resume and let us help complete your profile.</p>
         </div>
         <span className="profile-section-icon">
-          <i className="bi bi-file-earmark-person" />
+          <i className={`bi ${resumeOpen ? 'bi-chevron-up' : 'bi-chevron-down'}`} />
         </span>
-      </div>
+      </button>
+
+      {resumeOpen && (
+      <>
 
       <div className="resume-upload-area">
         <input
@@ -828,6 +846,8 @@ function ResumeUpload({ profile, onApply, showToast }) {
           is not uploaded to a CodeSphere server or permanently stored.
         </span>
       </div>
+      </>
+      )}
     </section>
   );
 }
@@ -1546,6 +1566,7 @@ export default function Profile({ preview = false }) {
                   <span className="student-member-badge">
                     <i className="bi bi-patch-check-fill" /> CodeSphere Member
                   </span>
+                  {!preview && <BadgeStrip />}
                 </div>
 
                 <div className="student-identity-footer">
