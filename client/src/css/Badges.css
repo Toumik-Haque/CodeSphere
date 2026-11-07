@@ -46,6 +46,84 @@
   font-weight: 700;
 }
 
+.bdg-overview-link {
+  display: block;
+  color: inherit;
+  text-decoration: none;
+}
+
+.bdg-overview-link:focus-visible {
+  border-radius: 18px;
+  outline: 3px solid rgba(227, 77, 48, .4);
+  outline-offset: 4px;
+}
+
+.bdg-overview-preview {
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.bdg-overview-preview .bdg-hero {
+  transition: box-shadow 180ms ease, transform 180ms ease;
+}
+
+.bdg-overview-link:hover .bdg-hero {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 30px rgba(20, 45, 69, .2);
+}
+
+.bdg-overview-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.bdg-overview-view {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font-size: .75rem;
+  font-weight: 750;
+}
+
+.bdg-overview-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  color: #C9D6E3;
+  font-size: .76rem;
+}
+
+.bdg-overview-stats strong {
+  color: #fff;
+  font-size: .95rem;
+}
+
+.bdg-overview-recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.bdg-overview-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 9px;
+  border: 1px solid rgba(255, 255, 255, .16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, .08);
+  color: #fff;
+  font-size: .72rem;
+  font-weight: 650;
+}
+
 /* Level hero */
 
 .bdg-hero {
@@ -548,6 +626,11 @@
 }
 
 @media (max-width: 479.98px) {
+  .bdg-overview-heading {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
   .bdg-level-emoji {
     width: 52px;
     height: 52px;

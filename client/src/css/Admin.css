@@ -1,4 +1,3 @@
-
 /* =========================================================
    CODESPHERE ADMIN DASHBOARD
    Theme: Refined Navy + Coral | Clean Light Workspace
@@ -59,7 +58,7 @@
   width: 100%;
   min-height: 100vh;
 
-  padding-top: var(--admin-navbar-height);
+  padding-top: calc(var(--admin-navbar-height) - 11px);
 
   background: var(--admin-bg);
   color: var(--admin-text);
@@ -101,12 +100,12 @@
   width: var(--admin-sidebar-width);
   height: 100vh;
 
-  padding: 25px 18px 20px;
+  padding: 15px 18px 20px;
 
   overflow-y: auto;
   overflow-x: hidden;
 
-  background: #ffffff;
+  background: var(--admin-surface);
   border-right: 1px solid var(--admin-border);
 
   box-shadow: 4px 0 20px rgba(20, 45, 69, 0.025);
@@ -115,7 +114,6 @@
 }
 
 /* Sidebar logo */
-
 .admin-sidebar > a:first-child {
   display: flex;
   align-items: center;
@@ -1086,7 +1084,7 @@
   max-width: 100%;
 }
 
-.core-member-image-preview {
+.team-member-image-preview {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
@@ -1095,7 +1093,7 @@
   margin-top: 13px;
 }
 
-.core-member-image-preview img {
+.team-member-image-preview img {
   width: 100px;
   height: 100px;
 
@@ -1384,10 +1382,10 @@
 }
 
 /* =========================================================
-   CORE MEMBERS
+   TEAM MEMBERS
 ========================================================= */
 
-.admin-core-members-list {
+.admin-team-members-list {
   margin-top: 0;
 }
 
@@ -1423,15 +1421,15 @@
   border-color: #f2b6a7;
 }
 
-.admin-core-member-list {
+.admin-team-member-list {
   gap: 15px;
 }
 
-.admin-core-member-item {
+.admin-team-member-item {
   align-items: flex-start;
 }
 
-.admin-core-member-avatar {
+.admin-team-member-avatar {
   flex: 0 0 90px;
 
   width: 90px;
@@ -1441,7 +1439,7 @@
   border-radius: 12px;
 }
 
-.admin-core-member-fallback {
+.admin-team-member-fallback {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1458,12 +1456,12 @@
   font-weight: 800;
 }
 
-.admin-core-member-card-content {
+.admin-team-member-card-content {
   flex: 1;
   min-width: 0;
 }
 
-.admin-core-member-card-content h3 {
+.admin-team-member-card-content h3 {
   margin: 2px 0 5px;
 
   color: var(--admin-navy);
@@ -1472,14 +1470,14 @@
   font-weight: 800;
 }
 
-.core-member-role {
+.team-member-role {
   margin: 0 0 12px;
 
   color: var(--admin-muted);
   font-size: 12px;
 }
 
-.admin-core-member-social-links {
+.admin-team-member-social-links {
   display: flex;
   flex-wrap: wrap;
   gap: 12px;
@@ -1487,7 +1485,7 @@
   margin-bottom: 13px;
 }
 
-.admin-core-member-social-links a {
+.admin-team-member-social-links a {
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -1499,15 +1497,15 @@
   transition: color 0.2s ease;
 }
 
-.admin-core-member-social-links a:hover {
+.admin-team-member-social-links a:hover {
   color: var(--admin-primary);
 }
 
-.admin-core-member-social-links i {
+.admin-team-member-social-links i {
   font-size: 14px;
 }
 
-.admin-core-member-actions {
+.admin-team-member-actions {
   justify-content: flex-start;
 }
 
@@ -1848,7 +1846,7 @@
     width: 100%;
   }
 
-  /* Core members */
+  /* Team members */
 
   .admin-events-dashboard-heading {
     align-items: flex-start;
@@ -1861,13 +1859,13 @@
     gap: 7px;
   }
 
-  .admin-core-member-avatar {
+  .admin-team-member-avatar {
     flex: 0 0 72px;
     width: 72px;
     height: 72px;
   }
 
-  .admin-core-member-card-content h3 {
+  .admin-team-member-card-content h3 {
     font-size: 14px;
   }
 }
@@ -1957,7 +1955,7 @@
     font-size: 15px;
   }
 
-  .admin-core-member-avatar {
+  .admin-team-member-avatar {
     flex-basis: 62px;
     width: 62px;
     height: 62px;
@@ -2068,6 +2066,59 @@
     gap: 7px;
   }
 }
+
+.admin-sidebar-bottom {
+  margin-top: auto;
+  padding: 20px 18px;
+}
+
+.admin-social-section h6 {
+  color: #142d45;
+  font-size: 13px;
+  font-weight: 700;
+  margin: 0 0 5px;
+}
+
+.admin-social-section p {
+  color: #8793a1;
+  font-size: 11px;
+  margin: 0 0 14px;
+}
+
+.admin-social-links {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-social-links a {
+  width: 34px;
+  height: 34px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  background: #f5f6f8;
+  color: #647589;
+  font-size: 15px;
+  text-decoration: none;
+  transition: all 0.25s ease;
+}
+
+.admin-social-links a:hover {
+  background: #fff0ed;
+  color: #f07868;
+  transform: translateY(-3px);
+}
+
+.admin-sidebar-footer {
+  margin-top: 18px;
+  padding-top: 12px;
+  border-top: 1px solid #edf0f2;
+  color: #9aa4af;
+  font-size: 10px;
+}
+
 /* Community tools: links to the forum, news and reverse coding staff pages */
 .admin-tools {
   display: grid;

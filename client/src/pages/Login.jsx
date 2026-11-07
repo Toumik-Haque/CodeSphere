@@ -15,7 +15,7 @@ export default function Login() {
   if (user) {
     return (
       <Navigate
-        to={user.role === 'admin' ? '/admin' : '/profile'}
+        to={user.role === 'admin' ? '/admin' : '/dashboard'}
         replace
       />
     );
@@ -30,7 +30,7 @@ export default function Login() {
       const loggedInUser = await login(email, password);
 
       navigate(
-        loggedInUser.role === 'admin' ? '/admin' : '/profile',
+        loggedInUser.role === 'admin' ? '/admin' : '/dashboard',
         { replace: true }
       );
     } catch (err) {

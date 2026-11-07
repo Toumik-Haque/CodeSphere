@@ -10,10 +10,22 @@ const sanitizeDescription = require('../utils/sanitizeDescription');
 const Event = require('../models/Event');
 const User = require('../models/User');
 const Attendance = require('../models/Attendance');
+const Registration = require('../models/Registration');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { syncBadgesQuietly } = require('../utils/badges');
 
 const router = express.Router();
+
+// Only authenticated CodeSphere members can register for events.
+function memberOnly(req, res, next) {
+  if (req.user?.role !== 'user') {
+    return res.status(403).json({
+      message: 'Only CodeSphere members can register for events.',
+    });
+  }
+
+  next();
+}
 
 const upload = multer({
   storage: multer.memoryStorage(),
@@ -251,6 +263,140 @@ router.get('/slug/:slug', async (req, res) => {
 
     return res.status(500).json({
       message: 'Unable to fetch event.',
+    });
+  }
+});
+
+// Member: register for a published event.
+router.post('/:id/register', protect, memberOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        message: 'Invalid event ID.',
+      });
+    }
+
+    const event = await Event.findOne({
+      _id: id,
+      status: 'published',
+    }).select('_id title date endDate');
+
+    if (!event) {
+      return res.status(404).json({
+        message: 'Published event not found.',
+      });
+    }
+
+    let registration = await Registration.findOne({
+      event: id,
+      user: req.user._id,
+    });
+
+    // Prevent duplicate active registrations.
+    if (registration?.status === 'registered') {
+      return res.status(409).json({
+        message: 'You are already registered for this event.',
+      });
+    }
+
+    // Reactivate an earlier cancelled registration.
+    if (registration) {
+      registration.status = 'registered';
+      registration.registeredAt = new Date();
+      registration.cancelledAt = null;
+
+      await registration.save();
+    } else {
+      registration = await Registration.create({
+        event: id,
+        user: req.user._id,
+      });
+    }
+
+    return res.status(201).json({
+      message: 'Successfully registered for the event.',
+      registration,
+    });
+  } catch (error) {
+    // Handle simultaneous registration attempts safely.
+    if (error.code === 11000) {
+      return res.status(409).json({
+        message: 'You are already registered for this event.',
+      });
+    }
+
+    console.error('Event registration error:', error.message);
+
+    return res.status(500).json({
+      message: 'Unable to register for this event.',
+    });
+  }
+});
+
+// Member: cancel an event registration.
+router.delete('/:id/register', protect, memberOnly, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        message: 'Invalid event ID.',
+      });
+    }
+
+    const registration = await Registration.findOne({
+      event: id,
+      user: req.user._id,
+      status: 'registered',
+    });
+
+    if (!registration) {
+      return res.status(404).json({
+        message: 'Active registration not found.',
+      });
+    }
+
+    registration.status = 'cancelled';
+    registration.cancelledAt = new Date();
+
+    await registration.save();
+
+    return res.json({
+      message: 'Event registration cancelled successfully.',
+      registration,
+    });
+  } catch (error) {
+    console.error('Cancel registration error:', error.message);
+
+    return res.status(500).json({
+      message: 'Unable to cancel event registration.',
+    });
+  }
+});
+
+// Member: get registration history of the logged-in member.
+router.get('/my-registrations', protect, memberOnly, async (req, res) => {
+  try {
+    const registrations = await Registration.find({
+      user: req.user._id,
+    })
+      .populate(
+        'event',
+        'title slug category description date endDate venue mode bannerImage status'
+      )
+      .sort({ registeredAt: -1 })
+      .lean();
+
+    return res.json({
+      registrations: registrations.filter((registration) => registration.event),
+    });
+  } catch (error) {
+    console.error('Fetch my registrations error:', error.message);
+
+    return res.status(500).json({
+      message: 'Unable to fetch your event registrations.',
     });
   }
 });
@@ -519,6 +665,11 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
       });
     }
 
+    await Promise.all([
+      Registration.deleteMany({ event: event._id }),
+      Attendance.deleteMany({ event: event._id }),
+    ]);
+
     if (event.bannerImage?.publicId) {
       try {
         await deleteStoredImage(event.bannerImage);
@@ -609,7 +760,55 @@ router.get('/admin/members', protect, adminOnly, async (req, res) => {
   }
 });
 
-// Admin: get attendance for all user accounts for one event.
+// Admin: get registered participants for one event.
+router.get(
+  '/admin/:id/registrations',
+  protect,
+  adminOnly,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+
+      if (!mongoose.isValidObjectId(id)) {
+        return res.status(400).json({
+          message: 'Invalid event ID.',
+        });
+      }
+
+      const event = await Event.findById(id)
+        .select('title slug category date endDate status')
+        .lean();
+
+      if (!event) {
+        return res.status(404).json({
+          message: 'Event not found.',
+        });
+      }
+
+      const registrations = await Registration.find({
+        event: id,
+        status: 'registered',
+      })
+        .populate('user', 'name username email')
+        .sort({ registeredAt: -1 })
+        .lean();
+
+      return res.json({
+        event,
+        totalRegistrations: registrations.length,
+        registrations,
+      });
+    } catch (error) {
+      console.error('Fetch event registrations error:', error.message);
+
+      return res.status(500).json({
+        message: 'Unable to fetch event registrations.',
+      });
+    }
+  }
+);
+
+// Admin: get attendance for registered participants only.
 router.get(
   '/admin/:id/attendance',
   protect,
@@ -634,9 +833,13 @@ router.get(
         });
       }
 
-      const members = await User.find({ role: 'user' })
-        .select('name email')
-        .sort({ name: 1 })
+      // Fetch only actively registered participants.
+      const registrations = await Registration.find({
+        event: id,
+        status: 'registered',
+      })
+        .populate('user', 'name email username')
+        .sort({ registeredAt: -1 })
         .lean();
 
       const records = await Attendance.find({ event: id }).lean();
@@ -648,21 +851,34 @@ router.get(
         ])
       );
 
-      const attendance = members.map((member) => {
-        const record = attendanceByUser.get(member._id.toString());
+      const attendance = registrations
+        .filter((registration) => registration.user)
+        .map((registration) => {
+          const member = registration.user;
+          const record = attendanceByUser.get(member._id.toString());
 
-        return {
-          ...member,
-          status: record?.status || 'absent',
-          attendanceId: record?._id || null,
-          markedAt: record?.markedAt || null,
-        };
+          return {
+            _id: member._id,
+            name: member.name,
+            email: member.email,
+            username: member.username,
+            registrationId: registration._id,
+            registeredAt: registration.registeredAt,
+            status: record?.status || 'absent',
+            attendanceId: record?._id || null,
+            markedAt: record?.markedAt || null,
+          };
+        });
+
+      return res.json({
+        event,
+        totalRegistered: attendance.length,
+        attendance,
       });
-
-      res.json({ event, attendance });
     } catch (error) {
       console.error('Fetch attendance error:', error.message);
-      res.status(500).json({
+
+      return res.status(500).json({
         message: 'Unable to fetch attendance.',
       });
     }
@@ -694,9 +910,13 @@ router.patch(
         });
       }
 
-      const [event, member] = await Promise.all([
+      const [event, registration] = await Promise.all([
         Event.findById(id).select('_id'),
-        User.findOne({ _id: userId, role: 'user' }).select('_id'),
+        Registration.findOne({
+          event: id,
+          user: userId,
+          status: 'registered',
+        }).select('_id'),
       ]);
 
       if (!event) {
@@ -705,9 +925,9 @@ router.patch(
         });
       }
 
-      if (!member) {
+      if (!registration) {
         return res.status(404).json({
-          message: 'Member not found.',
+          message: 'This member is not actively registered for the event.',
         });
       }
 

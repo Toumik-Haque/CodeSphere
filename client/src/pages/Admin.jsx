@@ -12,6 +12,7 @@ import Navbar from '../components/Navbar';
 import logo from '../assets/logo.svg';
 import '../css/Admin.css';
 import { Editor } from '@tinymce/tinymce-react';
+import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
 import AdminBadgeAwards from '../components/AdminBadgeAwards';
 
 const initialForm = {
@@ -23,7 +24,6 @@ const initialForm = {
   venue: '',
   mode: 'In-person',
   meetingLink: '',
-  registrationLink: '',
   linkedinPostLink: '',
   instagramPostLink: '',
   status: 'draft',
@@ -44,6 +44,11 @@ const categories = [
 ];
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
+
+const LINKEDIN_URL = 'https://www.linkedin.com/company/codesphereagemc/';
+const INSTAGRAM_URL = 'https://www.instagram.com/codesphereagemc/';
+const GITHUB_URL = 'https://github.com/codesphere-agemc';
+const WHATSAPP_URL = 'https://chat.whatsapp.com/FDGLH2yMpFuDJJBx448afz';
 
 function toDateTimeLocal(value) {
   if (!value) return '';
@@ -232,7 +237,6 @@ export default function Admin() {
       venue: event.venue || '',
       mode: event.mode || 'In-person',
       meetingLink: event.meetingLink || '',
-      registrationLink: event.registrationLink || '',
       linkedinPostLink: event.linkedinPostLink || '',
       instagramPostLink: event.instagramPostLink || '',
       status: event.status || 'draft',
@@ -336,7 +340,6 @@ export default function Admin() {
     }
 
     const optionalLinks = [
-      ['Registration link', form.registrationLink],
       ['LinkedIn post link', form.linkedinPostLink],
       ['Instagram post link', form.instagramPostLink],
     ];
@@ -368,7 +371,6 @@ export default function Admin() {
       formData.append('venue', form.venue.trim());
       formData.append('mode', form.mode);
       formData.append('meetingLink', form.meetingLink.trim());
-      formData.append('registrationLink', form.registrationLink.trim());
       formData.append('linkedinPostLink', form.linkedinPostLink.trim());
       formData.append('instagramPostLink', form.instagramPostLink.trim());
       formData.append('status', form.status);
@@ -472,7 +474,7 @@ export default function Admin() {
   }, [events, eventSearch, eventCategory]);
 
   // --------------------------------------------------
-  // CORE MEMBERS
+  // TEAM MEMBERS
   // --------------------------------------------------
 
   const [coreMembers, setCoreMembers] = useState([]);
@@ -518,13 +520,15 @@ export default function Admin() {
     setCoreMembersLoading(true);
 
     try {
-      const data = await apiRequest('/core-members');
+      const data = await apiRequest('/team-members');
 
       setCoreMembers(
-        Array.isArray(data.members) ? data.members : []
+        sortCoreMembers(
+          Array.isArray(data.members) ? data.members : []
+        )
       );
     } catch (err) {
-      setError(err.message || 'Unable to load core members.');
+      setError(err.message || 'Unable to load team members.');
     } finally {
       setCoreMembersLoading(false);
     }
@@ -637,8 +641,8 @@ export default function Admin() {
       return;
     }
 
-    if (!editingCoreMemberId && !coreMemberImage) {
-      setError('Please upload a profile image.');
+    if (!coreMemberImage) {
+      setError('Please upload a profile image before saving.');
       return;
     }
 
@@ -675,11 +679,11 @@ export default function Admin() {
       }
 
       const result = editingCoreMemberId
-        ? await apiRequest(`/core-members/${editingCoreMemberId}`, {
+        ? await apiRequest(`/team-members/${editingCoreMemberId}`, {
           method: 'PATCH',
           body: formData,
         })
-        : await apiRequest('/core-members', {
+        : await apiRequest('/team-members', {
           method: 'POST',
           body: formData,
         });
@@ -687,11 +691,11 @@ export default function Admin() {
       resetCoreMemberForm();
       setActiveCoreMemberTab('manage');
 
-      setMessage(result.message || 'Core member saved successfully.');
+      setMessage(result.message || 'Team Member saved successfully.');
 
       await loadCoreMembers();
     } catch (err) {
-      setError(err.message || 'Unable to save core member.');
+      setError(err.message || 'Unable to save Team Member.');
     } finally {
       setCoreMemberSaving(false);
     }
@@ -699,7 +703,7 @@ export default function Admin() {
 
   async function deleteCoreMember(member) {
     const confirmed = window.confirm(
-      `Delete "${member.name}" from Core Members?`
+      `Delete "${member.name}" from Team Members?`
     );
 
     if (!confirmed) return;
@@ -707,7 +711,7 @@ export default function Admin() {
     clearFeedback();
 
     try {
-      const result = await apiRequest(`/core-members/${member._id}`, {
+      const result = await apiRequest(`/team-members/${member._id}`, {
         method: 'DELETE',
       });
 
@@ -716,21 +720,23 @@ export default function Admin() {
         setActiveCoreMemberTab('manage');
       }
 
-      setMessage(result.message || 'Core member deleted successfully.');
+      setMessage(result.message || 'Team Member deleted successfully.');
 
       await loadCoreMembers();
     } catch (err) {
-      setError(err.message || 'Unable to delete core member.');
+      setError(err.message || 'Unable to delete Team Member.');
     }
   }
 
   const filteredCoreMembers = useMemo(() => {
     const query = coreMemberSearch.trim().toLowerCase();
 
-    return coreMembers.filter((member) => (
+    const filtered = coreMembers.filter((member) => (
       (member.name || '').toLowerCase().includes(query) ||
       (member.role || '').toLowerCase().includes(query)
     ));
+
+    return sortCoreMembers(filtered);
   }, [coreMembers, coreMemberSearch]);
 
   // --------------------------------------------------
@@ -1009,9 +1015,9 @@ export default function Admin() {
     attendance: 'Attendance',
     coreMembers: showCoreMemberForm
       ? editingCoreMemberId
-        ? 'Edit Core Member'
-        : 'Add Core Member'
-      : 'Core Members',
+        ? 'Edit Team Member'
+        : 'Add Team Member'
+      : 'Team Members',
   }[activeSection];
 
   return (
@@ -1067,30 +1073,62 @@ export default function Admin() {
               section="coreMembers"
               icon="bi bi-people"
             >
-              Core Members
+              Team Members
             </NavigationButton>
           </nav>
 
           <div className="admin-sidebar-bottom">
-            <div className="admin-profile">
-              <div className="admin-profile-avatar">
-                {getInitial(user?.name)}
-              </div>
+            <div className="admin-social-section">
+              <h6>CodeSphere Socials</h6>
 
-              <div className="admin-profile-info">
-                <strong>{user?.name || 'Administrator'}</strong>
-                <span>Administrator</span>
+              <p>Manage social account of your community</p>
+
+              <div className="admin-social-links">
+                <a
+                  href={LINKEDIN_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="LinkedIn"
+                  title="LinkedIn"
+                >
+                  <i className="bi bi-linkedin" />
+                </a>
+
+                <a
+                  href={INSTAGRAM_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="Instagram"
+                  title="Instagram"
+                >
+                  <i className="bi bi-instagram" />
+                </a>
+
+                <a
+                  href={GITHUB_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="GitHub"
+                  title="GitHub"
+                >
+                  <i className="bi bi-github" />
+                </a>
+
+                <a
+                  href={WHATSAPP_URL}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  aria-label="WhatsApp"
+                  title="WhatsApp"
+                >
+                  <i className="bi bi-whatsapp" />
+                </a>
               </div>
             </div>
 
-            <button
-              type="button"
-              className="admin-sidebar-logout"
-              onClick={handleLogout}
-            >
-              <i className="bi bi-box-arrow-right" aria-hidden="true" />
-              <span>Sign Out</span>
-            </button>
+            <div className="admin-sidebar-footer">
+              © {new Date().getFullYear()} CodeSphere
+            </div>
           </div>
         </aside>
 
@@ -1196,7 +1234,7 @@ export default function Admin() {
                       <i className="bi bi-person-badge" aria-hidden="true" />
                     </div>
 
-                    <p>Core Members</p>
+                    <p>Team Members</p>
                     <strong>{coreMembers.length}</strong>
                   </article>
 
@@ -1738,19 +1776,38 @@ export default function Admin() {
                         </div>
                       )}
 
-                      <div className="admin-form-field">
-                        <label htmlFor="event-registration-link">
-                          Registration link
-                        </label>
+                      <div className="admin-form-field admin-field-full">
+                        <div
+                          style={{
+                            padding: '16px 18px',
+                            background: '#fff0ed',
+                            border: '1px solid #f8d5ce',
+                            borderRadius: '12px',
+                          }}
+                        >
+                          <div className="d-flex align-items-center gap-2 mb-2">
+                            <i
+                              className="bi bi-person-check-fill"
+                              style={{ color: '#e34d30', fontSize: '18px' }}
+                            />
 
-                        <input
-                          id="event-registration-link"
-                          name="registrationLink"
-                          type="url"
-                          value={form.registrationLink}
-                          onChange={updateField}
-                          placeholder="https://..."
-                        />
+                            <strong style={{ color: '#142d45' }}>
+                              Internal Event Registration
+                            </strong>
+                          </div>
+
+                          <p
+                            className="mb-0"
+                            style={{
+                              color: '#647589',
+                              fontSize: '14px',
+                              lineHeight: '1.6',
+                            }}
+                          >
+                            Members can register directly through their CodeSphere accounts.
+                            No external Google Form or registration link is required.
+                          </p>
+                        </div>
                       </div>
 
                       <div className="admin-form-field">
@@ -2200,14 +2257,14 @@ export default function Admin() {
             )}
 
             {/* ============================================
-              CORE MEMBERS
+              TEAM MEMBERS
           ============================================ */}
             {activeSection === 'coreMembers' && (
               <>
                 <section className="admin-events-section">
                   <div className="admin-section-heading">
                     <div>
-                      <h2>Core Members Management</h2>
+                      <h2>Team Members Management</h2>
                       <p className="admin-panel-subtitle">
                         Add, edit and manage your CodeSphere team.
                       </p>
@@ -2217,7 +2274,7 @@ export default function Admin() {
                   <div
                     className="admin-event-tabs"
                     role="tablist"
-                    aria-label="Core member management"
+                    aria-label="Team Member management"
                   >
                     <button
                       type="button"
@@ -2251,7 +2308,7 @@ export default function Admin() {
 
                 {showCoreMemberForm ? (
 
-                  /* ADD / EDIT CORE MEMBER */
+                  /* ADD / EDIT Team Member */
                   <section className="admin-panel">
 
                     <form
@@ -2260,12 +2317,12 @@ export default function Admin() {
                     >
 
                       <div className="admin-form-field">
-                        <label htmlFor="core-member-name">
+                        <label htmlFor="team-member-name">
                           Full name *
                         </label>
 
                         <input
-                          id="core-member-name"
+                          id="team-member-name"
                           name="name"
                           value={coreMemberForm.name}
                           onChange={updateCoreMemberField}
@@ -2276,41 +2333,54 @@ export default function Admin() {
                       </div>
 
                       <div className="admin-form-field">
-                        <label htmlFor="core-member-role">
+                        <label htmlFor="team-member-role">
                           Position *
                         </label>
 
-                        <input
-                          id="core-member-role"
+                        <select
+                          id="team-member-role"
                           name="role"
                           value={coreMemberForm.role}
                           onChange={updateCoreMemberField}
-                          maxLength={100}
-                          placeholder="e.g. Technical Lead"
+                          className="admin-form-select"
                           required
-                        />
+                        >
+                          <option value="">Select Position</option>
+                          <option value="Faculty Coordinator">
+                            Faculty Coordinator
+                          </option>
+                          <option value="Secretary">
+                            Secretary
+                          </option>
+                          <option value="Assistant Secretary">
+                            Assistant Secretary
+                          </option>
+                          <option value="Student Member">
+                            Student Member
+                          </option>
+                        </select>
                       </div>
 
                       <div className="admin-form-field admin-field-full">
-                        <label htmlFor="core-member-image">
-                          Profile image {editingCoreMemberId ? '(optional)' : '*'}
+                        <label htmlFor="team-member-image">
+                          Profile image *
                         </label>
 
                         <input
                           className="admin-file-input"
                           ref={coreMemberImageInputRef}
-                          id="core-member-image"
+                          id="team-member-image"
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
-                          required={!editingCoreMemberId && !coreMemberImage}
+                          required={!coreMemberImage}
                           onChange={handleCoreMemberImageChange}
                         />
 
                         {coreMemberImagePreview && (
-                          <div className="core-member-image-preview">
+                          <div className="team-member-image-preview">
                             <img
                               src={coreMemberImagePreview}
-                              alt="Core member preview"
+                              alt="Team Member preview"
                             />
 
                             <button
@@ -2330,12 +2400,12 @@ export default function Admin() {
                       </div>
 
                       <div className="admin-form-field mt-3">
-                        <label htmlFor="core-member-github">
+                        <label htmlFor="team-member-github">
                           GitHub profile
                         </label>
 
                         <input
-                          id="core-member-github"
+                          id="team-member-github"
                           name="githubLink"
                           type="url"
                           value={coreMemberForm.githubLink}
@@ -2346,12 +2416,12 @@ export default function Admin() {
                       </div>
 
                       <div className="admin-form-field mt-3">
-                        <label htmlFor="core-member-linkedin">
+                        <label htmlFor="team-member-linkedin">
                           LinkedIn profile
                         </label>
 
                         <input
-                          id="core-member-linkedin"
+                          id="team-member-linkedin"
                           name="linkedinLink"
                           type="url"
                           value={coreMemberForm.linkedinLink}
@@ -2362,12 +2432,12 @@ export default function Admin() {
                       </div>
 
                       <div className="admin-form-field mt-3">
-                        <label htmlFor="core-member-instagram">
+                        <label htmlFor="team-member-instagram">
                           Instagram profile
                         </label>
 
                         <input
-                          id="core-member-instagram"
+                          id="team-member-instagram"
                           name="instagramLink"
                           type="url"
                           value={coreMemberForm.instagramLink}
@@ -2405,28 +2475,28 @@ export default function Admin() {
 
                 ) : (
 
-                  /* CORE MEMBER DIRECTORY */
-                  <section className="admin-events-section admin-core-members-list">
+                  /* Team Member DIRECTORY */
+                  <section className="admin-events-section admin-team-members-list">
                     <div className="admin-event-filters">
                       <label className="admin-event-search">
                         <i className="bi bi-search" />
 
                         <input
-                          id="core-member-search"
+                          id="team-member-search"
                           type="search"
                           value={coreMemberSearch}
                           onChange={(event) =>
                             setCoreMemberSearch(event.target.value)
                           }
                           placeholder="Search by name or position..."
-                          aria-label="Search core members"
+                          aria-label="Search team members"
                         />
                       </label>
                     </div>
 
                     {coreMembersLoading ? (
                       <p className="admin-empty">
-                        Loading core members...
+                        Loading team members...
                       </p>
                     ) : filteredCoreMembers.length === 0 ? (
                       <div className="admin-empty">
@@ -2434,7 +2504,7 @@ export default function Admin() {
 
                         <p>
                           {coreMembers.length === 0
-                            ? 'No core members added yet.'
+                            ? 'No team members added yet.'
                             : 'No members match your search.'}
                         </p>
 
@@ -2450,35 +2520,35 @@ export default function Admin() {
                         )}
                       </div>
                     ) : (
-                      <div className="admin-event-list admin-core-member-list">
+                      <div className="admin-event-list admin-team-member-list">
 
                         {filteredCoreMembers.map((member) => (
                           <article
-                            className="admin-event-item admin-core-member-item"
+                            className="admin-event-item admin-team-member-item"
                             key={member._id}
                           >
 
                             {member.image?.url ? (
                               <img
-                                className="admin-core-member-avatar"
+                                className="admin-team-member-avatar"
                                 src={member.image.url}
                                 alt={member.name}
                                 loading="lazy"
                               />
                             ) : (
-                              <div className="admin-core-member-avatar admin-core-member-fallback">
+                              <div className="admin-team-member-avatar admin-team-member-fallback">
                                 {getInitial(member.name)}
                               </div>
                             )}
 
-                            <div className="admin-core-member-card-content">
+                            <div className="admin-team-member-card-content">
                               <h3>{member.name}</h3>
 
-                              <p className="core-member-role">
+                              <p className="team-member-role">
                                 {member.role}
                               </p>
 
-                              <div className="admin-core-member-social-links">
+                              <div className="admin-team-member-social-links">
 
                                 {member.githubLink && (
                                   <a
@@ -2518,7 +2588,7 @@ export default function Admin() {
 
                               </div>
 
-                              <div className="admin-event-actions admin-core-member-actions">
+                              <div className="admin-event-actions admin-team-member-actions">
                                 <button
                                   type="button"
                                   onClick={() => editCoreMember(member)}

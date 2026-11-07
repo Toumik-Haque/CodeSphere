@@ -12,13 +12,14 @@ export default function TeamCarousel() {
   const trackRef = useRef(null);
   const isPausedRef = useRef(false);
 
-  // Load core team members.
+  // Load team members.
+  // The server already returns members in the correct display order.
   useEffect(() => {
     let active = true;
 
     async function loadMembers() {
       try {
-        const data = await apiRequest('/core-members');
+        const data = await apiRequest('/team-members');
 
         if (active) {
           const list = Array.isArray(data)
@@ -27,13 +28,7 @@ export default function TeamCarousel() {
               ? data.members
               : [];
 
-          setMembers(
-            [...list].sort(
-              (a, b) =>
-                (a.order ?? 0) - (b.order ?? 0) ||
-                (a.name || '').localeCompare(b.name || '')
-            )
-          );
+          setMembers(list);
         }
       } catch (err) {
         if (active) {
@@ -107,7 +102,7 @@ export default function TeamCarousel() {
 
     if (!track) return;
 
-    const card = track.querySelector('.core-member-slide');
+    const card = track.querySelector('.team-member-slide');
     const styles = window.getComputedStyle(track);
     const gap = parseFloat(styles.columnGap) || 20;
 
@@ -130,32 +125,32 @@ export default function TeamCarousel() {
 
   if (loading) {
     return (
-      <section className="core-team-section" aria-busy="true">
-        <div className="core-team-heading">
-          <p className="core-team-eyebrow">
-            <span className="core-team-eyebrow-line" />
+      <section className="team-section" aria-busy="true">
+        <div className="team-heading">
+          <p className="team-eyebrow">
+            <span className="team-eyebrow-line" />
             THE PEOPLE BEHIND
           </p>
-          <h2>Meet Our Core Team</h2>
+          <h2>Meet Our Team</h2>
         </div>
 
-        <p className="core-team-status">Loading our team...</p>
+        <p className="team-status">Loading our team...</p>
       </section>
     );
   }
 
   if (error || members.length === 0) {
     return (
-      <section className="core-team-section">
-        <div className="core-team-heading">
-          <p className="core-team-eyebrow">
-            <span className="core-team-eyebrow-line" />
+      <section className="team-section">
+        <div className="team-heading">
+          <p className="team-eyebrow">
+            <span className="team-eyebrow-line" />
             THE PEOPLE BEHIND
           </p>
-          <h2>Meet Our Core Team</h2>
+          <h2>Meet Our Team</h2>
         </div>
 
-        <p className="core-team-status">
+        <p className="team-status">
           {error || 'Our team profiles will be available soon.'}
         </p>
       </section>
@@ -164,30 +159,30 @@ export default function TeamCarousel() {
 
   return (
     <section
-      className="core-team-section"
-      aria-labelledby="core-team-title"
+      className="team-section"
+      aria-labelledby="team-title"
     >
-      <div className="core-team-heading">
+      <div className="team-heading">
         <div>
-          <p className="core-team-eyebrow">
-            <span className="core-team-eyebrow-line" />
+          <p className="team-eyebrow">
+            <span className="team-eyebrow-line" />
             THE PEOPLE BEHIND
           </p>
 
-          <h2 id="core-team-title">
+          <h2 id="team-title">
             Meet Our{' '}
-            <span className="gold-text">Core Team.</span>
+            <span className="gold-text">Team.</span>
           </h2>
 
-          <p className="core-team-description">
+          <p className="team-description">
             The people bringing ideas to life and building our community.
           </p>
         </div>
 
-        <div className="core-team-controls">
+        <div className="team-controls">
           <button
             type="button"
-            className="core-team-arrow"
+            className="team-arrow"
             onClick={() => {
               setIsAutoScrolling((current) => !current);
             }}
@@ -199,8 +194,9 @@ export default function TeamCarousel() {
             title={isAutoScrolling ? 'Pause scrolling' : 'Resume scrolling'}
           >
             <i
-              className={`bi ${isAutoScrolling ? 'bi-pause-fill' : 'bi-play-fill'
-                }`}
+              className={`bi ${
+                isAutoScrolling ? 'bi-pause-fill' : 'bi-play-fill'
+              }`}
               aria-hidden="true"
             />
           </button>
@@ -208,7 +204,7 @@ export default function TeamCarousel() {
       </div>
 
       <div
-        className="core-team-track"
+        className="team-track"
         ref={trackRef}
         onMouseEnter={() => {
           isPausedRef.current = true;
@@ -227,25 +223,28 @@ export default function TeamCarousel() {
       >
         {[...members, ...members].map((member, index) => (
           <article
-            className="core-member-slide"
+            className="team-member-slide"
             key={`${member._id}-${index}`}
             aria-hidden={index >= members.length ? 'true' : undefined}
           >
-            <div className="core-member-photo-wrap">
+            <div className="team-member-photo-wrap">
               {member.image?.url ? (
                 <img
-                  className="core-member-photo"
+                  className="team-member-photo"
                   src={member.image.url}
                   alt={index < members.length ? member.name : ''}
                   loading="lazy"
                 />
               ) : (
-                <div className="core-member-photo-fallback" aria-hidden="true">
+                <div
+                  className="team-member-photo-fallback"
+                  aria-hidden="true"
+                >
                   {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
                 </div>
               )}
 
-              <div className="core-member-socials">
+              <div className="team-member-socials">
                 {member.linkedinLink && (
                   <a
                     href={member.linkedinLink}
@@ -287,9 +286,9 @@ export default function TeamCarousel() {
               </div>
             </div>
 
-            <div className="core-member-info">
+            <div className="team-member-info">
               <h3>{member.name}</h3>
-              <p className="core-member-role">{member.role}</p>
+              <p className="team-member-role">{member.role}</p>
             </div>
           </article>
         ))}

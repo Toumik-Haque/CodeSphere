@@ -1,3 +1,4 @@
+
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
@@ -6,6 +7,7 @@ const imagekit = require('../config/imagekit');
 const { toFile } = require('@imagekit/nodejs');
 
 const CoreMember = require('../models/CoreMember');
+const { sortCoreMembers } = require('../utils/coreMemberRoleOrder');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -54,7 +56,7 @@ async function uploadToImageKit(fileBuffer, originalName) {
   const uploadedFile = await imagekit.files.upload({
     file: await toFile(fileBuffer, originalName),
     fileName: originalName,
-    folder: '/codesphere/core-members',
+    folder: '/codesphere/team-members',
   });
 
   return {
@@ -102,15 +104,26 @@ function validateOptionalUrl(value, label) {
 function validateMember(body) {
   const { name, role } = body;
 
+  const allowedRoles = [
+    'Faculty Coordinator',
+    'Secretary',
+    'Assistant Secretary',
+    'Student Member',
+  ];
+
   if (
     typeof name !== 'string' ||
     !name.trim() ||
-    name.trim().length > 100 ||
-    typeof role !== 'string' ||
-    !role.trim() ||
-    role.trim().length > 100
+    name.trim().length > 100
   ) {
-    return 'Please provide a valid member name and role.';
+    return 'Please provide a valid member name.';
+  }
+
+  if (
+    typeof role !== 'string' ||
+    !allowedRoles.includes(role.trim())
+  ) {
+    return 'Please select a valid Team Member position.';
   }
 
   const linkedinError = validateOptionalUrl(
@@ -137,25 +150,26 @@ function validateMember(body) {
   return null;
 }
 
-// Public: list all core members in display order.
+// Public: list all team members in display order.
 router.get('/', async (req, res) => {
   try {
     const members = await CoreMember.find()
       .select('-__v')
-      .sort({ order: 1, name: 1 })
       .lean();
 
-    return res.json({ members });
+    return res.json({
+      members: sortCoreMembers(members),
+    });
   } catch (error) {
-    console.error('Fetch core members error:', error.message);
+    console.error('Fetch team members error:', error.message);
 
     return res.status(500).json({
-      message: 'Unable to fetch core members.',
+      message: 'Unable to fetch team members.',
     });
   }
 });
 
-// Admin: create a core member.
+// Admin: create a Team Member. Profile image is mandatory.
 router.post(
   '/',
   protect,
@@ -173,6 +187,7 @@ router.post(
         });
       }
 
+      // Require a profile image during creation.
       if (!req.file) {
         return res.status(400).json({
           message: 'Please upload a profile image.',
@@ -199,11 +214,11 @@ router.post(
       });
 
       return res.status(201).json({
-        message: 'Core member created successfully.',
+        message: 'Team Member created successfully.',
         member,
       });
     } catch (error) {
-      console.error('Create core member error:', error);
+      console.error('Create Team Member error:', error);
 
       // If database creation fails, delete the newly uploaded image.
       if (uploadedImage?.publicId) {
@@ -218,13 +233,13 @@ router.post(
       }
 
       return res.status(500).json({
-        message: 'Unable to create core member.',
+        message: 'Unable to create Team Member.',
       });
     }
   }
 );
 
-// Admin: update a core member and optionally replace the image.
+// Admin: update a Team Member. A new profile image is mandatory.
 router.patch(
   '/:id',
   protect,
@@ -236,7 +251,7 @@ router.patch(
     try {
       if (!mongoose.isValidObjectId(req.params.id)) {
         return res.status(400).json({
-          message: 'Invalid core member ID.',
+          message: 'Invalid Team Member ID.',
         });
       }
 
@@ -244,7 +259,14 @@ router.patch(
 
       if (!member) {
         return res.status(404).json({
-          message: 'Core member not found.',
+          message: 'Team Member not found.',
+        });
+      }
+
+      // Require a new profile image during every edit.
+      if (!req.file) {
+        return res.status(400).json({
+          message: 'Please upload a new profile image.',
         });
       }
 
@@ -264,18 +286,16 @@ router.patch(
         });
       }
 
-      // Preserve the original image details before changing anything.
+      // Preserve the old image details before replacing it.
       const oldImage = {
         publicId: member.image?.publicId,
       };
 
-      // Upload replacement image to ImageKit if provided.
-      if (req.file) {
-        uploadedImage = await uploadToImageKit(
-          req.file.buffer,
-          req.file.originalname
-        );
-      }
+      // Upload the mandatory replacement image.
+      uploadedImage = await uploadToImageKit(
+        req.file.buffer,
+        req.file.originalname
+      );
 
       member.name = candidate.name.trim();
       member.role = candidate.role.trim();
@@ -283,28 +303,18 @@ router.patch(
       member.instagramLink = candidate.instagramLink.trim();
       member.githubLink = candidate.githubLink.trim();
 
-      const shouldRemoveImage =
-        !req.file && req.body.removeImage === 'true';
-
-      if (uploadedImage) {
-        member.image = {
-          url: uploadedImage.url,
-          publicId: uploadedImage.publicId,
-          provider: uploadedImage.provider,
-        };
-      } else if (shouldRemoveImage) {
-        member.image = {
-          url: '',
-          publicId: '',
-          provider: '',
-        };
-      }
+      // Replace the existing profile image.
+      member.image = {
+        url: uploadedImage.url,
+        publicId: uploadedImage.publicId,
+        provider: uploadedImage.provider,
+      };
 
       // Save database changes before deleting the previous image.
       await member.save();
 
       // Delete the old image only after the database update succeeds.
-      if ((uploadedImage || shouldRemoveImage) && oldImage.publicId) {
+      if (oldImage.publicId) {
         try {
           await deleteStoredImage(oldImage);
         } catch (cleanupError) {
@@ -316,11 +326,11 @@ router.patch(
       }
 
       return res.json({
-        message: 'Core member updated successfully.',
+        message: 'Team Member updated successfully.',
         member,
       });
     } catch (error) {
-      console.error('Update core member error:', error);
+      console.error('Update Team Member error:', error);
 
       // If the database update fails, clean up the new ImageKit image.
       if (uploadedImage?.publicId) {
@@ -335,18 +345,18 @@ router.patch(
       }
 
       return res.status(500).json({
-        message: 'Unable to update core member.',
+        message: 'Unable to update Team Member.',
       });
     }
   }
 );
 
-// Admin: delete a core member and their profile image.
+// Admin: delete a Team Member and their profile image.
 router.delete('/:id', protect, adminOnly, async (req, res) => {
   try {
     if (!mongoose.isValidObjectId(req.params.id)) {
       return res.status(400).json({
-        message: 'Invalid core member ID.',
+        message: 'Invalid Team Member ID.',
       });
     }
 
@@ -354,7 +364,7 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
 
     if (!member) {
       return res.status(404).json({
-        message: 'Core member not found.',
+        message: 'Team Member not found.',
       });
     }
 
@@ -371,13 +381,13 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
     }
 
     return res.json({
-      message: 'Core member deleted successfully.',
+      message: 'Team Member deleted successfully.',
     });
   } catch (error) {
-    console.error('Delete core member error:', error.message);
+    console.error('Delete Team Member error:', error.message);
 
     return res.status(500).json({
-      message: 'Unable to delete core member.',
+      message: 'Unable to delete Team Member.',
     });
   }
 });

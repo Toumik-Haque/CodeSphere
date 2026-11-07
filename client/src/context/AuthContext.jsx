@@ -1,7 +1,8 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
+  useEffect,
 } from 'react';
 
 import { apiRequest } from '../lib/api';
@@ -22,6 +23,29 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(
     () => localStorage.getItem('codesphere_token')
   );
+
+  useEffect(() => {
+  async function fetchCurrentUser() {
+    if (!token) return;
+
+    try {
+      const data = await apiRequest('/users/profile');
+
+      if (data.user) {
+        setUser(data.user);
+
+        localStorage.setItem(
+          'codesphere_user',
+          JSON.stringify(data.user)
+        );
+      }
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error.message);
+    }
+  }
+
+  fetchCurrentUser();
+}, [token]);
 
   async function sendOtp(email) {
     return apiRequest('/auth/send-otp', {
@@ -100,6 +124,14 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  function updateUser(updatedUser) {
+    setUser((currentUser) => {
+      const nextUser = { ...currentUser, ...updatedUser };
+      localStorage.setItem('codesphere_user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  }
+
   function logout() {
     localStorage.removeItem('codesphere_token');
     localStorage.removeItem('codesphere_user');
@@ -120,6 +152,7 @@ export function AuthProvider({ children }) {
         forgotPassword,
         verifyResetOtp,
         resetPassword,
+        updateUser,
         logout,
       }}
     >

@@ -82,8 +82,8 @@ router.put('/me/showcase', protect, async (req, res) => {
   }
 });
 
-// POST /api/badges/me/profile-complete { complete }: self-reported by the
-// Profile page (its data is stored in the browser).
+// POST /api/badges/me/profile-complete { complete }: completion is calculated
+// from profile data stored on the user's database record.
 router.post('/me/profile-complete', protect, async (req, res) => {
   try {
     await User.updateOne({ _id: req.user._id }, { $set: { profileComplete: Boolean(req.body.complete) } });

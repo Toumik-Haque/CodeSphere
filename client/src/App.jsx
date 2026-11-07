@@ -24,7 +24,6 @@ import Footer from './components/Footer';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
-import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
@@ -42,6 +41,9 @@ import ReverseChallenge from './pages/ReverseChallenge';
 import AdminReverse from './pages/AdminReverse';
 import News from './pages/News';
 import AdminNews from './pages/AdminNews';
+
+import UserDashboard from './pages/UserDashboard';
+import MemberProfile from './pages/MemberProfile';
 
 function HomePage() {
   return (
@@ -73,7 +75,7 @@ function ProtectedRoute({ children, adminOnly = false, anyRole = false }) {
   }
 
   if (adminOnly && user.role !== 'admin') {
-    return <Navigate to="/profile" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (!adminOnly && !anyRole && user.role === 'admin') {
@@ -104,7 +106,6 @@ function AppRoutes() {
       {/* Public pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
-      <Route path="/events/:slug" element={<EventDetails />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/open-source" element={<OpenSource />} />
@@ -126,29 +127,41 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Protected student profile */}
+      {/* Protected event details page */}
+      <Route
+        path="/events/:slug"
+        element={<EventDetails />}
+      />
+
+      {/* Protected user dashboard */}
       <Route
         path="/profile"
         element={
           <ProtectedRoute>
-            <Profile />
+            <Navigate to="/dashboard/profile" replace />
           </ProtectedRoute>
         }
       />
 
-      {/* Redirect old capital-P profile URL */}
+      {/* Protected user dashboard */}
       <Route
-        path="/Profile"
-        element={<Navigate to="/profile" replace />}
+        path="/dashboard/*"
+        element={
+          <ProtectedRoute>
+            <UserDashboard />
+          </ProtectedRoute>
+        }
       />
 
-      {/* Development-only profile preview (no login required) */}
-      {import.meta.env.DEV && (
-        <Route
-          path="/profile-preview"
-          element={<Profile preview />}
-        />
-      )}
+      {/* Protected member profiles */}
+      <Route
+        path="/:username"
+        element={
+          <ProtectedRoute>
+            <MemberProfile />
+          </ProtectedRoute>
+        }
+      />
 
       {/* Protected admin dashboard */}
       <Route
