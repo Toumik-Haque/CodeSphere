@@ -187,7 +187,7 @@ export default function ProfileBadges({
   if (compact) {
     return (
       <Link
-        to="/dashboard/milestone"
+        to="/user/milestone"
         className="bdg-overview-link"
         aria-label={`View My Badges. Current level ${level.name}; ${data.earnedCount} of ${data.totalCount} badges earned.`}
       >

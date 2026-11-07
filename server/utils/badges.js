@@ -193,6 +193,75 @@ async function syncBadges(userId) {
   };
 }
 
+async function badgeLeaderboard(currentUserId, limit = 10) {
+  const visibilityFilter = {
+    role: 'user',
+    $or: [
+      { profileVisibility: { $ne: 'private' } },
+      { _id: currentUserId },
+    ],
+  };
+  const users = await User.find(visibilityFilter)
+    .select('name username profileImage')
+    .lean();
+  const userIds = users.map((user) => user._id);
+
+  if (!userIds.length) {
+    return { leaderboard: [], currentUser: null, totalUsers: 0 };
+  }
+
+  const [debugProgress, challengeProgress, reverse, badgeCounts] = await Promise.all([
+    DebugProgress.find({ user: { $in: userIds } })
+      .select('user completed.bugId completed.correct completed.xp')
+      .lean(),
+    ChallengeProgress.find({ user: { $in: userIds } })
+      .select('user solved.challengeId')
+      .lean(),
+    reverseSummary(userIds),
+    UserBadge.aggregate([
+      { $match: { user: { $in: userIds }, badgeId: { $in: [...badgesById.keys()] } } },
+      { $group: { _id: '$user', count: { $sum: 1 } } },
+    ]),
+  ]);
+
+  const debugByUser = new Map(debugProgress.map((progress) => [String(progress.user), progress]));
+  const challengeByUser = new Map(challengeProgress.map((progress) => [String(progress.user), progress]));
+  const badgeCountByUser = new Map(badgeCounts.map((entry) => [String(entry._id), entry.count]));
+  const ranked = users.map((user) => {
+    const id = String(user._id);
+    const xp =
+      debugXpTotal(debugByUser.get(id), (bugId) => bugsById.get(bugId)?.level) +
+      challengeXpTotal(challengeByUser.get(id)) +
+      (reverse.get(id)?.xp || 0);
+
+    return {
+      id,
+      name: user.name,
+      username: user.username || '',
+      profileImage: user.profileImage?.url || '',
+      xp,
+      badgeCount: badgeCountByUser.get(id) || 0,
+      level: levelFor(xp),
+      isCurrentUser: id === String(currentUserId),
+    };
+  }).sort((first, second) =>
+    second.xp - first.xp ||
+    second.badgeCount - first.badgeCount ||
+    first.name.localeCompare(second.name)
+  );
+
+  const leaderboard = ranked.slice(0, limit).map((entry, index) => ({
+    ...entry,
+    rank: index + 1,
+  }));
+  const currentUserRank = ranked.findIndex((entry) => entry.isCurrentUser);
+  const currentUser = currentUserRank >= limit
+    ? { ...ranked[currentUserRank], rank: currentUserRank + 1 }
+    : null;
+
+  return { leaderboard, currentUser, totalUsers: ranked.length };
+}
+
 // Safe wrapper for action routes: badge errors must never break the action.
 async function syncBadgesQuietly(userId) {
   try {
@@ -217,6 +286,7 @@ module.exports = {
   buildStats,
   qualifiedBadgeIds,
   evaluateBadges,
+  badgeLeaderboard,
   syncBadges,
   syncBadgesQuietly,
   publicBadge,

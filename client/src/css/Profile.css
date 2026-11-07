@@ -178,11 +178,17 @@
 }
 
 .student-profile-layout.dashboard-badges-view {
-  grid-template-columns: minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(255px, 0.34fr);
+  align-items: start;
+  gap: 20px;
 }
 
-.dashboard-badges-view > .student-profile-sidebar {
-  display: none;
+.dashboard-badges-main {
+  min-width: 0;
+}
+
+.dashboard-badges-main .bdg-section {
+  margin-bottom: 0;
 }
 
 /* =========================================
@@ -383,25 +389,6 @@
   line-height: 1.7;
 }
 
-/* =========================================
-   WELCOME CARD
-========================================= */
-
-.profile-welcome-card {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  overflow: hidden;
-  padding: 25px 28px;
-  border: 1px solid #f1ded3;
-  border-radius: 15px;
-  background:
-    radial-gradient(circle at 90% 10%, rgba(255,255,255,.8), transparent 28%),
-    linear-gradient(115deg, #fff9f5, #fff0e8);
-}
-
 .profile-welcome-label {
   display: inline-block;
   margin-bottom: 9px;
@@ -409,36 +396,6 @@
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 1.4px;
-}
-
-.profile-welcome-card h2 {
-  margin: 0;
-  color: var(--profile-navy);
-  font-size: clamp(21px, 3vw, 26px);
-  font-weight: 800;
-  letter-spacing: -0.5px;
-}
-
-.profile-welcome-card p {
-  max-width: 480px;
-  margin: 8px 0 0;
-  color: #697b8b;
-  font-size: 13px;
-  line-height: 1.7;
-}
-
-.profile-welcome-icon {
-  display: grid;
-  width: 64px;
-  height: 64px;
-  flex: 0 0 64px;
-  place-items: center;
-  border: 1px solid #f4d9cb;
-  border-radius: 18px;
-  background: rgba(255,255,255,.8);
-  color: var(--profile-orange);
-  font-size: 29px;
-  transform: rotate(-5deg);
 }
 
 .profile-next-steps {
@@ -1192,6 +1149,10 @@
     gap: 17px;
   }
 
+  .student-profile-layout.dashboard-badges-view {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
   .student-profile-sidebar {
     gap: 13px;
   }
@@ -1231,18 +1192,6 @@
 
   .profile-sidebar-card {
     padding: 17px;
-  }
-
-  .profile-welcome-card {
-    padding: 20px;
-  }
-
-  .profile-welcome-icon {
-    width: 49px;
-    height: 49px;
-    flex-basis: 49px;
-    border-radius: 13px;
-    font-size: 22px;
   }
 
   .profile-next-steps {
@@ -1315,25 +1264,6 @@
 
   .student-profile-heading > div > p:last-child {
     font-size: 12px;
-  }
-
-  .profile-welcome-card {
-    padding: 17px;
-  }
-
-  .profile-welcome-card h2 {
-    font-size: 21px;
-  }
-
-  .profile-welcome-card p {
-    font-size: 11px;
-  }
-
-  .profile-welcome-icon {
-    width: 42px;
-    height: 42px;
-    flex-basis: 42px;
-    font-size: 19px;
   }
 
   .profile-next-steps ul {

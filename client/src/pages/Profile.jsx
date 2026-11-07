@@ -5,6 +5,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
+import BadgeLeaderboard from '../components/BadgeLeaderboard';
 import '../css/Profile.css';
 import { calculateProfileCompletion } from '../lib/profileCompletion';
 
@@ -1629,7 +1630,7 @@ export default function Profile({
 
             {!isMilestoneView && currentUser?.username ? (
               <Link
-                to={`/${encodeURIComponent(currentUser.username)}`}
+                to={`/user/${encodeURIComponent(currentUser.username)}`}
                 className="profile-back-link profile-public-link"
               >
                 <i className="bi bi-box-arrow-up-right" /> View Public Profile
@@ -1660,18 +1661,23 @@ export default function Profile({
           )}
 
           <div className={`student-profile-layout dashboard-section-layout${isMilestoneView ? ' dashboard-badges-view' : ''}`}>
-            <DashboardProfileSidebar
-              user={currentUser}
-              completion={completion}
-              photoInputRef={photoInputRef}
-              onPhotoChange={(event) => handleImageChange(event, 'Profile photo')}
-            />
+            {isMilestoneView ? (
+              <>
+                <div className="dashboard-badges-main">
+                  <ProfileBadges preview={preview} completion={completion} />
+                </div>
+                {!preview && <BadgeLeaderboard />}
+              </>
+            ) : (
+              <>
+                <DashboardProfileSidebar
+                  user={currentUser}
+                  completion={completion}
+                  photoInputRef={photoInputRef}
+                  onPhotoChange={(event) => handleImageChange(event, 'Profile photo')}
+                />
 
-            <div className="student-profile-main">
-              {isMilestoneView ? (
-                <ProfileBadges preview={preview} completion={completion} />
-              ) : (
-                <>
+                <div className="student-profile-main">
                   <ResumeUpload
                     profile={profile}
                     onApply={applyResumeDetails}
@@ -1814,9 +1820,9 @@ export default function Profile({
 
                     <Link to="/">Explore CodeSphere</Link>
                   </div>
-                </>
-              )}
-            </div>
+                </div>
+              </>
+            )}
           </div>
         </div>
       </main>
