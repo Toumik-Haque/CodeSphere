@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import '../css/IssueGuide.css';
 
 // "How to raise an issue" guide for the Open Source page, using CodeSphere
 // itself as the worked example.
+
+const STEP_DURATION = 7000; // same pace as the contribution walkthrough
 
 const STEPS = [
   {
@@ -140,7 +142,30 @@ function Label({ name, color }) {
 }
 
 export default function IssueGuide({ repoUrl, Eyebrow }) {
-  const [step, setStep] = useState(0);
+  const [step, setStepRaw] = useState(0);
+  // Auto-advance like "How to contribute": starts when visible, loops,
+  // pauses as soon as someone picks a step themselves.
+  const [playing, setPlaying] = useState(() => !window.matchMedia?.('(prefers-reduced-motion: reduce)').matches);
+  const [visible, setVisible] = useState(() => !('IntersectionObserver' in window));
+  const stepsRef = useRef(null);
+  const setStep = (next) => {
+    setPlaying(false);
+    setStepRaw(next);
+  };
+
+  useEffect(() => {
+    const node = stepsRef.current;
+    if (!node || !('IntersectionObserver' in window)) return undefined;
+    const observer = new IntersectionObserver(([entry]) => setVisible(entry.isIntersecting), { threshold: 0.3 });
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, []);
+
+  useEffect(() => {
+    if (!playing || !visible) return undefined;
+    const id = window.setTimeout(() => setStepRaw((i) => (i + 1) % STEPS.length), STEP_DURATION);
+    return () => window.clearTimeout(id);
+  }, [step, playing, visible]);
   const [tab, setTab] = useState('bug');
   const [copied, setCopied] = useState(false);
   const template = TEMPLATES[tab];
@@ -174,7 +199,7 @@ export default function IssueGuide({ repoUrl, Eyebrow }) {
       </div>
 
       {/* ---------- Steps ---------- */}
-      <div className="ig-steps">
+      <div className="ig-steps" ref={stepsRef}>
         <ol className="ig-step-list" role="tablist" aria-label="Steps">
           {STEPS.map((s, i) => (
             <li key={s.title}>
@@ -192,6 +217,21 @@ export default function IssueGuide({ repoUrl, Eyebrow }) {
           ))}
         </ol>
         <div className="ig-step-panel" role="tabpanel" key={step}>
+          <div className="ig-progress" aria-hidden="true">
+            <span
+              key={`${step}-${playing}-${visible}`}
+              className={playing && visible ? 'running' : ''}
+              style={{ animationDuration: `${STEP_DURATION}ms` }}
+            />
+          </div>
+          <button
+            type="button"
+            className="ig-play"
+            onClick={() => setPlaying((p) => !p)}
+            aria-label={playing ? 'Pause walkthrough' : 'Play walkthrough'}
+          >
+            <i className={`bi ${playing ? 'bi-pause-fill' : 'bi-play-fill'}`} aria-hidden="true" /> {playing ? 'Pause' : 'Play'}
+          </button>
           <span className="ig-step-icon"><i className={`bi ${STEPS[step].icon}`} aria-hidden="true" /></span>
           <span className="ig-step-count">Step {step + 1} of {STEPS.length}</span>
           <h3>{STEPS[step].title}</h3>
@@ -201,11 +241,11 @@ export default function IssueGuide({ repoUrl, Eyebrow }) {
             <p>{STEPS[step].example}</p>
           </div>
           <div className="ig-step-nav">
-            <button type="button" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+            <button type="button" onClick={() => setStep(Math.max(0, step - 1))} disabled={step === 0}>
               <i className="bi bi-arrow-left" aria-hidden="true" /> Back
             </button>
             {step < STEPS.length - 1 ? (
-              <button type="button" className="primary" onClick={() => setStep((s) => s + 1)}>
+              <button type="button" className="primary" onClick={() => setStep(step + 1)}>
                 Next step <i className="bi bi-arrow-right" aria-hidden="true" />
               </button>
             ) : (

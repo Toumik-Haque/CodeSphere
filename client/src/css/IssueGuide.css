@@ -220,3 +220,36 @@
   .ig-step-panel { animation: none; }
   .ig-step-list button { transition: none; }
 }
+
+/* Auto-advancing walkthrough */
+.ig-step-panel { min-width: 0; padding-top: calc(clamp(20px, 3vw, 32px) + 4px); }
+.ig-progress { position: absolute; top: 0; right: 0; left: 0; height: 4px; background: #EDF2F7; }
+.ig-progress span { display: block; width: 0; height: 100%; background: linear-gradient(90deg, #F05A36, #F2B01E); }
+.ig-progress span.running { animation: ig-progress linear forwards; }
+@keyframes ig-progress { from { width: 0; } to { width: 100%; } }
+
+.ig-play {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 12px;
+  border: 1px solid var(--ig-line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--ig-navy);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.ig-play:hover { border-color: var(--ig-orange); }
+
+/* Long example text wraps instead of being cut off */
+.ig-example { min-width: 0; }
+.ig-example p { overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  .ig-progress span.running { animation: none; width: 100%; }
+}
