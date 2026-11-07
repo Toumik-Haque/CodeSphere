@@ -1729,3 +1729,67 @@
   color: var(--text-muted);
   font-size: .8rem;
 }
+
+/* --------------------------------------------------
+   "How to climb" card (below the boards) + mobile clean-up
+-------------------------------------------------- */
+
+.lb-how {
+  margin: 34px auto 0;
+  padding: clamp(18px, 3vw, 26px);
+  max-width: 900px;
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: rgba(255, 255, 255, .9);
+  text-align: center;
+}
+
+.lb-how h2 {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 6px;
+  color: var(--navy);
+  font-size: clamp(1.2rem, 3vw, 1.5rem);
+  font-weight: 800;
+}
+
+.lb-how h2 i { color: var(--gold); }
+button.lb-rules-link { border: 0; background: none; }
+
+@media (max-width: 767.98px) {
+  .lb-page { padding-top: 92px; }
+  .lb-hero { margin-bottom: 16px; }
+  .lb-hero .section-eyebrow { display: none; }
+  .lb-title { margin: 0 0 12px; font-size: 2rem; }
+
+  /* One slim segmented control instead of three tall cards. */
+  .lb-board-switch { display: flex; width: 100%; margin: 0; padding: 4px; border-radius: 14px; }
+  .lb-board-switch button {
+    display: inline-flex;
+    flex: 1;
+    justify-content: center;
+    gap: 6px;
+    padding: 9px 6px;
+    border-radius: 10px;
+    font-size: .88rem;
+    text-align: center;
+    white-space: nowrap;
+  }
+  .lb-board-switch button i { font-size: 1rem; }
+  .lb-board-switch button small { display: none; }
+
+  /* Explainer: a tidy list instead of floating pills. */
+  .lb-how { text-align: left; }
+  .lb-how .lb-subtitle { margin: 0; }
+  .lb-how .lb-rules { flex-direction: column; gap: 0; margin-top: 12px; }
+  .lb-how .lb-rules li {
+    align-items: flex-start;
+    padding: 10px 2px;
+    border: 0;
+    border-top: 1px solid var(--line);
+    border-radius: 0;
+    background: transparent;
+  }
+  .lb-how .lb-rules li i { margin-top: 3px; }
+}
