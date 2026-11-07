@@ -13,6 +13,7 @@ import logo from '../assets/logo.svg';
 import '../css/Admin.css';
 import { Editor } from '@tinymce/tinymce-react';
 import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
+import AdminBadgeAwards from '../components/AdminBadgeAwards';
 
 const initialForm = {
   title: '',
@@ -1172,6 +1173,22 @@ export default function Admin() {
                   </div>
                 </div>
 
+                {/* COMMUNITY TOOLS (separate staff pages) */}
+                <div className="admin-tools" aria-label="Community tools">
+                  <Link to="/admin/forum" className="admin-tool">
+                    <i className="bi bi-shield-lock" aria-hidden="true" />
+                    <span><strong>Forum moderation</strong><small>Report queue, actions and audit trail</small></span>
+                  </Link>
+                  <Link to="/admin/news" className="admin-tool">
+                    <i className="bi bi-newspaper" aria-hidden="true" />
+                    <span><strong>Tech News editor</strong><small>Review stories, sources and weekly digests</small></span>
+                  </Link>
+                  <Link to="/admin/reverse-coding" className="admin-tool">
+                    <i className="bi bi-arrow-repeat" aria-hidden="true" />
+                    <span><strong>Reverse Coding</strong><small>Author, validate and publish challenges</small></span>
+                  </Link>
+                </div>
+
                 {/* OVERVIEW */}
                 <div className="admin-dashboard-heading">
                   <div>
@@ -2019,6 +2036,10 @@ export default function Admin() {
                             </div>
                           </div>
                         </div>
+
+                        {registeredUser.role !== 'admin' && (
+                          <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
+                        )}
 
                       </article>
                     ))}

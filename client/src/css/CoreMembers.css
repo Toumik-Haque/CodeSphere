@@ -9,12 +9,8 @@
   overflow: hidden;
   padding: clamp(2.5rem, 4.5vw, 4rem)
     clamp(1rem, 5vw, 4rem);
-  background: linear-gradient(
-    180deg,
-    #ffffff 0%,
-    #f4f9fd 42%,
-    #eaf5fc 100%
-  );
+  /* Fully transparent so the page's background video shows through */
+  background: transparent;
   color: var(--navy);
 }
 

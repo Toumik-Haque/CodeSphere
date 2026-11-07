@@ -16,6 +16,19 @@
   color: #ffffff;
 }
 
+/* On pages with a background video, let it show through a dark glass tint
+   (white text stays readable) */
+body:has(.video-background) .codesphere-footer {
+  background: linear-gradient(
+    145deg,
+    rgba(16, 36, 58, 0.72) 0%,
+    rgba(20, 45, 71, 0.62) 55%,
+    rgba(13, 32, 52, 0.78) 100%
+  );
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+}
+
 /* Decorative background elements */
 
 .codesphere-footer::before {
@@ -320,5 +333,122 @@
     align-items: flex-start;
     flex-direction: column;
     gap: 12px;
+  }
+}
+
+/* Developers */
+
+.footer-devs {
+  position: relative;
+  margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid rgba(255, 255, 255, .1);
+}
+
+.footer-devs h3 {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 0 16px;
+  color: #fff;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+.footer-devs h3 i {
+  color: var(--gold-light);
+}
+
+.footer-devs-list {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.footer-dev-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  height: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(255, 255, 255, .1);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, .05);
+  color: #fff;
+  text-decoration: none;
+  transition: transform .2s ease, background .2s ease, border-color .2s ease;
+}
+
+.footer-dev-card:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 133, 104, .5);
+  background: rgba(255, 255, 255, .1);
+  color: #fff;
+}
+
+.footer-dev-avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border: 2px solid var(--gold);
+  border-radius: 50%;
+  background: #1c3550;
+  object-fit: cover;
+}
+
+.footer-dev-info {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.footer-dev-info strong {
+  overflow: hidden;
+  font-size: .95rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-dev-info span {
+  overflow: hidden;
+  color: #B9C7D6;
+  font-size: .8rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-dev-arrow {
+  margin-left: auto;
+  color: var(--gold-light);
+  transition: transform .2s ease;
+}
+
+.footer-dev-card:hover .footer-dev-arrow {
+  transform: translate(2px, -2px);
+}
+
+@media (max-width: 991px) {
+  .footer-devs-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 575px) {
+  .footer-devs {
+    margin-top: 32px;
+  }
+
+  .footer-devs-list {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .footer-dev-card,
+  .footer-dev-arrow {
+    transition: none;
   }
 }

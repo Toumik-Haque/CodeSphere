@@ -1,5 +1,5 @@
 
-import React from 'react';
+
 import { Link } from 'react-router-dom';
 import logo from '../assets/brand-dark.png';
 import '../css/Footer.css';
@@ -7,7 +7,13 @@ import '../css/Footer.css';
 const navLinks = [
   { label: 'Home', path: '/' },
   { label: 'Events', path: '/events' },
+  { label: 'Playground', path: '/playground' },
+  { label: 'Reverse Coding', path: '/reverse-coding' },
+  { label: 'Tech News', path: '/news' },
+  { label: 'Forum', path: '/forum' },
+  { label: 'Leaderboard', path: '/leaderboard' },
   { label: 'Materials', path: '/materials' },
+  { label: 'Open Source', path: '/open-source' },
   { label: 'Team', path: '/team' },
   { label: 'Contact Us', path: '/contact' },
 ];
@@ -36,6 +42,13 @@ const CONTACT_LOCATION = 'Alipurduar Government Engineering and Management Colle
 const mapUrl = `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
   CONTACT_LOCATION
 )}`;
+
+// Developers who built this site.
+const developers = [
+  { name: 'Toumik Haque', github: 'Toumik-Haque' },
+  { name: 'Sayan Singha', github: 'Sayan16-code' },
+  { name: 'Arnab Kumar Dey', github: 'arnab9957' },
+];
 
 const Footer = () => {
   const scrollToTop = () => {
@@ -68,7 +81,7 @@ const Footer = () => {
             </Link>
 
             <p className="footer-tagline">
-              Learn together. Build together. Grow together.
+              Learn together. Build together.Grow together.
             </p>
 
             <p className="footer-description">
@@ -77,24 +90,24 @@ const Footer = () => {
               ideas into reality.
             </p>
 
-            <div className='footer-email-location'>
-            <a
-              href="mailto:codesphere@agemc.ac.in"
-              className="footer-email"
-            >
-              <i className="bi bi-envelope" aria-hidden="true" />
-              codesphere@agemc.ac.in
-            </a>
+            <div className="footer-email-location">
+              <a
+                href="mailto:codesphere@agemc.ac.in"
+                className="footer-email"
+              >
+                <i className="bi bi-envelope" aria-hidden="true" />
+                codesphere@agemc.ac.in
+              </a>
 
-            <a
-              className="footer-location"
-              href={mapUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <i className="bi bi-geo-alt" aria-hidden="true" />
-              {CONTACT_LOCATION}
-            </a>
+              <a
+                className="footer-location"
+                href={mapUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <i className="bi bi-geo-alt" aria-hidden="true" />
+                {CONTACT_LOCATION}
+              </a>
             </div>
           </div>
 
@@ -122,7 +135,7 @@ const Footer = () => {
             <h3>Be Part of Our Community</h3>
 
             <p>
-              Connect with fellow developers, exchange ideas,
+              Connect with fellow developers,exchange ideas,
               collaborate on projects, and grow together
               with CodeSphere.
             </p>
@@ -162,6 +175,43 @@ const Footer = () => {
             </div>
           </div>
 
+        </div>
+
+        {/* Developers */}
+        <div className="footer-devs">
+          <h3>
+            <i className="bi bi-code-slash" aria-hidden="true" /> Meet the Developers
+          </h3>
+
+          <ul className="footer-devs-list">
+            {developers.map((dev) => (
+              <li key={dev.github}>
+                <a
+                  href={`https://github.com/${dev.github}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="footer-dev-card"
+                  aria-label={`${dev.name} on GitHub`}
+                >
+                  <img
+                    src={`https://github.com/${dev.github}.png?size=96`}
+                    alt=""
+                    width="44"
+                    height="44"
+                    loading="lazy"
+                    className="footer-dev-avatar"
+                  />
+                  <span className="footer-dev-info">
+                    <strong>{dev.name}</strong>
+                    <span>
+                      <i className="bi bi-github" aria-hidden="true" /> @{dev.github}
+                    </span>
+                  </span>
+                  <i className="bi bi-arrow-up-right footer-dev-arrow" aria-hidden="true" />
+                </a>
+              </li>
+            ))}
+          </ul>
         </div>
 
         {/* Bottom Bar */}

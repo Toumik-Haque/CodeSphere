@@ -11,11 +11,13 @@ import {
 import { AuthProvider, useAuth } from './context/AuthContext';
 
 import VideoBackground from './components/VideoBackground';
+import BadgeCelebration from './components/BadgeCelebration';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Events from './components/Events';
 import TeamCarousel from './components/TeamCarousel';
 import CTA from './components/CTA';
+import PlaygroundHighlight from './components/PlaygroundHighlight';
 import About from './components/About';
 import Footer from './components/Footer';
 
@@ -27,6 +29,18 @@ import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
 import Team from './pages/Team';
 import Contact from './pages/Contact';
+import OpenSource from './pages/OpenSource';
+import Playground from './pages/Playground';
+import Leaderboard from './pages/Leaderboard';
+import Forum from './pages/Forum';
+import ForumNew from './pages/ForumNew';
+import ForumThread from './pages/ForumThread';
+import AdminForum from './pages/AdminForum';
+import ReverseCoding from './pages/ReverseCoding';
+import ReverseChallenge from './pages/ReverseChallenge';
+import AdminReverse from './pages/AdminReverse';
+import News from './pages/News';
+import AdminNews from './pages/AdminNews';
 
 import UserDashboard from './pages/UserDashboard';
 import MemberProfile from './pages/MemberProfile';
@@ -41,6 +55,7 @@ function HomePage() {
         <Hero />
         <About />
         <Events />
+        <PlaygroundHighlight />
         <TeamCarousel />
         <CTA />
       </main>
@@ -51,7 +66,8 @@ function HomePage() {
 }
 
 // Protect routes that require authentication.
-function ProtectedRoute({ children, adminOnly = false }) {
+// anyRole: any signed-in user (students and admins), e.g. forum posting.
+function ProtectedRoute({ children, adminOnly = false, anyRole = false }) {
   const { user, token } = useAuth();
 
   if (!user || !token) {
@@ -62,7 +78,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
     return <Navigate to="/dashboard" replace />;
   }
 
-  if (!adminOnly && user.role === 'admin') {
+  if (!adminOnly && !anyRole && user.role === 'admin') {
     return <Navigate to="/admin" replace />;
   }
 
@@ -92,6 +108,19 @@ function AppRoutes() {
       <Route path="/events" element={<EventsPage />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
+      <Route path="/open-source" element={<OpenSource />} />
+      <Route path="/playground" element={<Playground />} />
+      <Route path="/leaderboard" element={<Leaderboard />} />
+      <Route path="/forum" element={<Forum />} />
+      <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
+      <Route path="/forum/:id" element={<ForumThread />} />
+      <Route path="/admin/forum" element={<ProtectedRoute adminOnly><AdminForum /></ProtectedRoute>} />
+      <Route path="/reverse-coding" element={<ReverseCoding />} />
+      <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
+      <Route path="/admin/reverse-coding" element={<ProtectedRoute adminOnly><AdminReverse /></ProtectedRoute>} />
+      <Route path="/news" element={<News />} />
+      <Route path="/news/:slug" element={<News />} />
+      <Route path="/admin/news" element={<ProtectedRoute adminOnly><AdminNews /></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />
@@ -147,6 +176,7 @@ export default function App() {
 
       <AuthProvider>
         <AppRoutes />
+        <BadgeCelebration />
       </AuthProvider>
     </BrowserRouter>
   );
