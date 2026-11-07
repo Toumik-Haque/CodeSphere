@@ -58,6 +58,15 @@ const userSchema = new mongoose.Schema(
     // Profile photo (ImageKit) shown in the forum and leaderboards.
     avatarUrl: { type: String, default: '' },
     avatarFileId: { type: String, default: '' },
+    // Saved resume (PDF or image on ImageKit), visible only to its owner.
+    resume: {
+      url: { type: String, default: '' },
+      fileId: { type: String, default: '' },
+      name: { type: String, default: '' },
+      size: { type: Number, default: 0 },
+      type: { type: String, default: '' },
+      uploadedAt: Date,
+    },
     // Daily "Today in Tech" email (separate from the weekly newsletter).
     dailyNewsOptIn: { type: Boolean, default: false },
     newsletterOptIn: {

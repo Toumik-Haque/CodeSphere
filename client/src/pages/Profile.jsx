@@ -379,8 +379,46 @@ function Toast({ toast, onClose }) {
    RESUME UPLOAD COMPONENT
 ========================================= */
 
-function ResumeUpload({ profile, onApply, showToast }) {
+function ResumeUpload({ profile, onApply, showToast, preview = false }) {
   const inputRef = useRef(null);
+  // The resume file saved on the server (survives refreshes).
+  const [savedResume, setSavedResume] = useState(null);
+  const [savingResume, setSavingResume] = useState(false);
+
+  useEffect(() => {
+    if (preview) return undefined;
+    let cancelled = false;
+    apiRequest('/users/me/resume').then((r) => !cancelled && setSavedResume(r.resume)).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [preview]);
+
+  const saveResumeFile = async (file) => {
+    if (preview) return;
+    setSavingResume(true);
+    try {
+      const form = new FormData();
+      form.append('resume', file, file.name);
+      const { resume } = await apiRequest('/users/me/resume', { method: 'PUT', body: form });
+      setSavedResume(resume);
+    } catch (error) {
+      showToast(`Your resume was read, but saving the file failed: ${error.message}`, 'warning');
+    } finally {
+      setSavingResume(false);
+    }
+  };
+
+  const deleteSavedResume = async () => {
+    if (!window.confirm('Delete your saved resume? You can upload it again any time.')) return;
+    try {
+      await apiRequest('/users/me/resume', { method: 'DELETE' });
+      setSavedResume(null);
+      showToast('Saved resume deleted.', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  };
   const [resumeOpen, setResumeOpen] = useState(() => {
     try {
       return localStorage.getItem('cs_profile_resume_open') === '1';
@@ -437,6 +475,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
     }
 
     setFileName(file.name);
+    saveResumeFile(file);
     setDraft(null);
     setProgress(0);
     setProgressLabel('');
@@ -572,7 +611,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
       <button type="button" className="profile-section-heading profile-collapse-head" onClick={() => setResumeOpen(!resumeOpen)} aria-expanded={resumeOpen}>
         <div>
           <h2>Resume & CV</h2>
-          <p>Upload your resume and let us help complete your profile.</p>
+          <p>{savedResume ? `Saved: ${savedResume.name}` : 'Upload your resume and let us help complete your profile.'}</p>
         </div>
         <span className="profile-section-icon">
           <i className={`bi ${resumeOpen ? 'bi-chevron-up' : 'bi-chevron-down'}`} />
@@ -581,6 +620,31 @@ function ResumeUpload({ profile, onApply, showToast }) {
 
       {resumeOpen && (
       <>
+      {savedResume && (
+        <div className="resume-saved">
+          <span className="resume-file-icon">
+            <i className={`bi ${savedResume.type === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image'}`} />
+          </span>
+          <div className="resume-file-info">
+            <strong>{savedResume.name}</strong>
+            <small>
+              Saved {new Date(savedResume.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {' · '}{Math.max(1, Math.round(savedResume.size / 1024))} KB
+            </small>
+          </div>
+          <div className="resume-saved-actions">
+            <a href={savedResume.url} target="_blank" rel="noopener noreferrer" className="profile-action-button">
+              <i className="bi bi-eye" /> View
+            </a>
+            <a href={`${savedResume.url}?ik-attachment=true`} className="profile-icon-button" title="Download" aria-label="Download resume">
+              <i className="bi bi-download" />
+            </a>
+            <button type="button" className="profile-icon-button" onClick={deleteSavedResume} title="Delete" aria-label="Delete saved resume">
+              <i className="bi bi-trash" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="resume-upload-area">
         <input
@@ -596,7 +660,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
         </div>
 
         <div className="resume-upload-copy">
-          <h3>Upload your resume</h3>
+          <h3>{savedResume ? 'Upload a new version' : 'Upload your resume'}</h3>
           <p>
             Choose a PDF or image file. We'll extract details that can help
             complete your CodeSphere profile.
@@ -621,7 +685,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
           </span>
           <div className="resume-file-info">
             <strong>{fileName}</strong>
-            <small>{isProcessing ? 'Processing locally...' : 'Selected resume'}</small>
+            <small>{isProcessing ? 'Reading your resume...' : savingResume ? 'Saving to your account...' : 'Selected resume'}</small>
           </div>
           {!isProcessing && (
             <button
@@ -809,8 +873,8 @@ function ResumeUpload({ profile, onApply, showToast }) {
       <div className="resume-privacy-note">
         <i className="bi bi-shield-lock" />
         <span>
-          Your resume is processed locally in your browser. The original file
-          is not uploaded to a CodeSphere server or permanently stored.
+          Your resume is read in your browser and saved to your account so you
+          can view it any time. Only you can see it here; delete it whenever you like.
         </span>
       </div>
       </>
@@ -1587,6 +1651,7 @@ export default function Profile({ preview = false }) {
                 profile={profile}
                 onApply={applyResumeDetails}
                 showToast={showToast}
+                preview={preview}
               />
 
               <section className="profile-section-card profile-builder-card">
