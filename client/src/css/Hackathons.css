@@ -488,3 +488,34 @@
 }
 
 .hk-hero h1 .gold-text { color: #FF7A55; }
+
+/* Sticky filter bar: solid when pinned (covers the area behind the
+   transparent header) and slides away with the header on scroll down. */
+.hk-toolbar {
+  transition: transform .35s cubic-bezier(.4, 0, .2, 1), opacity .35s ease, box-shadow .2s ease;
+}
+
+.hk-toolbar.is-stuck {
+  background: #F7FAFD;
+  box-shadow: 0 10px 20px -14px rgba(16, 36, 58, .35);
+}
+
+.hk-toolbar.is-stuck::before {
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 90px;
+  background: #F7FAFD;
+  content: "";
+}
+
+html[data-nav-hidden="true"] .hk-toolbar.is-stuck {
+  opacity: 0;
+  pointer-events: none;
+  transform: translateY(calc(-100% - 100px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hk-toolbar { transition: none; }
+}

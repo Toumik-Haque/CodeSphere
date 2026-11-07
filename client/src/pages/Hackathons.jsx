@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -80,6 +80,25 @@ export default function Hackathons() {
   const [feed, setFeed] = useState(null);
   const [error, setError] = useState('');
   const [search, setSearch] = useState(params.get('q') || '');
+  const toolbarRef = useRef(null);
+  const [stuck, setStuck] = useState(false);
+
+  // Know when the filter bar is pinned, to give it a solid backdrop.
+  useEffect(() => {
+    const check = () => {
+      const el = toolbarRef.current;
+      if (!el) return;
+      const top = parseFloat(getComputedStyle(el).top) || 0;
+      setStuck(el.getBoundingClientRect().top <= top + 1);
+    };
+    check();
+    window.addEventListener('scroll', check, { passive: true });
+    window.addEventListener('resize', check);
+    return () => {
+      window.removeEventListener('scroll', check);
+      window.removeEventListener('resize', check);
+    };
+  }, []);
 
   const source = params.get('source') || '';
   const mode = params.get('mode') || '';
@@ -194,7 +213,7 @@ export default function Hackathons() {
               </div>
             </header>
 
-            <div className="hk-toolbar">
+            <div className={`hk-toolbar ${stuck ? 'is-stuck' : ''}`} ref={toolbarRef}>
               <div className="hk-sources" role="tablist" aria-label="Platform">
                 <button type="button" role="tab" aria-selected={!source} className={!source ? 'active' : ''} onClick={() => update({ source: '' })}>
                   All <small>{totalLive}</small>

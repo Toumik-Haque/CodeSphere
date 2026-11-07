@@ -162,6 +162,12 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
+  // Let sticky page toolbars hide/show together with the header.
+  const headerHidden = isHidden && !isMenuOpen && !isDropdownOpen;
+  useEffect(() => {
+    document.documentElement.dataset.navHidden = headerHidden ? 'true' : 'false';
+  }, [headerHidden]);
+
   // Light text when the (transparent) header sits over a dark section.
   const navRef = useRef(null);
   const [onDark, setOnDark] = useState(false);
@@ -370,7 +376,7 @@ const Navbar = () => {
     <>
       <nav
         ref={navRef}
-        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${onDark ? 'navbar-on-dark' : ''} ${isHidden && !isMenuOpen && !isDropdownOpen ? 'navbar-hidden' : ''} ${
+        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${onDark ? 'navbar-on-dark' : ''} ${headerHidden ? 'navbar-hidden' : ''} ${
           isScrolled ? 'navbar-scrolled' : ''
         }`}
         aria-label="Main navigation"
