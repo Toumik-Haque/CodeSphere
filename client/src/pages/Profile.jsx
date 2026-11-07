@@ -1091,7 +1091,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
 ========================================= */
 
 export default function Profile({ preview = false }) {
-  const { user } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const profileStorageKey = getStorageKey('profile', user);
   const photoStorageKey = getStorageKey('profile_image', user);
@@ -1117,7 +1117,7 @@ export default function Profile({ preview = false }) {
   const [skillLevel, setSkillLevel] = useState('Intermediate');
 
   const [profileImage, setProfileImage] = useState(() =>
-    preview ? '' : readImage(photoStorageKey)
+    preview ? '' : user?.avatarUrl || readImage(photoStorageKey)
   );
 
   const [bannerImage, setBannerImage] = useState(() =>
@@ -1172,6 +1172,32 @@ export default function Profile({ preview = false }) {
     }
   };
 
+  const uploadAvatar = async (fileOrBlob) => {
+    const form = new FormData();
+    form.append('image', fileOrBlob, fileOrBlob.name || 'avatar.png');
+    const { avatarUrl } = await apiRequest('/users/me/avatar', { method: 'PUT', body: form });
+    try {
+      localStorage.setItem(photoStorageKey, avatarUrl);
+    } catch {
+      /* storage full: the server copy is what matters */
+    }
+    updateUser({ avatarUrl });
+    return avatarUrl;
+  };
+
+  // One-time move: photos saved only in this browser go to the server.
+  useEffect(() => {
+    if (preview || user?.avatarUrl) return;
+    const saved = readImage(photoStorageKey);
+    if (!saved.startsWith('data:image/')) return;
+    fetch(saved)
+      .then((r) => r.blob())
+      .then((blob) => uploadAvatar(new File([blob], 'avatar.png', { type: blob.type || 'image/png' })))
+      .then((url) => setProfileImage(url))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, user?.avatarUrl, photoStorageKey]);
+
   const handleImageChange = async (event, setImage, storageKey, imageLabel) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -1189,6 +1215,16 @@ export default function Profile({ preview = false }) {
     }
 
     try {
+      // The profile photo is stored on the server so others (forum,
+      // leaderboard) can see it; the banner stays in this browser.
+      if (!preview && storageKey === photoStorageKey) {
+        const url = await uploadAvatar(file);
+        setImage(url);
+        setError('');
+        showToast(`${imageLabel} updated successfully!`);
+        return;
+      }
+
       const imageData = await readImageFile(file);
 
       if (!preview) localStorage.setItem(storageKey, imageData);

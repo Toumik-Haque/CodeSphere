@@ -19,7 +19,9 @@ const threadSchema = new Schema(
     category: { type: String, required: true, index: true },
     postType: { type: String, required: true },
     title: { type: String, required: true, trim: true, maxlength: 150 },
-    body: { type: String, required: true, maxlength: 10000 },
+    // Rich posts are stored as sanitised HTML (format 'html'); older ones are plain text.
+    body: { type: String, required: true, maxlength: 40000 },
+    format: { type: String, enum: ['text', 'html'], default: 'text' },
     tags: { type: [String], default: [], index: true },
     status: { type: String, enum: STATUSES, default: 'visible', index: true },
     pinned: { type: Boolean, default: false },

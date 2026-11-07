@@ -55,6 +55,9 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
     // Opted in to the weekly Tech Brief email.
+    // Profile photo (ImageKit) shown in the forum and leaderboards.
+    avatarUrl: { type: String, default: '' },
+    avatarFileId: { type: String, default: '' },
     // Daily "Today in Tech" email (separate from the weekly newsletter).
     dailyNewsOptIn: { type: Boolean, default: false },
     newsletterOptIn: {

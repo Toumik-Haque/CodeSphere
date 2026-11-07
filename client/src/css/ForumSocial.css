@@ -446,3 +446,7 @@
 @media (prefers-reduced-motion: reduce) {
   .fx-skeleton i { animation: none; }
 }
+
+/* Real profile photos in avatars */
+.fx-avatar.has-photo { overflow: hidden; background: #EEF3F8; }
+.fx-avatar.has-photo img { width: 100%; height: 100%; object-fit: cover; }

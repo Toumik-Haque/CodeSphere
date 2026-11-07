@@ -22,10 +22,22 @@ const avatarHue = (name = '') => [...name].reduce((h, c) => (h * 31 + c.charCode
 
 const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
+// Profile photo when the person has one, coloured initials otherwise.
+function Avatar({ person, className }) {
+  if (person.avatarUrl) {
+    return (
+      <span className={`${className} has-photo`} aria-hidden="true">
+        <img src={person.avatarUrl} alt="" loading="lazy" />
+      </span>
+    );
+  }
+  return <span className={className} style={{ '--hue': avatarHue(person.name) }} aria-hidden="true">{person.initials}</span>;
+}
+
 export function AuthorBadge({ author, size = 'sm' }) {
   return (
     <span className={`forum-author forum-author-${size}`}>
-      <span className="forum-avatar fx-avatar" style={{ '--hue': avatarHue(author.name) }} aria-hidden="true">{author.initials}</span>
+      <Avatar person={author} className="forum-avatar fx-avatar" />
       <span>
         <strong>{author.name}</strong>
         {author.isStaff
@@ -42,7 +54,7 @@ export function ThreadCard({ thread, config }) {
   const { author } = thread;
   return (
     <article className={`fx-post ${thread.pinned ? 'is-pinned' : ''}`}>
-      <span className="fx-avatar" style={{ '--hue': avatarHue(author.name) }} aria-hidden="true">{author.initials}</span>
+      <Avatar person={author} className="fx-avatar" />
       <div className="fx-post-main">
         {thread.pinned && <p className="fx-pinned"><i className="bi bi-pin-angle-fill" aria-hidden="true" /> Pinned post</p>}
         <header className="fx-post-head">
@@ -184,7 +196,7 @@ export default function Forum() {
 
             {isLoggedIn ? (
               <Link to={`/forum/new${category ? `?category=${category}` : ''}`} className="fx-composer">
-                <span className="fx-avatar" style={{ '--hue': avatarHue(user.name) }} aria-hidden="true">{initialsOf(user.name)}</span>
+                <Avatar person={{ name: user.name, initials: initialsOf(user.name), avatarUrl: user.avatarUrl }} className="fx-avatar" />
                 <span className="fx-composer-input">What&apos;s on your mind? Ask a question or share something…</span>
                 <span className="fx-btn">Post</span>
               </Link>

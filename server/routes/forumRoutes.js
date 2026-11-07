@@ -17,6 +17,7 @@ const { notify } = require('../utils/notify');
 const { syncBadgesQuietly } = require('../utils/badges');
 const { pushToThread } = require('../utils/realtime');
 const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
+const sanitizeHtml = require('sanitize-html');
 const {
   FORUM_CATEGORIES,
   POST_TYPES,
@@ -78,6 +79,7 @@ function publicAuthor(user) {
     initials: name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join(''),
     year: user.role === 'admin' ? '' : user.yearOfStudy || '',
     isStaff: user.role === 'admin' || Boolean(user.staffRoles?.includes('moderator')),
+    avatarUrl: user.avatarUrl || '',
   };
 }
 
@@ -105,8 +107,29 @@ async function notifyMentions(text, author, { title, link }) {
   });
 }
 
-function preview(body) {
-  const text = stripMentions(body).replace(/```[\s\S]*?```/g, ' [code] ').replace(/\s+/g, ' ').trim();
+// ---------- Rich text (HTML from the editor) ----------
+const RICH_OPTIONS = {
+  allowedTags: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'a', 'blockquote', 'pre', 'code', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span'],
+  allowedAttributes: { a: ['href', 'target', 'rel'], span: ['style'], p: ['style'], td: ['colspan', 'rowspan'], th: ['colspan', 'rowspan'] },
+  allowedStyles: {
+    '*': {
+      color: [/^#[0-9a-f]{3,8}$/i, /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i],
+      'background-color': [/^#[0-9a-f]{3,8}$/i, /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i],
+      'text-align': [/^(left|right|center|justify)$/],
+    },
+  },
+  allowedSchemes: ['http', 'https', 'mailto'],
+  transformTags: { a: sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'nofollow noopener noreferrer' }) },
+};
+const sanitizeRich = (html) => sanitizeHtml(String(html || ''), RICH_OPTIONS).trim();
+// Plain text of an HTML post (for limits, previews, notifications).
+const richToText = (html) => sanitizeHtml(String(html || '').replace(/<\/(p|h[2-4]|li|blockquote|pre|tr)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n'), { allowedTags: [], allowedAttributes: {} })
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+const plainOf = (body, format) => (format === 'html' ? richToText(body) : body);
+
+function preview(body, format = 'text') {
+  const text = stripMentions(plainOf(body, format)).replace(/```[\s\S]*?```/g, ' [code] ').replace(/\s+/g, ' ').trim();
   return text.length > 220 ? `${text.slice(0, 217)}…` : text;
 }
 
@@ -120,7 +143,7 @@ function threadCard(thread) {
   return {
     id: String(thread._id),
     title: thread.title,
-    preview: preview(thread.body),
+    preview: preview(thread.body, thread.format),
     category: thread.category,
     postType: thread.postType,
     tags: thread.tags,
@@ -152,9 +175,11 @@ function mutedMessage(user) {
 }
 
 // Validates title/body/category/type/tags; returns { errors, value }.
-function validateThread(input, user, { partial = false } = {}) {
+function validateThread(input, user, { partial = false, format } = {}) {
   const errors = [];
   const value = {};
+  // New posts choose the format; edits keep the post's existing format.
+  const useHtml = (format || input.format) === 'html';
 
   if (!partial || input.title !== undefined) {
     value.title = cleanText(input.title).replace(/\s+/g, ' ');
@@ -163,8 +188,10 @@ function validateThread(input, user, { partial = false } = {}) {
     }
   }
   if (!partial || input.body !== undefined) {
-    value.body = cleanText(input.body);
-    if (value.body.length < LIMITS.bodyMin || value.body.length > LIMITS.threadBodyMax) {
+    value.body = useHtml ? sanitizeRich(input.body).slice(0, 40000) : cleanText(input.body);
+    if (!partial) value.format = useHtml ? 'html' : 'text';
+    const plain = useHtml ? richToText(value.body) : value.body;
+    if (plain.length < LIMITS.bodyMin || plain.length > LIMITS.threadBodyMax) {
       errors.push(`Post must be ${LIMITS.bodyMin}–${LIMITS.threadBodyMax} characters.`);
     }
   }
@@ -250,14 +277,14 @@ router.get('/threads', optionalAuth, async (req, res) => {
     if (tab === 'trending') {
       // Score recent threads by replies, reactions and views.
       const recent = await ForumThread.find(filter).sort({ lastActivityAt: -1 }).limit(300)
-        .populate('author', 'name yearOfStudy role staffRoles').lean();
+        .populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean();
       recent.sort((a, b) => trendScore(b) - trendScore(a));
       total = recent.length;
       threads = recent.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     } else {
       const query = ForumThread.find(filter, q ? { score: { $meta: 'textScore' } } : {});
       [threads, total] = await Promise.all([
-        query.sort(sort).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).populate('author', 'name yearOfStudy role staffRoles').lean(),
+        query.sort(sort).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean(),
         ForumThread.countDocuments(filter),
       ]);
     }
@@ -308,6 +335,7 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
     const duplicate = await ForumThread.exists({
       author: req.user._id,
       body: value.body,
+      format: value.format,
       createdAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) },
     });
     if (duplicate) return res.status(409).json({ message: 'You just posted this. Check your discussions.' });
@@ -327,7 +355,7 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
     });
     if (uploads.length) await ForumUpload.updateMany({ _id: { $in: uploads.map((u) => u._id) } }, { $set: { used: true } });
     await ForumFollow.create({ user: req.user._id, thread: thread._id });
-    await notifyMentions(value.body, req.user, { title: thread.title, link: `/forum/${thread._id}` });
+    await notifyMentions(plainOf(value.body, value.format), req.user, { title: thread.title, link: `/forum/${thread._id}` });
     const newBadges = await syncBadgesQuietly(req.user._id);
     return res.status(201).json({ id: String(thread._id), newBadges });
   } catch (error) {
@@ -340,7 +368,7 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
 router.get('/threads/:id', optionalAuth, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Discussion not found.' });
   try {
-    const thread = await ForumThread.findById(req.params.id).populate('author', 'name yearOfStudy role staffRoles').lean();
+    const thread = await ForumThread.findById(req.params.id).populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean();
     const staff = isStaff(req.user);
     const mine = sameUser(thread?.author, req.user);
     if (!thread || (thread.status !== 'visible' && !staff && !(mine && thread.status === 'hidden'))) {
@@ -350,7 +378,7 @@ router.get('/threads/:id', optionalAuth, async (req, res) => {
     if (!mine) await ForumThread.updateOne({ _id: thread._id }, { $inc: { viewCount: 1 } });
 
     const replyFilter = { thread: thread._id, status: staff ? { $in: ['visible', 'hidden'] } : 'visible' };
-    const replies = await ForumReply.find(replyFilter).sort({ createdAt: 1 }).populate('author', 'name yearOfStudy role staffRoles').lean();
+    const replies = await ForumReply.find(replyFilter).sort({ createdAt: 1 }).populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean();
 
     let viewer = { signedIn: false };
     if (req.user) {
@@ -382,6 +410,7 @@ router.get('/threads/:id', optionalAuth, async (req, res) => {
         ...threadCard(thread),
         viewCount: thread.viewCount + (mine ? 0 : 1),
         body: thread.body,
+        format: thread.format || 'text',
         attachments: (thread.attachments || []).map((a) => ({ url: a.url })),
         reactions: thread.reactions,
         acceptedReply: thread.acceptedReply ? String(thread.acceptedReply) : null,
@@ -420,7 +449,7 @@ router.patch('/threads/:id', protect, async (req, res) => {
       return res.status(403).json({ message: `Posts can be edited for ${LIMITS.editWindowMs / 60000} minutes after posting.` });
     }
 
-    const { errors, value } = validateThread(req.body, req.user, { partial: true });
+    const { errors, value } = validateThread(req.body, req.user, { partial: true, format: thread.format });
     if (errors.length) return res.status(400).json({ message: errors[0], errors });
 
     Object.assign(thread, value, { editedAt: new Date() });

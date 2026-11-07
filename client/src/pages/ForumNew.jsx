@@ -2,12 +2,12 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import SafeText from '../components/SafeText';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
-import MentionTextarea from '../components/MentionTextarea';
+import RichTextEditor from '../components/RichTextEditor';
+import RichText from '../components/RichText';
 import '../css/Forum.css';
 import '../css/ForumSocial.css';
 
@@ -74,6 +74,7 @@ export default function ForumNew() {
         method: 'POST',
         body: JSON.stringify({
           ...form,
+          format: 'html',
           tags: form.tags.split(/[,\s]+/).filter(Boolean),
           attachments: images.map((img) => img.id),
         }),
@@ -143,18 +144,13 @@ export default function ForumNew() {
             </div>
             {preview ? (
               <div className="forum-preview">
-                {form.body ? <SafeText text={form.body} /> : <p className="forum-muted">Nothing to preview yet.</p>}
+                {form.body ? <RichText html={form.body} /> : <p className="forum-muted">Nothing to preview yet.</p>}
               </div>
             ) : (
-              <MentionTextarea
+              <RichTextEditor
                 value={form.body}
                 onChange={(body) => setForm((f) => ({ ...f, body }))}
-                rows={10}
-                placeholder="Explain your question or idea. Wrap code in ``` (three backticks) on their own lines."
-                minLength={limits?.bodyMin}
-                maxLength={limits?.threadBodyMax}
-                required
-                aria-label="Details"
+                placeholder="Explain your question or idea. Use the toolbar for headings, lists, links and code blocks."
               />
             )}
             <div className="forum-images">
@@ -175,7 +171,7 @@ export default function ForumNew() {
               )}
             </div>
             <small className="forum-hint">
-              Formatting: ```code blocks```, `inline code`, **bold**, links, and @name to mention someone. Up to 3 images (2 MB each). {limits && `${form.body.length}/${limits.threadBodyMax}`}
+              Use the toolbar for headings, lists, links, colours and code blocks. Up to 3 images (2 MB each). Mention people with @name in replies.
             </small>
 
             <label>

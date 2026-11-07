@@ -2,8 +2,32 @@ const express = require('express');
 const User = require('../models/User');
 const { protect, adminOnly, STAFF_ROLES } = require('../middleware/authMiddleware');
 const { notify } = require('../utils/notify');
+const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
 
 const router = express.Router();
+
+// ---------- Profile photo (stored on ImageKit, visible to others) ----------
+
+// PUT /api/users/me/avatar  (multipart field "image", max 2 MB)
+router.put('/me/avatar', protect, handleImageUpload, async (req, res) => {
+  try {
+    const stored = await storeImage(req.file.buffer, req.user._id, 'avatars');
+    const old = req.user.avatarFileId;
+    await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: stored.url, avatarFileId: stored.fileId } });
+    if (old) await deleteImages([{ fileId: old }]);
+    res.json({ avatarUrl: stored.url });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.status ? error.message : 'Could not upload the photo.' });
+  }
+});
+
+// DELETE /api/users/me/avatar
+router.delete('/me/avatar', protect, async (req, res) => {
+  const old = req.user.avatarFileId;
+  await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: '', avatarFileId: '' } });
+  if (old) await deleteImages([{ fileId: old }]);
+  res.json({ avatarUrl: '' });
+});
 
 // GET ALL REGISTERED USERS (EXCLUDING ADMINS)
 // GET /api/users/admin/all?search=

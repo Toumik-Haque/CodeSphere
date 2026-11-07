@@ -10,6 +10,8 @@ import { celebrateBadges } from '../lib/badges';
 import { openThreadStream } from '../lib/realtime';
 import { useAuth } from '../context/AuthContext';
 import MentionTextarea from '../components/MentionTextarea';
+import RichText from '../components/RichText';
+import RichTextEditor from '../components/RichTextEditor';
 import { timeAgo } from '../lib/time';
 import '../css/Forum.css';
 import '../css/ForumSocial.css';
@@ -157,7 +159,7 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
   );
 }
 
-function EditBox({ initial, onSave, onCancel, limit }) {
+function EditBox({ initial, onSave, onCancel, limit, rich = false }) {
   const [value, setValue] = useState(initial);
   const [error, setError] = useState('');
   return (
@@ -172,7 +174,9 @@ function EditBox({ initial, onSave, onCancel, limit }) {
         }
       }}
     >
-      <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={6} maxLength={limit} aria-label="Edit text" />
+      {rich
+        ? <RichTextEditor value={value} onChange={setValue} height={300} />
+        : <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={6} maxLength={limit} aria-label="Edit text" />}
       {error && <p className="forum-error" role="alert">{error}</p>}
       <div className="forum-composer-actions">
         <button type="button" className="forum-btn-ghost" onClick={onCancel}>Cancel</button>
@@ -405,6 +409,7 @@ export default function ForumThread() {
             {editing === 'thread' ? (
               <EditBox
                 initial={thread.body}
+                rich={thread.format === 'html'}
                 limit={limits?.threadBodyMax}
                 onCancel={() => setEditing(null)}
                 onSave={async (body) => {
@@ -414,7 +419,9 @@ export default function ForumThread() {
                 }}
               />
             ) : (
-              <SafeText text={thread.body} className="forum-thread-body" />
+              thread.format === 'html'
+                ? <RichText html={thread.body} className="forum-thread-body" />
+                : <SafeText text={thread.body} className="forum-thread-body" />
             )}
 
             {thread.attachments?.length > 0 && (

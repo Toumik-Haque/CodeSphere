@@ -118,6 +118,16 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  // Merge fields into the signed-in user (and the saved copy).
+  function updateUser(patch) {
+    setUser((current) => {
+      if (!current) return current;
+      const next = { ...current, ...patch };
+      localStorage.setItem('codesphere_user', JSON.stringify(next));
+      return next;
+    });
+  }
+
   function logout() {
     localStorage.removeItem('codesphere_token');
     localStorage.removeItem('codesphere_user');
@@ -139,6 +149,7 @@ export function AuthProvider({ children }) {
         verifyResetOtp,
         resetPassword,
         logout,
+        updateUser,
       }}
     >
       {children}
