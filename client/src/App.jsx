@@ -6,6 +6,7 @@ import {
   Route,
   Navigate,
   useLocation,
+  useParams,
 } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
@@ -52,10 +53,10 @@ function HomePage() {
 
       <main>
         <Hero />
-        <About />
         <Events />
         <PlaygroundHighlight />
         <TeamCarousel />
+        <About />
         <CTA />
       </main>
 
@@ -82,6 +83,29 @@ function ProtectedRoute({ children, adminOnly = false, anyRole = false }) {
   }
 
   return children;
+}
+
+function RoleBasedMemberProfile() {
+  const { user } = useAuth();
+  const { username } = useParams();
+  const location = useLocation();
+
+  if (!user || !username) {
+    return <Navigate to="/login" replace />;
+  }
+
+  const dashboardPath = user.role === 'admin' ? '/admin' : '/user';
+  const targetPath = `${dashboardPath}/${encodeURIComponent(username)}`;
+
+  if (location.pathname !== targetPath) {
+    return <Navigate
+      to={targetPath}
+      replace
+      state={user.role === 'admin' ? { activeSection: 'users' } : undefined}
+    />;
+  }
+
+  return user.role === 'admin' ? <Admin /> : <UserDashboard />;
 }
 
 // Scroll to the top whenever the route changes.
@@ -171,7 +195,7 @@ function AppRoutes() {
         path="/user/:username"
         element={
           <ProtectedRoute anyRole>
-            <UserDashboard />
+            <RoleBasedMemberProfile />
           </ProtectedRoute>
         }
       />
@@ -180,6 +204,15 @@ function AppRoutes() {
         element={
           <ProtectedRoute>
             <UserDashboard />
+          </ProtectedRoute>
+        }
+      />
+
+      <Route
+        path="/admin/:username"
+        element={
+          <ProtectedRoute anyRole>
+            <RoleBasedMemberProfile />
           </ProtectedRoute>
         }
       />
