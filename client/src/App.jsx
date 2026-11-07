@@ -47,6 +47,9 @@ import AdminMaterials from './pages/AdminMaterials';
 import Hackathons from './pages/Hackathons';
 import HackathonDetail from './pages/HackathonDetail';
 import AdminHackathons from './pages/AdminHackathons';
+import HostSubmit from './pages/HostSubmit';
+import MyHosting from './pages/MyHosting';
+import AdminReview from './pages/AdminReview';
 
 function HomePage() {
   return (
@@ -132,6 +135,10 @@ function AppRoutes() {
       <Route path="/materials" element={<Materials />} />
       <Route path="/materials/:slug" element={<Materials />} />
       <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminMaterials /></ProtectedRoute>} />
+      <Route path="/host" element={<ProtectedRoute anyRole><MyHosting /></ProtectedRoute>} />
+      <Route path="/host/:kind/new" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
+      <Route path="/host/:kind/:id/edit" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
+      <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminReview /></ProtectedRoute>} />
       <Route path="/hackathons" element={<Hackathons />} />
       <Route path="/hackathons/:slug" element={<HackathonDetail />} />
       <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminHackathons /></ProtectedRoute>} />

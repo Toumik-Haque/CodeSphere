@@ -40,6 +40,7 @@ const realtimeRoutes = require('./routes/realtimeRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
 const guideRoutes = require('./routes/guideRoutes');
 const hackathonRoutes = require('./routes/hackathonRoutes');
+const hostRoutes = require('./routes/hostRoutes');
 const { startHackathonSync } = require('./utils/hackathonSync');
 const { startNewsScheduler } = require('./utils/newsIngest');
 
@@ -60,6 +61,7 @@ app.use('/api/realtime', realtimeRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/guides', guideRoutes);
 app.use('/api/hackathons', hackathonRoutes);
+app.use('/api/host', hostRoutes);
 
 const PORT = process.env.PORT || 5000;
 

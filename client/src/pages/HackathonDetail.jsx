@@ -3,6 +3,7 @@ import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SafeText from '../components/SafeText';
+import HackathonJudging from '../components/HackathonJudging';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { countdown, isPast, PHASES } from '../lib/hackathons';
@@ -287,6 +288,16 @@ export default function HackathonDetail() {
                 <span className={`hk-phase tone-${phase.tone}`}>{phase.label}</span>
                 <h1>{h.title}</h1>
                 {h.tagline && <p>{h.tagline}</p>}
+                {h.origin === 'community' && h.hostName && (
+                  <p className="hk-hosted">
+                    <i className="bi bi-people" aria-hidden="true" /> Hosted by <strong>{h.hostName}</strong>
+                    {[['bi-linkedin', 'LinkedIn', h.linkedinPostLink], ['bi-instagram', 'Instagram', h.instagramPostLink], ['bi-globe2', 'Website', h.websiteLink]]
+                      .filter(([, , url]) => url)
+                      .map(([icon, label, url]) => (
+                        <a key={label} href={url} target="_blank" rel="noopener noreferrer nofollow" aria-label={label}><i className={`bi ${icon}`} aria-hidden="true" /></a>
+                      ))}
+                  </p>
+                )}
                 <div className="hk-stats">
                   <span><strong>{h.teams}</strong> teams</span>
                   <span><strong>{h.submissions}</strong> projects</span>
@@ -344,6 +355,17 @@ export default function HackathonDetail() {
               </div>
 
               <aside className="hk-detail-side">
+                {h.canManage && (
+                  <section className="hk-panel">
+                    <h2><i className="bi bi-clipboard-check" aria-hidden="true" /> You host this</h2>
+                    <p className="hk-muted">Manage teams, rank projects and publish results.</p>
+                    <details>
+                      <summary className="hk-btn">Open teams & judging</summary>
+                      <HackathonJudging id={h.id} showEmails={false} onChanged={reload} />
+                    </details>
+                    <Link to={`/host/hackathon/${h.id}/edit`} className="hk-btn" style={{ marginTop: 8 }}>Edit listing</Link>
+                  </section>
+                )}
                 <TeamPanel h={h} team={data.team} slug={slug} reload={reload} />
                 {data.team && <SubmissionForm key={data.submission?.updatedAt || 'new'} h={h} team={data.team} submission={data.submission} slug={slug} reload={reload} />}
                 <section className="hk-panel">

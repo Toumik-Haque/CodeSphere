@@ -475,3 +475,7 @@
 @media (prefers-reduced-motion: reduce) {
   .hk-card, .hk-club-card, .hk-card-top img, .hk-dot, .hk-skeleton { animation: none !important; transition: none !important; }
 }
+
+.hk-hosted { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 4px 0 0; color: rgba(255, 255, 255, .85); }
+.hk-hosted a { display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; background: rgba(255, 255, 255, .12); color: #fff; }
+.hk-hosted a:hover { background: rgba(255, 255, 255, .25); color: #fff; }

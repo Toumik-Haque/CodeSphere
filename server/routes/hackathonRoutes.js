@@ -2,13 +2,31 @@ const express = require('express');
 const crypto = require('crypto');
 const mongoose = require('mongoose');
 const { Hackathon, HackathonTeam, HackathonSubmission, ExternalHackathon, HackathonSync } = require('../models/Hackathon');
-const { protect, optionalAuth, requireStaff } = require('../middleware/authMiddleware');
+const { protect, optionalAuth, requireStaff, hasStaffRole } = require('../middleware/authMiddleware');
 const { notify } = require('../utils/notify');
 const { createLimiter } = require('../utils/rateLimit');
 const { syncExternalHackathons, SOURCE_NAMES } = require('../utils/hackathonSync');
+const { validateHackathon } = require('../utils/hackathonValidate');
 
 const router = express.Router();
 const organizer = [protect, requireStaff('hackathon-organizer')];
+
+// Organisers, or the student who hosts this (approved) community hackathon.
+async function canManage(user, hackathonId) {
+  if (hasStaffRole(user, 'hackathon-organizer')) return true;
+  return Boolean(await Hackathon.exists({ _id: hackathonId, origin: 'community', reviewStatus: 'approved', createdBy: user._id }));
+}
+const manager = (getHackathonId) => [protect, async (req, res, next) => {
+  try {
+    const id = await getHackathonId(req);
+    if (id && isId(String(id)) && await canManage(req.user, id)) return next();
+  } catch {
+    /* fall through */
+  }
+  return res.status(403).json({ message: 'Not allowed.' });
+}];
+const manageById = manager((req) => req.params.id);
+const manageBySubmission = manager(async (req) => (isId(req.params.id) ? (await HackathonSubmission.findById(req.params.id).select('hackathon').lean())?.hackathon : null));
 const teamLimiter = createLimiter({ windowMs: 60 * 60 * 1000, max: 30, message: 'Too many team changes. Try again later.' });
 
 const isId = (id) => mongoose.Types.ObjectId.isValid(id);
@@ -92,42 +110,6 @@ function submissionView(s, { withAward }) {
   };
 }
 
-function validateHackathon(body) {
-  const tracks = (Array.isArray(body.tracks) ? body.tracks : []).map((t) => clean(t, 60)).filter(Boolean).slice(0, 12);
-  const prizes = (Array.isArray(body.prizes) ? body.prizes : [])
-    .map((p) => ({ title: clean(p?.title, 80), reward: clean(p?.reward, 120) }))
-    .filter((p) => p.title)
-    .slice(0, 12);
-  const data = {
-    title: clean(body.title, 120),
-    slug: clean(body.slug || body.title, 80).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''),
-    tagline: clean(body.tagline, 200),
-    description: clean(body.description, 20000),
-    rules: clean(body.rules, 10000),
-    tracks,
-    prizes,
-    mode: ['online', 'offline', 'hybrid'].includes(body.mode) ? body.mode : 'online',
-    venue: clean(body.venue, 200),
-    bannerUrl: safeUrl(body.bannerUrl),
-    regStart: new Date(body.regStart),
-    regEnd: new Date(body.regEnd),
-    submissionStart: new Date(body.submissionStart),
-    submissionEnd: new Date(body.submissionEnd),
-    teamMin: Math.min(10, Math.max(1, Number(body.teamMin) || 1)),
-    teamMax: Math.min(10, Math.max(1, Number(body.teamMax) || 4)),
-    status: body.status === 'published' ? 'published' : 'draft',
-  };
-  if (data.title.length < 3) return { error: 'Give the hackathon a title.' };
-  if (!data.slug) return { error: 'The URL slug is invalid.' };
-  if (['regStart', 'regEnd', 'submissionStart', 'submissionEnd'].some((k) => Number.isNaN(data[k].getTime()))) return { error: 'Set all four dates.' };
-  if (data.regEnd < data.regStart) return { error: 'Registration must end after it starts.' };
-  if (data.submissionEnd <= data.submissionStart) return { error: 'Submissions must close after they open.' };
-  if (data.submissionStart < data.regStart) return { error: 'Submissions cannot open before registration.' };
-  if (data.teamMax < data.teamMin) return { error: 'Maximum team size must be at least the minimum.' };
-  if (body.bannerUrl && !data.bannerUrl) return { error: 'The banner must be an http(s) link.' };
-  return { data };
-}
-
 const loadPublished = (slug) => Hackathon.findOne({ slug: clean(slug, 80).toLowerCase(), status: 'published' });
 const myTeam = (hackathonId, userId) => HackathonTeam.findOne({ hackathon: hackathonId, members: userId });
 
@@ -185,7 +167,7 @@ router.get('/external', async (req, res) => {
 // =====================================================================
 
 router.get('/admin/all', organizer, async (req, res) => {
-  const list = await Hackathon.find().sort({ submissionEnd: -1 }).lean();
+  const list = await Hackathon.find({ $or: [{ origin: { $ne: 'community' } }, { reviewStatus: 'approved' }] }).sort({ submissionEnd: -1 }).lean();
   const counts = await countsFor(list.map((h) => h._id));
   const sync = await HackathonSync.findById('external-hackathons').lean();
   res.json({ hackathons: list.map((h) => ({ ...card(h, counts[h._id]), description: h.description, rules: h.rules })), sync });
@@ -196,7 +178,7 @@ router.post('/admin/sync', organizer, async (req, res) => {
   res.json({ results });
 });
 
-router.get('/admin/:id', organizer, async (req, res) => {
+router.get('/admin/:id', manageById, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });
   const h = await Hackathon.findById(req.params.id).lean();
   if (!h) return res.status(404).json({ message: 'Not found.' });
@@ -210,7 +192,8 @@ router.get('/admin/:id', organizer, async (req, res) => {
       id: String(t._id),
       name: t.name,
       submitted: subs.some((s) => String(s.team?._id) === String(t._id)),
-      members: t.members.map((u) => ({ ...member(u), email: u.email })),
+      // Student hosts see names only; staff organisers also see emails.
+      members: t.members.map((u) => ({ ...member(u), ...(hasStaffRole(req.user, 'hackathon-organizer') ? { email: u.email } : {}) })),
     })),
     submissions: subs.map((s) => submissionView(s, { withAward: true })),
   });
@@ -249,7 +232,7 @@ router.delete('/admin/:id', organizer, async (req, res) => {
 });
 
 // Judge a submission: award label + rank.
-router.put('/admin/submissions/:id', organizer, async (req, res) => {
+router.put('/admin/submissions/:id', manageBySubmission, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });
   const rank = req.body.rank === '' || req.body.rank == null ? undefined : Math.min(100, Math.max(1, Number(req.body.rank) || 1));
   const update = rank ? { award: clean(req.body.award, 80), rank } : { award: clean(req.body.award, 80), $unset: { rank: 1 } };
@@ -259,7 +242,7 @@ router.put('/admin/submissions/:id', organizer, async (req, res) => {
 });
 
 // Publish (or hide) results; participants are notified when published.
-router.post('/admin/:id/results', organizer, async (req, res) => {
+router.post('/admin/:id/results', manageById, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });
   const h = await Hackathon.findById(req.params.id);
   if (!h) return res.status(404).json({ message: 'Not found.' });
@@ -328,7 +311,18 @@ router.get('/:slug', optionalAuth, async (req, res) => {
   }
 
   res.json({
-    hackathon: { ...card(h.toObject(), counts[h._id]), description: h.description, rules: h.rules, ...windows(h, now) },
+    hackathon: {
+      ...card(h.toObject(), counts[h._id]),
+      description: h.description,
+      rules: h.rules,
+      origin: h.origin,
+      hostName: h.hostName,
+      websiteLink: h.websiteLink,
+      linkedinPostLink: h.linkedinPostLink,
+      instagramPostLink: h.instagramPostLink,
+      canManage: Boolean(req.user && String(h.createdBy) === String(req.user._id) && h.origin === 'community'),
+      ...windows(h, now),
+    },
     team,
     submission,
     gallery,

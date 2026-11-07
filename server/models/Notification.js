@@ -21,6 +21,7 @@ const notificationSchema = new mongoose.Schema(
         'reverse-new',
         'news-digest',
         'hackathon',
+        'host-review',
         'system',
       ],
     },

@@ -118,6 +118,7 @@ const Navbar = () => {
     { role: 'challenge-editor', path: '/admin/reverse-coding', icon: 'bi-arrow-repeat', label: 'Reverse Coding editor' },
     { role: 'challenge-editor', path: '/admin/materials', icon: 'bi-journal-bookmark', label: 'Study Guide editor' },
     { role: 'hackathon-organizer', path: '/admin/hackathons', icon: 'bi-trophy', label: 'Hackathon organizer' },
+    { role: 'hackathon-organizer', path: '/admin/review', icon: 'bi-inbox', label: 'Review hosted hackathons' },
   ].filter((link) => user?.staffRoles?.includes(link.role));
 
   const dashboardPath = isAdmin ? '/admin' : '/profile';
@@ -280,6 +281,11 @@ const Navbar = () => {
             >
               <i className="bi bi-speedometer2" aria-hidden="true" />
               <span>{dashboardLabel}</span>
+            </Link>
+
+            <Link to="/host" className="navbar-dropdown-item" onClick={closeMenu}>
+              <i className="bi bi-megaphone" aria-hidden="true" />
+              <span>My hosted listings</span>
             </Link>
 
             {staffLinks.map((link) => (

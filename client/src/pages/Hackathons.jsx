@@ -6,6 +6,7 @@ import { apiRequest } from '../lib/api';
 import { formatDate, timeAgo } from '../lib/time';
 import { SOURCES, PHASES, countdown, closesWithin } from '../lib/hackathons';
 import '../css/Hackathons.css';
+import '../css/Host.css';
 
 const MODE_ICON = { online: 'bi-globe2', offline: 'bi-geo-alt', hybrid: 'bi-diagram-2' };
 
@@ -169,6 +170,17 @@ export default function Hackathons() {
               </details>
             )}
           </section>
+
+          <div className="host-cta">
+            <div>
+              <strong>Hosting a hackathon?</strong>
+              <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
+            </div>
+            <div>
+              <Link to="/host/hackathon/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your hackathon</Link>
+              <Link to="/host" className="host-btn">My listings</Link>
+            </div>
+          </div>
 
           {/* ---------- Live from other platforms ---------- */}
           <section id="live" className="hk-section">

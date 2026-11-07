@@ -1146,6 +1146,10 @@ export default function Admin() {
                     <i className="bi bi-newspaper" aria-hidden="true" />
                     <span><strong>Tech News editor</strong><small>Review stories, sources and weekly digests</small></span>
                   </Link>
+                  <Link to="/admin/review" className="admin-tool">
+                    <i className="bi bi-inbox" aria-hidden="true" />
+                    <span><strong>Review hosted listings</strong><small>Approve or reject events and hackathons from students</small></span>
+                  </Link>
                   <Link to="/admin/hackathons" className="admin-tool">
                     <i className="bi bi-trophy" aria-hidden="true" />
                     <span><strong>Hackathons</strong><small>Run club hackathons and judge projects</small></span>

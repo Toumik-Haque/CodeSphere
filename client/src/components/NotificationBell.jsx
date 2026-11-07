@@ -13,6 +13,7 @@ const TYPE_ICONS = {
   'reverse-new': 'bi-arrow-repeat',
   'news-digest': 'bi-newspaper',
   hackathon: 'bi-trophy',
+  'host-review': 'bi-megaphone',
   system: 'bi-info-circle',
 };
 

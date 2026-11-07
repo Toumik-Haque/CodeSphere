@@ -44,14 +44,14 @@ function sniffType(buffer) {
 }
 
 // Store with a random name in a per-user folder.
-async function storeImage(buffer, userId) {
+async function storeImage(buffer, userId, area = 'forum') {
   const type = sniffType(buffer);
   if (!type) throw Object.assign(new Error('That file isn\'t a valid image.'), { status: 400 });
   const fileName = `${crypto.randomUUID()}.${TYPES[type]}`;
   const uploaded = await imagekit.files.upload({
     file: await toFile(buffer, fileName),
     fileName,
-    folder: `/codesphere/forum/${userId}`,
+    folder: `/codesphere/${area}/${userId}`,
     useUniqueFileName: false,
   });
   return { url: uploaded.url, fileId: uploaded.fileId };
