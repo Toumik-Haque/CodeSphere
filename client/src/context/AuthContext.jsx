@@ -2,6 +2,7 @@ import React, {
   createContext,
   useContext,
   useState,
+  useEffect,
 } from 'react';
 
 import { apiRequest } from '../lib/api';
@@ -22,6 +23,29 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(
     () => localStorage.getItem('codesphere_token')
   );
+
+  useEffect(() => {
+  async function fetchCurrentUser() {
+    if (!token) return;
+
+    try {
+      const data = await apiRequest('/users/profile');
+
+      if (data.user) {
+        setUser(data.user);
+
+        localStorage.setItem(
+          'codesphere_user',
+          JSON.stringify(data.user)
+        );
+      }
+    } catch (error) {
+      console.error('Failed to refresh user profile:', error.message);
+    }
+  }
+
+  fetchCurrentUser();
+}, [token]);
 
   async function sendOtp(email) {
     return apiRequest('/auth/send-otp', {

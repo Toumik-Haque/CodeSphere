@@ -17,7 +17,7 @@ const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
 
-  const isAdminPage = location.pathname.startsWith('/admin');
+  const isAdminPage = location.pathname.startsWith('/admin') || location.pathname.startsWith('/dashboard');
 
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -34,7 +34,7 @@ const Navbar = () => {
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
-  const dashboardPath = isAdmin ? '/admin' : '/profile';
+  const dashboardPath = isAdmin ? '/admin' : '/dashboard';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
   const userName = user?.name || 'Student';

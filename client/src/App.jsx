@@ -22,12 +22,14 @@ import Footer from './components/Footer';
 import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
-import Profile from './pages/Profile';
 import Admin from './pages/Admin';
 import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
 import Team from './pages/Team';
 import Contact from './pages/Contact';
+
+import UserDashboard from './pages/UserDashboard';
+import MemberProfile from './pages/MemberProfile';
 
 function HomePage() {
   return (
@@ -57,7 +59,7 @@ function ProtectedRoute({ children, adminOnly = false }) {
   }
 
   if (adminOnly && user.role !== 'admin') {
-    return <Navigate to="/profile" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   if (!adminOnly && user.role === 'admin') {
@@ -88,7 +90,6 @@ function AppRoutes() {
       {/* Public pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
-      <Route path="/events/:slug" element={<EventDetails />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
 
@@ -97,29 +98,31 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Protected student profile */}
+      {/* Protected event details page */}
       <Route
-        path="/profile"
+        path="/events/:slug"
+        element={<EventDetails />}
+      />
+
+      {/* Protected user dashboard */}
+      <Route
+        path="/dashboard/*"
         element={
           <ProtectedRoute>
-            <Profile />
+            <UserDashboard />
           </ProtectedRoute>
         }
       />
 
-      {/* Redirect old capital-P profile URL */}
+      {/* Protected member profiles */}
       <Route
-        path="/Profile"
-        element={<Navigate to="/profile" replace />}
+        path="/:username"
+        element={
+          <ProtectedRoute>
+            <MemberProfile />
+          </ProtectedRoute>
+        }
       />
-
-      {/* Development-only profile preview (no login required) */}
-      {import.meta.env.DEV && (
-        <Route
-          path="/profile-preview"
-          element={<Profile preview />}
-        />
-      )}
 
       {/* Protected admin dashboard */}
       <Route

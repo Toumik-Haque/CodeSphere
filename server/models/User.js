@@ -1,25 +1,27 @@
+
 const mongoose = require('mongoose');
 
 const userSchema = new mongoose.Schema(
   {
+    // Basic account information
     name: {
       type: String,
       required: true,
       trim: true,
       maxlength: 80,
     },
-    collegeName: {
+
+    username: {
       type: String,
-      required: true,
+      lowercase: true,
       trim: true,
-      maxlength: 150,
-      default: 'ALIPURDUAR GOVERNMENT ENGINEERING AND MANAGEMENT COLLEGE',
+      minlength: 3,
+      maxlength: 30,
+      match: /^[a-z0-9]+(?:-[a-z0-9]+)*$/,
+      unique: true,
+      sparse: true,
     },
-    yearOfStudy: {
-      type: String,
-      required: true,
-      enum: ['1st Year', '2nd Year', '3rd Year', '4th Year'],
-    },
+
     email: {
       type: String,
       required: true,
@@ -27,18 +29,96 @@ const userSchema = new mongoose.Schema(
       lowercase: true,
       trim: true,
     },
+
     password: {
       type: String,
       required: true,
       select: false,
     },
+
     role: {
       type: String,
       enum: ['user', 'admin'],
       default: 'user',
     },
+
+    // Academic information
+    collegeName: {
+      type: String,
+      required: true,
+      trim: true,
+      maxlength: 150,
+      default:
+        'ALIPURDUAR GOVERNMENT ENGINEERING AND MANAGEMENT COLLEGE',
+    },
+
+    yearOfStudy: {
+      type: String,
+      required: true,
+      enum: ['1st Year', '2nd Year', '3rd Year', '4th Year'],
+    },
+
+    // Developer profile information
+    profileImage: {
+      url: {
+        type: String,
+        default: '',
+      },
+      fileId: {
+        type: String,
+        default: '',
+      },
+    },
+
+    bio: {
+      type: String,
+      trim: true,
+      maxlength: 500,
+      default: '',
+    },
+
+    github: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    linkedin: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    portfolio: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    technicalInterests: {
+      type: [String],
+      default: [],
+    },
+
+    skills: {
+      type: [String],
+      default: [],
+    },
+
+    learningGoals: {
+      type: [String],
+      default: [],
+    },
+
+    profileVisibility: {
+      type: String,
+      enum: ['members', 'private'],
+      default: 'members',
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
 module.exports = mongoose.model('User', userSchema);

@@ -8,6 +8,7 @@ const User = require('../models/User');
 const EmailOtp = require('../models/EmailOtp');
 const PasswordResetOtp = require('../models/PasswordResetOtp');
 const { protect } = require('../middleware/authMiddleware');
+const { generateUniqueUsername } = require('../utils/username');
 
 const router = express.Router();
 
@@ -609,16 +610,49 @@ router.post('/register', async (req, res) => {
       });
     }
 
+
     const hashedPassword = await bcrypt.hash(password, 12);
 
-    const user = await User.create({
-      name: name.trim(),
-      collegeName: collegeName.trim(),
-      yearOfStudy,
-      email: normalizedEmail,
-      password: hashedPassword,
-      role: 'user',
-    });
+    let user = null;
+    let registrationError = null;
+
+    // Retry if another registration claims the same username simultaneously.
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const username = await generateUniqueUsername(name.trim());
+
+      try {
+        user = await User.create({
+          name: name.trim(),
+          username,
+          collegeName: collegeName.trim(),
+          yearOfStudy,
+          email: normalizedEmail,
+          password: hashedPassword,
+          role: 'user',
+        });
+
+        break;
+      } catch (error) {
+        registrationError = error;
+
+        // Retry only when the username unique index caused the conflict.
+        const usernameConflict =
+          error.code === 11000 &&
+          (
+            error.keyPattern?.username ||
+            error.keyValue?.username
+          );
+
+        if (!usernameConflict) {
+          throw error;
+        }
+      }
+    }
+
+    if (!user) {
+      throw registrationError || new Error('Unable to generate a unique username.');
+    }
+
 
     // Consume the verification record after successful registration.
     await EmailOtp.deleteOne({ _id: verification._id });
@@ -631,6 +665,7 @@ router.post('/register', async (req, res) => {
       user: {
         id: user._id,
         name: user.name,
+        username: user.username,
         collegeName: user.collegeName,
         yearOfStudy: user.yearOfStudy,
         email: user.email,
