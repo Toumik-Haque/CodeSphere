@@ -12,7 +12,27 @@
   transition: background-color .25s ease,
               border-color .25s ease,
               box-shadow .25s ease,
-              backdrop-filter .25s ease;
+              backdrop-filter .25s ease,
+              transform .35s cubic-bezier(.4, 0, .2, 1),
+              opacity .35s ease;
+}
+
+/* Slides away while scrolling down; returns on scroll up. */
+.codesphere-navbar.navbar-hidden {
+  transform: translateY(-110%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* Keyboard users: bring it back when focus moves into it. */
+.codesphere-navbar.navbar-hidden:focus-within {
+  transform: none;
+  opacity: 1;
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .codesphere-navbar { transition: none; }
 }
 
 /* Scrolled navbar */

@@ -118,6 +118,7 @@ const Navbar = () => {
   const isAdminPage = location.pathname.startsWith('/admin');
 
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -144,8 +145,15 @@ const Navbar = () => {
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
   useEffect(() => {
+    let lastY = window.scrollY;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const y = window.scrollY;
+      setIsScrolled(y > 20);
+      // Hide while scrolling down, show again on scroll up (small moves ignored).
+      if (y < 80) setIsHidden(false);
+      else if (y > lastY + 8) setIsHidden(true);
+      else if (y < lastY - 8) setIsHidden(false);
+      if (Math.abs(y - lastY) > 8 || y < 80) lastY = y;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -362,7 +370,7 @@ const Navbar = () => {
     <>
       <nav
         ref={navRef}
-        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${onDark ? 'navbar-on-dark' : ''} ${
+        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${onDark ? 'navbar-on-dark' : ''} ${isHidden && !isMenuOpen && !isDropdownOpen ? 'navbar-hidden' : ''} ${
           isScrolled ? 'navbar-scrolled' : ''
         }`}
         aria-label="Main navigation"
