@@ -112,6 +112,45 @@ export function DigestView({ digest, categories, signedIn }) {
   );
 }
 
+// Opt-in toggle for the weekly email.
+function NewsletterToggle() {
+  const [subscribed, setSubscribed] = useState(null);
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiRequest('/newsletter/me').then((r) => !cancelled && setSubscribed(r.subscribed)).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (subscribed === null) return null;
+
+  const toggle = async () => {
+    setSaving(true);
+    try {
+      const r = await apiRequest('/newsletter/me', { method: 'PUT', body: JSON.stringify({ subscribed: !subscribed }) });
+      setSubscribed(r.subscribed);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className={`news-subscribe ${subscribed ? 'is-on' : ''}`}>
+      <i className={`bi ${subscribed ? 'bi-envelope-check-fill' : 'bi-envelope'}`} aria-hidden="true" />
+      <span>
+        <strong>{subscribed ? 'You get the Tech Brief by email' : 'Get the Tech Brief by email'}</strong>
+        <small>One email when each weekly edition is published. Unsubscribe any time.</small>
+      </span>
+      <button type="button" onClick={toggle} disabled={saving} aria-pressed={subscribed}>
+        {subscribed ? 'Unsubscribe' : 'Subscribe'}
+      </button>
+    </div>
+  );
+}
+
 export default function News() {
   const { slug } = useParams();
   const { user, token } = useAuth();
@@ -181,6 +220,7 @@ export default function News() {
               <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search past stories…" aria-label="Search stories" maxLength={100} />
               <button type="submit">Search</button>
             </form>
+            {signedIn && <NewsletterToggle />}
           </header>
 
           <div className="news-chips" role="tablist" aria-label="Browse">

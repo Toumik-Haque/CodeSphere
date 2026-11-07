@@ -54,6 +54,11 @@ const userSchema = new mongoose.Schema(
       enum: ['moderator', 'news-editor', 'challenge-editor'],
       default: [],
     },
+    // Opted in to the weekly Tech Brief email.
+    newsletterOptIn: {
+      type: Boolean,
+      default: false,
+    },
     // Notification types the student has muted (see utils/notify.js).
     mutedNotifications: {
       type: [String],

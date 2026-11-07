@@ -6,6 +6,7 @@ const User = require('../models/User');
 const { NewsSource, NewsItem, NewsDigest, NewsFetchLog } = require('../models/News');
 const { NEWS_LIMITS } = require('../data/news');
 const { notify } = require('./notify');
+const { sendDigestNewsletter } = require('./newsletter');
 
 // ---------- text and URL safety ----------
 
@@ -200,6 +201,16 @@ async function notifyLiveDigests() {
     });
     digest.notifiedAt = new Date();
     await digest.save();
+
+    // Email opted-in students once (skipped if Brevo isn't configured).
+    if (!digest.emailedAt) {
+      const result = await sendDigestNewsletter(digest);
+      if (!result.skipped) {
+        digest.emailedAt = new Date();
+        digest.emailCount = result.sent;
+        await digest.save();
+      }
+    }
   }
 }
 

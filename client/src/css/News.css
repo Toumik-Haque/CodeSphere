@@ -482,3 +482,35 @@
 @media (prefers-reduced-motion: reduce) {
   .news-skeleton { animation: none; }
 }
+
+/* Newsletter opt-in */
+.news-subscribe {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 12px;
+  max-width: 520px;
+  margin-top: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: #fff;
+}
+
+.news-subscribe > i { color: var(--gold); font-size: 1.4rem; }
+.news-subscribe span { display: flex; flex: 1; flex-direction: column; min-width: 180px; }
+.news-subscribe strong { color: var(--navy); font-size: .92rem; }
+.news-subscribe small { color: var(--text-muted); font-size: .78rem; }
+
+.news-subscribe button {
+  padding: 8px 14px;
+  border: 0;
+  border-radius: 10px;
+  background: var(--gold);
+  color: #fff;
+  font-weight: 800;
+}
+
+.news-subscribe.is-on { border-color: #BFE8CF; background: #F3FBF6; }
+.news-subscribe.is-on > i { color: #16A34A; }
+.news-subscribe.is-on button { border: 1px solid var(--line); background: #fff; color: var(--navy); }

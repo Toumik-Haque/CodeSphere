@@ -37,6 +37,7 @@ const forumRoutes = require('./routes/forumRoutes');
 const reverseRoutes = require('./routes/reverseRoutes');
 const newsRoutes = require('./routes/newsRoutes');
 const realtimeRoutes = require('./routes/realtimeRoutes');
+const newsletterRoutes = require('./routes/newsletterRoutes');
 const { startNewsScheduler } = require('./utils/newsIngest');
 
 app.use('/api/auth', authRoutes);
@@ -53,6 +54,7 @@ app.use('/api/forum', forumRoutes);
 app.use('/api/reverse', reverseRoutes);
 app.use('/api/news', newsRoutes);
 app.use('/api/realtime', realtimeRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 const PORT = process.env.PORT || 5000;
 

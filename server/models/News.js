@@ -72,6 +72,9 @@ const digestSchema = new Schema(
     status: { type: String, enum: ['draft', 'published'], default: 'draft', index: true },
     publishedAt: { type: Date, default: null },
     notifiedAt: { type: Date, default: null },
+    // Newsletter delivery (once per digest).
+    emailedAt: { type: Date, default: null },
+    emailCount: { type: Number, default: 0 },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     publishedBy: { type: Schema.Types.ObjectId, ref: 'User' },
   },
