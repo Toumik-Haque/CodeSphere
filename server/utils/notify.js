@@ -1,8 +1,9 @@
 const Notification = require('../models/Notification');
 const User = require('../models/User');
+const { pushToUser } = require('./realtime');
 
 // Notification types a student can mute (see User.mutedNotifications).
-const MUTABLE_TYPES = ['forum-reply', 'reverse-new', 'news-digest'];
+const MUTABLE_TYPES = ['forum-reply', 'forum-mention', 'reverse-new', 'news-digest', 'news-daily'];
 
 /**
  * Create notifications for one or more users. Never throws: a failed
@@ -22,6 +23,8 @@ async function notify(userIds, { type, title, body = '', link = '' }) {
 
     if (recipients.length) {
       await Notification.insertMany(recipients.map((user) => ({ user, type, title, body, link })));
+      // Live update for anyone with the site open.
+      recipients.forEach((user) => pushToUser(user, 'notification', { type, title, link }));
     }
   } catch (error) {
     console.error('Notify error:', error.message);

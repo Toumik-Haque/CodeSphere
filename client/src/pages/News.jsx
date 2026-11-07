@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { formatDate } from '../lib/time';
+import DailyNews, { DailyEmailToggle } from '../components/DailyNews';
 import '../css/News.css';
 
 function useCategories() {
@@ -124,7 +125,8 @@ export default function News() {
   const [error, setError] = useState('');
   const [search, setSearch] = useState(params.get('q') || '');
 
-  const view = params.get('view') || 'digest';
+  // Default: today's automatic news. A digest slug opens the weekly Brief.
+  const view = params.get('view') || (slug ? 'digest' : 'today');
   const q = params.get('q') || '';
   const category = params.get('category') || '';
 
@@ -152,7 +154,7 @@ export default function News() {
 
   // Search / filter / saved.
   useEffect(() => {
-    if (view === 'digest' && !q && !category) return undefined;
+    if (view === 'today' || (view === 'digest' && !q && !category)) return undefined;
     let cancelled = false;
     const request = view === 'saved'
       ? apiRequest('/news/bookmarks')
@@ -165,7 +167,8 @@ export default function News() {
     };
   }, [view, q, category]);
 
-  const browsing = view === 'saved' || q || category;
+  const isToday = view === 'today' && !q;
+  const browsing = !isToday && (view === 'saved' || q || category);
 
   return (
     <>
@@ -173,22 +176,26 @@ export default function News() {
       <main className="news-page">
         <div className="container">
           <header className="news-hero">
-            <span className="section-eyebrow"><span className="section-eyebrow-line" /> WEEKLY TECH NEWS</span>
-            <h1>The CodeSphere <span className="gold-text">Tech Brief.</span></h1>
-            <p>What changed in tech this week, why it matters to developers, and what to try next. Curated and summarised by the CodeSphere team, with links to the original sources.</p>
+            <span className="section-eyebrow"><span className="section-eyebrow-line" /> TECH NEWS · UPDATED DAILY</span>
+            <h1>Stay updated, <span className="gold-text">every single day.</span></h1>
+            <p>Today&apos;s top developer stories from Hacker News, DEV and trusted tech blogs, refreshed through the day, plus the weekly Tech Brief curated by the CodeSphere team.</p>
             <form className="news-search" role="search" onSubmit={(e) => { e.preventDefault(); update({ q: search.trim(), view: '' }); }}>
               <i className="bi bi-search" aria-hidden="true" />
               <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search past stories…" aria-label="Search stories" maxLength={100} />
               <button type="submit">Search</button>
             </form>
+            {signedIn && <DailyEmailToggle />}
           </header>
 
           <div className="news-chips" role="tablist" aria-label="Browse">
-            <button type="button" role="tab" aria-selected={!browsing} className={!browsing ? 'active' : ''} onClick={() => { setSearch(''); update({ view: '', q: '', category: '' }); }}>
-              <i className="bi bi-newspaper" aria-hidden="true" /> {slug ? 'This edition' : 'Latest edition'}
+            <button type="button" role="tab" aria-selected={isToday && !category} className={isToday && !category ? 'active' : ''} onClick={() => { setSearch(''); update({ view: '', q: '', category: '' }); }}>
+              <i className="bi bi-lightning-charge" aria-hidden="true" /> Today
+            </button>
+            <button type="button" role="tab" aria-selected={view === 'digest' && !browsing} className={view === 'digest' && !browsing ? 'active' : ''} onClick={() => { setSearch(''); update({ view: 'digest', q: '', category: '' }); }}>
+              <i className="bi bi-newspaper" aria-hidden="true" /> {slug ? 'This edition' : 'Weekly Brief'}
             </button>
             {categories.map((c) => (
-              <button key={c.id} type="button" role="tab" aria-selected={category === c.id} className={category === c.id ? 'active' : ''} onClick={() => update({ category: category === c.id ? '' : c.id, view: '' })}>
+              <button key={c.id} type="button" role="tab" aria-selected={category === c.id} className={category === c.id ? 'active' : ''} onClick={() => update({ category: category === c.id ? '' : c.id, view: view === 'saved' ? '' : (slug ? 'digest' : view === 'today' ? '' : view) })}>
                 <i className={`bi ${c.icon}`} aria-hidden="true" /> {c.name}
               </button>
             ))}
@@ -201,6 +208,9 @@ export default function News() {
 
           {error && <p className="news-error" role="alert">{error}</p>}
 
+          {isToday ? (
+            <DailyNews categories={categories} category={category} onCategory={(c) => update({ category: c })} />
+          ) : (
           <div className="news-layout">
             <div className="news-main">
               {browsing ? (
@@ -251,6 +261,7 @@ export default function News() {
               </p>
             </aside>
           </div>
+          )}
         </div>
       </main>
       <Footer />

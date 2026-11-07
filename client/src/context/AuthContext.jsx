@@ -1,8 +1,8 @@
 import {
   createContext,
   useContext,
-  useState,
   useEffect,
+  useState,
 } from 'react';
 
 import { apiRequest } from '../lib/api';
@@ -24,28 +24,30 @@ export function AuthProvider({ children }) {
     () => localStorage.getItem('codesphere_token')
   );
 
+  // Refresh the saved user from the server on load and after sign-in, so
+  // changes (staff roles, photo, username, profile details) show up without
+  // signing in again. /auth/me has account data; /users/profile adds the
+  // developer profile. Both are merged into the saved user.
   useEffect(() => {
-  async function fetchCurrentUser() {
-    if (!token) return;
-
-    try {
-      const data = await apiRequest('/users/profile');
-
-      if (data.user) {
-        setUser(data.user);
-
-        localStorage.setItem(
-          'codesphere_user',
-          JSON.stringify(data.user)
-        );
-      }
-    } catch (error) {
+    if (!token) return undefined;
+    let cancelled = false;
+    const merge = (data) => {
+      if (cancelled || !data?.user) return;
+      setUser((current) => {
+        if (!current) return current;
+        const next = { ...current, ...data.user };
+        localStorage.setItem('codesphere_user', JSON.stringify(next));
+        return next;
+      });
+    };
+    apiRequest('/auth/me').then(merge).catch(() => {});
+    apiRequest('/users/profile').then(merge).catch((error) => {
       console.error('Failed to refresh user profile:', error.message);
-    }
-  }
-
-  fetchCurrentUser();
-}, [token]);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
 
   async function sendOtp(email) {
     return apiRequest('/auth/send-otp', {
@@ -124,11 +126,13 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
-  function updateUser(updatedUser) {
-    setUser((currentUser) => {
-      const nextUser = { ...currentUser, ...updatedUser };
-      localStorage.setItem('codesphere_user', JSON.stringify(nextUser));
-      return nextUser;
+  // Merge fields into the signed-in user (and the saved copy).
+  function updateUser(patch) {
+    setUser((current) => {
+      if (!current) return current;
+      const next = { ...current, ...patch };
+      localStorage.setItem('codesphere_user', JSON.stringify(next));
+      return next;
     });
   }
 

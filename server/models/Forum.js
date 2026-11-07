@@ -19,7 +19,9 @@ const threadSchema = new Schema(
     category: { type: String, required: true, index: true },
     postType: { type: String, required: true },
     title: { type: String, required: true, trim: true, maxlength: 150 },
-    body: { type: String, required: true, maxlength: 10000 },
+    // Rich posts are stored as sanitised HTML (format 'html'); older ones are plain text.
+    body: { type: String, required: true, maxlength: 40000 },
+    format: { type: String, enum: ['text', 'html'], default: 'text' },
     tags: { type: [String], default: [], index: true },
     status: { type: String, enum: STATUSES, default: 'visible', index: true },
     pinned: { type: Boolean, default: false },
@@ -30,6 +32,11 @@ const threadSchema = new Schema(
     reactions: reactionCounts,
     lastActivityAt: { type: Date, default: Date.now, index: true },
     editedAt: { type: Date, default: null },
+    // Up to 3 images (stored in ImageKit).
+    attachments: {
+      type: [{ url: String, fileId: String, _id: false }],
+      default: [],
+    },
   },
   { timestamps: true },
 );
@@ -90,6 +97,17 @@ const reportSchema = new Schema(
 );
 reportSchema.index({ reporter: 1, targetType: 1, target: 1, status: 1 });
 
+// An uploaded image waiting to be attached to a thread by its owner.
+const uploadSchema = new Schema(
+  {
+    owner: { ...ref('User'), required: true, index: true },
+    url: { type: String, required: true },
+    fileId: { type: String, required: true },
+    used: { type: Boolean, default: false },
+  },
+  { timestamps: true },
+);
+
 // Audit trail: every moderator action.
 const moderationSchema = new Schema(
   {
@@ -112,4 +130,5 @@ module.exports = {
   ForumFollow: mongoose.model('ForumFollow', followSchema),
   ForumReport: mongoose.model('ForumReport', reportSchema),
   ForumModeration: mongoose.model('ForumModeration', moderationSchema),
+  ForumUpload: mongoose.model('ForumUpload', uploadSchema),
 };

@@ -80,6 +80,18 @@ const eventSchema = new mongoose.Schema(
       trim: true,
       default: '',
     },
+    rules: { type: String, trim: true, maxlength: 10000, default: '' },
+    // ---- Community hosting (events/hackathons submitted by students) ----
+    origin: { type: String, enum: ['club', 'community'], default: 'club', index: true },
+    reviewStatus: { type: String, enum: ['none', 'pending', 'approved', 'rejected'], default: 'none', index: true },
+    reviewNote: { type: String, trim: true, maxlength: 1000, default: '' },
+    reviewedAt: Date,
+    reviewedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+    submittedAt: Date,
+    hostName: { type: String, trim: true, maxlength: 120, default: '' },
+    contactEmail: { type: String, trim: true, maxlength: 200, default: '' },
+    contactPhone: { type: String, trim: true, maxlength: 30, default: '' },
+    websiteLink: { type: String, trim: true, default: '' },
     status: {
       type: String,
       enum: ['draft', 'published'],

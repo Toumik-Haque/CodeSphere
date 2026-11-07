@@ -2,12 +2,14 @@ import { useEffect, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-import SafeText from '../components/SafeText';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
+import RichTextEditor from '../components/RichTextEditor';
+import RichText from '../components/RichText';
 import '../css/Forum.css';
+import '../css/ForumSocial.css';
 
 export default function ForumNew() {
   const { user } = useAuth();
@@ -25,6 +27,27 @@ export default function ForumNew() {
   const [preview, setPreview] = useState(false);
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
+  const [images, setImages] = useState([]); // [{ id, url }]
+  const [uploading, setUploading] = useState(false);
+
+  const addImage = async (file) => {
+    if (!file) return;
+    if (images.length >= 3) return setError('Up to 3 images per post.');
+    if (file.size > 2 * 1024 * 1024) return setError('Images must be 2 MB or smaller.');
+    setUploading(true);
+    setError('');
+    try {
+      const data = new FormData();
+      data.append('image', file);
+      const r = await apiRequest('/forum/uploads', { method: 'POST', body: data });
+      setImages((list) => [...list, r]);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setUploading(false);
+    }
+    return undefined;
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -51,7 +74,9 @@ export default function ForumNew() {
         method: 'POST',
         body: JSON.stringify({
           ...form,
+          format: 'html',
           tags: form.tags.split(/[,\s]+/).filter(Boolean),
+          attachments: images.map((img) => img.id),
         }),
       });
       celebrateBadges(result.newBadges);
@@ -119,22 +144,34 @@ export default function ForumNew() {
             </div>
             {preview ? (
               <div className="forum-preview">
-                {form.body ? <SafeText text={form.body} /> : <p className="forum-muted">Nothing to preview yet.</p>}
+                {form.body ? <RichText html={form.body} /> : <p className="forum-muted">Nothing to preview yet.</p>}
               </div>
             ) : (
-              <textarea
+              <RichTextEditor
                 value={form.body}
-                onChange={set('body')}
-                rows={10}
-                placeholder="Explain your question or idea. Wrap code in ``` (three backticks) on their own lines."
-                minLength={limits?.bodyMin}
-                maxLength={limits?.threadBodyMax}
-                required
-                aria-label="Details"
+                onChange={(body) => setForm((f) => ({ ...f, body }))}
+                placeholder="Explain your question or idea. Use the toolbar for headings, lists, links and code blocks."
               />
             )}
+            <div className="forum-images">
+              {images.map((img) => (
+                <figure key={img.id}>
+                  <img src={img.url} alt="Attached" />
+                  <button type="button" onClick={() => setImages((list) => list.filter((x) => x.id !== img.id))} aria-label="Remove image">
+                    <i className="bi bi-x" aria-hidden="true" />
+                  </button>
+                </figure>
+              ))}
+              {images.length < 3 && (
+                <label className="forum-image-add">
+                  <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => { addImage(e.target.files[0]); e.target.value = ''; }} disabled={uploading} />
+                  <i className={`bi ${uploading ? 'bi-hourglass-split' : 'bi-image'}`} aria-hidden="true" />
+                  {uploading ? 'Uploading…' : 'Add image'}
+                </label>
+              )}
+            </div>
             <small className="forum-hint">
-              Formatting: ```code blocks```, `inline code`, **bold**, and links. {limits && `${form.body.length}/${limits.threadBodyMax}`}
+              Use the toolbar for headings, lists, links, colours and code blocks. Up to 3 images (2 MB each). Mention people with @name in replies.
             </small>
 
             <label>

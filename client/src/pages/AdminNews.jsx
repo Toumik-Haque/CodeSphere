@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { formatDate, timeAgo } from '../lib/time';
+import DailyNewsAdmin from '../components/DailyNewsAdmin';
 import '../css/News.css';
 
 const STATUSES = ['candidate', 'reviewing', 'approved', 'published', 'rejected', 'archived'];
@@ -259,7 +260,7 @@ export default function AdminNews() {
           <h1 className="news-admin-title"><i className="bi bi-newspaper" aria-hidden="true" /> Tech News editor</h1>
 
           <div className="news-chips" role="tablist">
-            {[['queue', 'Review queue', 'bi-inboxes'], ['add', 'Add a story', 'bi-plus-circle'], ['digests', 'Digests', 'bi-journal-richtext'], ['sources', 'Sources', 'bi-rss']].map(([id, label, icon]) => (
+            {[['queue', 'Review queue', 'bi-inboxes'], ['add', 'Add a story', 'bi-plus-circle'], ['digests', 'Digests', 'bi-journal-richtext'], ['sources', 'Sources', 'bi-rss'], ['daily', 'Daily news', 'bi-lightning-charge']].map(([id, label, icon]) => (
               <button key={id} type="button" role="tab" aria-selected={tab === id} className={tab === id ? 'active' : ''} onClick={() => { setTab(id); setMessage(''); }}>
                 <i className={`bi ${icon}`} aria-hidden="true" /> {label}
               </button>
@@ -342,6 +343,8 @@ export default function AdminNews() {
               </div>
             </>
           )}
+
+          {tab === 'daily' && <DailyNewsAdmin />}
 
           {tab === 'sources' && (
             <>

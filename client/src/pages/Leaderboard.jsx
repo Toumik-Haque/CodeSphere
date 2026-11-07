@@ -507,6 +507,34 @@ const Leaderboard = () => {
   const podium = rows.filter((row) => row.rank <= 3).slice(0, 3);
   const rest = rows.slice(podium.length);
 
+  // How XP works: shown below the boards so the rankings come first.
+  const howToEarn = (
+    <section className="lb-how" aria-labelledby="lb-how-title">
+      <h2 id="lb-how-title"><i className="bi bi-lightning-charge-fill" aria-hidden="true" /> How to climb the board</h2>
+      <p className="lb-subtitle">Fix the daily bug, solve coding challenges, keep your streak alive. Every day counts.</p>
+      <ul className="lb-rules">
+        <li><i className="bi bi-bug-fill" aria-hidden="true" /><span><strong>Daily bug</strong> +10–30 XP, plus a streak bonus</span></li>
+        <li><i className="bi bi-code-square" aria-hidden="true" /><span><strong>Coding challenges</strong> +10–50 XP each</span></li>
+        <li><i className="bi bi-arrow-repeat" aria-hidden="true" /><span><strong>Reverse Coding</strong> points (best score counts)</span></li>
+        <li><i className="bi bi-fire" aria-hidden="true" /><span><strong>Streak</strong> = days in a row you fixed the daily bug</span></li>
+      </ul>
+      {board === 'students' ? (
+        <a href="#rules" className="lb-rules-link"><i className="bi bi-info-circle" aria-hidden="true" /> Read all the rules</a>
+      ) : (
+        <button
+          type="button"
+          className="lb-rules-link"
+          onClick={() => {
+            switchBoard('students');
+            setTimeout(() => document.getElementById('rules')?.scrollIntoView({ behavior: 'smooth' }), 450);
+          }}
+        >
+          <i className="bi bi-info-circle" aria-hidden="true" /> Read all the rules
+        </button>
+      )}
+    </section>
+  );
+
   return (
     <>
       <Navbar />
@@ -555,36 +583,6 @@ const Leaderboard = () => {
               </button>
             </div>
 
-            {board !== 'opensource' && (
-            <>
-            <p className="lb-subtitle">
-              Fix the daily bug, solve coding challenges, keep your streak alive.
-              Every day counts.
-            </p>
-
-            <ul className="lb-rules">
-              <li>
-                <i className="bi bi-bug-fill" aria-hidden="true" />
-                <span><strong>Daily bug</strong> +10–30 XP, plus a streak bonus</span>
-              </li>
-              <li>
-                <i className="bi bi-code-square" aria-hidden="true" />
-                <span><strong>Coding challenges</strong> +10–50 XP each</span>
-              </li>
-              <li>
-                <i className="bi bi-arrow-repeat" aria-hidden="true" />
-                <span><strong>Reverse Coding</strong> challenge points (best score counts)</span>
-              </li>
-              <li>
-                <i className="bi bi-fire" aria-hidden="true" />
-                <span><strong>Streak</strong> = days in a row you fixed the daily bug</span>
-              </li>
-            </ul>
-            <a href="#rules" className="lb-rules-link">
-              <i className="bi bi-info-circle" aria-hidden="true" /> Read all the rules
-            </a>
-            </>
-            )}
           </header>
 
           {board === 'opensource' && <OpenSourceContributors />}
@@ -700,6 +698,8 @@ const Leaderboard = () => {
               </div>
             </>
           )}
+
+          {board === 'both' && howToEarn}
 
           {board === 'students' && (
           <>
@@ -832,6 +832,8 @@ const Leaderboard = () => {
           {data && data.totalPlayers > rows.length && (
             <p className="lb-footnote">Showing the top {rows.length} of {data.totalPlayers} players.</p>
           )}
+
+          {howToEarn}
 
           <div id="rules">
             <Rules catalog={catalog} />

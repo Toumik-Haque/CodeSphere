@@ -537,3 +537,10 @@
   padding: 9px 12px;
   text-align: left;
 }
+/* Community-hosted events */
+.event-view-host { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: -4px 0 14px; color: var(--text-muted, #5B7083); }
+.event-view-host strong { color: var(--navy); }
+.event-view-host a { color: var(--gold); font-weight: 700; }
+.event-view-rules { margin: 18px 0; padding: 16px 18px; border: 1px solid rgba(16, 36, 58, .1); border-radius: 14px; background: rgba(255, 255, 255, .7); }
+.event-view-rules h2 { margin: 0 0 8px; color: var(--navy); font-size: 1.1rem; font-weight: 800; }
+.event-view-rules p { margin: 0; white-space: pre-wrap; }

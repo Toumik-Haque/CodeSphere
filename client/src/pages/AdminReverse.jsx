@@ -174,7 +174,14 @@ export default function AdminReverse() {
           </div>
 
           {data && !data.judgeReady && (
-            <p className="rc-notice"><i className="bi bi-info-circle" aria-hidden="true" /> Judge0 isn&apos;t configured, so challenges can&apos;t be validated or published from here yet. The starter set was loaded with <code>node scripts/seedReverseChallenges.js</code>.</p>
+            <p className="rc-notice"><i className="bi bi-info-circle" aria-hidden="true" /> Code running is turned off (CODE_RUNNER=off), so challenges can&apos;t be validated or published from here.</p>
+          )}
+          {data?.judgeReady && (
+            <p className="rc-runner">
+              <i className="bi bi-cpu" aria-hidden="true" /> Code runner:{' '}
+              <strong>{data.runner === 'judge0' ? 'Judge0' : 'Wandbox (free, public)'}</strong>
+              {data.runner === 'wandbox' && <span> · set JUDGE0_URL or JUDGE0_API_KEY to switch to Judge0</span>}
+            </p>
           )}
           {message && <p className="rc-notice" role="status">{message}</p>}
 

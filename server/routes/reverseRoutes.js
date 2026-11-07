@@ -1,13 +1,17 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { ReverseChallenge, ReverseAttempt, ReverseBookmark } = require('../models/Reverse');
-const { protect, adminOnly, optionalAuth } = require('../middleware/authMiddleware');
+const { protect, optionalAuth, requireStaff } = require('../middleware/authMiddleware');
+
+// Admins and challenge editors.
+const editorOnly = requireStaff('challenge-editor');
 const { createLimiter } = require('../utils/rateLimit');
-const { isConfigured, SUPPORTED_LANGUAGES } = require('../config/judge0');
+const { isConfigured, activeRunner, SUPPORTED_LANGUAGES } = require('../config/codeRunner');
 const { evaluate } = require('../utils/reverseJudge');
 const { syncBadgesQuietly } = require('../utils/badges');
 const { notify } = require('../utils/notify');
 const User = require('../models/User');
+const StudyGuide = require('../models/StudyGuide');
 
 const router = express.Router();
 
@@ -127,6 +131,8 @@ router.get('/:slug', optionalAuth, async (req, res) => {
       : [];
 
     const publicTests = challenge.tests.filter((t) => !t.hidden).map((t) => ({ input: t.input, output: t.output }));
+    // Study Guide pages on the same topic (linked from the editorial).
+    const guides = await StudyGuide.find({ topic: challenge.topic, status: 'published' }).select('slug title level').limit(3).lean();
 
     return res.json({
       challenge: {
@@ -147,6 +153,7 @@ router.get('/:slug', optionalAuth, async (req, res) => {
         editorialLocked: Boolean(challenge.editorial) && !state.solved,
       },
       history: history.map((h) => ({ ...h, id: String(h._id), _id: undefined })),
+      guides: guides.map((g) => ({ slug: g.slug, title: g.title, level: g.level })),
       judgeReady: isConfigured(),
     });
   } catch (error) {
@@ -171,7 +178,7 @@ async function prepare(req, res) {
     return null;
   }
   if (!isConfigured()) {
-    res.status(503).json({ message: 'The code runner isn\'t set up on this server yet (Judge0 key missing). Ask the CodeSphere team.' });
+    res.status(503).json({ message: 'Code running is turned off on this server. Ask the CodeSphere team.' });
     return null;
   }
   const key = String(req.user._id);
@@ -311,7 +318,7 @@ function validateChallenge(body) {
 }
 
 // GET /api/reverse/admin/all: every challenge (any status), full data.
-router.get('/admin/all', protect, adminOnly, async (req, res) => {
+router.get('/admin/all', protect, editorOnly, async (req, res) => {
   try {
     const challenges = await ReverseChallenge.find().sort({ updatedAt: -1 }).lean();
     const stats = await ReverseAttempt.aggregate([
@@ -330,6 +337,7 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
       levels: LEVELS,
       languages: SUPPORTED_LANGUAGES,
       judgeReady: isConfigured(),
+      runner: activeRunner(),
     });
   } catch (error) {
     console.error('Reverse admin list error:', error);
@@ -338,7 +346,7 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
 });
 
 // POST /api/reverse/admin: create a draft.
-router.post('/admin', protect, adminOnly, async (req, res) => {
+router.post('/admin', protect, editorOnly, async (req, res) => {
   const { errors, value } = validateChallenge(req.body);
   for (const field of ['slug', 'title', 'format', 'level', 'topic', 'points', 'statement', 'tests']) {
     if (value[field] === undefined || value[field] === '') errors.push(`Missing: ${field}.`);
@@ -356,7 +364,7 @@ router.post('/admin', protect, adminOnly, async (req, res) => {
 
 // PUT /api/reverse/admin/:id: edit. Changing tests or the reference
 // solution clears validation (it must be re-validated before publishing).
-router.put('/admin/:id', protect, adminOnly, async (req, res) => {
+router.put('/admin/:id', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   const { errors, value } = validateChallenge(req.body);
   if (errors.length) return res.status(400).json({ message: errors[0], errors });
@@ -381,13 +389,13 @@ router.put('/admin/:id', protect, adminOnly, async (req, res) => {
 
 // POST /api/reverse/admin/:id/validate: the reference solution must pass
 // every test before the challenge can be published.
-router.post('/admin/:id/validate', protect, adminOnly, async (req, res) => {
+router.post('/admin/:id/validate', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   try {
     const challenge = await ReverseChallenge.findById(req.params.id);
     if (!challenge) return res.status(404).json({ message: 'Challenge not found.' });
     if (!challenge.referenceSolution?.code) return res.status(400).json({ message: 'Add a reference solution first.' });
-    if (!isConfigured()) return res.status(503).json({ message: 'Validation needs the Judge0 code runner (key missing).' });
+    if (!isConfigured()) return res.status(503).json({ message: 'Validation needs the code runner (CODE_RUNNER is off).' });
 
     // Show admins every test's details (they're allowed to see hidden ones).
     const asPublic = challenge.tests.map((t) => ({ ...t.toObject(), hidden: false }));
@@ -404,7 +412,7 @@ router.post('/admin/:id/validate', protect, adminOnly, async (req, res) => {
 });
 
 // POST /api/reverse/admin/:id/publish { publishAt? }: publish now or later.
-router.post('/admin/:id/publish', protect, adminOnly, async (req, res) => {
+router.post('/admin/:id/publish', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   try {
     const challenge = await ReverseChallenge.findById(req.params.id);
@@ -435,7 +443,7 @@ router.post('/admin/:id/publish', protect, adminOnly, async (req, res) => {
 });
 
 // POST /api/reverse/admin/:id/retire: unpublish (keeps attempts/history).
-router.post('/admin/:id/retire', protect, adminOnly, async (req, res) => {
+router.post('/admin/:id/retire', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   try {
     await ReverseChallenge.updateOne({ _id: req.params.id }, { $set: { status: 'retired', updatedBy: req.user._id } });

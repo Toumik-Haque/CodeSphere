@@ -26,7 +26,11 @@ export async function apiRequest(endpoint, options = {}) {
   const data = await response.json().catch(() => ({}));
 
   if (!response.ok) {
-    throw new Error(data.message || 'Something went wrong.');
+    const error = new Error(data.message || 'Something went wrong.');
+    // Extra details (e.g. a list of missing fields) for pages that want them.
+    error.status = response.status;
+    error.data = data;
+    throw error;
   }
 
   return data;

@@ -9,11 +9,15 @@ const {
   ForumFollow,
   ForumReport,
   ForumModeration,
+  ForumUpload,
 } = require('../models/Forum');
-const { protect, adminOnly, optionalAuth } = require('../middleware/authMiddleware');
+const { protect, optionalAuth, requireStaff, hasStaffRole } = require('../middleware/authMiddleware');
 const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
 const { syncBadgesQuietly } = require('../utils/badges');
+const { pushToThread } = require('../utils/realtime');
+const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
+const sanitizeHtml = require('sanitize-html');
 const {
   FORUM_CATEGORIES,
   POST_TYPES,
@@ -34,12 +38,15 @@ const reasonIds = new Set(REPORT_REASONS.map((r) => r.id));
 const limitThreads = createLimiter({ windowMs: 15 * 60 * 1000, max: 5, message: 'You can start up to 5 discussions every 15 minutes.' });
 const limitReplies = createLimiter({ windowMs: 10 * 60 * 1000, max: 20, message: 'You\'re replying very fast. Take a short break and try again.' });
 const limitReactions = createLimiter({ windowMs: 60 * 1000, max: 60 });
+const limitUploads = createLimiter({ windowMs: 60 * 60 * 1000, max: 15, message: 'You can upload up to 15 images an hour.' });
+const limitSearch = createLimiter({ windowMs: 60 * 1000, max: 60 });
 const limitReports = createLimiter({ windowMs: 60 * 60 * 1000, max: 10, message: 'You can send up to 10 reports an hour.' });
 
 // ---------- helpers ----------
 
 const isId = (id) => mongoose.Types.ObjectId.isValid(id);
-const isStaff = (user) => user?.role === 'admin';
+// Admins and forum moderators.
+const isStaff = (user) => hasStaffRole(user, 'moderator');
 const sameUser = (a, b) => Boolean(a && b) && String(a._id || a) === String(b._id || b);
 
 // Plain text only: drop control characters, normalise newlines, trim.
@@ -71,12 +78,58 @@ function publicAuthor(user) {
     name,
     initials: name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join(''),
     year: user.role === 'admin' ? '' : user.yearOfStudy || '',
-    isStaff: user.role === 'admin',
+    isStaff: user.role === 'admin' || Boolean(user.staffRoles?.includes('moderator')),
+    avatarUrl: user.avatarUrl || '',
   };
 }
 
-function preview(body) {
-  const text = body.replace(/```[\s\S]*?```/g, ' [code] ').replace(/\s+/g, ' ').trim();
+// Mentions are stored in the text as @[Display Name](userId).
+const MENTION = /@\[([^\]\n]{1,80})\]\(([a-f0-9]{24})\)/g;
+const MAX_MENTIONS = 5;
+const MAX_ATTACHMENTS = 3;
+
+const stripMentions = (text) => text.replace(MENTION, '@$1');
+
+function mentionedIds(text) {
+  return [...new Set([...text.matchAll(MENTION)].map((m) => m[2]))].slice(0, MAX_MENTIONS);
+}
+
+// Notify mentioned users (not the author; only real accounts).
+async function notifyMentions(text, author, { title, link }) {
+  const ids = mentionedIds(text).filter((id) => id !== String(author._id));
+  if (!ids.length) return;
+  const users = await User.find({ _id: { $in: ids } }).select('_id').lean();
+  await notify(users.map((u) => u._id), {
+    type: 'forum-mention',
+    title: `${author.name} mentioned you in "${title.slice(0, 80)}"`,
+    body: stripMentions(text).slice(0, 140),
+    link,
+  });
+}
+
+// ---------- Rich text (HTML from the editor) ----------
+const RICH_OPTIONS = {
+  allowedTags: ['p', 'br', 'strong', 'b', 'em', 'i', 'u', 's', 'h2', 'h3', 'h4', 'ul', 'ol', 'li', 'a', 'blockquote', 'pre', 'code', 'hr', 'table', 'thead', 'tbody', 'tr', 'th', 'td', 'span'],
+  allowedAttributes: { a: ['href', 'target', 'rel'], span: ['style'], p: ['style'], td: ['colspan', 'rowspan'], th: ['colspan', 'rowspan'] },
+  allowedStyles: {
+    '*': {
+      color: [/^#[0-9a-f]{3,8}$/i, /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i],
+      'background-color': [/^#[0-9a-f]{3,8}$/i, /^rgb\(\s*\d{1,3}\s*,\s*\d{1,3}\s*,\s*\d{1,3}\s*\)$/i],
+      'text-align': [/^(left|right|center|justify)$/],
+    },
+  },
+  allowedSchemes: ['http', 'https', 'mailto'],
+  transformTags: { a: sanitizeHtml.simpleTransform('a', { target: '_blank', rel: 'nofollow noopener noreferrer' }) },
+};
+const sanitizeRich = (html) => sanitizeHtml(String(html || ''), RICH_OPTIONS).trim();
+// Plain text of an HTML post (for limits, previews, notifications).
+const richToText = (html) => sanitizeHtml(String(html || '').replace(/<\/(p|h[2-4]|li|blockquote|pre|tr)>/gi, '\n').replace(/<br\s*\/?>/gi, '\n'), { allowedTags: [], allowedAttributes: {} })
+  .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+  .replace(/[ \t]+\n/g, '\n').replace(/\n{3,}/g, '\n\n').trim();
+const plainOf = (body, format) => (format === 'html' ? richToText(body) : body);
+
+function preview(body, format = 'text') {
+  const text = stripMentions(plainOf(body, format)).replace(/```[\s\S]*?```/g, ' [code] ').replace(/\s+/g, ' ').trim();
   return text.length > 220 ? `${text.slice(0, 217)}…` : text;
 }
 
@@ -90,7 +143,7 @@ function threadCard(thread) {
   return {
     id: String(thread._id),
     title: thread.title,
-    preview: preview(thread.body),
+    preview: preview(thread.body, thread.format),
     category: thread.category,
     postType: thread.postType,
     tags: thread.tags,
@@ -122,9 +175,11 @@ function mutedMessage(user) {
 }
 
 // Validates title/body/category/type/tags; returns { errors, value }.
-function validateThread(input, user, { partial = false } = {}) {
+function validateThread(input, user, { partial = false, format } = {}) {
   const errors = [];
   const value = {};
+  // New posts choose the format; edits keep the post's existing format.
+  const useHtml = (format || input.format) === 'html';
 
   if (!partial || input.title !== undefined) {
     value.title = cleanText(input.title).replace(/\s+/g, ' ');
@@ -133,8 +188,10 @@ function validateThread(input, user, { partial = false } = {}) {
     }
   }
   if (!partial || input.body !== undefined) {
-    value.body = cleanText(input.body);
-    if (value.body.length < LIMITS.bodyMin || value.body.length > LIMITS.threadBodyMax) {
+    value.body = useHtml ? sanitizeRich(input.body).slice(0, 40000) : cleanText(input.body);
+    if (!partial) value.format = useHtml ? 'html' : 'text';
+    const plain = useHtml ? richToText(value.body) : value.body;
+    if (plain.length < LIMITS.bodyMin || plain.length > LIMITS.threadBodyMax) {
       errors.push(`Post must be ${LIMITS.bodyMin}–${LIMITS.threadBodyMax} characters.`);
     }
   }
@@ -220,14 +277,14 @@ router.get('/threads', optionalAuth, async (req, res) => {
     if (tab === 'trending') {
       // Score recent threads by replies, reactions and views.
       const recent = await ForumThread.find(filter).sort({ lastActivityAt: -1 }).limit(300)
-        .populate('author', 'name yearOfStudy role').lean();
+        .populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean();
       recent.sort((a, b) => trendScore(b) - trendScore(a));
       total = recent.length;
       threads = recent.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     } else {
       const query = ForumThread.find(filter, q ? { score: { $meta: 'textScore' } } : {});
       [threads, total] = await Promise.all([
-        query.sort(sort).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).populate('author', 'name yearOfStudy role').lean(),
+        query.sort(sort).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean(),
         ForumThread.countDocuments(filter),
       ]);
     }
@@ -278,12 +335,27 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
     const duplicate = await ForumThread.exists({
       author: req.user._id,
       body: value.body,
+      format: value.format,
       createdAt: { $gte: new Date(Date.now() - 10 * 60 * 1000) },
     });
     if (duplicate) return res.status(409).json({ message: 'You just posted this. Check your discussions.' });
 
-    const thread = await ForumThread.create({ ...value, author: req.user._id });
+    // Attach images this user uploaded and hasn't used yet.
+    const attachmentIds = (Array.isArray(req.body.attachments) ? req.body.attachments : []).filter(isId);
+    if (attachmentIds.length > MAX_ATTACHMENTS) return res.status(400).json({ message: `Up to ${MAX_ATTACHMENTS} images per post.` });
+    const uploads = attachmentIds.length
+      ? await ForumUpload.find({ _id: { $in: attachmentIds }, owner: req.user._id, used: false })
+      : [];
+    if (uploads.length !== attachmentIds.length) return res.status(400).json({ message: 'One of the images is no longer available. Upload it again.' });
+
+    const thread = await ForumThread.create({
+      ...value,
+      author: req.user._id,
+      attachments: uploads.map((u) => ({ url: u.url, fileId: u.fileId })),
+    });
+    if (uploads.length) await ForumUpload.updateMany({ _id: { $in: uploads.map((u) => u._id) } }, { $set: { used: true } });
     await ForumFollow.create({ user: req.user._id, thread: thread._id });
+    await notifyMentions(plainOf(value.body, value.format), req.user, { title: thread.title, link: `/forum/${thread._id}` });
     const newBadges = await syncBadgesQuietly(req.user._id);
     return res.status(201).json({ id: String(thread._id), newBadges });
   } catch (error) {
@@ -296,7 +368,7 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
 router.get('/threads/:id', optionalAuth, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Discussion not found.' });
   try {
-    const thread = await ForumThread.findById(req.params.id).populate('author', 'name yearOfStudy role').lean();
+    const thread = await ForumThread.findById(req.params.id).populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean();
     const staff = isStaff(req.user);
     const mine = sameUser(thread?.author, req.user);
     if (!thread || (thread.status !== 'visible' && !staff && !(mine && thread.status === 'hidden'))) {
@@ -306,7 +378,7 @@ router.get('/threads/:id', optionalAuth, async (req, res) => {
     if (!mine) await ForumThread.updateOne({ _id: thread._id }, { $inc: { viewCount: 1 } });
 
     const replyFilter = { thread: thread._id, status: staff ? { $in: ['visible', 'hidden'] } : 'visible' };
-    const replies = await ForumReply.find(replyFilter).sort({ createdAt: 1 }).populate('author', 'name yearOfStudy role').lean();
+    const replies = await ForumReply.find(replyFilter).sort({ createdAt: 1 }).populate('author', 'name yearOfStudy role staffRoles avatarUrl').lean();
 
     let viewer = { signedIn: false };
     if (req.user) {
@@ -338,6 +410,8 @@ router.get('/threads/:id', optionalAuth, async (req, res) => {
         ...threadCard(thread),
         viewCount: thread.viewCount + (mine ? 0 : 1),
         body: thread.body,
+        format: thread.format || 'text',
+        attachments: (thread.attachments || []).map((a) => ({ url: a.url })),
         reactions: thread.reactions,
         acceptedReply: thread.acceptedReply ? String(thread.acceptedReply) : null,
         editedAt: thread.editedAt,
@@ -375,7 +449,7 @@ router.patch('/threads/:id', protect, async (req, res) => {
       return res.status(403).json({ message: `Posts can be edited for ${LIMITS.editWindowMs / 60000} minutes after posting.` });
     }
 
-    const { errors, value } = validateThread(req.body, req.user, { partial: true });
+    const { errors, value } = validateThread(req.body, req.user, { partial: true, format: thread.format });
     if (errors.length) return res.status(400).json({ message: errors[0], errors });
 
     Object.assign(thread, value, { editedAt: new Date() });
@@ -397,6 +471,7 @@ router.delete('/threads/:id', protect, async (req, res) => {
 
     thread.status = 'deleted';
     await thread.save();
+    await deleteImages(thread.attachments);
     return res.json({ ok: true });
   } catch (error) {
     console.error('Forum delete error:', error);
@@ -457,6 +532,11 @@ router.post('/threads/:id/replies', protect, limitReplies, async (req, res) => {
       body: body.slice(0, 140),
       link: `/forum/${thread._id}#reply-${reply._id}`,
     });
+
+    await notifyMentions(body, req.user, { title: thread.title, link: `/forum/${thread._id}#reply-${reply._id}` });
+
+    // Tell readers of this thread a reply arrived (ids only, no content).
+    pushToThread(thread._id, 'reply', { replyId: String(reply._id), authorId: String(req.user._id) });
 
     const newBadges = await syncBadgesQuietly(req.user._id);
     return res.status(201).json({ id: String(reply._id), newBadges });
@@ -591,6 +671,47 @@ async function toggle(Model, req, res) {
 router.post('/threads/:id/bookmark', protect, (req, res) => toggle(ForumBookmark, req, res));
 router.post('/threads/:id/follow', protect, (req, res) => toggle(ForumFollow, req, res));
 
+// ---------- uploads and mentions ----------
+
+// POST /api/forum/uploads (multipart "image"): upload one image for a post.
+router.post('/uploads', protect, limitUploads, handleImageUpload, async (req, res) => {
+  try {
+    if (forumMuted(req.user)) return res.status(403).json({ message: mutedMessage(req.user) });
+
+    // Tidy up this user's images that were never attached (older than a day).
+    const stale = await ForumUpload.find({ owner: req.user._id, used: false, createdAt: { $lt: new Date(Date.now() - 86400000) } });
+    if (stale.length) {
+      await deleteImages(stale);
+      await ForumUpload.deleteMany({ _id: { $in: stale.map((s) => s._id) } });
+    }
+
+    const stored = await storeImage(req.file.buffer, req.user._id);
+    const saved = await ForumUpload.create({ owner: req.user._id, ...stored });
+    return res.status(201).json({ id: String(saved._id), url: saved.url });
+  } catch (error) {
+    if (error.status === 400) return res.status(400).json({ message: error.message });
+    console.error('Forum upload error:', error);
+    return res.status(502).json({ message: 'Could not upload the image. Try again.' });
+  }
+});
+
+// GET /api/forum/users?q=: people to @mention (names and year only).
+router.get('/users', protect, limitSearch, async (req, res) => {
+  try {
+    const q = cleanText(req.query.q || '').slice(0, 40);
+    if (q.length < 1) return res.json({ users: [] });
+    const pattern = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const users = await User.find({ name: pattern, _id: { $ne: req.user._id } })
+      .select('name yearOfStudy role').limit(8).lean();
+    return res.json({
+      users: users.map((u) => ({ id: String(u._id), name: u.name, year: u.role === 'admin' ? 'CodeSphere team' : u.yearOfStudy })),
+    });
+  } catch (error) {
+    console.error('Forum user search error:', error);
+    return res.status(500).json({ message: 'Could not search people.' });
+  }
+});
+
 // ---------- reports ----------
 
 // POST /api/forum/reports { targetType, targetId, reason, detail }
@@ -627,7 +748,7 @@ router.post('/reports', protect, limitReports, async (req, res) => {
 // ---------- moderation (admins) ----------
 
 // GET /api/forum/admin/reports?status=open
-router.get('/admin/reports', protect, adminOnly, async (req, res) => {
+router.get('/admin/reports', protect, requireStaff('moderator'), async (req, res) => {
   try {
     const status = ['open', 'resolved', 'dismissed'].includes(req.query.status) ? req.query.status : 'open';
     const reports = await ForumReport.find({ status }).sort({ createdAt: status === 'open' ? 1 : -1 }).limit(100)
@@ -682,7 +803,7 @@ router.get('/admin/reports', protect, adminOnly, async (req, res) => {
 });
 
 // GET /api/forum/admin/audit: latest moderator actions.
-router.get('/admin/audit', protect, adminOnly, async (req, res) => {
+router.get('/admin/audit', protect, requireStaff('moderator'), async (req, res) => {
   try {
     const actions = await ForumModeration.find().sort({ createdAt: -1 }).limit(100).populate('moderator', 'name').lean();
     res.json({
@@ -710,7 +831,7 @@ const REPORT_ACTIONS = ['resolve', 'dismiss'];
 
 // POST /api/forum/admin/actions
 //   { targetType, targetId, action, reason, category?, days?, reportId? }
-router.post('/admin/actions', protect, adminOnly, async (req, res) => {
+router.post('/admin/actions', protect, requireStaff('moderator'), async (req, res) => {
   const { targetType, targetId, action } = req.body;
   const reason = cleanText(req.body.reason || '').slice(0, 300);
   if (!isId(targetId)) return res.status(400).json({ message: 'Invalid target.' });
@@ -723,7 +844,10 @@ router.post('/admin/actions', protect, adminOnly, async (req, res) => {
       if (!thread || thread.status === 'deleted') return res.status(404).json({ message: 'Discussion not found.' });
       if (action === 'hide') thread.status = 'hidden';
       if (action === 'restore') thread.status = 'visible';
-      if (action === 'remove') thread.status = 'removed';
+      if (action === 'remove') {
+        thread.status = 'removed';
+        await deleteImages(thread.attachments);
+      }
       if (action === 'pin' || action === 'unpin') thread.pinned = action === 'pin';
       if (action === 'lock' || action === 'unlock') thread.locked = action === 'lock';
       if (action === 'move') {
@@ -760,6 +884,9 @@ router.post('/admin/actions', protect, adminOnly, async (req, res) => {
     } else if (targetType === 'user' && USER_ACTIONS.includes(action)) {
       const user = await User.findById(targetId);
       if (!user || user.role === 'admin') return res.status(404).json({ message: 'Student not found.' });
+      if (user.staffRoles?.length && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Only admins can pause staff members.' });
+      }
       if (action === 'mute') {
         const days = Math.min(Math.max(Number.parseInt(req.body.days, 10) || 1, 1), 30);
         user.forumMutedUntil = new Date(Date.now() + days * 86400000);

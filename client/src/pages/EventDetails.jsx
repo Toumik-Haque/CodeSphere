@@ -310,6 +310,21 @@ export default function EventDetails() {
 
 
                   <h1 className="event-view-title">{event.title}</h1>
+                  {event.origin === 'community' && event.hostName && (
+                    <p className="event-view-host">
+                      <i className="bi bi-people" aria-hidden="true" /> Hosted by <strong>{event.hostName}</strong>
+                      {event.websiteLink && (
+                        <> · <a href={event.websiteLink} target="_blank" rel="noopener noreferrer nofollow">Website</a></>
+                      )}
+                    </p>
+                  )}
+
+                  {event.rules && (
+                    <div className="event-view-rules">
+                      <h2>Rules &amp; guidelines</h2>
+                      <p>{event.rules}</p>
+                    </div>
+                  )}
 
                   <div className="event-view-banner">
                     {event.bannerImage?.url && (
@@ -496,7 +511,7 @@ export default function EventDetails() {
                     </>
                   )}
 
-                  {passed && event.linkedinPostLink && (
+                  {(passed || event.origin === 'community') && event.linkedinPostLink && (
                     <a
                       className="event-view-button text-white"
                       href={event.linkedinPostLink}
@@ -509,7 +524,7 @@ export default function EventDetails() {
                     </a>
                   )}
 
-                  {passed && event.instagramPostLink && (
+                  {(passed || event.origin === 'community') && event.instagramPostLink && (
                     <a
                       className="event-view-button text-white"
                       href={event.instagramPostLink}

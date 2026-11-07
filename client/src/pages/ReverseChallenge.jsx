@@ -222,7 +222,7 @@ export default function ReverseChallenge() {
 
           {!data.judgeReady && (
             <p className="rc-notice" role="status">
-              <i className="bi bi-info-circle" aria-hidden="true" /> Run and Submit are turned off until the code runner (Judge0) is connected. You can still read the challenge and draft your solution; it saves in this browser.
+              <i className="bi bi-info-circle" aria-hidden="true" /> Run and Submit are turned off until code running is turned back on. You can still read the challenge and draft your solution; it saves in this browser.
             </p>
           )}
 
@@ -323,7 +323,19 @@ export default function ReverseChallenge() {
             )}
 
             {panel === 'editorial' && (editorial
-              ? <div className="rc-editorial"><SafeText text={editorial} /></div>
+              ? (
+                <div className="rc-editorial">
+                  <SafeText text={editorial} />
+                  {data.guides?.length > 0 && (
+                    <p className="rc-guide-links">
+                      <i className="bi bi-journal-bookmark" aria-hidden="true" /> Learn more in the Study Guide:{' '}
+                      {data.guides.map((g, i) => (
+                        <span key={g.slug}>{i > 0 && ', '}<Link to={`/materials/${g.slug}`}>{g.title}</Link></span>
+                      ))}
+                    </p>
+                  )}
+                </div>
+              )
               : <p className="rc-muted"><i className="bi bi-lock-fill" aria-hidden="true" /> The editorial unlocks after you solve this challenge. Try the hints first!</p>)}
           </section>
         </div>

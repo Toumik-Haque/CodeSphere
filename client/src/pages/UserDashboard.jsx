@@ -55,7 +55,7 @@ function ProfileSection({ view }) {
 async function requestDashboardOverview(user, signal) {
   const [profileResponse, projectsResponse] = await Promise.all([
     apiRequest('/users/profile', { signal }),
-    apiRequest('/projects', { signal }),
+    apiRequest('/portfolio-projects', { signal }),
   ]);
 
   return {

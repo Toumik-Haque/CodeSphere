@@ -7,8 +7,14 @@ import { AuthorBadge } from './Forum';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig, REACTIONS } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
+import { openThreadStream } from '../lib/realtime';
+import { useAuth } from '../context/AuthContext';
+import MentionTextarea from '../components/MentionTextarea';
+import RichText from '../components/RichText';
+import RichTextEditor from '../components/RichTextEditor';
 import { timeAgo } from '../lib/time';
 import '../css/Forum.css';
+import '../css/ForumSocial.css';
 
 function Reactions({ targetType, targetId, counts, mine = [], disabled, onError }) {
   const [state, setState] = useState({ counts, mine });
@@ -132,11 +138,11 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
           <button type="button" onClick={onCancel} aria-label="Cancel reply"><i className="bi bi-x" aria-hidden="true" /></button>
         </p>
       )}
-      <textarea
+      <MentionTextarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={setBody}
         rows={parentReply ? 3 : 4}
-        placeholder="Write a helpful, kind reply… (``` for code)"
+        placeholder="Write a helpful, kind reply… (``` for code, @ to mention)"
         maxLength={limit}
         required
         autoFocus={autoFocus}
@@ -153,7 +159,7 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
   );
 }
 
-function EditBox({ initial, onSave, onCancel, limit }) {
+function EditBox({ initial, onSave, onCancel, limit, rich = false }) {
   const [value, setValue] = useState(initial);
   const [error, setError] = useState('');
   return (
@@ -168,7 +174,9 @@ function EditBox({ initial, onSave, onCancel, limit }) {
         }
       }}
     >
-      <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={6} maxLength={limit} aria-label="Edit text" />
+      {rich
+        ? <RichTextEditor value={value} onChange={setValue} height={300} />
+        : <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={6} maxLength={limit} aria-label="Edit text" />}
       {error && <p className="forum-error" role="alert">{error}</p>}
       <div className="forum-composer-actions">
         <button type="button" className="forum-btn-ghost" onClick={onCancel}>Cancel</button>
@@ -192,6 +200,14 @@ export default function ForumThread() {
   const [version, setVersion] = useState(0);
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const { user } = useAuth();
+  const myId = user?.id ? String(user.id) : null;
+  // Replies posted by others since this page loaded (live).
+  const [newReplies, setNewReplies] = useState(0);
+
+  useEffect(() => openThreadStream(id, (event) => {
+    if (event.authorId !== myId) setNewReplies((n) => n + 1);
+  }), [id, myId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -393,6 +409,7 @@ export default function ForumThread() {
             {editing === 'thread' ? (
               <EditBox
                 initial={thread.body}
+                rich={thread.format === 'html'}
                 limit={limits?.threadBodyMax}
                 onCancel={() => setEditing(null)}
                 onSave={async (body) => {
@@ -402,7 +419,19 @@ export default function ForumThread() {
                 }}
               />
             ) : (
-              <SafeText text={thread.body} className="forum-thread-body" />
+              thread.format === 'html'
+                ? <RichText html={thread.body} className="forum-thread-body" />
+                : <SafeText text={thread.body} className="forum-thread-body" />
+            )}
+
+            {thread.attachments?.length > 0 && (
+              <div className="forum-images is-view">
+                {thread.attachments.map((img) => (
+                  <a key={img.url} href={img.url} target="_blank" rel="noopener noreferrer">
+                    <img src={img.url} alt="Attachment" loading="lazy" />
+                  </a>
+                ))}
+              </div>
             )}
 
             {thread.tags.length > 0 && (
@@ -460,6 +489,20 @@ export default function ForumThread() {
               </div>
             )}
           </article>
+
+          {newReplies > 0 && (
+            <button
+              type="button"
+              className="forum-live-banner"
+              onClick={() => {
+                setNewReplies(0);
+                reload();
+              }}
+            >
+              <span className="forum-live-dot" aria-hidden="true" />
+              {newReplies} new {newReplies === 1 ? 'reply' : 'replies'}. Show
+            </button>
+          )}
 
           <section className="forum-replies" aria-labelledby="replies-title">
             <h2 id="replies-title">{thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}</h2>

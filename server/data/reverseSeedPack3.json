@@ -1,0 +1,1552 @@
+[
+ {
+  "slug": "rc-digit-sum",
+  "title": "Digit Sum",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Mathematics",
+  "tags": [
+   "mathematics",
+   "digit-sum"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Read one non-negative integer. Print the sum of its digits.",
+  "inputFormat": "One integer n (0 ≤ n ≤ 10^9).",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "0",
+    "output": "0"
+   },
+   {
+    "input": "7",
+    "output": "7"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=input().strip(); print(sum(map(int,n)))\n```",
+  "tests": [
+   {
+    "input": "0",
+    "output": "0",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "7",
+    "hidden": false
+   },
+   {
+    "input": "123",
+    "output": "6",
+    "hidden": true
+   },
+   {
+    "input": "505",
+    "output": "10",
+    "hidden": true
+   },
+   {
+    "input": "99999",
+    "output": "45",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=input().strip(); print(sum(map(int,n)))"
+ },
+ {
+  "slug": "rc-digit-count",
+  "title": "Digit Count",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Mathematics",
+  "tags": [
+   "mathematics",
+   "digit-count"
+  ],
+  "points": 15,
+  "estMinutes": 10,
+  "statement": "Read one integer. Print the number of digits; zero has one digit.",
+  "inputFormat": "One integer n (-10^9 ≤ n ≤ 10^9).",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "0",
+    "output": "1"
+   },
+   {
+    "input": "7",
+    "output": "1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\ns=input().strip().lstrip('-'); print(len(s))\n```",
+  "tests": [
+   {
+    "input": "0",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "-123",
+    "output": "3",
+    "hidden": true
+   },
+   {
+    "input": "10000",
+    "output": "5",
+    "hidden": true
+   },
+   {
+    "input": "-99999",
+    "output": "5",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "s=input().strip().lstrip('-'); print(len(s))"
+ },
+ {
+  "slug": "rc-reverse-word",
+  "title": "Reverse Word",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Strings",
+  "tags": [
+   "strings",
+   "reverse-word"
+  ],
+  "points": 20,
+  "estMinutes": 15,
+  "statement": "Read a lowercase word and print its characters in reverse order.",
+  "inputFormat": "One lowercase word (1 ≤ length ≤ 100).",
+  "outputFormat": "The reversed word.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "hello",
+    "output": "olleh"
+   },
+   {
+    "input": "coding",
+    "output": "gnidoc"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nprint(input().strip()[::-1])\n```",
+  "tests": [
+   {
+    "input": "hello",
+    "output": "olleh",
+    "hidden": false
+   },
+   {
+    "input": "coding",
+    "output": "gnidoc",
+    "hidden": false
+   },
+   {
+    "input": "a",
+    "output": "a",
+    "hidden": true
+   },
+   {
+    "input": "racecar",
+    "output": "racecar",
+    "hidden": true
+   },
+   {
+    "input": "codesphere",
+    "output": "erehpsedoc",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "print(input().strip()[::-1])"
+ },
+ {
+  "slug": "rc-palindrome-check",
+  "title": "Palindrome Check",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Strings",
+  "tags": [
+   "strings",
+   "palindrome-check"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Read a lowercase word. Print YES if it reads the same forward and backward; otherwise print NO.",
+  "inputFormat": "One lowercase word (1 ≤ length ≤ 100).",
+  "outputFormat": "YES or NO.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "madam",
+    "output": "YES"
+   },
+   {
+    "input": "hello",
+    "output": "NO"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\ns=input().strip(); print('YES' if s==s[::-1] else 'NO')\n```",
+  "tests": [
+   {
+    "input": "madam",
+    "output": "YES",
+    "hidden": false
+   },
+   {
+    "input": "hello",
+    "output": "NO",
+    "hidden": false
+   },
+   {
+    "input": "a",
+    "output": "YES",
+    "hidden": true
+   },
+   {
+    "input": "racecar",
+    "output": "YES",
+    "hidden": true
+   },
+   {
+    "input": "level",
+    "output": "YES",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "s=input().strip(); print('YES' if s==s[::-1] else 'NO')"
+ },
+ {
+  "slug": "rc-even-or-odd",
+  "title": "Even or Odd",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Conditionals",
+  "tags": [
+   "conditionals",
+   "even-or-odd"
+  ],
+  "points": 15,
+  "estMinutes": 10,
+  "statement": "Read an integer and print Even if divisible by 2, otherwise print Odd.",
+  "inputFormat": "One integer n (-10^9 ≤ n ≤ 10^9).",
+  "outputFormat": "Even or Odd.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "0",
+    "output": "Even"
+   },
+   {
+    "input": "8",
+    "output": "Even"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); print('Even' if n%2==0 else 'Odd')\n```",
+  "tests": [
+   {
+    "input": "0",
+    "output": "Even",
+    "hidden": false
+   },
+   {
+    "input": "8",
+    "output": "Even",
+    "hidden": false
+   },
+   {
+    "input": "13",
+    "output": "Odd",
+    "hidden": true
+   },
+   {
+    "input": "-7",
+    "output": "Odd",
+    "hidden": true
+   },
+   {
+    "input": "-12",
+    "output": "Even",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); print('Even' if n%2==0 else 'Odd')"
+ },
+ {
+  "slug": "rc-positive-negative-zero",
+  "title": "Positive Negative Zero",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Conditionals",
+  "tags": [
+   "conditionals",
+   "positive-negative-zero"
+  ],
+  "points": 20,
+  "estMinutes": 15,
+  "statement": "Read an integer and print Positive, Negative, or Zero.",
+  "inputFormat": "One integer n (-10^9 ≤ n ≤ 10^9).",
+  "outputFormat": "Positive, Negative, or Zero.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "0",
+    "output": "Zero"
+   },
+   {
+    "input": "9",
+    "output": "Positive"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); print('Positive' if n>0 else 'Negative' if n<0 else 'Zero')\n```",
+  "tests": [
+   {
+    "input": "0",
+    "output": "Zero",
+    "hidden": false
+   },
+   {
+    "input": "9",
+    "output": "Positive",
+    "hidden": false
+   },
+   {
+    "input": "-11",
+    "output": "Negative",
+    "hidden": true
+   },
+   {
+    "input": "1",
+    "output": "Positive",
+    "hidden": true
+   },
+   {
+    "input": "-1",
+    "output": "Negative",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); print('Positive' if n>0 else 'Negative' if n<0 else 'Zero')"
+ },
+ {
+  "slug": "rc-count-vowels",
+  "title": "Count Vowels",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Strings",
+  "tags": [
+   "strings",
+   "count-vowels"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Read a lowercase word and print the number of vowels a, e, i, o, u.",
+  "inputFormat": "One lowercase word (1 ≤ length ≤ 100).",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "hello",
+    "output": "2"
+   },
+   {
+    "input": "coding",
+    "output": "2"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\ns=input().strip(); print(sum(c in 'aeiou' for c in s))\n```",
+  "tests": [
+   {
+    "input": "hello",
+    "output": "2",
+    "hidden": false
+   },
+   {
+    "input": "coding",
+    "output": "2",
+    "hidden": false
+   },
+   {
+    "input": "a",
+    "output": "1",
+    "hidden": true
+   },
+   {
+    "input": "rhythm",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "education",
+    "output": "5",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "s=input().strip(); print(sum(c in 'aeiou' for c in s))"
+ },
+ {
+  "slug": "rc-factorial",
+  "title": "Factorial",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Mathematics",
+  "tags": [
+   "mathematics",
+   "factorial"
+  ],
+  "points": 20,
+  "estMinutes": 15,
+  "statement": "Read a non-negative integer n and print n factorial.",
+  "inputFormat": "One integer n (0 ≤ n ≤ 12).",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "0",
+    "output": "1"
+   },
+   {
+    "input": "1",
+    "output": "1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nimport math; print(math.factorial(int(input())))\n```",
+  "tests": [
+   {
+    "input": "0",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "1",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "5",
+    "output": "120",
+    "hidden": true
+   },
+   {
+    "input": "7",
+    "output": "5040",
+    "hidden": true
+   },
+   {
+    "input": "10",
+    "output": "3628800",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "import math; print(math.factorial(int(input())))"
+ },
+ {
+  "slug": "rc-leap-year",
+  "title": "Leap Year",
+  "format": "io",
+  "level": "Intermediate",
+  "topic": "Conditionals",
+  "tags": [
+   "conditionals",
+   "leap-year"
+  ],
+  "points": 30,
+  "estMinutes": 25,
+  "statement": "Read a year and print Leap if it is a Gregorian leap year; otherwise print Not Leap.",
+  "inputFormat": "One year y (1 ≤ y ≤ 9999).",
+  "outputFormat": "Leap or Not Leap.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "2000",
+    "output": "Leap"
+   },
+   {
+    "input": "1900",
+    "output": "Not Leap"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\ny=int(input()); print('Leap' if y%400==0 or (y%4==0 and y%100!=0) else 'Not Leap')\n```",
+  "tests": [
+   {
+    "input": "2000",
+    "output": "Leap",
+    "hidden": false
+   },
+   {
+    "input": "1900",
+    "output": "Not Leap",
+    "hidden": false
+   },
+   {
+    "input": "2024",
+    "output": "Leap",
+    "hidden": true
+   },
+   {
+    "input": "2023",
+    "output": "Not Leap",
+    "hidden": true
+   },
+   {
+    "input": "2100",
+    "output": "Not Leap",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "y=int(input()); print('Leap' if y%400==0 or (y%4==0 and y%100!=0) else 'Not Leap')"
+ },
+ {
+  "slug": "rc-word-count",
+  "title": "Word Count",
+  "format": "io",
+  "level": "Intermediate",
+  "topic": "Strings",
+  "tags": [
+   "strings",
+   "word-count"
+  ],
+  "points": 20,
+  "estMinutes": 15,
+  "statement": "Read a line of text and print the number of whitespace-separated words.",
+  "inputFormat": "One line of text (up to 500 characters).",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "hello world",
+    "output": "2"
+   },
+   {
+    "input": "one",
+    "output": "1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nprint(len(input().split()))\n```",
+  "tests": [
+   {
+    "input": "hello world",
+    "output": "2",
+    "hidden": false
+   },
+   {
+    "input": "one",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "  spaces   between words  ",
+    "output": "3",
+    "hidden": true
+   },
+   {
+    "input": "CodeSphere is fun",
+    "output": "3",
+    "hidden": true
+   },
+   {
+    "input": "a b c d",
+    "output": "4",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "print(len(input().split()))"
+ },
+ {
+  "slug": "rc-maximum-of-list",
+  "title": "Maximum of List",
+  "format": "io",
+  "level": "Intermediate",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "maximum-of-list"
+  ],
+  "points": 25,
+  "estMinutes": 20,
+  "statement": "Read n and then n integers. Print the largest value.",
+  "inputFormat": "First line n (1 ≤ n ≤ 1000), second line n integers.",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n3 8 2 10 4",
+    "output": "10"
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); print(max(a))\n```",
+  "tests": [
+   {
+    "input": "5\n3 8 2 10 4",
+    "output": "10",
+    "hidden": false
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-1",
+    "hidden": false
+   },
+   {
+    "input": "1\n42",
+    "output": "42",
+    "hidden": true
+   },
+   {
+    "input": "5\n7 7 7 7 7",
+    "output": "7",
+    "hidden": true
+   },
+   {
+    "input": "3\n-9 -8 -7",
+    "output": "-7",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); print(max(a))"
+ },
+ {
+  "slug": "rc-minimum-of-list",
+  "title": "Minimum of List",
+  "format": "io",
+  "level": "Intermediate",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "minimum-of-list"
+  ],
+  "points": 30,
+  "estMinutes": 25,
+  "statement": "Read n and then n integers. Print the smallest value.",
+  "inputFormat": "First line n (1 ≤ n ≤ 1000), second line n integers.",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n3 8 2 10 4",
+    "output": "2"
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-9"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); print(min(a))\n```",
+  "tests": [
+   {
+    "input": "5\n3 8 2 10 4",
+    "output": "2",
+    "hidden": false
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-9",
+    "hidden": false
+   },
+   {
+    "input": "1\n42",
+    "output": "42",
+    "hidden": true
+   },
+   {
+    "input": "5\n7 7 7 7 7",
+    "output": "7",
+    "hidden": true
+   },
+   {
+    "input": "3\n-9 -8 -7",
+    "output": "-9",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); print(min(a))"
+ },
+ {
+  "slug": "rc-array-sum",
+  "title": "Array Sum",
+  "format": "io",
+  "level": "Intermediate",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "array-sum"
+  ],
+  "points": 20,
+  "estMinutes": 15,
+  "statement": "Read n and then n integers. Print their sum.",
+  "inputFormat": "First line n (1 ≤ n ≤ 1000), second line n integers.",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n1 2 3 4 5",
+    "output": "15"
+   },
+   {
+    "input": "4\n10 -2 5 -3",
+    "output": "10"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); print(sum(a))\n```",
+  "tests": [
+   {
+    "input": "5\n1 2 3 4 5",
+    "output": "15",
+    "hidden": false
+   },
+   {
+    "input": "4\n10 -2 5 -3",
+    "output": "10",
+    "hidden": false
+   },
+   {
+    "input": "1\n100",
+    "output": "100",
+    "hidden": true
+   },
+   {
+    "input": "5\n0 0 0 0 0",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "4\n-1 -2 -3 -4",
+    "output": "-10",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); print(sum(a))"
+ },
+ {
+  "slug": "rc-sort-ascending",
+  "title": "Sort Ascending",
+  "format": "io",
+  "level": "Intermediate",
+  "topic": "Sorting",
+  "tags": [
+   "sorting",
+   "sort-ascending"
+  ],
+  "points": 25,
+  "estMinutes": 20,
+  "statement": "Read n and n integers. Print the integers in non-decreasing order.",
+  "inputFormat": "First line n (1 ≤ n ≤ 1000), second line n integers.",
+  "outputFormat": "Sorted values separated by spaces.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n3 1 4 2 5",
+    "output": "1 2 3 4 5"
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-9 -5 -2 -1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); print(*sorted(a))\n```",
+  "tests": [
+   {
+    "input": "5\n3 1 4 2 5",
+    "output": "1 2 3 4 5",
+    "hidden": false
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-9 -5 -2 -1",
+    "hidden": false
+   },
+   {
+    "input": "1\n42",
+    "output": "42",
+    "hidden": true
+   },
+   {
+    "input": "5\n7 7 7 7 7",
+    "output": "7 7 7 7 7",
+    "hidden": true
+   },
+   {
+    "input": "3\n0 -1 1",
+    "output": "-1 0 1",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); print(*sorted(a))"
+ },
+ {
+  "slug": "rc-linear-search",
+  "title": "Linear Search",
+  "format": "io",
+  "level": "Intermediate",
+  "topic": "Searching",
+  "tags": [
+   "searching",
+   "linear-search"
+  ],
+  "points": 30,
+  "estMinutes": 25,
+  "statement": "Read n, an array, and target x. Print the zero-based index of its first occurrence, or -1 if absent.",
+  "inputFormat": "Line 1: n. Line 2: n integers. Line 3: x.",
+  "outputFormat": "One integer index.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n1 2 3 2 5\n2",
+    "output": "1"
+   },
+   {
+    "input": "5\n1 2 3 4 5\n8",
+    "output": "-1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); x=int(input()); print(a.index(x) if x in a else -1)\n```",
+  "tests": [
+   {
+    "input": "5\n1 2 3 2 5\n2",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "5\n1 2 3 4 5\n8",
+    "output": "-1",
+    "hidden": false
+   },
+   {
+    "input": "1\n42\n42",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "4\n-2 0 2 4\n2",
+    "output": "2",
+    "hidden": true
+   },
+   {
+    "input": "5\n3 3 3 3 3\n6",
+    "output": "-1",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); x=int(input()); print(a.index(x) if x in a else -1)"
+ },
+ {
+  "slug": "rc-second-largest-distinct",
+  "title": "Second Largest Distinct",
+  "format": "algorithm",
+  "level": "Intermediate",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "second-largest-distinct"
+  ],
+  "points": 20,
+  "estMinutes": 15,
+  "statement": "Read n and n integers. Print the second-largest distinct value. At least two distinct values are guaranteed.",
+  "inputFormat": "First line n (2 ≤ n ≤ 1000), second line n integers.",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n10 20 30 40 50",
+    "output": "40"
+   },
+   {
+    "input": "6\n5 5 8 8 10 10",
+    "output": "8"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); print(sorted(set(a))[-2])\n```",
+  "tests": [
+   {
+    "input": "5\n10 20 30 40 50",
+    "output": "40",
+    "hidden": false
+   },
+   {
+    "input": "6\n5 5 8 8 10 10",
+    "output": "8",
+    "hidden": false
+   },
+   {
+    "input": "2\n1 2",
+    "output": "1",
+    "hidden": true
+   },
+   {
+    "input": "5\n5 5 5 4 4",
+    "output": "4",
+    "hidden": true
+   },
+   {
+    "input": "4\n-1 -5 -3 -2",
+    "output": "-2",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); print(sorted(set(a))[-2])"
+ },
+ {
+  "slug": "rc-remove-duplicates",
+  "title": "Remove Duplicates",
+  "format": "algorithm",
+  "level": "Intermediate",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "remove-duplicates"
+  ],
+  "points": 25,
+  "estMinutes": 20,
+  "statement": "Read n and n integers. Print each value once, preserving the order of its first occurrence.",
+  "inputFormat": "First line n (1 ≤ n ≤ 1000), second line n integers.",
+  "outputFormat": "Unique values separated by spaces.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "6\n1 2 1 3 2 4",
+    "output": "1 2 3 4"
+   },
+   {
+    "input": "5\n7 7 7 7 7",
+    "output": "7"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); s=set(); r=[]\nfor x in a:\n if x not in s: s.add(x); r.append(x)\nprint(*r)\n```",
+  "tests": [
+   {
+    "input": "6\n1 2 1 3 2 4",
+    "output": "1 2 3 4",
+    "hidden": false
+   },
+   {
+    "input": "5\n7 7 7 7 7",
+    "output": "7",
+    "hidden": false
+   },
+   {
+    "input": "1\n42",
+    "output": "42",
+    "hidden": true
+   },
+   {
+    "input": "5\n-1 0 -1 2 0",
+    "output": "-1 0 2",
+    "hidden": true
+   },
+   {
+    "input": "4\n3 2 1 3",
+    "output": "3 2 1",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); s=set(); r=[]\nfor x in a:\n if x not in s: s.add(x); r.append(x)\nprint(*r)"
+ },
+ {
+  "slug": "rc-greatest-common-divisor",
+  "title": "Greatest Common Divisor",
+  "format": "algorithm",
+  "level": "Intermediate",
+  "topic": "Number Theory",
+  "tags": [
+   "number-theory",
+   "greatest-common-divisor"
+  ],
+  "points": 30,
+  "estMinutes": 25,
+  "statement": "Read two non-negative integers and print their greatest common divisor.",
+  "inputFormat": "Two integers a and b (0 ≤ a,b ≤ 10^9).",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "12 18",
+    "output": "6"
+   },
+   {
+    "input": "7 0",
+    "output": "7"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nimport math; a,b=map(int,input().split()); print(math.gcd(a,b))\n```",
+  "tests": [
+   {
+    "input": "12 18",
+    "output": "6",
+    "hidden": false
+   },
+   {
+    "input": "7 0",
+    "output": "7",
+    "hidden": false
+   },
+   {
+    "input": "1 1",
+    "output": "1",
+    "hidden": true
+   },
+   {
+    "input": "100 25",
+    "output": "25",
+    "hidden": true
+   },
+   {
+    "input": "81 27",
+    "output": "27",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "import math; a,b=map(int,input().split()); print(math.gcd(a,b))"
+ },
+ {
+  "slug": "rc-prime-test",
+  "title": "Prime Test",
+  "format": "algorithm",
+  "level": "Advanced",
+  "topic": "Number Theory",
+  "tags": [
+   "number-theory",
+   "prime-test"
+  ],
+  "points": 30,
+  "estMinutes": 25,
+  "statement": "Read n and print Prime if it is prime; otherwise print Not Prime.",
+  "inputFormat": "One integer n (0 ≤ n ≤ 10^6).",
+  "outputFormat": "Prime or Not Prime.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "7",
+    "output": "Prime"
+   },
+   {
+    "input": "10",
+    "output": "Not Prime"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); ok=n>=2\nfor i in range(2,int(n**0.5)+1):\n if n%i==0: ok=False; break\nprint('Prime' if ok else 'Not Prime')\n```",
+  "tests": [
+   {
+    "input": "7",
+    "output": "Prime",
+    "hidden": false
+   },
+   {
+    "input": "10",
+    "output": "Not Prime",
+    "hidden": false
+   },
+   {
+    "input": "1",
+    "output": "Not Prime",
+    "hidden": true
+   },
+   {
+    "input": "2",
+    "output": "Prime",
+    "hidden": true
+   },
+   {
+    "input": "97",
+    "output": "Prime",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); ok=n>=2\nfor i in range(2,int(n**0.5)+1):\n if n%i==0: ok=False; break\nprint('Prime' if ok else 'Not Prime')"
+ },
+ {
+  "slug": "rc-fibonacci-term",
+  "title": "Fibonacci Term",
+  "format": "algorithm",
+  "level": "Advanced",
+  "topic": "Loops",
+  "tags": [
+   "loops",
+   "fibonacci-term"
+  ],
+  "points": 35,
+  "estMinutes": 30,
+  "statement": "Read n and print the n-th Fibonacci number, with F(0)=0 and F(1)=1.",
+  "inputFormat": "One integer n (0 ≤ n ≤ 40).",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "0",
+    "output": "0"
+   },
+   {
+    "input": "1",
+    "output": "1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a,b=0,1\nfor _ in range(n): a,b=b,a+b\nprint(a)\n```",
+  "tests": [
+   {
+    "input": "0",
+    "output": "0",
+    "hidden": false
+   },
+   {
+    "input": "1",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "5",
+    "output": "5",
+    "hidden": true
+   },
+   {
+    "input": "10",
+    "output": "55",
+    "hidden": true
+   },
+   {
+    "input": "20",
+    "output": "6765",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a,b=0,1\nfor _ in range(n): a,b=b,a+b\nprint(a)"
+ },
+ {
+  "slug": "rc-binary-search",
+  "title": "Binary Search",
+  "format": "algorithm",
+  "level": "Advanced",
+  "topic": "Searching",
+  "tags": [
+   "searching",
+   "binary-search"
+  ],
+  "points": 40,
+  "estMinutes": 35,
+  "statement": "Read n, a sorted array, and target x. Print the zero-based index of an occurrence of x, or -1 if absent.",
+  "inputFormat": "Line 1: n. Line 2: sorted n integers. Line 3: x.",
+  "outputFormat": "One integer index.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n1 2 3 4 5\n3",
+    "output": "2"
+   },
+   {
+    "input": "5\n1 2 3 4 5\n8",
+    "output": "-1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); x=int(input()); l=0; r=n-1; ans=-1\nwhile l<=r:\n m=(l+r)//2\n if a[m]==x: ans=m; break\n if a[m]<x: l=m+1\n else: r=m-1\nprint(ans)\n```",
+  "tests": [
+   {
+    "input": "5\n1 2 3 4 5\n3",
+    "output": "2",
+    "hidden": false
+   },
+   {
+    "input": "5\n1 2 3 4 5\n8",
+    "output": "-1",
+    "hidden": false
+   },
+   {
+    "input": "1\n42\n42",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "6\n-5 -2 0 3 8 10\n-5",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "5\n1 1 1 1 1\n1",
+    "output": "2",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); x=int(input()); l=0; r=n-1; ans=-1\nwhile l<=r:\n m=(l+r)//2\n if a[m]==x: ans=m; break\n if a[m]<x: l=m+1\n else: r=m-1\nprint(ans)"
+ },
+ {
+  "slug": "rc-array-rotation",
+  "title": "Array Rotation",
+  "format": "algorithm",
+  "level": "Advanced",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "array-rotation"
+  ],
+  "points": 30,
+  "estMinutes": 25,
+  "statement": "Read n, an array, and non-negative k. Print the array rotated k positions to the right.",
+  "inputFormat": "Line 1: n. Line 2: n integers. Line 3: k.",
+  "outputFormat": "Rotated array separated by spaces.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n1 2 3 4 5\n2",
+    "output": "4 5 1 2 3"
+   },
+   {
+    "input": "4\n1 2 3 4\n0",
+    "output": "1 2 3 4"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); k=int(input())%n; print(*(a[-k:]+a[:-k]) if k else a)\n```",
+  "tests": [
+   {
+    "input": "5\n1 2 3 4 5\n2",
+    "output": "4 5 1 2 3",
+    "hidden": false
+   },
+   {
+    "input": "4\n1 2 3 4\n0",
+    "output": "1 2 3 4",
+    "hidden": false
+   },
+   {
+    "input": "1\n42\n10",
+    "output": "42",
+    "hidden": true
+   },
+   {
+    "input": "5\n1 2 3 4 5\n5",
+    "output": "1 2 3 4 5",
+    "hidden": true
+   },
+   {
+    "input": "3\n-1 0 1\n1",
+    "output": "1 -1 0",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); k=int(input())%n; print(*(a[-k:]+a[:-k]) if k else a)"
+ },
+ {
+  "slug": "rc-balanced-brackets",
+  "title": "Balanced Brackets",
+  "format": "algorithm",
+  "level": "Advanced",
+  "topic": "Stacks",
+  "tags": [
+   "stacks",
+   "balanced-brackets"
+  ],
+  "points": 35,
+  "estMinutes": 30,
+  "statement": "Read a string containing (), [], and {}. Print YES if brackets are correctly matched and nested; otherwise print NO.",
+  "inputFormat": "One bracket string (0 ≤ length ≤ 1000).",
+  "outputFormat": "YES or NO.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "([])",
+    "output": "YES"
+   },
+   {
+    "input": "([)]",
+    "output": "NO"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\ns=input().strip(); p={')':'(',']':'[','}':'{'}; st=[]; ok=True\nfor c in s:\n if c in '([{': st.append(c)\n elif not st or st.pop()!=p[c]: ok=False; break\nprint('YES' if ok and not st else 'NO')\n```",
+  "tests": [
+   {
+    "input": "([])",
+    "output": "YES",
+    "hidden": false
+   },
+   {
+    "input": "([)]",
+    "output": "NO",
+    "hidden": false
+   },
+   {
+    "input": "\n",
+    "output": "YES",
+    "hidden": true
+   },
+   {
+    "input": "((()))",
+    "output": "YES",
+    "hidden": true
+   },
+   {
+    "input": "{[()]}",
+    "output": "YES",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "s=input().strip(); p={')':'(',']':'[','}':'{'}; st=[]; ok=True\nfor c in s:\n if c in '([{': st.append(c)\n elif not st or st.pop()!=p[c]: ok=False; break\nprint('YES' if ok and not st else 'NO')"
+ },
+ {
+  "slug": "rc-two-sum-exists",
+  "title": "Two Sum Exists",
+  "format": "algorithm",
+  "level": "Advanced",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "two-sum-exists"
+  ],
+  "points": 40,
+  "estMinutes": 35,
+  "statement": "Read n, an array, and target t. Print YES if two different positions contain values that sum to t; otherwise print NO.",
+  "inputFormat": "Line 1: n. Line 2: n integers. Line 3: t.",
+  "outputFormat": "YES or NO.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n2 7 11 15 1\n9",
+    "output": "YES"
+   },
+   {
+    "input": "3\n1 2 3\n7",
+    "output": "NO"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); t=int(input()); seen=set(); ok=False\nfor x in a:\n if t-x in seen: ok=True\n seen.add(x)\nprint('YES' if ok else 'NO')\n```",
+  "tests": [
+   {
+    "input": "5\n2 7 11 15 1\n9",
+    "output": "YES",
+    "hidden": false
+   },
+   {
+    "input": "3\n1 2 3\n7",
+    "output": "NO",
+    "hidden": false
+   },
+   {
+    "input": "1\n5\n10",
+    "output": "NO",
+    "hidden": true
+   },
+   {
+    "input": "4\n-2 0 2 4\n2",
+    "output": "YES",
+    "hidden": true
+   },
+   {
+    "input": "5\n3 3 3 3 3\n6",
+    "output": "YES",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); t=int(input()); seen=set(); ok=False\nfor x in a:\n if t-x in seen: ok=True\n seen.add(x)\nprint('YES' if ok else 'NO')"
+ },
+ {
+  "slug": "rc-maximum-subarray-sum",
+  "title": "Maximum Subarray Sum",
+  "format": "algorithm",
+  "level": "Advanced",
+  "topic": "Dynamic Programming",
+  "tags": [
+   "dynamic-programming",
+   "maximum-subarray-sum"
+  ],
+  "points": 30,
+  "estMinutes": 25,
+  "statement": "Read n and n integers. Print the maximum sum of any non-empty contiguous subarray.",
+  "inputFormat": "First line n (1 ≤ n ≤ 100000), second line n integers.",
+  "outputFormat": "One integer.",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "5\n-2 1 -3 4 -1",
+    "output": "4"
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-1"
+   }
+  ],
+  "hints": [
+   "Study how the sample input is transformed into the sample output.",
+   "Try a small case manually and identify the operation or rule.",
+   "Test an edge case before submitting."
+  ],
+  "editorial": "Parse the input in the given order, apply the operation described by the examples, and print the result.\n\n```\nn=int(input()); a=list(map(int,input().split())); best=cur=a[0]\nfor x in a[1:]: cur=max(x,cur+x); best=max(best,cur)\nprint(best)\n```",
+  "tests": [
+   {
+    "input": "5\n-2 1 -3 4 -1",
+    "output": "4",
+    "hidden": false
+   },
+   {
+    "input": "4\n-5 -2 -9 -1",
+    "output": "-1",
+    "hidden": false
+   },
+   {
+    "input": "1\n42",
+    "output": "42",
+    "hidden": true
+   },
+   {
+    "input": "5\n1 2 3 4 5",
+    "output": "15",
+    "hidden": true
+   },
+   {
+    "input": "6\n-2 -3 4 -1 -2 1",
+    "output": "4",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n=int(input()); a=list(map(int,input().split())); best=cur=a[0]\nfor x in a[1:]: cur=max(x,cur+x); best=max(best,cur)\nprint(best)"
+ }
+]

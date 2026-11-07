@@ -20,7 +20,9 @@ const navItems = [
   {
     label: 'Discover',
     children: [
-      { label: 'Events', path: '/events', icon: 'bi-calendar-event', description: 'Workshops, hackathons and meetups' },
+      { label: 'Project Hub', path: '/projects', icon: 'bi-rocket-takeoff', description: 'Build, import from GitHub and showcase' },
+      { label: 'Hackathons', path: '/hackathons', icon: 'bi-trophy', description: 'Club hackathons + live ones from the web' },
+      { label: 'Events', path: '/events', icon: 'bi-calendar-event', description: 'Workshops, talks and meetups' },
       { label: 'Tech News', path: '/news', icon: 'bi-newspaper', description: 'The weekly CodeSphere Tech Brief' },
       { label: 'Open Source', path: '/open-source', icon: 'bi-github', description: 'Contribute and find programs' },
     ],
@@ -91,6 +93,25 @@ function NavGroup({ item, pathname }) {
   );
 }
 
+// Is the first solid background under (x, y), ignoring the header, dark?
+// Returns null when nothing solid is behind it.
+function isDarkAt(x, y, nav) {
+  for (const el of document.elementsFromPoint(x, y)) {
+    if (nav.contains(el)) continue;
+    // Elements can declare their tone (e.g. the code editor's current theme).
+    if (el.dataset?.navTone) return el.dataset.navTone === 'dark';
+    // Media (editor iframe, video, images): judge by the container behind it.
+    if (['VIDEO', 'IMG', 'CANVAS', 'IFRAME'].includes(el.tagName)) continue;
+    const m = getComputedStyle(el).backgroundColor.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);
+    if (!m) continue;
+    const alpha = m[4] === undefined ? 1 : Number(m[4]);
+    if (alpha < 0.5) continue;
+    const [r, g, b] = [m[1], m[2], m[3]].map(Number);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 110;
+  }
+  return null;
+}
+
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -98,6 +119,7 @@ const Navbar = () => {
   const isAdminPage = location.pathname.startsWith('/admin') || location.pathname.startsWith('/user');
 
   const [isScrolled, setIsScrolled] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -110,12 +132,30 @@ const Navbar = () => {
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
-  const dashboardPath = isAdmin ? '/admin' : '/user';
+  // Staff tools for students who hold a staff role (admins use the dashboard).
+  const staffLinks = isAdmin ? [] : [
+    { role: 'moderator', path: '/admin/forum', icon: 'bi-shield-lock', label: 'Forum moderation' },
+    { role: 'news-editor', path: '/admin/news', icon: 'bi-newspaper', label: 'Tech News editor' },
+    { role: 'challenge-editor', path: '/admin/reverse-coding', icon: 'bi-arrow-repeat', label: 'Reverse Coding editor' },
+    { role: 'challenge-editor', path: '/admin/materials', icon: 'bi-journal-bookmark', label: 'Study Guide editor' },
+    { role: 'hackathon-organizer', path: '/admin/hackathons', icon: 'bi-trophy', label: 'Hackathon organizer' },
+    { role: 'project-reviewer', path: '/admin/projects', icon: 'bi-kanban', label: 'Review projects' },
+    { role: 'hackathon-organizer', path: '/admin/review', icon: 'bi-inbox', label: 'Review hosted hackathons' },
+  ].filter((link) => user?.staffRoles?.includes(link.role));
+
+  const dashboardPath = isAdmin ? '/admin' : '/profile';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
   useEffect(() => {
+    let lastY = window.scrollY;
     const handleScroll = () => {
-      setIsScrolled(window.scrollY > 20);
+      const y = window.scrollY;
+      setIsScrolled(y > 20);
+      // Hide while scrolling down, show again on scroll up (small moves ignored).
+      if (y < 80) setIsHidden(false);
+      else if (y > lastY + 8) setIsHidden(true);
+      else if (y < lastY - 8) setIsHidden(false);
+      if (Math.abs(y - lastY) > 8 || y < 80) lastY = y;
     };
 
     window.addEventListener('scroll', handleScroll, { passive: true });
@@ -123,6 +163,42 @@ const Navbar = () => {
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Let sticky page toolbars hide/show together with the header.
+  const headerHidden = isHidden && !isMenuOpen && !isDropdownOpen;
+  useEffect(() => {
+    document.documentElement.dataset.navHidden = headerHidden ? 'true' : 'false';
+  }, [headerHidden]);
+
+  // Light text when the (transparent) header sits over a dark section.
+  const navRef = useRef(null);
+  const [onDark, setOnDark] = useState(false);
+  useEffect(() => {
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const nav = navRef.current;
+      if (!nav) return;
+      const y = Math.round(nav.getBoundingClientRect().height / 2);
+      const votes = [0.3, 0.45, 0.6]
+        .map((f) => isDarkAt(Math.round(window.innerWidth * f), y, nav))
+        .filter((v) => v !== null);
+      setOnDark(votes.length > 0 && votes.filter(Boolean).length * 2 > votes.length);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    schedule();
+    const late = setTimeout(schedule, 400); // after page content renders
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(late);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -272,6 +348,18 @@ const Navbar = () => {
               <span>{dashboardLabel}</span>
             </Link>
 
+            <Link to="/host" className="navbar-dropdown-item" onClick={closeMenu}>
+              <i className="bi bi-megaphone" aria-hidden="true" />
+              <span>My hosted listings</span>
+            </Link>
+
+            {staffLinks.map((link) => (
+              <Link key={link.path} to={link.path} className="navbar-dropdown-item" onClick={closeMenu}>
+                <i className={`bi ${link.icon}`} aria-hidden="true" />
+                <span>{link.label}</span>
+              </Link>
+            ))}
+
             <button
               type="button"
               className="navbar-dropdown-item navbar-dropdown-logout"
@@ -289,7 +377,8 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${
+        ref={navRef}
+        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${onDark ? 'navbar-on-dark' : ''} ${headerHidden ? 'navbar-hidden' : ''} ${
           isScrolled ? 'navbar-scrolled' : ''
         }`}
         aria-label="Main navigation"

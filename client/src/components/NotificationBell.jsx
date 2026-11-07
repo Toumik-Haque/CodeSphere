@@ -2,24 +2,33 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
+import { openUserStream } from '../lib/realtime';
 
 const TYPE_ICONS = {
   'forum-reply': 'bi-chat-dots',
+  'forum-mention': 'bi-at',
   'forum-moderation': 'bi-shield-exclamation',
   'forum-report-reviewed': 'bi-flag',
   'reverse-result': 'bi-arrow-repeat',
   'reverse-new': 'bi-arrow-repeat',
   'news-digest': 'bi-newspaper',
+  'news-daily': 'bi-lightning-charge',
+  hackathon: 'bi-trophy',
+  'host-review': 'bi-megaphone',
+  project: 'bi-rocket-takeoff',
   system: 'bi-info-circle',
 };
 
 const MUTE_LABELS = {
   'forum-reply': 'Replies to discussions I follow',
+  'forum-mention': 'When someone @mentions me',
   'reverse-new': 'New Reverse Coding challenges',
   'news-digest': 'New Tech Brief editions',
+  'news-daily': 'Daily "Today in Tech" (8 AM)',
 };
 
-const POLL_MS = 60000;
+// Live updates arrive over SSE; polling is only a slow safety net.
+const POLL_MS = 5 * 60000;
 
 // Bell with unread count and a dropdown of recent notifications.
 export default function NotificationBell({ compact = false }) {
@@ -30,7 +39,10 @@ export default function NotificationBell({ compact = false }) {
 
   const load = useCallback(() => apiRequest('/notifications?limit=15').then(setData).catch(() => {}), []);
 
-  // Poll for new notifications (only while the tab is visible).
+  // Live: refresh as soon as the server pushes a new notification.
+  useEffect(() => openUserStream(() => load()), [load]);
+
+  // Fallback poll (only while the tab is visible).
   useEffect(() => {
     let timer;
     const tick = () => {

@@ -10,6 +10,28 @@ const TYPE_TAGS = {
   'coming-soon': { label: 'Coming soon', icon: 'bi-hourglass-split' },
 };
 
+// Remember open/closed sections in this browser.
+function useStoredToggle(key, initial = false) {
+  const [open, setOpen] = useState(() => {
+    try {
+      const v = localStorage.getItem(key);
+      return v === null ? initial : v === '1';
+    } catch {
+      return initial;
+    }
+  });
+  const toggle = (next) => setOpen((cur) => {
+    const value = typeof next === 'boolean' ? next : !cur;
+    try {
+      localStorage.setItem(key, value ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+    return value;
+  });
+  return [open, toggle];
+}
+
 function formatDate(date) {
   return new Date(date).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' });
 }
@@ -102,6 +124,15 @@ export default function ProfileBadges({
   const [open, setOpen] = useState(null);
   const [showcase, setShowcase] = useState([]);
   const [saving, setSaving] = useState(false);
+  const [expanded, setExpanded] = useStoredToggle('cs_profile_progress_open', false);
+
+  // The badge strip on the profile card can ask this section to open.
+  useEffect(() => {
+    const openUp = () => setExpanded(true);
+    window.addEventListener('cs:open-progress', openUp);
+    return () => window.removeEventListener('cs:open-progress', openUp);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (preview) return undefined;
@@ -238,10 +269,34 @@ export default function ProfileBadges({
     return [g.id, `${inGroup.filter((b) => b.earned).length}/${inGroup.length}`];
   }));
 
+  if (!expanded) {
+    return (
+      <section className="bdg-section bdg-compact" id="codesphere-progress" aria-labelledby="bdg-title">
+        <button type="button" className="bdg-compact-bar" onClick={() => setExpanded(true)} aria-expanded="false">
+          <span className="bdg-compact-emoji" aria-hidden="true">{level.emoji}</span>
+          <span className="bdg-compact-main">
+            <span className="bdg-kicker">CODESPHERE PROFILE</span>
+            <strong id="bdg-title">{level.name}</strong>
+            <span className="bdg-bar" aria-hidden="true"><span style={{ width: `${Math.round(level.progress * 100)}%` }} /></span>
+          </span>
+          <span className="bdg-compact-stats">
+            <span><strong>{stats.xp}</strong> XP</span>
+            <span><strong>{data.earnedCount}/{data.totalCount}</strong> 🏅</span>
+            <span><strong>{stats.bestStreak}</strong> 🔥</span>
+          </span>
+          <span className="bdg-compact-toggle">Show details <i className="bi bi-chevron-down" aria-hidden="true" /></span>
+        </button>
+      </section>
+    );
+  }
+
   return (
-    <section className="bdg-section" aria-labelledby="bdg-title">
+    <section className="bdg-section" id="codesphere-progress" aria-labelledby="bdg-title">
       {/* Level + XP */}
       <div className="bdg-hero">
+        <button type="button" className="bdg-collapse" onClick={() => setExpanded(false)} aria-expanded="true">
+          Hide details <i className="bi bi-chevron-up" aria-hidden="true" />
+        </button>
         <div className="bdg-level">
           <span className="bdg-level-emoji" aria-hidden="true">{level.emoji}</span>
           <div>

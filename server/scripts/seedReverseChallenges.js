@@ -4,6 +4,7 @@
 // Usage (from server/):
 //   node scripts/seedReverseChallenges.js            publish all
 //   node scripts/seedReverseChallenges.js --draft    keep as drafts
+//   node scripts/seedReverseChallenges.js --pack=reverseSeedPack2   another set
 //
 // If Judge0 is configured, each reference solution is validated against
 // every test first; challenges that fail stay as drafts. Without Judge0 the
@@ -13,9 +14,12 @@
 require('dotenv').config();
 const mongoose = require('mongoose');
 const { ReverseChallenge } = require('../models/Reverse');
-const { isConfigured } = require('../config/judge0');
+const { isConfigured, activeRunner } = require('../config/codeRunner');
 const { evaluate } = require('../utils/reverseJudge');
-const seeds = require('../data/reverseSeed');
+// --pack=<file in data/> loads another set, e.g. --pack=reverseSeedPack2
+const packArg = process.argv.find((a) => a.startsWith('--pack='));
+const packName = packArg ? packArg.slice(7).replace(/\.json$/, '').replace(/[^\w-]/g, '') : 'reverseSeed';
+const seeds = require(`../data/${packName}`);
 
 const keepDraft = process.argv.includes('--draft');
 
@@ -23,7 +27,7 @@ const keepDraft = process.argv.includes('--draft');
   try {
     await mongoose.connect(process.env.MONGODB_URI);
     const judge = isConfigured();
-    console.log(judge ? 'Validating with Judge0…' : 'Judge0 not configured: using the pre-verified starter set.');
+    console.log(judge ? `Validating with the code runner (${activeRunner()})…` : 'Judge0 not configured: using the pre-verified starter set.');
 
     for (const seed of seeds) {
       const { reference, ...data } = seed;
@@ -37,8 +41,13 @@ const keepDraft = process.argv.includes('--draft');
       let note = 'Starter set: reference solution verified against every test when written.';
       if (judge) {
         const result = await evaluate(doc, 'python', reference, doc.tests.map((t) => ({ ...t, hidden: false })));
+        if (result.verdict === 'system-error') {
+          // The checker was busy: leave this challenge exactly as it was.
+          console.log(`… ${doc.slug.padEnd(22)} skipped (code checker busy, run again later)`);
+          continue;
+        }
         valid = result.verdict === 'accepted';
-        note = valid ? 'Reference solution passed every test (Judge0).' : `Reference solution failed: ${result.verdict} (${result.passed}/${result.total}).`;
+        note = valid ? `Reference solution passed every test (${activeRunner()}).` : `Reference solution failed: ${result.verdict} (${result.passed}/${result.total}).`;
       }
 
       const existing = await ReverseChallenge.findOne({ slug: doc.slug });

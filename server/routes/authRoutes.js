@@ -670,6 +670,8 @@ router.post('/register', async (req, res) => {
         yearOfStudy: user.yearOfStudy,
         email: user.email,
         role: user.role,
+        staffRoles: user.staffRoles || [],
+        avatarUrl: user.avatarUrl || '',
       },
     });
 
@@ -955,6 +957,8 @@ router.post('/login', async (req, res) => {
         yearOfStudy: user.yearOfStudy,
         email: user.email,
         role: user.role,
+        staffRoles: user.staffRoles || [],
+        avatarUrl: user.avatarUrl || '',
       },
     });
 
@@ -981,6 +985,9 @@ router.get('/me', protect, async (req, res) => {
       yearOfStudy: req.user.yearOfStudy,
       email: req.user.email,
       role: req.user.role,
+      staffRoles: req.user.staffRoles || [],
+      avatarUrl: req.user.avatarUrl || '',
+      bannerUrl: req.user.bannerUrl || '',
       createdAt: req.user.createdAt,
     },
   });

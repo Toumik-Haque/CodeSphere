@@ -1,12 +1,143 @@
 const express = require('express');
 const User = require('../models/User');
-const Project = require('../models/Project');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, STAFF_ROLES } = require('../middleware/authMiddleware');
+const { notify } = require('../utils/notify');
+const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
 
 const router = express.Router();
 
-const imagekit = require('../config/imagekit');
+// ---------- Profile photo (stored on ImageKit, visible to others) ----------
+
+// PUT /api/users/me/avatar  (multipart field "image", max 2 MB)
+router.put('/me/avatar', protect, handleImageUpload, async (req, res) => {
+  try {
+    const stored = await storeImage(req.file.buffer, req.user._id, 'avatars');
+    const old = req.user.avatarFileId;
+    // Also fill profileImage (used by the profile dashboard).
+    await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: stored.url, avatarFileId: stored.fileId, profileImage: { url: stored.url, fileId: stored.fileId } } });
+    if (old) await deleteImages([{ fileId: old }]);
+    res.json({ avatarUrl: stored.url });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.status ? error.message : 'Could not upload the photo.' });
+  }
+});
+
+// ---------- Resume (kept so students can view it any time) ----------
+
+const crypto = require('crypto');
+const multer = require('multer');
 const { toFile } = require('@imagekit/nodejs');
+const imagekit = require('../config/imagekit');
+
+const RESUME_TYPES = { 'application/pdf': 'pdf', 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+const resumeUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => (RESUME_TYPES[file.mimetype] ? cb(null, true) : cb(new Error('Upload a PDF, JPG, PNG or WebP file.'))),
+});
+
+// Check the real contents, not just the declared type.
+function sniffResume(buffer) {
+  if (buffer.slice(0, 5).toString('latin1') === '%PDF-') return 'application/pdf';
+  if (buffer[0] === 0xff && buffer[1] === 0xd8 && buffer[2] === 0xff) return 'image/jpeg';
+  if (buffer.slice(0, 8).equals(Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]))) return 'image/png';
+  if (buffer.slice(0, 4).toString('latin1') === 'RIFF' && buffer.slice(8, 12).toString('latin1') === 'WEBP') return 'image/webp';
+  return null;
+}
+
+const resumeView = (r) => (r?.url ? { url: r.url, name: r.name, size: r.size, type: r.type, uploadedAt: r.uploadedAt } : null);
+
+// GET /api/users/me/resume
+router.get('/me/resume', protect, (req, res) => res.json({ resume: resumeView(req.user.resume) }));
+
+// PUT /api/users/me/resume  (multipart field "resume", max 5 MB)
+router.put('/me/resume', protect, (req, res, next) => resumeUpload.single('resume')(req, res, (error) => {
+  if (error) return res.status(400).json({ message: error.code === 'LIMIT_FILE_SIZE' ? 'The resume must be 5 MB or smaller.' : error.message });
+  if (!req.file) return res.status(400).json({ message: 'Choose a resume file.' });
+  return next();
+}), async (req, res) => {
+  try {
+    const type = sniffResume(req.file.buffer);
+    if (!type) return res.status(400).json({ message: 'That file is not a valid PDF or image.' });
+    // Random file name: the link can't be guessed from the student's name.
+    const fileName = `${crypto.randomUUID()}.${RESUME_TYPES[type]}`;
+    const uploaded = await imagekit.files.upload({
+      file: await toFile(req.file.buffer, fileName),
+      fileName,
+      folder: `/codesphere/resumes/${req.user._id}`,
+      useUniqueFileName: false,
+    });
+    const old = req.user.resume?.fileId;
+    const resume = {
+      url: uploaded.url,
+      fileId: uploaded.fileId,
+      name: String(req.file.originalname || 'resume').replace(/[^\w .()-]/g, '_').slice(0, 120),
+      size: req.file.size,
+      type,
+      uploadedAt: new Date(),
+    };
+    await User.updateOne({ _id: req.user._id }, { $set: { resume } });
+    if (old) await deleteImages([{ fileId: old }]);
+    res.json({ resume: resumeView(resume) });
+  } catch (error) {
+    console.error('Resume upload error:', error.message);
+    res.status(500).json({ message: 'Could not save the resume. Try again.' });
+  }
+});
+
+// DELETE /api/users/me/resume
+router.delete('/me/resume', protect, async (req, res) => {
+  const old = req.user.resume?.fileId;
+  await User.updateOne({ _id: req.user._id }, { $unset: { resume: 1 } });
+  if (old) await deleteImages([{ fileId: old }]);
+  res.json({ resume: null });
+});
+
+// ---------- Profile banner (bigger images allowed) ----------
+
+const bannerUploadMw = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => (['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)
+    ? cb(null, true)
+    : cb(new Error('The banner must be a JPEG, PNG, WebP or GIF image.'))),
+});
+
+// PUT /api/users/me/banner  (multipart field "image", max 5 MB)
+router.put('/me/banner', protect, (req, res, next) => bannerUploadMw.single('image')(req, res, (error) => {
+  if (error) return res.status(400).json({ message: error.code === 'LIMIT_FILE_SIZE' ? 'The banner must be 5 MB or smaller.' : error.message });
+  if (!req.file) return res.status(400).json({ message: 'Choose an image.' });
+  return next();
+}), async (req, res) => {
+  try {
+    const stored = await storeImage(req.file.buffer, req.user._id, 'banners');
+    const old = req.user.bannerFileId;
+    await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: stored.url, bannerFileId: stored.fileId, bannerImage: { url: stored.url, fileId: stored.fileId } } });
+    if (old) await deleteImages([{ fileId: old }]);
+    res.json({ bannerUrl: stored.url });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.status ? error.message : 'Could not upload the banner.' });
+  }
+});
+
+// DELETE /api/users/me/banner
+router.delete('/me/banner', protect, async (req, res) => {
+  const old = req.user.bannerFileId;
+  await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: '', bannerFileId: '' } });
+  if (old) await deleteImages([{ fileId: old }]);
+  res.json({ bannerUrl: '' });
+});
+
+// DELETE /api/users/me/avatar
+router.delete('/me/avatar', protect, async (req, res) => {
+  const old = req.user.avatarFileId;
+  await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: '', avatarFileId: '' } });
+  if (old) await deleteImages([{ fileId: old }]);
+  res.json({ avatarUrl: '' });
+});
+// ---------- Public profiles, usernames and profile editing ----------
+// (router, protect, adminOnly, imagekit and toFile are declared above)
+const Project = require('../models/PortfolioProject'); // profile portfolio, not the Project Hub
 const handleProfileUpload = require('../middleware/profileUpload');
 
 const isValidHttpUrl = (value) => {
@@ -150,6 +281,35 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
   }
 });
 
+// PUT /api/users/admin/:id/staff-roles { staffRoles: [] }: admins grant or
+// revoke staff roles (moderator, news-editor, challenge-editor).
+router.put('/admin/:id/staff-roles', protect, adminOnly, async (req, res) => {
+  try {
+    const roles = [...new Set(Array.isArray(req.body.staffRoles) ? req.body.staffRoles : [])]
+      .filter((r) => STAFF_ROLES.includes(r));
+    const user = await User.findOne({ _id: req.params.id, role: 'user' });
+    if (!user) return res.status(404).json({ message: 'Student not found.' });
+
+    const added = roles.filter((r) => !user.staffRoles.includes(r));
+    user.staffRoles = roles;
+    await user.save();
+
+    if (added.length) {
+      await notify(user._id, {
+        type: 'system',
+        title: `You're now a CodeSphere ${added.join(' & ')}. Thank you for helping!`,
+        body: 'Your staff tools are in the menu under your name.',
+        link: '/',
+      });
+    }
+    return res.json({ staffRoles: user.staffRoles });
+  } catch (error) {
+    console.error('Staff roles error:', error);
+    return res.status(500).json({ message: 'Could not update staff roles.' });
+  }
+});
+
+module.exports = router;
 // GET /api/users/search?q=term (search profiles visible to signed-in members)
 router.get('/search', protect, async (req, res) => {
   try {
@@ -556,6 +716,9 @@ router.post(
         url: uploadedImage.url,
         fileId: uploadedImage.fileId,
       };
+      // Keep the flat fields used by the forum / Project Hub in sync.
+      if (imageField === 'profileImage') user.avatarUrl = uploadedImage.url;
+      else user.bannerUrl = uploadedImage.url;
 
       await user.save();
 
@@ -619,6 +782,8 @@ router.delete('/profile/image', protect, async (req, res) => {
       url: '',
       fileId: '',
     };
+    if (imageField === 'profileImage') user.avatarUrl = '';
+    else user.bannerUrl = '';
 
     await user.save();
 

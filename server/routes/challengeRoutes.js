@@ -2,7 +2,7 @@ const express = require('express');
 const ChallengeProgress = require('../models/ChallengeProgress');
 const { protect } = require('../middleware/authMiddleware');
 const { CHALLENGES } = require('../data/codingChallenges');
-const { runCode, isConfigured, SUPPORTED_LANGUAGES } = require('../config/judge0');
+const { runCode, isConfigured, SUPPORTED_LANGUAGES } = require('../config/codeRunner');
 const { challengeXpTotal } = require('../utils/progress');
 const { syncBadgesQuietly } = require('../utils/badges');
 

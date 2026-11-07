@@ -1705,3 +1705,61 @@
     width: 100%;
   }
 }
+
+/* Resume review: projects and coding profiles */
+.resume-review-list { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; }
+.resume-review-list h4 { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; color: var(--navy, #10243A); font-size: .95rem; font-weight: 800; }
+.resume-review-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid rgba(16, 36, 58, .1);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+.resume-review-item input { margin-top: 4px; }
+.resume-review-item > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.resume-review-item strong { color: var(--navy, #10243A); }
+.resume-review-item small { color: #617386; overflow-wrap: anywhere; }
+.resume-review-item em { color: #33475B; font-size: .85rem; font-style: normal; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.resume-review-hint { margin: 0; color: #617386; font-size: .8rem; }
+
+/* Saved resume */
+.resume-saved {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px 14px;
+  border: 1px solid #BFE8CF;
+  border-radius: 14px;
+  background: #F3FBF6;
+}
+.resume-saved .resume-file-info { flex: 1; min-width: 160px; }
+.resume-saved .resume-file-info strong { overflow-wrap: anywhere; }
+.resume-saved-actions { display: flex; align-items: center; gap: 6px; }
+.resume-saved-actions a { text-decoration: none; }
+
+/* Profile banner (dashboard sidebar) */
+.student-identity-card.has-cover { padding-top: 0; }
+.student-cover {
+  position: relative;
+  height: 112px;
+  background-color: #0b1a2b;
+  background-position: center;
+  background-size: cover;
+}
+.student-identity-card.has-cover .student-avatar { margin-top: -46px; }
+.profile-banner-upload-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 7px 10px;
+}
+@media (max-width: 767.98px) {
+  .student-cover { height: 92px; }
+  .student-identity-card.has-cover .student-avatar { margin-top: -40px; }
+}

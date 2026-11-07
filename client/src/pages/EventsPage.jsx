@@ -1,11 +1,13 @@
 
 import { useEffect, useMemo, useState } from 'react';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import VideoBackground from '../components/VideoBackground';
 import { apiRequest } from '../lib/api';
 import { EventCard } from '../components/Events';
 import '../css/EventsPage.css';
+import '../css/Host.css';
 
 function isValidDate(value) {
   return value && !Number.isNaN(new Date(value).getTime());
@@ -104,6 +106,17 @@ export default function EventsPage() {
               our CodeSphere community.
             </p>
           </header>
+
+          <div className="host-cta">
+            <div>
+              <strong>Hosting an event?</strong>
+              <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
+            </div>
+            <div>
+              <Link to="/host/event/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your event</Link>
+              <Link to="/host" className="host-btn">My listings</Link>
+            </div>
+          </div>
 
           <div className="events-toolbar">
             <div className="events-category-wrapper">

@@ -14,6 +14,7 @@ import '../css/Admin.css';
 import { Editor } from '@tinymce/tinymce-react';
 import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
 import AdminBadgeAwards from '../components/AdminBadgeAwards';
+import AdminStaffRoles from '../components/AdminStaffRoles';
 import MemberProfile from './MemberProfile';
 
 const initialForm = {
@@ -1301,6 +1302,22 @@ export default function Admin() {
                     <i className="bi bi-newspaper" aria-hidden="true" />
                     <span><strong>Tech News editor</strong><small>Review stories, sources and weekly digests</small></span>
                   </Link>
+                  <Link to="/admin/projects" className="admin-tool">
+                    <i className="bi bi-kanban" aria-hidden="true" />
+                    <span><strong>Project submissions</strong><small>Review, publish and feature Project Hub entries</small></span>
+                  </Link>
+                  <Link to="/admin/review" className="admin-tool">
+                    <i className="bi bi-inbox" aria-hidden="true" />
+                    <span><strong>Review hosted listings</strong><small>Approve or reject events and hackathons from students</small></span>
+                  </Link>
+                  <Link to="/admin/hackathons" className="admin-tool">
+                    <i className="bi bi-trophy" aria-hidden="true" />
+                    <span><strong>Hackathons</strong><small>Run club hackathons and judge projects</small></span>
+                  </Link>
+                  <Link to="/admin/materials" className="admin-tool">
+                    <i className="bi bi-journal-bookmark" aria-hidden="true" />
+                    <span><strong>Study Guide</strong><small>Write and publish learning materials</small></span>
+                  </Link>
                   <Link to="/admin/reverse-coding" className="admin-tool">
                     <i className="bi bi-arrow-repeat" aria-hidden="true" />
                     <span><strong>Reverse Coding</strong><small>Author, validate and publish challenges</small></span>
@@ -2200,6 +2217,12 @@ export default function Admin() {
                           </div>
                         </div>
 
+                        {registeredUser.role !== 'admin' && (
+                          <>
+                            <AdminStaffRoles userId={registeredUser._id} initial={registeredUser.staffRoles || []} />
+                            <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
+                          </>
+                        )}
                         <div className="admin-user-card-actions">
                           {registeredUser.role !== 'admin' && (
                             <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />

@@ -206,6 +206,41 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Extra staff permissions an admin can grant to a student:
+    // moderator (forum), news-editor (Tech News), challenge-editor (Reverse Coding).
+    staffRoles: {
+      type: [String],
+      enum: ['moderator', 'news-editor', 'challenge-editor', 'hackathon-organizer', 'project-reviewer'],
+      default: [],
+    },
+    // Opted in to the weekly Tech Brief email.
+    // Profile photo (ImageKit) shown in the forum and leaderboards.
+    avatarUrl: { type: String, default: '' },
+    avatarFileId: { type: String, default: '' },
+    // Connected GitHub identity (Project Hub verification). No token is stored.
+    github: {
+      id: Number,
+      login: String,
+      connectedAt: Date,
+    },
+    // Profile banner image (ImageKit).
+    bannerUrl: { type: String, default: '' },
+    bannerFileId: { type: String, default: '' },
+    // Saved resume (PDF or image on ImageKit), visible only to its owner.
+    resume: {
+      url: { type: String, default: '' },
+      fileId: { type: String, default: '' },
+      name: { type: String, default: '' },
+      size: { type: Number, default: 0 },
+      type: { type: String, default: '' },
+      uploadedAt: Date,
+    },
+    // Daily "Today in Tech" email (separate from the weekly newsletter).
+    dailyNewsOptIn: { type: Boolean, default: false },
+    newsletterOptIn: {
+      type: Boolean,
+      default: false,
+    },
     // Notification types the student has muted (see utils/notify.js).
     mutedNotifications: {
       type: [String],

@@ -42,6 +42,19 @@ import ReverseChallenge from './pages/ReverseChallenge';
 import AdminReverse from './pages/AdminReverse';
 import News from './pages/News';
 import AdminNews from './pages/AdminNews';
+import Materials from './pages/Materials';
+import AdminMaterials from './pages/AdminMaterials';
+import Hackathons from './pages/Hackathons';
+import HackathonDetail from './pages/HackathonDetail';
+import AdminHackathons from './pages/AdminHackathons';
+import HostSubmit from './pages/HostSubmit';
+import MyHosting from './pages/MyHosting';
+import AdminReview from './pages/AdminReview';
+import ProjectHub from './pages/ProjectHub';
+import ProjectDetail from './pages/ProjectDetail';
+import ProjectEditor from './pages/ProjectEditor';
+import GuidedProject from './pages/GuidedProject';
+import AdminProjects from './pages/AdminProjects';
 
 import UserDashboard from './pages/UserDashboard';
 
@@ -54,6 +67,7 @@ function HomePage() {
       <main>
         <Hero />
         <Events />
+        <About />
         <PlaygroundHighlight />
         <About />
         <TeamCarousel />
@@ -67,11 +81,18 @@ function HomePage() {
 
 // Protect routes that require authentication.
 // anyRole: any signed-in user (students and admins), e.g. forum posting.
-function ProtectedRoute({ children, adminOnly = false, anyRole = false }) {
+// staff: a staff role (moderator, news-editor, challenge-editor); admins and
+// students holding that role may enter.
+function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = null }) {
   const { user, token } = useAuth();
 
   if (!user || !token) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (staff) {
+    const allowed = user.role === 'admin' || user.staffRoles?.includes(staff);
+    return allowed ? children : <Navigate to="/" replace />;
   }
 
   if (adminOnly && user.role !== 'admin') {
@@ -150,13 +171,29 @@ function AppRoutes() {
       <Route path="/forum" element={<Forum />} />
       <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
       <Route path="/forum/:id" element={<ForumThread />} />
-      <Route path="/admin/forum" element={<ProtectedRoute adminOnly><AdminForum /></ProtectedRoute>} />
+      <Route path="/admin/forum" element={<ProtectedRoute staff="moderator"><AdminForum /></ProtectedRoute>} />
       <Route path="/reverse-coding" element={<ReverseCoding />} />
       <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
-      <Route path="/admin/reverse-coding" element={<ProtectedRoute adminOnly><AdminReverse /></ProtectedRoute>} />
+      <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminReverse /></ProtectedRoute>} />
+      <Route path="/materials" element={<Materials />} />
+      <Route path="/materials/:slug" element={<Materials />} />
+      <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminMaterials /></ProtectedRoute>} />
+      <Route path="/host" element={<ProtectedRoute anyRole><MyHosting /></ProtectedRoute>} />
+      <Route path="/host/:kind/new" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
+      <Route path="/host/:kind/:id/edit" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
+      <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminReview /></ProtectedRoute>} />
+      <Route path="/projects" element={<ProjectHub />} />
+      <Route path="/projects/new" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
+      <Route path="/projects/guided/:slug" element={<GuidedProject />} />
+      <Route path="/projects/:id/edit" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
+      <Route path="/projects/:slug" element={<ProjectDetail />} />
+      <Route path="/admin/projects" element={<ProtectedRoute staff="project-reviewer"><AdminProjects /></ProtectedRoute>} />
+      <Route path="/hackathons" element={<Hackathons />} />
+      <Route path="/hackathons/:slug" element={<HackathonDetail />} />
+      <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminHackathons /></ProtectedRoute>} />
       <Route path="/news" element={<News />} />
       <Route path="/news/:slug" element={<News />} />
-      <Route path="/admin/news" element={<ProtectedRoute adminOnly><AdminNews /></ProtectedRoute>} />
+      <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminNews /></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />

@@ -215,7 +215,7 @@ router.get('/', async (req, res) => {
     if (category) filter.category = category;
 
     const events = await Event.find(filter)
-      .select('-createdBy -__v')
+      .select('-createdBy -__v -contactEmail -contactPhone -reviewNote -reviewedBy -reviewStatus')
       .sort({ date: 1 })
       .lean();
 
@@ -229,7 +229,7 @@ router.get('/', async (req, res) => {
 // Admin: list all events, including drafts.
 router.get('/admin/all', protect, adminOnly, async (req, res) => {
   try {
-    const events = await Event.find()
+    const events = await Event.find({ $or: [{ origin: { $ne: 'community' } }, { reviewStatus: 'approved' }] })
       .sort({ date: -1 })
       .populate('createdBy', 'name email')
       .lean();
@@ -248,7 +248,7 @@ router.get('/slug/:slug', async (req, res) => {
       slug: req.params.slug,
       status: 'published',
     })
-      .select('-createdBy -__v')
+      .select('-createdBy -__v -contactEmail -contactPhone -reviewNote -reviewedBy -reviewStatus')
       .lean();
 
     if (!event) {
@@ -412,7 +412,7 @@ router.get('/:id', async (req, res) => {
       _id: req.params.id,
       status: 'published',
     })
-      .select('-createdBy -__v')
+      .select('-createdBy -__v -contactEmail -contactPhone -reviewNote -reviewedBy -reviewStatus')
       .lean();
 
     if (!event) {

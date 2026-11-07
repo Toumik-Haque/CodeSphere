@@ -91,6 +91,40 @@ const Playground = () => {
   // const [checkResult, setCheckResult] = useState(null);
 
   const iframeRef = useRef(null);
+  const langRailRef = useRef(null);
+
+  // Language bar scrolls by itself in a loop (the list is rendered twice).
+  // Pauses on hover, touch or keyboard focus; off for reduced motion.
+  useEffect(() => {
+    const rail = langRailRef.current;
+    if (!rail || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return undefined;
+    let paused = false;
+    let frame = 0;
+    let last = performance.now();
+    let pos = rail.scrollLeft;
+    const step = (now) => {
+      const dt = Math.min(64, now - last);
+      last = now;
+      const half = rail.scrollWidth / 2;
+      if (!paused && half > rail.clientWidth) {
+        pos += dt * 0.04; // ~40px per second
+        if (pos >= half) pos -= half;
+        rail.scrollLeft = pos;
+      } else {
+        pos = rail.scrollLeft % half || rail.scrollLeft; // follow manual scrolling
+      }
+      frame = requestAnimationFrame(step);
+    };
+    const pause = () => { paused = true; };
+    const resume = () => { paused = false; pos = rail.scrollLeft; };
+    const events = [['mouseenter', pause], ['mouseleave', resume], ['focusin', pause], ['focusout', resume], ['touchstart', pause], ['touchend', resume]];
+    events.forEach(([e, f]) => rail.addEventListener(e, f, { passive: true }));
+    frame = requestAnimationFrame(step);
+    return () => {
+      cancelAnimationFrame(frame);
+      events.forEach(([e, f]) => rail.removeEventListener(e, f));
+    };
+  }, []);
   const workspaceRef = useRef(null);
   // Latest code in the editor, kept in a ref so typing doesn't re-render the page.
   const codeRef = useRef('');
@@ -388,13 +422,17 @@ const Playground = () => {
 
         {/* Language picker */}
         <section className="container" aria-label="Choose a language">
-          <div className="playground-languages" role="tablist">
-            {LANGUAGES.map((lang) => (
+          <div className="playground-languages is-marquee" role="tablist" ref={langRailRef}>
+            {[...LANGUAGES, ...LANGUAGES].map((lang, index) => {
+              const copy = index >= LANGUAGES.length; // duplicate for the seamless loop
+              return (
               <button
-                key={lang.id}
+                key={`${lang.id}-${copy ? 'b' : 'a'}`}
                 type="button"
-                role="tab"
-                aria-selected={lang.id === language.id}
+                role={copy ? undefined : 'tab'}
+                aria-hidden={copy || undefined}
+                tabIndex={copy ? -1 : undefined}
+                aria-selected={copy ? undefined : lang.id === language.id}
                 className={`playground-lang ${lang.id === language.id ? 'active' : ''}`}
                 style={{ '--lang-color': lang.color }}
                 onClick={() => switchLanguage(lang)}
@@ -402,7 +440,8 @@ const Playground = () => {
                 <i className={`bi ${lang.icon}`} aria-hidden="true" />
                 {lang.label}
               </button>
-            ))}
+              );
+            })}
           </div>
           <p className="playground-lang-tagline">
             <strong>{language.label}:</strong> {language.tagline}{' '}
@@ -565,6 +604,7 @@ const Playground = () => {
               src={editorUrl(language.id, theme)}
               onLoad={handleEditorLoad}
               className="playground-iframe"
+              data-nav-tone={theme === 'dark' ? 'dark' : 'light'}
               allow="clipboard-read; clipboard-write"
             />
 

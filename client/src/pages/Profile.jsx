@@ -12,6 +12,7 @@ import { calculateProfileCompletion } from '../lib/profileCompletion';
 import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import ProfileBadges from '../components/ProfileBadges';
+import { parseResumeText as parseResume, itemsToLines } from '../lib/resumeParser';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -75,6 +76,8 @@ const emptyProfile = {
 };
 
 const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
+// Default profile banner (client/public), used until a student uploads one.
+const DEFAULT_BANNER = '/default-profile-banner.webp';
 const RESUME_SIZE_LIMIT = 5 * 1024 * 1024;
 
 const normalizeProject = (project) => ({
@@ -222,105 +225,7 @@ const sectionConfig = [
    RESUME TEXT EXTRACTION & PARSING
 ========================================= */
 
-const normalizeText = (text) =>
-  text
-    .replace(/\r/g, '\n')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-
-const findFirstMatch = (text, patterns) => {
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match?.[1]) return match[1].trim();
-  }
-  return '';
-};
-
-const parseResumeText = (rawText) => {
-  const text = normalizeText(rawText);
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
-
-  const phoneMatches = text.match(
-    /(?:\+?\d{1,3}[\s.-]?)?(?:\d[\s.-]?){9,12}/g
-  ) || [];
-
-  const phone = phoneMatches
-    .map((value) => value.replace(/\D/g, ''))
-    .find((value) => value.length >= 10 && value.length <= 13) || '';
-
-  const ignoredNameLines = [
-    'resume', 'curriculum vitae', 'cv', 'profile',
-    'contact', 'career objective', 'objective',
-  ];
-
-  const name = lines.find((line) => {
-    const clean = line.replace(/[^a-zA-Z .'-]/g, '').trim();
-    return (
-      clean.length >= 4 &&
-      clean.length <= 55 &&
-      clean.split(/\s+/).length >= 2 &&
-      !ignoredNameLines.includes(clean.toLowerCase()) &&
-      !clean.includes('@')
-    );
-  }) || '';
-
-  const collegeName = lines.find((line) =>
-    /\b(university|college|institute|institution)\b/i.test(line)
-  ) || '';
-
-  const degree = findFirstMatch(text, [
-    /\b(B\.?\s?Tech(?:nology)?\.?)\b/i,
-    /\b(B\.?\s?E\.?)\b/i,
-    /\b(B\.?\s?C\.?\s?A\.?)\b/i,
-    /\b(B\.?\s?Sc\.?)\b/i,
-    /\b(M\.?\s?Tech(?:nology)?\.?)\b/i,
-    /\b(M\.?\s?C\.?\s?A\.?)\b/i,
-    /\b(M\.?\s?Sc\.?)\b/i,
-    /\b(Diploma)\b/i,
-  ]);
-
-  const department = departments.find((item) => {
-    if (item === 'Other') return false;
-    const keywords = item.toLowerCase().split(/\s+/);
-    return keywords.every((word) => text.toLowerCase().includes(word));
-  }) || '';
-
-  const graduationYear = findFirstMatch(text, [
-    /(?:expected\s+)?(?:year\s+of\s+)?graduation\s*[:-]?\s*((?:20)\d{2})/i,
-    /(?:passing|completion)\s+year\s*[:-]?\s*((?:20)\d{2})/i,
-  ]);
-
-  const currentYear = findFirstMatch(text, [
-    /\b(1st|2nd|3rd|4th)\s+year\b/i,
-  ]);
-
-  const yearOfStudy = currentYear
-    ? `${currentYear.charAt(0).toUpperCase()}${currentYear.slice(1)}`
-    : '';
-
-  const detectedSkills = skillOptions.filter((skill) => {
-    const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp(`(^|[^a-zA-Z0-9])${escaped}([^a-zA-Z0-9]|$)`, 'i').test(text);
-  });
-
-  const extracted = {
-    name: name.replace(/\s{2,}/g, ' ').trim(),
-    phone,
-    collegeName,
-    degree,
-    department,
-    yearOfStudy,
-    graduationYear,
-    skills: detectedSkills,
-  };
-
-  return Object.fromEntries(
-    Object.entries(extracted).filter(([, value]) =>
-      Array.isArray(value) ? value.length > 0 : Boolean(value)
-    )
-  );
-};
+// Parsing lives in lib/resumeParser.js (sections, college, projects, links).
 
 const renderPdfPageToCanvas = async (page) => {
   const viewport = page.getViewport({ scale: 1.6 });
@@ -373,9 +278,8 @@ const extractResumeText = async (file, onProgress) => {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
 
-      extractedText += content.items
-        .map((item) => item.str || '')
-        .join(' ') + '\n';
+      // Rebuild real lines from text positions (not one long line per page).
+      extractedText += `${itemsToLines(content.items)}\n`;
 
       onProgress?.({
         stage: 'Reading PDF',
@@ -513,8 +417,60 @@ function Toast({ toast, onClose }) {
    RESUME UPLOAD COMPONENT
 ========================================= */
 
-function ResumeUpload({ profile, onApply, showToast }) {
+function ResumeUpload({ profile, onApply, showToast, preview = false }) {
   const inputRef = useRef(null);
+  // The resume file saved on the server (survives refreshes).
+  const [savedResume, setSavedResume] = useState(null);
+  const [savingResume, setSavingResume] = useState(false);
+
+  useEffect(() => {
+    if (preview) return undefined;
+    let cancelled = false;
+    apiRequest('/users/me/resume').then((r) => !cancelled && setSavedResume(r.resume)).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [preview]);
+
+  const saveResumeFile = async (file) => {
+    if (preview) return;
+    setSavingResume(true);
+    try {
+      const form = new FormData();
+      form.append('resume', file, file.name);
+      const { resume } = await apiRequest('/users/me/resume', { method: 'PUT', body: form });
+      setSavedResume(resume);
+    } catch (error) {
+      showToast(`Your resume was read, but saving the file failed: ${error.message}`, 'warning');
+    } finally {
+      setSavingResume(false);
+    }
+  };
+
+  const deleteSavedResume = async () => {
+    if (!window.confirm('Delete your saved resume? You can upload it again any time.')) return;
+    try {
+      await apiRequest('/users/me/resume', { method: 'DELETE' });
+      setSavedResume(null);
+      showToast('Saved resume deleted.', 'success');
+    } catch (error) {
+      showToast(error.message, 'error');
+    }
+  };
+  const [resumeOpen, setResumeOpen] = useState(() => {
+    try {
+      return localStorage.getItem('cs_profile_resume_open') === '1';
+    } catch {
+      return false;
+    }
+  });
+  useEffect(() => {
+    try {
+      localStorage.setItem('cs_profile_resume_open', resumeOpen ? '1' : '0');
+    } catch {
+      /* ignore */
+    }
+  }, [resumeOpen]);
 
   const [fileName, setFileName] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
@@ -557,6 +513,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
     }
 
     setFileName(file.name);
+    saveResumeFile(file);
     setDraft(null);
     setProgress(0);
     setProgressLabel('');
@@ -576,7 +533,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
         throw new Error('No readable text was found in this resume.');
       }
 
-      const extracted = parseResumeText(text);
+      const extracted = parseResume(text, { departments, skillOptions });
 
       if (Object.keys(extracted).length === 0) {
         throw new Error(
@@ -586,11 +543,16 @@ function ResumeUpload({ profile, onApply, showToast }) {
 
       setDraft(extracted);
 
-      setSelectedFields(
-        Object.fromEntries(
-          Object.keys(extracted).map((key) => [key, true])
-        )
-      );
+      // Projects and coding profiles are picked one by one.
+      setSelectedFields({
+        ...Object.fromEntries(
+          Object.keys(extracted)
+            .filter((key) => key !== 'projects' && key !== 'codingProfiles')
+            .map((key) => [key, true])
+        ),
+        ...Object.fromEntries((extracted.projects || []).map((_, i) => [`project:${i}`, true])),
+        ...Object.fromEntries((extracted.codingProfiles || []).map((_, i) => [`profile:${i}`, true])),
+      });
 
       showToast('Resume processed. Review the extracted information.', 'success');
     } catch (error) {
@@ -647,10 +609,26 @@ function ResumeUpload({ profile, onApply, showToast }) {
           }));
 
         updates.skills = [...existingSkills, ...newSkills];
-      } else {
+      } else if (!field.includes(':')) {
         updates[field] = draft[field];
       }
     });
+
+    // Projects: add the ticked ones whose title isn't on the profile yet.
+    const pickedProjects = (draft.projects || []).filter((_, i) => selectedFields[`project:${i}`]);
+    if (pickedProjects.length) {
+      const existing = profile.projects || [];
+      const titles = new Set(existing.map((p) => (p.title || '').toLowerCase().trim()));
+      updates.projects = [...existing, ...pickedProjects.filter((p) => !titles.has(p.title.toLowerCase().trim()))];
+    }
+
+    // Coding profiles: one per platform.
+    const pickedProfiles = (draft.codingProfiles || []).filter((_, i) => selectedFields[`profile:${i}`]);
+    if (pickedProfiles.length) {
+      const existing = profile.codingProfiles || [];
+      const platforms = new Set(existing.map((p) => p.platform));
+      updates.codingProfiles = [...existing, ...pickedProfiles.filter((p) => !platforms.has(p.platform))];
+    }
 
     const saved = await onApply(updates);
     if (saved) {
@@ -669,16 +647,44 @@ function ResumeUpload({ profile, onApply, showToast }) {
   };
 
   return (
-    <section className="profile-section-card resume-upload-card">
-      <div className="profile-section-heading">
+    <section className={`profile-section-card resume-upload-card ${resumeOpen ? '' : 'is-collapsed'}`}>
+      <button type="button" className="profile-section-heading profile-collapse-head" onClick={() => setResumeOpen(!resumeOpen)} aria-expanded={resumeOpen}>
         <div>
           <h2>Resume & CV</h2>
-          <p>Upload your resume and let us help complete your profile.</p>
+          <p>{savedResume ? `Saved: ${savedResume.name}` : 'Upload your resume and let us help complete your profile.'}</p>
         </div>
         <span className="profile-section-icon">
-          <i className="bi bi-file-earmark-person" />
+          <i className={`bi ${resumeOpen ? 'bi-chevron-up' : 'bi-chevron-down'}`} />
         </span>
-      </div>
+      </button>
+
+      {resumeOpen && (
+      <>
+      {savedResume && (
+        <div className="resume-saved">
+          <span className="resume-file-icon">
+            <i className={`bi ${savedResume.type === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image'}`} />
+          </span>
+          <div className="resume-file-info">
+            <strong>{savedResume.name}</strong>
+            <small>
+              Saved {new Date(savedResume.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+              {' · '}{Math.max(1, Math.round(savedResume.size / 1024))} KB
+            </small>
+          </div>
+          <div className="resume-saved-actions">
+            <a href={savedResume.url} target="_blank" rel="noopener noreferrer" className="profile-action-button">
+              <i className="bi bi-eye" /> View
+            </a>
+            <a href={`${savedResume.url}?ik-attachment=true`} className="profile-icon-button" title="Download" aria-label="Download resume">
+              <i className="bi bi-download" />
+            </a>
+            <button type="button" className="profile-icon-button" onClick={deleteSavedResume} title="Delete" aria-label="Delete saved resume">
+              <i className="bi bi-trash" />
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="resume-upload-area">
         <input
@@ -694,7 +700,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
         </div>
 
         <div className="resume-upload-copy">
-          <h3>Upload your resume</h3>
+          <h3>{savedResume ? 'Upload a new version' : 'Upload your resume'}</h3>
           <p>
             Choose a PDF or image file. We'll extract details that can help
             complete your CodeSphere profile.
@@ -719,7 +725,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
           </span>
           <div className="resume-file-info">
             <strong>{fileName}</strong>
-            <small>{isProcessing ? 'Processing locally...' : 'Selected resume'}</small>
+            <small>{isProcessing ? 'Reading your resume...' : savingResume ? 'Saving to your account...' : 'Selected resume'}</small>
           </div>
           {!isProcessing && (
             <button
@@ -838,6 +844,50 @@ function ResumeUpload({ profile, onApply, showToast }) {
                 </div>
               </div>
             )}
+
+            {Array.isArray(draft.projects) && draft.projects.length > 0 && (
+              <div className="resume-review-list">
+                <h4><i className="bi bi-kanban" /> Projects ({draft.projects.length})</h4>
+                {draft.projects.map((project, i) => (
+                  <label key={`${project.title}-${i}`} className="resume-review-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedFields[`project:${i}`])}
+                      onChange={() => toggleField(`project:${i}`)}
+                    />
+                    <span>
+                      <strong>{project.title}</strong>
+                      <small>
+                        {[project.type, project.technologies].filter(Boolean).join(' · ')}
+                        {project.github && <> · <i className="bi bi-github" /> repo</>}
+                        {project.demo && <> · <i className="bi bi-box-arrow-up-right" /> demo</>}
+                      </small>
+                      {project.description && <em>{project.description}</em>}
+                    </span>
+                  </label>
+                ))}
+                <p className="resume-review-hint">You can edit each project in the Projects section after adding.</p>
+              </div>
+            )}
+
+            {Array.isArray(draft.codingProfiles) && draft.codingProfiles.length > 0 && (
+              <div className="resume-review-list">
+                <h4><i className="bi bi-terminal" /> Coding profiles ({draft.codingProfiles.length})</h4>
+                {draft.codingProfiles.map((item, i) => (
+                  <label key={item.url} className="resume-review-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedFields[`profile:${i}`])}
+                      onChange={() => toggleField(`profile:${i}`)}
+                    />
+                    <span>
+                      <strong>{item.platform}</strong>
+                      <small>{item.url}</small>
+                    </span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
 
           <div className="resume-review-actions">
@@ -863,10 +913,12 @@ function ResumeUpload({ profile, onApply, showToast }) {
       <div className="resume-privacy-note">
         <i className="bi bi-shield-lock" />
         <span>
-          Your resume is processed locally in your browser. The original file
-          is not uploaded to a CodeSphere server or permanently stored.
+          Your resume is read in your browser and saved to your account so you
+          can view it any time. Only you can see it here; delete it whenever you like.
         </span>
       </div>
+      </>
+      )}
     </section>
   );
 }
@@ -1312,6 +1364,7 @@ export default function Profile({
   const [skillLevel, setSkillLevel] = useState('Intermediate');
 
   const photoInputRef = useRef(null);
+  const bannerInputRef = useRef(null);
   const toastTimerRef = useRef(null);
   const toastIdRef = useRef(0);
 
@@ -1384,7 +1437,7 @@ export default function Profile({
     }
   };
 
-  const handleImageChange = async (event, imageLabel) => {
+  const handleImageChange = async (event, imageLabel, kind = 'profile') => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -1403,11 +1456,11 @@ export default function Profile({
     try {
       if (preview) {
         const imageData = await readImageFile(file);
-        setProfile((current) => ({ ...current, profileImage: { url: imageData } }));
+        setProfile((current) => ({ ...current, [kind === 'banner' ? 'bannerImage' : 'profileImage']: { url: imageData } }));
       } else {
         const body = new FormData();
         body.append('profileImage', file);
-        await apiRequest('/users/profile/image', { method: 'POST', body });
+        await apiRequest(`/users/profile/image${kind === 'banner' ? '?type=banner' : ''}`, { method: 'POST', body });
         const refreshed = await loadProfile();
         if (!refreshed) {
           showToast('Image uploaded, but your profile could not be refreshed.', 'error');
@@ -1431,7 +1484,7 @@ export default function Profile({
     try {
       const [profileResponse, projectsResponse] = await Promise.all([
         apiRequest('/users/profile', { signal }),
-        apiRequest('/projects', { signal }),
+        apiRequest('/portfolio-projects', { signal }),
       ]);
 
       setProfile(normalizeProfile({
@@ -1505,7 +1558,7 @@ export default function Profile({
 
     try {
       const response = await apiRequest(
-        projectId ? `/projects/${projectId}` : '/projects',
+        projectId ? `/portfolio-projects/${projectId}` : '/portfolio-projects',
         {
           method: projectId ? 'PATCH' : 'POST',
           body: JSON.stringify(payload),
@@ -1573,7 +1626,7 @@ export default function Profile({
       if (!projectId) return false;
 
       try {
-        const response = await apiRequest(`/projects/${projectId}`, {
+        const response = await apiRequest(`/portfolio-projects/${projectId}`, {
           method: 'DELETE',
         });
         setProfile((current) => ({
@@ -1745,6 +1798,10 @@ export default function Profile({
                   completion={completion}
                   photoInputRef={photoInputRef}
                   onPhotoChange={(event) => handleImageChange(event, 'Profile photo')}
+                  bannerInputRef={bannerInputRef}
+                  onBannerChange={(event) => handleImageChange(event, 'Banner image', 'banner')}
+                  defaultBanner={DEFAULT_BANNER}
+                  showBadges={!preview}
                 />
 
                 <div className="student-profile-main">
@@ -1752,6 +1809,7 @@ export default function Profile({
                     profile={profile}
                     onApply={applyResumeDetails}
                     showToast={showToast}
+                    preview={preview}
                   />
 
                   <section className="profile-section-card profile-builder-card">

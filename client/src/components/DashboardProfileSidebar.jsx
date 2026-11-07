@@ -1,12 +1,21 @@
+import BadgeStrip from './BadgeStrip';
+
 export default function DashboardProfileSidebar({
   user,
   completion,
   photoInputRef,
   onPhotoChange,
+  bannerInputRef,
+  onBannerChange,
+  // The CodeSphere banner (client/public) for everyone without their own.
+  defaultBanner = '/default-profile-banner.webp',
+  showBadges = false,
 }) {
   const name = user?.name || 'CodeSphere Member';
   const username = user?.username;
-  const profileImage = user?.profileImage?.url;
+  const profileImage = user?.profileImage?.url || user?.avatarUrl;
+  // Everyone gets the CodeSphere banner until they upload their own.
+  const bannerImage = user?.bannerImage?.url || user?.bannerUrl || '';
   const joinedDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-IN', {
         month: 'long',
@@ -16,7 +25,23 @@ export default function DashboardProfileSidebar({
 
   return (
     <aside className="student-profile-sidebar">
-      <section className="student-identity-card">
+      <section className={`student-identity-card ${bannerImage || defaultBanner ? 'has-cover' : ''}`}>
+        {(bannerImage || defaultBanner) && (
+          <div className="student-cover" style={{ backgroundImage: `url("${encodeURI(bannerImage || defaultBanner)}")` }}>
+            {bannerInputRef && onBannerChange && (
+              <>
+                <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onBannerChange} />
+                <button
+                  type="button"
+                  className="profile-image-upload-button profile-banner-upload-button"
+                  onClick={() => bannerInputRef.current?.click()}
+                >
+                  <i className="bi bi-camera" /> {bannerImage ? 'Change banner' : 'Add banner'}
+                </button>
+              </>
+            )}
+          </div>
+        )}
         <div className="student-avatar">
           {profileImage ? (
             <img src={profileImage} alt={name} />
@@ -53,6 +78,7 @@ export default function DashboardProfileSidebar({
           <span className="student-member-badge">
             <i className="bi bi-patch-check-fill" /> CodeSphere Member
           </span>
+          {showBadges && <BadgeStrip />}
         </div>
 
         {joinedDate && (

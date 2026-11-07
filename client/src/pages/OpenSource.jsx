@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import IssueGuide from '../components/IssueGuide';
 import ContributionGuide from '../components/ContributionGuide';
 import '../css/OpenSource.css';
 
@@ -604,6 +605,7 @@ export default function OpenSource() {
         <div className="os-page-container">
           <CodeSphereHero />
           <ContributionGuide repoUrl={GITHUB_REPO} Eyebrow={SectionEyebrow} />
+          <IssueGuide repoUrl={GITHUB_REPO} Eyebrow={SectionEyebrow} />
           <ContributorTicker />
           <ProgramsSection onOpenGuide={setSelectedProgram} />
         </div>

@@ -51,4 +51,21 @@ async function optionalAuth(req, res, next) {
   return next();
 }
 
-module.exports = { protect, adminOnly, optionalAuth };
+const STAFF_ROLES = ['moderator', 'news-editor', 'challenge-editor', 'hackathon-organizer', 'project-reviewer'];
+
+// True for admins, or for users holding the given staff role.
+function hasStaffRole(user, role) {
+  return user?.role === 'admin' || Boolean(user?.staffRoles?.includes(role));
+}
+
+// Route guard: admins, or users with the given staff role. Use after protect.
+function requireStaff(role) {
+  return function staffOnly(req, res, next) {
+    if (!hasStaffRole(req.user, role)) {
+      return res.status(403).json({ message: 'You don\'t have permission to do that.' });
+    }
+    return next();
+  };
+}
+
+module.exports = { protect, adminOnly, optionalAuth, requireStaff, hasStaffRole, STAFF_ROLES };

@@ -1,0 +1,1256 @@
+[
+ {
+  "slug": "easy-hello-world",
+  "title": "Hello World",
+  "format": "output",
+  "level": "Beginner",
+  "topic": "Basics",
+  "tags": [
+   "basics",
+   "output",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Write a program to print Hello, World! on the screen.",
+  "inputFormat": "No input.",
+  "outputFormat": "Print Hello, World!",
+  "constraints": "",
+  "examples": [
+   {
+    "input": "\n",
+    "output": "Hello, World!"
+   }
+  ],
+  "hints": [
+   "Your program needs no input.",
+   "Check the exact punctuation and capital letters."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nprint(\"Hello, World!\")\n```",
+  "tests": [
+   {
+    "input": "\n",
+    "output": "Hello, World!",
+    "hidden": false
+   },
+   {
+    "input": "\n",
+    "output": "Hello, World!",
+    "hidden": true
+   },
+   {
+    "input": "\n",
+    "output": "Hello, World!",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "print(\"Hello, World!\")"
+ },
+ {
+  "slug": "easy-add-two-numbers",
+  "title": "Add Two Numbers",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Arithmetic",
+  "tags": [
+   "basics",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given two integers A and B, calculate and print their sum.",
+  "inputFormat": "Two space-separated integers A and B.",
+  "outputFormat": "Print the sum of A and B.",
+  "constraints": "-1000 <= A, B <= 1000",
+  "examples": [
+   {
+    "input": "5 7",
+    "output": "12"
+   },
+   {
+    "input": "-5 5",
+    "output": "0"
+   }
+  ],
+  "hints": [
+   "Read both numbers from one line.",
+   "Use split() to separate them."
+  ],
+  "editorial": "A short, direct solution:\n\n```\na, b = map(int, input().split())\nprint(a + b)\n```",
+  "tests": [
+   {
+    "input": "5 7",
+    "output": "12",
+    "hidden": false
+   },
+   {
+    "input": "-5 5",
+    "output": "0",
+    "hidden": false
+   },
+   {
+    "input": "1000 1000",
+    "output": "2000",
+    "hidden": true
+   },
+   {
+    "input": "-1000 -1",
+    "output": "-1001",
+    "hidden": true
+   },
+   {
+    "input": "0 0",
+    "output": "0",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "a, b = map(int, input().split())\nprint(a + b)"
+ },
+ {
+  "slug": "easy-subtract-it",
+  "title": "Subtract It",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Arithmetic",
+  "tags": [
+   "basics",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given two integers A and B, calculate A minus B.",
+  "inputFormat": "Two space-separated integers A and B.",
+  "outputFormat": "Print A - B.",
+  "constraints": "-1000 <= A, B <= 1000",
+  "examples": [
+   {
+    "input": "10 4",
+    "output": "6"
+   },
+   {
+    "input": "4 10",
+    "output": "-6"
+   }
+  ],
+  "hints": [
+   "Order matters: A comes first.",
+   "The answer can be negative."
+  ],
+  "editorial": "A short, direct solution:\n\n```\na, b = map(int, input().split())\nprint(a - b)\n```",
+  "tests": [
+   {
+    "input": "10 4",
+    "output": "6",
+    "hidden": false
+   },
+   {
+    "input": "4 10",
+    "output": "-6",
+    "hidden": false
+   },
+   {
+    "input": "-5 -5",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "1000 -1000",
+    "output": "2000",
+    "hidden": true
+   },
+   {
+    "input": "0 7",
+    "output": "-7",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "a, b = map(int, input().split())\nprint(a - b)"
+ },
+ {
+  "slug": "easy-multiply-two-numbers",
+  "title": "Multiply Two Numbers",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Arithmetic",
+  "tags": [
+   "basics",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given two integers A and B, calculate their product.",
+  "inputFormat": "Two space-separated integers A and B.",
+  "outputFormat": "Print A * B.",
+  "constraints": "-100 <= A, B <= 100",
+  "examples": [
+   {
+    "input": "6 5",
+    "output": "30"
+   },
+   {
+    "input": "-3 4",
+    "output": "-12"
+   }
+  ],
+  "hints": [
+   "Read two numbers and multiply.",
+   "Negative times negative is positive."
+  ],
+  "editorial": "A short, direct solution:\n\n```\na, b = map(int, input().split())\nprint(a * b)\n```",
+  "tests": [
+   {
+    "input": "6 5",
+    "output": "30",
+    "hidden": false
+   },
+   {
+    "input": "-3 4",
+    "output": "-12",
+    "hidden": false
+   },
+   {
+    "input": "0 99",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "-100 -100",
+    "output": "10000",
+    "hidden": true
+   },
+   {
+    "input": "7 1",
+    "output": "7",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "a, b = map(int, input().split())\nprint(a * b)"
+ },
+ {
+  "slug": "easy-even-or-odd",
+  "title": "Even or Odd",
+  "format": "logic",
+  "level": "Beginner",
+  "topic": "Conditionals",
+  "tags": [
+   "basics",
+   "conditionals",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given an integer N, determine whether it is even or odd.",
+  "inputFormat": "A single integer N.",
+  "outputFormat": "Print Even if N is divisible by 2, otherwise print Odd.",
+  "constraints": "-100000 <= N <= 100000",
+  "examples": [
+   {
+    "input": "8",
+    "output": "Even"
+   },
+   {
+    "input": "7",
+    "output": "Odd"
+   }
+  ],
+  "hints": [
+   "Divide by 2 and look at the remainder.",
+   "Zero counts as even."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(\"Even\" if n % 2 == 0 else \"Odd\")\n```",
+  "tests": [
+   {
+    "input": "8",
+    "output": "Even",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "Odd",
+    "hidden": false
+   },
+   {
+    "input": "0",
+    "output": "Even",
+    "hidden": true
+   },
+   {
+    "input": "-3",
+    "output": "Odd",
+    "hidden": true
+   },
+   {
+    "input": "-100000",
+    "output": "Even",
+    "hidden": true
+   },
+   {
+    "input": "99999",
+    "output": "Odd",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(\"Even\" if n % 2 == 0 else \"Odd\")"
+ },
+ {
+  "slug": "easy-positive-or-negative",
+  "title": "Positive or Negative",
+  "format": "logic",
+  "level": "Beginner",
+  "topic": "Conditionals",
+  "tags": [
+   "basics",
+   "conditionals",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given an integer N, determine whether it is Positive, Negative, or Zero.",
+  "inputFormat": "A single integer N.",
+  "outputFormat": "Print Positive, Negative, or Zero.",
+  "constraints": "-100000 <= N <= 100000",
+  "examples": [
+   {
+    "input": "-5",
+    "output": "Negative"
+   },
+   {
+    "input": "10",
+    "output": "Positive"
+   },
+   {
+    "input": "0",
+    "output": "Zero"
+   }
+  ],
+  "hints": [
+   "There are three possible answers.",
+   "Check for zero separately."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(\"Positive\" if n > 0 else \"Negative\" if n < 0 else \"Zero\")\n```",
+  "tests": [
+   {
+    "input": "-5",
+    "output": "Negative",
+    "hidden": false
+   },
+   {
+    "input": "10",
+    "output": "Positive",
+    "hidden": false
+   },
+   {
+    "input": "0",
+    "output": "Zero",
+    "hidden": false
+   },
+   {
+    "input": "1",
+    "output": "Positive",
+    "hidden": true
+   },
+   {
+    "input": "-1",
+    "output": "Negative",
+    "hidden": true
+   },
+   {
+    "input": "100000",
+    "output": "Positive",
+    "hidden": true
+   },
+   {
+    "input": "-100000",
+    "output": "Negative",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(\"Positive\" if n > 0 else \"Negative\" if n < 0 else \"Zero\")"
+ },
+ {
+  "slug": "easy-find-the-bigger-number",
+  "title": "Find the Bigger Number",
+  "format": "logic",
+  "level": "Beginner",
+  "topic": "Conditionals",
+  "tags": [
+   "basics",
+   "conditionals",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given two integers A and B, print the greater number. If both are equal, print either number.",
+  "inputFormat": "Two space-separated integers A and B.",
+  "outputFormat": "Print the greater of the two numbers.",
+  "constraints": "-100000 <= A, B <= 100000",
+  "examples": [
+   {
+    "input": "15 9",
+    "output": "15"
+   },
+   {
+    "input": "9 15",
+    "output": "15"
+   }
+  ],
+  "hints": [
+   "Compare the two numbers.",
+   "If they are equal, either one is fine."
+  ],
+  "editorial": "A short, direct solution:\n\n```\na, b = map(int, input().split())\nprint(max(a, b))\n```",
+  "tests": [
+   {
+    "input": "15 9",
+    "output": "15",
+    "hidden": false
+   },
+   {
+    "input": "9 15",
+    "output": "15",
+    "hidden": false
+   },
+   {
+    "input": "-5 -2",
+    "output": "-2",
+    "hidden": true
+   },
+   {
+    "input": "7 7",
+    "output": "7",
+    "hidden": true
+   },
+   {
+    "input": "-100000 100000",
+    "output": "100000",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "a, b = map(int, input().split())\nprint(max(a, b))"
+ },
+ {
+  "slug": "easy-square-it",
+  "title": "Square It!",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Arithmetic",
+  "tags": [
+   "basics",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given an integer N, calculate and print its square.",
+  "inputFormat": "A single integer N.",
+  "outputFormat": "Print N multiplied by N.",
+  "constraints": "-1000 <= N <= 1000",
+  "examples": [
+   {
+    "input": "6",
+    "output": "36"
+   },
+   {
+    "input": "-6",
+    "output": "36"
+   }
+  ],
+  "hints": [
+   "Multiply the number by itself.",
+   "A negative number squared is positive."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(n * n)\n```",
+  "tests": [
+   {
+    "input": "6",
+    "output": "36",
+    "hidden": false
+   },
+   {
+    "input": "-6",
+    "output": "36",
+    "hidden": false
+   },
+   {
+    "input": "0",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "1000",
+    "output": "1000000",
+    "hidden": true
+   },
+   {
+    "input": "-1000",
+    "output": "1000000",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(n * n)"
+ },
+ {
+  "slug": "easy-count-down",
+  "title": "Count Down",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Loops",
+  "tags": [
+   "basics",
+   "loops",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given a positive integer N, print all integers from N down to 1, separated by spaces.",
+  "inputFormat": "A single positive integer N.",
+  "outputFormat": "Print numbers from N to 1 in descending order.",
+  "constraints": "1 <= N <= 1000",
+  "examples": [
+   {
+    "input": "5",
+    "output": "5 4 3 2 1"
+   },
+   {
+    "input": "1",
+    "output": "1"
+   }
+  ],
+  "hints": [
+   "Start at N and go down.",
+   "Separate the numbers with single spaces."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(\" \".join(str(i) for i in range(n, 0, -1)))\n```",
+  "tests": [
+   {
+    "input": "5",
+    "output": "5 4 3 2 1",
+    "hidden": false
+   },
+   {
+    "input": "1",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "3",
+    "output": "3 2 1",
+    "hidden": true
+   },
+   {
+    "input": "10",
+    "output": "10 9 8 7 6 5 4 3 2 1",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(\" \".join(str(i) for i in range(n, 0, -1)))"
+ },
+ {
+  "slug": "easy-sum-from-1-to-n",
+  "title": "Sum from 1 to N",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Loops",
+  "tags": [
+   "basics",
+   "loops",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 10,
+  "estMinutes": 5,
+  "statement": "Given a positive integer N, calculate the sum of all integers from 1 to N.",
+  "inputFormat": "A single positive integer N.",
+  "outputFormat": "Print the sum from 1 to N.",
+  "constraints": "1 <= N <= 100000",
+  "examples": [
+   {
+    "input": "5",
+    "output": "15"
+   },
+   {
+    "input": "1",
+    "output": "1"
+   }
+  ],
+  "hints": [
+   "Add every number from 1 to N.",
+   "A loop works; so does the formula N(N+1)/2."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(n * (n + 1) // 2)\n```",
+  "tests": [
+   {
+    "input": "5",
+    "output": "15",
+    "hidden": false
+   },
+   {
+    "input": "1",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "10",
+    "output": "55",
+    "hidden": true
+   },
+   {
+    "input": "100",
+    "output": "5050",
+    "hidden": true
+   },
+   {
+    "input": "100000",
+    "output": "5000050000",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(n * (n + 1) // 2)"
+ },
+ {
+  "slug": "easy-last-digit",
+  "title": "Last Digit",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Numbers",
+  "tags": [
+   "numbers",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given a positive integer N, print its last digit.",
+  "inputFormat": "A single positive integer N.",
+  "outputFormat": "Print the last digit of N.",
+  "constraints": "1 <= N <= 1000000000",
+  "examples": [
+   {
+    "input": "1234",
+    "output": "4"
+   },
+   {
+    "input": "7",
+    "output": "7"
+   }
+  ],
+  "hints": [
+   "The last digit is the remainder after dividing by 10."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(n % 10)\n```",
+  "tests": [
+   {
+    "input": "1234",
+    "output": "4",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "7",
+    "hidden": false
+   },
+   {
+    "input": "10",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "1000000000",
+    "output": "0",
+    "hidden": true
+   },
+   {
+    "input": "98765",
+    "output": "5",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(n % 10)"
+ },
+ {
+  "slug": "easy-first-digit",
+  "title": "First Digit",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Numbers",
+  "tags": [
+   "numbers",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given a positive integer N, print its first digit.",
+  "inputFormat": "A single positive integer N.",
+  "outputFormat": "Print the first digit of N.",
+  "constraints": "1 <= N <= 1000000000",
+  "examples": [
+   {
+    "input": "5678",
+    "output": "5"
+   },
+   {
+    "input": "7",
+    "output": "7"
+   }
+  ],
+  "hints": [
+   "Treat the number as text, or keep dividing by 10."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = input().strip()\nprint(n[0])\n```",
+  "tests": [
+   {
+    "input": "5678",
+    "output": "5",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "7",
+    "hidden": false
+   },
+   {
+    "input": "10",
+    "output": "1",
+    "hidden": true
+   },
+   {
+    "input": "1000000000",
+    "output": "1",
+    "hidden": true
+   },
+   {
+    "input": "98765",
+    "output": "9",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = input().strip()\nprint(n[0])"
+ },
+ {
+  "slug": "easy-count-digits",
+  "title": "Count Digits",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Numbers",
+  "tags": [
+   "numbers",
+   "loops",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given a positive integer N, count how many digits it contains.",
+  "inputFormat": "A single positive integer N.",
+  "outputFormat": "Print the number of digits in N.",
+  "constraints": "1 <= N <= 1000000000",
+  "examples": [
+   {
+    "input": "12345",
+    "output": "5"
+   },
+   {
+    "input": "7",
+    "output": "1"
+   }
+  ],
+  "hints": [
+   "Count the characters, or count how many times you can divide by 10."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = input().strip()\nprint(len(n))\n```",
+  "tests": [
+   {
+    "input": "12345",
+    "output": "5",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "1",
+    "hidden": false
+   },
+   {
+    "input": "10",
+    "output": "2",
+    "hidden": true
+   },
+   {
+    "input": "1000000000",
+    "output": "10",
+    "hidden": true
+   },
+   {
+    "input": "999",
+    "output": "3",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = input().strip()\nprint(len(n))"
+ },
+ {
+  "slug": "easy-reverse-a-number",
+  "title": "Reverse a Number",
+  "format": "io",
+  "level": "Beginner",
+  "topic": "Loops",
+  "tags": [
+   "numbers",
+   "loops",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given a positive integer N, reverse its digits and print the resulting number. Leading zeros in the reversed result should be removed.",
+  "inputFormat": "A single positive integer N.",
+  "outputFormat": "Print the reversed number.",
+  "constraints": "1 <= N <= 1000000000",
+  "examples": [
+   {
+    "input": "1234",
+    "output": "4321"
+   },
+   {
+    "input": "1200",
+    "output": "21"
+   }
+  ],
+  "hints": [
+   "Reverse the digits.",
+   "Zeros at the front of the result disappear."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = input().strip()\nprint(int(n[::-1]))\n```",
+  "tests": [
+   {
+    "input": "1234",
+    "output": "4321",
+    "hidden": false
+   },
+   {
+    "input": "1200",
+    "output": "21",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "7",
+    "hidden": true
+   },
+   {
+    "input": "10",
+    "output": "1",
+    "hidden": true
+   },
+   {
+    "input": "1000000000",
+    "output": "1",
+    "hidden": true
+   },
+   {
+    "input": "987650",
+    "output": "56789",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = input().strip()\nprint(int(n[::-1]))"
+ },
+ {
+  "slug": "easy-palindrome-number",
+  "title": "Palindrome Number",
+  "format": "logic",
+  "level": "Beginner",
+  "topic": "Loops",
+  "tags": [
+   "numbers",
+   "loops",
+   "conditionals",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "A number is called a palindrome if it reads the same forward and backward. Given a positive integer N, determine whether it is a palindrome.",
+  "inputFormat": "A single positive integer N.",
+  "outputFormat": "Print Yes if N is a palindrome, otherwise print No.",
+  "constraints": "1 <= N <= 1000000000",
+  "examples": [
+   {
+    "input": "121",
+    "output": "Yes"
+   },
+   {
+    "input": "123",
+    "output": "No"
+   }
+  ],
+  "hints": [
+   "Compare the number with its reverse.",
+   "Print Yes or No exactly."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = input().strip()\nprint(\"Yes\" if n == n[::-1] else \"No\")\n```",
+  "tests": [
+   {
+    "input": "121",
+    "output": "Yes",
+    "hidden": false
+   },
+   {
+    "input": "123",
+    "output": "No",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "Yes",
+    "hidden": true
+   },
+   {
+    "input": "10",
+    "output": "No",
+    "hidden": true
+   },
+   {
+    "input": "1221",
+    "output": "Yes",
+    "hidden": true
+   },
+   {
+    "input": "12321",
+    "output": "Yes",
+    "hidden": true
+   },
+   {
+    "input": "123456",
+    "output": "No",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = input().strip()\nprint(\"Yes\" if n == n[::-1] else \"No\")"
+ },
+ {
+  "slug": "easy-multiplication-table",
+  "title": "Multiplication Table",
+  "format": "pattern",
+  "level": "Beginner",
+  "topic": "Loops",
+  "tags": [
+   "loops",
+   "arithmetic",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given an integer N, print its multiplication table from 1 to 10. Print each result on a new line in the format N x i = result.",
+  "inputFormat": "A single integer N.",
+  "outputFormat": "Print ten lines containing the multiplication table.",
+  "constraints": "1 <= N <= 100",
+  "examples": [
+   {
+    "input": "3",
+    "output": "3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30"
+   },
+   {
+    "input": "1",
+    "output": "1 x 1 = 1\n1 x 2 = 2\n1 x 3 = 3\n1 x 4 = 4\n1 x 5 = 5\n1 x 6 = 6\n1 x 7 = 7\n1 x 8 = 8\n1 x 9 = 9\n1 x 10 = 10"
+   }
+  ],
+  "hints": [
+   "Loop i from 1 to 10.",
+   "Match the spaces in \"N x i = result\" exactly."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nfor i in range(1, 11):\n    print(f\"{n} x {i} = {n * i}\")\n```",
+  "tests": [
+   {
+    "input": "3",
+    "output": "3 x 1 = 3\n3 x 2 = 6\n3 x 3 = 9\n3 x 4 = 12\n3 x 5 = 15\n3 x 6 = 18\n3 x 7 = 21\n3 x 8 = 24\n3 x 9 = 27\n3 x 10 = 30",
+    "hidden": false
+   },
+   {
+    "input": "1",
+    "output": "1 x 1 = 1\n1 x 2 = 2\n1 x 3 = 3\n1 x 4 = 4\n1 x 5 = 5\n1 x 6 = 6\n1 x 7 = 7\n1 x 8 = 8\n1 x 9 = 9\n1 x 10 = 10",
+    "hidden": false
+   },
+   {
+    "input": "7",
+    "output": "7 x 1 = 7\n7 x 2 = 14\n7 x 3 = 21\n7 x 4 = 28\n7 x 5 = 35\n7 x 6 = 42\n7 x 7 = 49\n7 x 8 = 56\n7 x 9 = 63\n7 x 10 = 70",
+    "hidden": true
+   },
+   {
+    "input": "100",
+    "output": "100 x 1 = 100\n100 x 2 = 200\n100 x 3 = 300\n100 x 4 = 400\n100 x 5 = 500\n100 x 6 = 600\n100 x 7 = 700\n100 x 8 = 800\n100 x 9 = 900\n100 x 10 = 1000",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "exact",
+  "reference": "n = int(input())\nfor i in range(1, 11):\n    print(f\"{n} x {i} = {n * i}\")"
+ },
+ {
+  "slug": "easy-find-the-largest",
+  "title": "Find the Largest",
+  "format": "logic",
+  "level": "Beginner",
+  "topic": "Conditionals",
+  "tags": [
+   "conditionals",
+   "numbers",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given three integers A, B, and C, print the largest among them.",
+  "inputFormat": "Three space-separated integers A, B, and C.",
+  "outputFormat": "Print the largest integer.",
+  "constraints": "-100000 <= A, B, C <= 100000",
+  "examples": [
+   {
+    "input": "10 25 15",
+    "output": "25"
+   },
+   {
+    "input": "-1 -2 -3",
+    "output": "-1"
+   }
+  ],
+  "hints": [
+   "Compare all three numbers.",
+   "All of them may be negative."
+  ],
+  "editorial": "A short, direct solution:\n\n```\na, b, c = map(int, input().split())\nprint(max(a, b, c))\n```",
+  "tests": [
+   {
+    "input": "10 25 15",
+    "output": "25",
+    "hidden": false
+   },
+   {
+    "input": "-1 -2 -3",
+    "output": "-1",
+    "hidden": false
+   },
+   {
+    "input": "5 5 5",
+    "output": "5",
+    "hidden": true
+   },
+   {
+    "input": "1 2 3",
+    "output": "3",
+    "hidden": true
+   },
+   {
+    "input": "100000 -100000 0",
+    "output": "100000",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "a, b, c = map(int, input().split())\nprint(max(a, b, c))"
+ },
+ {
+  "slug": "easy-vowel-checker",
+  "title": "Vowel Checker",
+  "format": "logic",
+  "level": "Beginner",
+  "topic": "Strings",
+  "tags": [
+   "strings",
+   "conditionals",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given a lowercase English letter, determine whether it is a vowel or consonant. The vowels are a, e, i, o, and u.",
+  "inputFormat": "A single lowercase English letter.",
+  "outputFormat": "Print Vowel or Consonant.",
+  "constraints": "Input contains exactly one lowercase English letter.",
+  "examples": [
+   {
+    "input": "a",
+    "output": "Vowel"
+   },
+   {
+    "input": "b",
+    "output": "Consonant"
+   }
+  ],
+  "hints": [
+   "There are exactly five vowels: a, e, i, o, u.",
+   "y counts as a consonant here."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nc = input().strip()\nprint(\"Vowel\" if c in \"aeiou\" else \"Consonant\")\n```",
+  "tests": [
+   {
+    "input": "a",
+    "output": "Vowel",
+    "hidden": false
+   },
+   {
+    "input": "b",
+    "output": "Consonant",
+    "hidden": false
+   },
+   {
+    "input": "e",
+    "output": "Vowel",
+    "hidden": true
+   },
+   {
+    "input": "u",
+    "output": "Vowel",
+    "hidden": true
+   },
+   {
+    "input": "z",
+    "output": "Consonant",
+    "hidden": true
+   },
+   {
+    "input": "y",
+    "output": "Consonant",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "c = input().strip()\nprint(\"Vowel\" if c in \"aeiou\" else \"Consonant\")"
+ },
+ {
+  "slug": "easy-sum-of-array",
+  "title": "Sum of Array",
+  "format": "algorithm",
+  "level": "Beginner",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "loops",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given an array of N integers, calculate and print the sum of all its elements.",
+  "inputFormat": "The first line contains N. The second line contains N space-separated integers.",
+  "outputFormat": "Print the sum of all array elements.",
+  "constraints": "1 <= N <= 1000; -1000 <= A[i] <= 1000",
+  "examples": [
+   {
+    "input": "5\n1 2 3 4 5",
+    "output": "15"
+   },
+   {
+    "input": "1\n-7",
+    "output": "-7"
+   }
+  ],
+  "hints": [
+   "Read N, then the list.",
+   "Add every element."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(sum(map(int, input().split())))\n```",
+  "tests": [
+   {
+    "input": "5\n1 2 3 4 5",
+    "output": "15",
+    "hidden": false
+   },
+   {
+    "input": "1\n-7",
+    "output": "-7",
+    "hidden": false
+   },
+   {
+    "input": "4\n-1 -2 -3 -4",
+    "output": "-10",
+    "hidden": true
+   },
+   {
+    "input": "3\n1000 1000 1000",
+    "output": "3000",
+    "hidden": true
+   },
+   {
+    "input": "5\n0 0 0 0 0",
+    "output": "0",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(sum(map(int, input().split())))"
+ },
+ {
+  "slug": "easy-find-the-maximum-in-an-array",
+  "title": "Find the Maximum in an Array",
+  "format": "algorithm",
+  "level": "Beginner",
+  "topic": "Arrays",
+  "tags": [
+   "arrays",
+   "searching",
+   "easy"
+  ],
+  "points": 20,
+  "estMinutes": 10,
+  "statement": "Given an array of N integers, find and print its maximum element.",
+  "inputFormat": "The first line contains N. The second line contains N space-separated integers.",
+  "outputFormat": "Print the maximum element in the array.",
+  "constraints": "1 <= N <= 1000; -100000 <= A[i] <= 100000",
+  "examples": [
+   {
+    "input": "5\n3 8 2 9 4",
+    "output": "9"
+   },
+   {
+    "input": "1\n-7",
+    "output": "-7"
+   }
+  ],
+  "hints": [
+   "Keep track of the biggest value seen so far.",
+   "The answer can be negative."
+  ],
+  "editorial": "A short, direct solution:\n\n```\nn = int(input())\nprint(max(map(int, input().split())))\n```",
+  "tests": [
+   {
+    "input": "5\n3 8 2 9 4",
+    "output": "9",
+    "hidden": false
+   },
+   {
+    "input": "1\n-7",
+    "output": "-7",
+    "hidden": false
+   },
+   {
+    "input": "4\n-1 -2 -3 -4",
+    "output": "-1",
+    "hidden": true
+   },
+   {
+    "input": "3\n5 5 5",
+    "output": "5",
+    "hidden": true
+   },
+   {
+    "input": "6\n1 100000 3 -100000 2 99999",
+    "output": "100000",
+    "hidden": true
+   }
+  ],
+  "outputPolicy": "trim",
+  "reference": "n = int(input())\nprint(max(map(int, input().split())))"
+ }
+]
