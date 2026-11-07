@@ -30,10 +30,13 @@ function TopStory({ item, rank, categories }) {
   const category = categories.find((c) => c.id === item.category);
   return (
     <article className={`dn-top ${rank === 1 ? 'is-lead' : ''}`}>
-      <span className="dn-rank" aria-hidden="true">{rank}</span>
+      {rank !== 1 && <span className="dn-rank" aria-hidden="true">{rank}</span>}
       {rank === 1 && item.image && <img src={item.image} alt="" loading="lazy" referrerPolicy="no-referrer" onError={(e) => { e.currentTarget.remove(); }} />}
-      <div>
-        {category && <span className="dn-cat"><i className={`bi ${category.icon}`} aria-hidden="true" /> {category.name}</span>}
+      <div className="dn-top-body">
+        <div className="dn-top-head">
+          {rank === 1 && <span className="dn-rank" aria-hidden="true">{rank}</span>}
+          {category && <span className="dn-cat"><i className={`bi ${category.icon}`} aria-hidden="true" /> {category.name}</span>}
+        </div>
         <h3><a href={item.url} target="_blank" rel="noopener noreferrer" className="dn-link">{item.title}</a></h3>
         {rank === 1 && item.summary && <p className="dn-summary">{item.summary}</p>}
         <Meta item={item} />

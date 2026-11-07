@@ -568,7 +568,14 @@
   font-weight: 800;
 }
 
-.dn-top.is-lead .dn-rank { position: absolute; z-index: 1; top: 22px; left: 22px; background: var(--gold); box-shadow: 0 6px 14px rgba(240, 90, 54, .35); }
+.dn-top.is-lead .dn-rank { background: var(--gold); box-shadow: 0 6px 14px rgba(240, 90, 54, .35); }
+.dn-top-body { min-width: 0; flex: 1; }
+.dn-top-head { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; min-height: 0; }
+.dn-top.is-lead .dn-top-head { margin-bottom: 4px; }
+.dn-top:not(.is-lead) .dn-rank { margin-top: 2px; }
+/* Keep "source · domain · time" together; numbers wrap as a group. */
+.dn-meta > span:not(.dn-score) { white-space: nowrap; }
+.dn-meta strong { white-space: nowrap; }
 
 .dn-top h3, .dn-card h3 { margin: 4px 0; font-size: 1.02rem; font-weight: 800; line-height: 1.35; }
 .dn-link { color: var(--navy); text-decoration: none; }
