@@ -62,6 +62,8 @@ const emptyProfile = {
 };
 
 const IMAGE_SIZE_LIMIT = 1 * 1024 * 1024;
+// Default profile banner (client/public), used until a student uploads one.
+const DEFAULT_BANNER = '/default-profile-banner.webp';
 const RESUME_SIZE_LIMIT = 5 * 1024 * 1024;
 
 const getStorageKey = (type, user) => {
@@ -1565,7 +1567,8 @@ export default function Profile({ preview = false }) {
               <section className="student-identity-card">
                 <div
                   className="student-cover"
-                  style={bannerImage ? { backgroundImage: `url(${bannerImage})` } : {}}
+                  // Everyone gets the CodeSphere banner until they upload their own.
+                  style={{ backgroundImage: `url(${bannerImage || DEFAULT_BANNER})` }}
                 >
                   <input
                     ref={bannerInputRef}
@@ -1587,7 +1590,7 @@ export default function Profile({ preview = false }) {
                     className="profile-image-upload-button profile-banner-upload-button"
                     onClick={() => bannerInputRef.current?.click()}
                   >
-                    <i className="bi bi-camera" /> Add banner
+                    <i className="bi bi-camera" /> {bannerImage ? 'Change banner' : 'Add banner'}
                   </button>
                 </div>
 
