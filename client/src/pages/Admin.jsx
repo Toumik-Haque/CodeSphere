@@ -1146,6 +1146,10 @@ export default function Admin() {
                     <i className="bi bi-newspaper" aria-hidden="true" />
                     <span><strong>Tech News editor</strong><small>Review stories, sources and weekly digests</small></span>
                   </Link>
+                  <Link to="/admin/materials" className="admin-tool">
+                    <i className="bi bi-journal-bookmark" aria-hidden="true" />
+                    <span><strong>Study Guide</strong><small>Write and publish learning materials</small></span>
+                  </Link>
                   <Link to="/admin/reverse-coding" className="admin-tool">
                     <i className="bi bi-arrow-repeat" aria-hidden="true" />
                     <span><strong>Reverse Coding</strong><small>Author, validate and publish challenges</small></span>

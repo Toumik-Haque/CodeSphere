@@ -11,6 +11,7 @@ const { evaluate } = require('../utils/reverseJudge');
 const { syncBadgesQuietly } = require('../utils/badges');
 const { notify } = require('../utils/notify');
 const User = require('../models/User');
+const StudyGuide = require('../models/StudyGuide');
 
 const router = express.Router();
 
@@ -130,6 +131,8 @@ router.get('/:slug', optionalAuth, async (req, res) => {
       : [];
 
     const publicTests = challenge.tests.filter((t) => !t.hidden).map((t) => ({ input: t.input, output: t.output }));
+    // Study Guide pages on the same topic (linked from the editorial).
+    const guides = await StudyGuide.find({ topic: challenge.topic, status: 'published' }).select('slug title level').limit(3).lean();
 
     return res.json({
       challenge: {
@@ -150,6 +153,7 @@ router.get('/:slug', optionalAuth, async (req, res) => {
         editorialLocked: Boolean(challenge.editorial) && !state.solved,
       },
       history: history.map((h) => ({ ...h, id: String(h._id), _id: undefined })),
+      guides: guides.map((g) => ({ slug: g.slug, title: g.title, level: g.level })),
       judgeReady: isConfigured(),
     });
   } catch (error) {

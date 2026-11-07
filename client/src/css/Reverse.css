@@ -688,3 +688,13 @@
 @media (prefers-reduced-motion: reduce) {
   .rc-card, .rc-skeleton { animation: none !important; transition: none !important; }
 }
+
+.rc-guide-links {
+  margin: 12px 0 0;
+  padding-top: 10px;
+  border-top: 1px dashed var(--line);
+  color: var(--navy);
+  font-size: .9rem;
+}
+
+.rc-guide-links a { color: var(--gold); font-weight: 700; }

@@ -42,6 +42,8 @@ import ReverseChallenge from './pages/ReverseChallenge';
 import AdminReverse from './pages/AdminReverse';
 import News from './pages/News';
 import AdminNews from './pages/AdminNews';
+import Materials from './pages/Materials';
+import AdminMaterials from './pages/AdminMaterials';
 
 function HomePage() {
   return (
@@ -124,6 +126,9 @@ function AppRoutes() {
       <Route path="/reverse-coding" element={<ReverseCoding />} />
       <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
       <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminReverse /></ProtectedRoute>} />
+      <Route path="/materials" element={<Materials />} />
+      <Route path="/materials/:slug" element={<Materials />} />
+      <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminMaterials /></ProtectedRoute>} />
       <Route path="/news" element={<News />} />
       <Route path="/news/:slug" element={<News />} />
       <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminNews /></ProtectedRoute>} />

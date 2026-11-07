@@ -115,6 +115,7 @@ const Navbar = () => {
     { role: 'moderator', path: '/admin/forum', icon: 'bi-shield-lock', label: 'Forum moderation' },
     { role: 'news-editor', path: '/admin/news', icon: 'bi-newspaper', label: 'Tech News editor' },
     { role: 'challenge-editor', path: '/admin/reverse-coding', icon: 'bi-arrow-repeat', label: 'Reverse Coding editor' },
+    { role: 'challenge-editor', path: '/admin/materials', icon: 'bi-journal-bookmark', label: 'Study Guide editor' },
   ].filter((link) => user?.staffRoles?.includes(link.role));
 
   const dashboardPath = isAdmin ? '/admin' : '/profile';
