@@ -55,6 +55,8 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
     // Opted in to the weekly Tech Brief email.
+    // Daily "Today in Tech" email (separate from the weekly newsletter).
+    dailyNewsOptIn: { type: Boolean, default: false },
     newsletterOptIn: {
       type: Boolean,
       default: false,

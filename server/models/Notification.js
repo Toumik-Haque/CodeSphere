@@ -20,6 +20,7 @@ const notificationSchema = new mongoose.Schema(
         'reverse-result',
         'reverse-new',
         'news-digest',
+        'news-daily',
         'hackathon',
         'host-review',
         'system',

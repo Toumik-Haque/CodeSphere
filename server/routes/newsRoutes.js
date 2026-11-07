@@ -5,6 +5,8 @@ const { ForumThread, ForumFollow } = require('../models/Forum');
 const { protect, optionalAuth, requireStaff } = require('../middleware/authMiddleware');
 const { NEWS_CATEGORIES, NEWS_LIMITS } = require('../data/news');
 const { toPlainText, canonicalUrl, ingestSource, ingestAll, notifyLiveDigests } = require('../utils/newsIngest');
+const { DailyNews, DailyBrief, DailyNewsSync } = require('../models/DailyNews');
+const { syncDailyNews, pickDiverse, istDay, heat } = require('../utils/dailyNews');
 
 const router = express.Router();
 
@@ -108,6 +110,90 @@ router.get('/digests/:slug', optionalAuth, async (req, res) => {
   }
 });
 
+
+// =====================================================================
+// Daily news (automatic, no editor)
+// =====================================================================
+
+function dailyItem(d) {
+  return {
+    id: String(d._id),
+    title: d.title,
+    url: d.url,
+    source: d.source,
+    sourceName: d.sourceName,
+    summary: d.summary,
+    image: d.image,
+    author: d.author,
+    category: d.category,
+    tags: d.tags,
+    score: d.score,
+    comments: d.comments,
+    discussionUrl: d.discussionUrl,
+    publishedAt: d.publishedAt,
+  };
+}
+
+// GET /api/news/daily/today: today's top 5 (built at 8:00 IST; live pick before that).
+router.get('/daily/today', async (req, res) => {
+  try {
+    const day = istDay();
+    const brief = await DailyBrief.findOne({ day }).lean();
+    let items;
+    if (brief) {
+      const docs = await DailyNews.find({ _id: { $in: brief.items } }).lean();
+      items = brief.items.map((id) => docs.find((d) => String(d._id) === String(id))).filter(Boolean);
+    } else {
+      const recent = await DailyNews.find({ publishedAt: { $gte: new Date(Date.now() - 36 * 3600000) } }).lean();
+      items = pickDiverse(recent, 5);
+    }
+    const [todayCount, state] = await Promise.all([
+      DailyNews.countDocuments({ publishedAt: { $gte: new Date(Date.now() - 24 * 3600000) } }),
+      DailyNewsSync.findById('daily-news').lean(),
+    ]);
+    res.json({ day, items: items.map(dailyItem), todayCount, lastSyncedAt: state?.lastRunAt || null });
+  } catch (error) {
+    console.error('Daily today error:', error);
+    res.status(500).json({ message: 'Could not load today\'s news.' });
+  }
+});
+
+// GET /api/news/daily?category&source&q&sort=latest|hot&page
+router.get('/daily', async (req, res) => {
+  try {
+    const page = Math.max(1, Math.min(50, Number.parseInt(req.query.page, 10) || 1));
+    const limit = 24;
+    const filter = {};
+    if (categoryIds.has(req.query.category)) filter.category = req.query.category;
+    if (typeof req.query.source === 'string' && /^[a-z]{2,20}$/.test(req.query.source)) filter.source = req.query.source;
+    const q = clean(req.query.q, 80);
+    if (q) filter.$text = { $search: q };
+
+    let items;
+    const total = await DailyNews.countDocuments(filter);
+    if (req.query.sort === 'hot' && !q) {
+      // Hot = popularity decayed by age, over the last 3 days.
+      const pool = await DailyNews.find({ ...filter, publishedAt: { $gte: new Date(Date.now() - 3 * 86400000) } }).lean();
+      items = pool.sort((a, b) => heat(b) - heat(a)).slice((page - 1) * limit, page * limit);
+    } else {
+      items = await DailyNews.find(filter)
+        .sort(q ? { score: { $meta: 'textScore' } } : { publishedAt: -1 })
+        .skip((page - 1) * limit).limit(limit).lean();
+    }
+    const sources = await DailyNews.aggregate([{ $group: { _id: '$source', n: { $sum: 1 } } }]);
+    res.json({
+      items: items.map(dailyItem),
+      page,
+      pages: Math.max(1, Math.ceil(total / limit)),
+      total,
+      sources: sources.map((s) => ({ id: s._id, count: s.n })),
+    });
+  } catch (error) {
+    console.error('Daily list error:', error);
+    res.status(500).json({ message: 'Could not load news.' });
+  }
+});
+
 // GET /api/news?q&category&page: search published stories.
 router.get('/', optionalAuth, async (req, res) => {
   try {
@@ -164,6 +250,26 @@ router.post('/items/:id/bookmark', protect, async (req, res) => {
 // Admins and news editors.
 const admin = [protect, requireStaff('news-editor')];
 
+
+// Daily news: status + manual sync (news editors).
+router.get('/admin/daily', admin, async (req, res) => {
+  const [state, total, brief] = await Promise.all([
+    DailyNewsSync.findById('daily-news').lean(),
+    DailyNews.countDocuments(),
+    DailyBrief.findOne({ day: istDay() }).lean(),
+  ]);
+  res.json({
+    state,
+    total,
+    today: brief ? { notifiedAt: brief.notifiedAt, emailedAt: brief.emailedAt, emailCount: brief.emailCount } : null,
+    keys: { gnews: Boolean(process.env.GNEWS_API_KEY), newsdata: Boolean(process.env.NEWSDATA_API_KEY) },
+    autoDigest: process.env.NEWS_AUTO_DIGEST === 'on',
+  });
+});
+
+router.post('/admin/daily/sync', admin, async (req, res) => {
+  res.json({ results: await syncDailyNews() });
+});
 // Sources
 router.get('/admin/sources', admin, async (req, res) => {
   try {

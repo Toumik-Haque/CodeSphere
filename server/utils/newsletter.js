@@ -128,4 +128,77 @@ async function sendDigestNewsletter(digest) {
   }
 }
 
-module.exports = { sendDigestNewsletter, isEmailConfigured, unsubscribeToken, verifyUnsubscribe };
+// ---------- Daily "Today in Tech" email (separate opt-in) ----------
+
+function dailyEmail(brief, items, user) {
+  const link = `${siteUrl()}/news?view=today`;
+  const unsubscribe = `${apiUrl()}/newsletter/unsubscribe?u=${user._id}&t=${unsubscribeToken(user._id)}&list=daily`;
+  const date = new Date(`${brief.day}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' });
+  const rows = items.map((item, i) => `
+    <tr><td style="padding:14px 0;border-bottom:1px solid #e6edf4">
+      <div style="color:#f05a36;font-size:12px;font-weight:700">${i + 1}. ${escape(item.sourceName)}</div>
+      <a href="${safeUrl(item.url)}" style="color:#10243a;font-size:${i === 0 ? '19px' : '16px'};font-weight:700;text-decoration:none">${escape(item.title)}</a>
+      ${item.summary ? `<p style="color:#34465a;font-size:14px;margin:6px 0 0">${escape(item.summary.slice(0, 200))}</p>` : ''}
+    </td></tr>`).join('');
+  const html = `<!doctype html><html><body style="margin:0;background:#f4f8fc;font-family:Arial,sans-serif">
+  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
+    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:24px">
+      <tr><td>
+        <div style="color:#f05a36;font-size:12px;font-weight:700;letter-spacing:1px">TODAY IN TECH · CODESPHERE</div>
+        <h1 style="color:#10243a;font-size:22px;margin:8px 0">${escape(date)}</h1>
+        <p style="color:#34465a;font-size:14px;margin:0">The ${items.length} stories developers are talking about today.</p>
+      </td></tr>
+      ${rows}
+      <tr><td style="padding:18px 0" align="center">
+        <a href="${safeUrl(link)}" style="background:#f05a36;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:700">See all of today's news</a>
+      </td></tr>
+      <tr><td style="color:#8a99a8;font-size:12px;text-align:center">
+        You get this because you turned on the daily email. <a href="${safeUrl(unsubscribe)}" style="color:#8a99a8">Stop daily emails</a>
+      </td></tr>
+    </table>
+  </td></tr></table></body></html>`;
+  const text = [`Today in Tech: ${date}`, ...items.map((i, n) => `${n + 1}. ${i.title} (${i.sourceName}) ${i.url}`), `More: ${link}`, `Stop daily emails: ${unsubscribe}`].join('\n\n');
+  return { html, text };
+}
+
+/**
+ * Email today's brief to daily subscribers. Never throws.
+ * Brevo's free plan allows 300 emails/day: capped by DAILY_EMAIL_LIMIT (default 250).
+ */
+async function sendDailyBriefEmail(brief, items) {
+  try {
+    if (!isEmailConfigured()) return { sent: 0, skipped: true };
+    const limit = Math.max(0, Number(process.env.DAILY_EMAIL_LIMIT) || 250);
+    const subscribers = await User.find({ role: 'user', dailyNewsOptIn: true }).sort({ _id: 1 }).limit(limit).select('_id name email').lean();
+    let sent = 0;
+    for (let i = 0; i < subscribers.length; i += BATCH_SIZE) {
+      const batch = subscribers.slice(i, i + BATCH_SIZE);
+      const versions = batch.map((user) => {
+        const { html, text } = dailyEmail(brief, items, user);
+        return { to: [{ email: user.email, name: user.name }], htmlContent: html, textContent: text };
+      });
+      const response = await fetch(process.env.BREVO_API_URL || 'https://api.brevo.com/v3/smtp/email', {
+        method: 'POST',
+        headers: { 'api-key': process.env.BREVO_API_KEY, 'Content-Type': 'application/json', accept: 'application/json' },
+        body: JSON.stringify({
+          sender: { name: process.env.BREVO_SENDER_NAME || 'CodeSphere', email: process.env.BREVO_SENDER_EMAIL },
+          subject: `Today in Tech: ${items[0]?.title || 'your daily brief'}`.slice(0, 150),
+          htmlContent: versions[0].htmlContent,
+          messageVersions: versions,
+        }),
+        signal: AbortSignal.timeout(20000),
+      });
+      if (!response.ok) {
+        console.error('Daily email error:', response.status, await response.text().catch(() => ''));
+        continue;
+      }
+      sent += batch.length;
+    }
+    return { sent, skipped: false };
+  } catch (error) {
+    console.error('Daily email error:', error.message);
+    return { sent: 0, skipped: false, error: error.message };
+  }
+}
+
+module.exports = { sendDigestNewsletter, sendDailyBriefEmail, isEmailConfigured, unsubscribeToken, verifyUnsubscribe };

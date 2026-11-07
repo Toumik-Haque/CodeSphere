@@ -12,6 +12,7 @@ const TYPE_ICONS = {
   'reverse-result': 'bi-arrow-repeat',
   'reverse-new': 'bi-arrow-repeat',
   'news-digest': 'bi-newspaper',
+  'news-daily': 'bi-lightning-charge',
   hackathon: 'bi-trophy',
   'host-review': 'bi-megaphone',
   system: 'bi-info-circle',
@@ -22,6 +23,7 @@ const MUTE_LABELS = {
   'forum-mention': 'When someone @mentions me',
   'reverse-new': 'New Reverse Coding challenges',
   'news-digest': 'New Tech Brief editions',
+  'news-daily': 'Daily "Today in Tech" (8 AM)',
 };
 
 // Live updates arrive over SSE; polling is only a slow safety net.

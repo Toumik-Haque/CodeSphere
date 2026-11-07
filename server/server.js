@@ -43,6 +43,7 @@ const hackathonRoutes = require('./routes/hackathonRoutes');
 const hostRoutes = require('./routes/hostRoutes');
 const { startHackathonSync } = require('./utils/hackathonSync');
 const { startNewsScheduler } = require('./utils/newsIngest');
+const { startDailyNews } = require('./utils/dailyNews');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -76,6 +77,8 @@ async function startServer() {
 
     // Daily feed fetching + scheduled digest announcements (NEWS_SCHEDULER=off to disable).
     startNewsScheduler();
+    // Daily news from Hacker News, DEV, RSS (+ GNews/NewsData if keys are set). DAILY_NEWS=off to disable.
+    startDailyNews();
     // Live hackathons from Devpost, Devfolio, Unstop, Hack2Skill, HackerEarth (HACKATHON_SYNC=off to disable).
     startHackathonSync();
 

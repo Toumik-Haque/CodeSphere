@@ -8,15 +8,18 @@ const router = express.Router();
 
 // GET /api/newsletter/me: am I subscribed to the Tech Brief email?
 router.get('/me', protect, (req, res) => {
-  res.json({ subscribed: Boolean(req.user.newsletterOptIn) });
+  res.json({ subscribed: Boolean(req.user.newsletterOptIn), daily: Boolean(req.user.dailyNewsOptIn) });
 });
 
 // PUT /api/newsletter/me { subscribed }: opt in or out.
 router.put('/me', protect, async (req, res) => {
   try {
-    const subscribed = Boolean(req.body.subscribed);
-    await User.updateOne({ _id: req.user._id }, { $set: { newsletterOptIn: subscribed } });
-    res.json({ subscribed });
+    // { subscribed } = weekly Tech Brief, { daily } = daily "Today in Tech".
+    const set = {};
+    if ('subscribed' in req.body) set.newsletterOptIn = Boolean(req.body.subscribed);
+    if ('daily' in req.body) set.dailyNewsOptIn = Boolean(req.body.daily);
+    const user = await User.findByIdAndUpdate(req.user._id, { $set: set }, { new: true }).select('newsletterOptIn dailyNewsOptIn');
+    res.json({ subscribed: user.newsletterOptIn, daily: user.dailyNewsOptIn });
   } catch (error) {
     console.error('Newsletter pref error:', error);
     res.status(500).json({ message: 'Could not update your subscription.' });
@@ -35,6 +38,10 @@ router.get('/unsubscribe', async (req, res) => {
     return res.status(400).send(page('Link not valid', 'This unsubscribe link is invalid. You can turn the email off on the Tech News page instead.'));
   }
   try {
+    if (req.query.list === 'daily') {
+      await User.updateOne({ _id: userId }, { $set: { dailyNewsOptIn: false } });
+      return res.send(page('Daily emails stopped', 'You won\'t get Today in Tech by email any more. You can turn it back on from the Tech News page.'));
+    }
     await User.updateOne({ _id: userId }, { $set: { newsletterOptIn: false } });
     return res.send(page('You\'re unsubscribed', 'You won\'t get the CodeSphere Tech Brief by email any more. You can subscribe again on the Tech News page.'));
   } catch (error) {
