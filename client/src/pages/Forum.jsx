@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig } from '../lib/forum';
 import { timeAgo } from '../lib/time';
+import AvatarUpload from '../components/AvatarUpload';
 import '../css/Forum.css';
 import '../css/ForumSocial.css';
 
@@ -19,8 +20,6 @@ const TABS = [
 
 // A stable colour per person, so avatars are easy to tell apart.
 const avatarHue = (name = '') => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
-
-const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
 // Profile photo when the person has one, coloured initials otherwise.
 function Avatar({ person, className }) {
@@ -195,11 +194,13 @@ export default function Forum() {
             </div>
 
             {isLoggedIn ? (
-              <Link to={`/forum/new${category ? `?category=${category}` : ''}`} className="fx-composer">
-                <Avatar person={{ name: user.name, initials: initialsOf(user.name), avatarUrl: user.avatarUrl }} className="fx-avatar" />
-                <span className="fx-composer-input">What&apos;s on your mind? Ask a question or share something…</span>
-                <span className="fx-btn">Post</span>
-              </Link>
+              <div className="fx-composer">
+                <AvatarUpload className="fx-avatar" />
+                <Link to={`/forum/new${category ? `?category=${category}` : ''}`} className="fx-composer-link">
+                  <span className="fx-composer-input">What&apos;s on your mind? Ask a question or share something…</span>
+                  <span className="fx-btn">Post</span>
+                </Link>
+              </div>
             ) : (
               <div className="fx-composer guest">
                 <span className="fx-composer-input">Join the conversation with fellow students.</span>

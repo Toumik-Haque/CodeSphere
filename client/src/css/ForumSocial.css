@@ -450,3 +450,30 @@
 /* Real profile photos in avatars */
 .fx-avatar.has-photo { overflow: hidden; background: #EEF3F8; }
 .fx-avatar.has-photo img { width: 100%; height: 100%; object-fit: cover; }
+
+/* Composer: avatar is an upload button, the rest links to the new-post page */
+.fx-composer-link { display: flex; flex: 1; align-items: center; gap: 12px; min-width: 0; color: inherit; text-decoration: none; }
+.fx-composer-link:hover .fx-composer-input { color: var(--navy); }
+
+.avatar-upload { position: relative; display: inline-flex; flex-shrink: 0; }
+.avatar-upload-btn { position: relative; padding: 0; border: 0; cursor: pointer; overflow: visible; }
+.avatar-upload-btn img { width: 100%; height: 100%; border-radius: 50%; object-fit: cover; }
+.avatar-upload-btn:focus-visible { outline: 3px solid var(--gold); outline-offset: 2px; }
+.avatar-upload-badge {
+  position: absolute;
+  right: -3px;
+  bottom: -3px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border: 2px solid #fff;
+  border-radius: 50%;
+  background: var(--gold);
+  color: #fff;
+  font-size: .62rem;
+  transition: opacity .15s ease;
+}
+.avatar-upload-badge.on-hover { opacity: 0; }
+.avatar-upload-btn:hover .avatar-upload-badge, .avatar-upload-btn:focus-visible .avatar-upload-badge { opacity: 1; }
+.avatar-upload-error { position: absolute; top: 100%; left: 0; z-index: 2; width: 220px; margin-top: 6px; padding: 6px 10px; border-radius: 8px; background: #FEF1F1; color: #A11B1B; font-size: .78rem; }
