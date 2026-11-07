@@ -7,6 +7,8 @@ import { AuthorBadge } from './Forum';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig, REACTIONS } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
+import { openThreadStream } from '../lib/realtime';
+import { useAuth } from '../context/AuthContext';
 import { timeAgo } from '../lib/time';
 import '../css/Forum.css';
 
@@ -192,6 +194,14 @@ export default function ForumThread() {
   const [version, setVersion] = useState(0);
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const { user } = useAuth();
+  const myId = user?.id ? String(user.id) : null;
+  // Replies posted by others since this page loaded (live).
+  const [newReplies, setNewReplies] = useState(0);
+
+  useEffect(() => openThreadStream(id, (event) => {
+    if (event.authorId !== myId) setNewReplies((n) => n + 1);
+  }), [id, myId]);
 
   useEffect(() => {
     let cancelled = false;
@@ -460,6 +470,20 @@ export default function ForumThread() {
               </div>
             )}
           </article>
+
+          {newReplies > 0 && (
+            <button
+              type="button"
+              className="forum-live-banner"
+              onClick={() => {
+                setNewReplies(0);
+                reload();
+              }}
+            >
+              <span className="forum-live-dot" aria-hidden="true" />
+              {newReplies} new {newReplies === 1 ? 'reply' : 'replies'}. Show
+            </button>
+          )}
 
           <section className="forum-replies" aria-labelledby="replies-title">
             <h2 id="replies-title">{thread.replyCount} {thread.replyCount === 1 ? 'reply' : 'replies'}</h2>

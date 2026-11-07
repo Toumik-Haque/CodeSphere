@@ -14,6 +14,7 @@ const { protect, optionalAuth, requireStaff, hasStaffRole } = require('../middle
 const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
 const { syncBadgesQuietly } = require('../utils/badges');
+const { pushToThread } = require('../utils/realtime');
 const {
   FORUM_CATEGORIES,
   POST_TYPES,
@@ -458,6 +459,9 @@ router.post('/threads/:id/replies', protect, limitReplies, async (req, res) => {
       body: body.slice(0, 140),
       link: `/forum/${thread._id}#reply-${reply._id}`,
     });
+
+    // Tell readers of this thread a reply arrived (ids only, no content).
+    pushToThread(thread._id, 'reply', { replyId: String(reply._id), authorId: String(req.user._id) });
 
     const newBadges = await syncBadgesQuietly(req.user._id);
     return res.status(201).json({ id: String(reply._id), newBadges });
