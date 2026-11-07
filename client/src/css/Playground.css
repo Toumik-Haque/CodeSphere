@@ -83,6 +83,15 @@
   scrollbar-width: thin;
 }
 
+/* Auto-scrolling rail: hidden scrollbar + soft faded edges. */
+.playground-languages.is-marquee {
+  scrollbar-width: none;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+}
+
+.playground-languages.is-marquee::-webkit-scrollbar { display: none; }
+
 .playground-lang {
   display: inline-flex;
   flex-shrink: 0;
