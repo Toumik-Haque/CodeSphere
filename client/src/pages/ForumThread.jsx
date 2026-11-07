@@ -12,6 +12,7 @@ import { useAuth } from '../context/AuthContext';
 import MentionTextarea from '../components/MentionTextarea';
 import { timeAgo } from '../lib/time';
 import '../css/Forum.css';
+import '../css/ForumSocial.css';
 
 function Reactions({ targetType, targetId, counts, mine = [], disabled, onError }) {
   const [state, setState] = useState({ counts, mine });

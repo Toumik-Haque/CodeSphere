@@ -9,6 +9,7 @@ import { loadForumConfig } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
 import MentionTextarea from '../components/MentionTextarea';
 import '../css/Forum.css';
+import '../css/ForumSocial.css';
 
 export default function ForumNew() {
   const { user } = useAuth();
