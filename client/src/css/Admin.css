@@ -421,6 +421,28 @@
   line-height: 1.6;
 }
 
+.admin-users-actions {
+  display: flex;
+  flex: 0 0 auto;
+  gap: 8px;
+}
+
+.admin-export-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin: -8px 0 16px;
+  color: var(--admin-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.admin-export-note i {
+  flex: 0 0 auto;
+  margin-top: 1px;
+  color: var(--admin-primary);
+}
+
 /* =========================================================
    DASHBOARD STATISTICS
 ========================================================= */
@@ -2054,6 +2076,113 @@
   color: var(--admin-primary, #e34d30);
 }
 
+.admin-user-card-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+}
+
+.admin-user-card-actions .adm-badges {
+  width: auto;
+  flex: 0 0 auto;
+  margin-top: 0;
+}
+
+.admin-user-card-actions .adm-badges-toggle,
+.admin-user-view-button {
+  min-height: 34px;
+  box-sizing: border-box;
+  white-space: nowrap;
+}
+
+.admin-user-view-button {
+  cursor: pointer;
+}
+
+.admin-clear-profile-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  min-height: 38px;
+  padding: 8px 13px;
+  border: 1px solid var(--admin-border);
+  border-radius: 9px;
+  background: #fff;
+  color: var(--admin-navy);
+  font-size: 12px;
+  font-weight: 700;
+  transition: background .2s ease, border-color .2s ease, color .2s ease;
+}
+
+.admin-clear-profile-button:hover {
+  border-color: #f2b6a7;
+  background: var(--admin-primary-light);
+  color: var(--admin-primary);
+}
+
+.admin-clear-profile-button {
+  width: 42px;
+  flex: 0 0 42px;
+  padding: 8px;
+}
+
+.admin-user-profile-search {
+  flex-direction: row;
+  align-items: center;
+}
+
+.admin-user-profile-search .admin-event-search {
+  flex: 1;
+}
+
+.admin-user-profile-view .dashboard-member-profile-embedded {
+  min-height: 0;
+  padding-top: 0;
+  background: transparent;
+}
+
+.admin-user-profile-view .dashboard-member-profile-embedded .member-profile-container {
+  width: 100%;
+  margin: 0;
+  padding: 0 0 24px;
+}
+
+@media (max-width: 800px) {
+  .admin-users-heading {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .admin-users-actions {
+    display: grid;
+    width: 100%;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+
+  .admin-users-actions .admin-secondary-button {
+    width: 100%;
+    min-width: 0;
+    min-height: 42px;
+    white-space: nowrap;
+  }
+
+  .admin-export-note {
+    margin: -2px 0 16px;
+    padding: 10px 12px;
+    border: 1px solid rgba(21, 54, 83, 0.08);
+    border-radius: 10px;
+    background: #f7f9fc;
+    font-size: 11px;
+  }
+
+  .admin-user-profile-search {
+    flex-direction: row;
+    align-items: center;
+  }
+}
+
 @media (max-width: 576px) {
   .admin-user-item {
     align-items: flex-start;
@@ -2064,6 +2193,11 @@
   .admin-user-meta {
     flex-direction: column;
     gap: 7px;
+  }
+
+  .admin-user-card-actions {
+    width: 100%;
+    justify-content: space-between;
   }
 }
 

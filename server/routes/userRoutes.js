@@ -84,6 +84,31 @@ const allowedProfileFields = [
 ];
 
 // GET ALL REGISTERED USERS (EXCLUDING ADMINS)
+// GET /api/users/admin/export
+router.get('/admin/export', protect, adminOnly, async (req, res) => {
+  try {
+    const users = await User.find({ role: 'user' })
+      .select(
+        'name username email collegeName yearOfStudy degree department graduationYear city bio github linkedin portfolio technicalInterests skills skillDetails codingProfiles achievements learningGoals profileComplete createdAt'
+      )
+      .sort({ createdAt: -1 })
+      .lean();
+
+    return res.json({
+      success: true,
+      count: users.length,
+      users,
+    });
+  } catch (error) {
+    console.error('Export users error:', error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to export registered users.',
+    });
+  }
+});
+
 // GET /api/users/admin/all?search=
 router.get('/admin/all', protect, adminOnly, async (req, res) => {
   try {

@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
@@ -67,6 +67,32 @@ export default function EventDetails() {
   const [registrationLoading, setRegistrationLoading] = useState(false);
   const [registrationChecking, setRegistrationChecking] = useState(false);
   const [registrationError, setRegistrationError] = useState('');
+  const [descriptionExpanded, setDescriptionExpanded] = useState(false);
+  const [descriptionCanExpand, setDescriptionCanExpand] = useState(false);
+  const descriptionRef = useRef(null);
+
+  const sanitizedDescription = DOMPurify.sanitize(event?.description || '');
+
+  useEffect(() => {
+    const descriptionElement = descriptionRef.current;
+    if (!descriptionElement || descriptionExpanded) return undefined;
+
+    const checkDescriptionHeight = () => {
+      const maxHeight = Number.parseFloat(
+        window.getComputedStyle(descriptionElement).maxHeight
+      );
+      setDescriptionCanExpand(
+        Number.isFinite(maxHeight) &&
+          descriptionElement.scrollHeight > maxHeight + 1
+      );
+    };
+
+    checkDescriptionHeight();
+    const resizeObserver = new ResizeObserver(checkDescriptionHeight);
+    resizeObserver.observe(descriptionElement);
+
+    return () => resizeObserver.disconnect();
+  }, [event?.description, descriptionExpanded]);
 
   useEffect(() => {
     let cancelled = false;
@@ -75,6 +101,8 @@ export default function EventDetails() {
       setLoading(true);
       setError('');
       setEvent(null);
+      setDescriptionExpanded(false);
+      setDescriptionCanExpand(false);
 
       try {
         const data = await apiRequest(`/events/slug/${encodeURIComponent(slug)}`);
@@ -283,17 +311,10 @@ export default function EventDetails() {
 
                   <h1 className="event-view-title">{event.title}</h1>
 
-                  <div
-                    className="event-view-description"
-                    dangerouslySetInnerHTML={{
-                      __html: DOMPurify.sanitize(event.description || ''),
-                    }}
-                  />
-
                   <div className="event-view-banner">
                     {event.bannerImage?.url && (
                       <img
-                        className="published-event-banner-blur"
+                        className="event-view-banner-blur"
                         src={event.bannerImage.url}
                         alt=""
                         aria-hidden="true"
@@ -302,7 +323,7 @@ export default function EventDetails() {
 
                     {event.bannerImage?.url && (
                       <img
-                        className="published-event-banner-image"
+                        className="event-view-banner-image"
                         src={event.bannerImage.url}
                         alt={`${event.title} banner`}
                         loading="lazy"
@@ -310,12 +331,12 @@ export default function EventDetails() {
                           e.currentTarget.style.display = 'none';
 
                           const fallback = e.currentTarget.parentElement
-                            ?.querySelector('.published-event-banner-fallback');
+                            ?.querySelector('.event-view-banner-fallback');
 
                           if (fallback) fallback.style.display = 'flex';
 
                           const blur = e.currentTarget.parentElement
-                            ?.querySelector('.published-event-banner-blur');
+                            ?.querySelector('.event-view-banner-blur');
 
                           if (blur) blur.style.display = 'none';
                         }}
@@ -323,7 +344,7 @@ export default function EventDetails() {
                     )}
 
                     <div
-                      className="published-event-banner-fallback"
+                      className="event-view-banner-fallback"
                       style={{
                         display: event.bannerImage?.url ? 'none' : 'flex',
                       }}
@@ -332,6 +353,34 @@ export default function EventDetails() {
                       <span>{event.category || 'CodeSphere Event'}</span>
                     </div>
                   </div>
+
+                  <div
+                    className={`event-view-description-wrap ${
+                      descriptionExpanded ? 'is-expanded' : 'is-collapsed'
+                    }`}
+                    ref={descriptionRef}
+                  >
+                    <div
+                      className="event-view-description"
+                      dangerouslySetInnerHTML={{ __html: sanitizedDescription }}
+                    />
+                  </div>
+                  {descriptionCanExpand && (
+                    <button
+                      className="event-view-description-toggle"
+                      type="button"
+                      onClick={() => setDescriptionExpanded((expanded) => !expanded)}
+                      aria-expanded={descriptionExpanded}
+                    >
+                      {descriptionExpanded ? 'Show less' : 'Show more'}
+                      <i
+                        className={`bi ${
+                          descriptionExpanded ? 'bi-chevron-up' : 'bi-chevron-down'
+                        }`}
+                        aria-hidden="true"
+                      />
+                    </button>
+                  )}
                 </section>
 
                 <aside className="event-view-details">

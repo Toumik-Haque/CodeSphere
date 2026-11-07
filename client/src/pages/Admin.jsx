@@ -1,11 +1,11 @@
-import React, {
+import {
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
@@ -14,6 +14,7 @@ import '../css/Admin.css';
 import { Editor } from '@tinymce/tinymce-react';
 import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
 import AdminBadgeAwards from '../components/AdminBadgeAwards';
+import MemberProfile from './MemberProfile';
 
 const initialForm = {
   title: '',
@@ -95,15 +96,78 @@ function formatDate(value) {
   });
 }
 
+function csvCell(value) {
+  const text = value == null ? '' : String(value);
+  const safeText = /^[\t\r\n ]*[=+\-@]/.test(text) ? `'${text}` : text;
+  return `"${safeText.replace(/"/g, '""')}"`;
+}
+
+function createUsersCsv(users) {
+  const columns = [
+    ['Name', (user) => user.name],
+    ['Username', (user) => user.username],
+    ['Email', (user) => user.email],
+    ['College', (user) => user.collegeName],
+    ['Year of study', (user) => user.yearOfStudy],
+    ['Degree', (user) => user.degree],
+    ['Department', (user) => user.department],
+    ['Graduation year', (user) => user.graduationYear],
+    ['City', (user) => user.city],
+    [
+      'Public profile URL',
+      (user) => user.username
+        ? `${window.location.origin}/user/${encodeURIComponent(user.username)}`
+        : '',
+    ],
+    ['Bio', (user) => user.bio],
+    ['Skills', (user) => (user.skills || []).join('; ')],
+    ['Technical interests', (user) => (user.technicalInterests || []).join('; ')],
+    ['Learning goals', (user) => (user.learningGoals || []).join('; ')],
+    ['Skill levels', (user) => (user.skillDetails || [])
+      .map((skill) => `${skill.name} (${skill.level})`)
+      .join('; ')],
+    ['GitHub', (user) => user.github],
+    ['LinkedIn', (user) => user.linkedin],
+    ['Portfolio', (user) => user.portfolio],
+    ['Coding profiles', (user) => (user.codingProfiles || [])
+      .map((profile) => `${profile.platform}: ${profile.url}`)
+      .join('; ')],
+    ['Achievements', (user) => (user.achievements || [])
+      .map((achievement) => [
+        achievement.title,
+        achievement.category,
+        achievement.issuer,
+        achievement.year,
+        achievement.link,
+      ].filter(Boolean).join(' - '))
+      .join('; ')],
+    ['Profile complete', (user) => user.profileComplete ? 'Yes' : 'No'],
+    ['Registered at', (user) => user.createdAt
+      ? new Date(user.createdAt).toISOString()
+      : ''],
+  ];
+
+  return [
+    columns.map(([label]) => csvCell(label)).join(','),
+    ...users.map((user) => columns
+      .map(([, getValue]) => csvCell(getValue(user)))
+      .join(',')),
+  ].join('\r\n');
+}
+
 export default function Admin() {
   const { user, logout } = useAuth();
+  const location = useLocation();
   const navigate = useNavigate();
+  const { username: routeUsername } = useParams();
 
   // --------------------------------------------------
   // MAIN NAVIGATION
   // --------------------------------------------------
 
-  const [activeSection, setActiveSection] = useState('home');
+  const [activeSection, setActiveSection] = useState(
+    routeUsername || location.state?.activeSection === 'users' ? 'users' : 'home'
+  );
   const [activeEventTab, setActiveEventTab] = useState('manage');
 
   // --------------------------------------------------
@@ -745,6 +809,7 @@ export default function Admin() {
 
   const [users, setUsers] = useState([]);
   const [usersLoading, setUsersLoading] = useState(false);
+  const [usersExporting, setUsersExporting] = useState(false);
   const [userSearch, setUserSearch] = useState('');
 
   const loadUsers = useCallback(async () => {
@@ -764,6 +829,51 @@ export default function Admin() {
       setUsersLoading(false);
     }
   }, [userSearch]);
+
+  function returnToUsersList() {
+    setUserSearch('');
+    setActiveSection('users');
+    navigate('/admin', {
+      replace: true,
+      state: { activeSection: 'users' },
+    });
+  }
+
+  function viewRegisteredUser(username) {
+    if (!username) return;
+
+    setActiveSection('users');
+    navigate(`/admin/${encodeURIComponent(username)}`);
+  }
+
+  async function exportUsers() {
+    clearFeedback();
+    setUsersExporting(true);
+
+    try {
+      const data = await apiRequest('/users/admin/export');
+      const exportUsersList = Array.isArray(data.users) ? data.users : [];
+      const csv = `\uFEFF${createUsersCsv(exportUsersList)}`;
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const downloadLink = document.createElement('a');
+
+      downloadLink.href = url;
+      downloadLink.download = `codesphere-registered-users-${new Date()
+        .toISOString()
+        .slice(0, 10)}.csv`;
+      document.body.appendChild(downloadLink);
+      downloadLink.click();
+      downloadLink.remove();
+      window.setTimeout(() => URL.revokeObjectURL(url), 1000);
+
+      setMessage(`Exported ${exportUsersList.length} registered users.`);
+    } catch (err) {
+      setError(err.message || 'Unable to export registered users.');
+    } finally {
+      setUsersExporting(false);
+    }
+  }
 
   // --------------------------------------------------
   // ATTENDANCE
@@ -952,6 +1062,14 @@ export default function Admin() {
 
   function goToSection(section) {
     clearFeedback();
+
+    if (routeUsername) {
+      setUserSearch('');
+      navigate('/admin', {
+        replace: true,
+        state: { activeSection: section },
+      });
+    }
 
     if (section !== 'events' && activeEventTab === 'form') {
       resetEventForm();
@@ -1953,27 +2071,63 @@ export default function Admin() {
             {activeSection === 'users' && (
               <section className="admin-members-panel">
 
-                <div className="admin-section-heading">
+                <div className="admin-section-heading admin-users-heading">
                   <div>
-                    <h2>Registered Users</h2>
+                    <h2>{routeUsername ? 'Member Profile' : 'Registered Users'}</h2>
 
                     <p className="admin-panel-subtitle">
-                      View and manage all registered CodeSphere accounts.
+                      {routeUsername
+                        ? `Viewing the public profile for @${routeUsername}.`
+                        : 'View and manage all registered CodeSphere accounts.'}
                     </p>
                   </div>
 
-                  <button
-                    type="button"
-                    className="admin-secondary-button"
-                    onClick={loadUsers}
-                    disabled={usersLoading}
-                  >
-                    <i className="bi bi-arrow-clockwise" />
-                    Refresh
-                  </button>
+                  {!routeUsername && (
+                    <div className="admin-users-actions">
+                      <button
+                        type="button"
+                        className="admin-secondary-button"
+                        onClick={exportUsers}
+                        disabled={usersExporting}
+                        title="Downloads all registered users as an Excel-compatible CSV"
+                      >
+                        <i className={`bi ${usersExporting ? 'bi-hourglass-split' : 'bi-file-earmark-spreadsheet'}`} />
+                        {usersExporting ? 'Exporting...' : 'Export Excel'}
+                      </button>
+
+                    </div>
+                  )}
                 </div>
+                {!routeUsername && (
+                  <p className="admin-export-note">
+                    <i className="bi bi-info-circle" aria-hidden="true" />
+                    Downloads all registered users as an Excel-compatible CSV, regardless of the current search. The file includes profile and academic details; share it carefully.
+                  </p>
+                )}
 
                 {/* SEARCH */}
+                {routeUsername ? (
+                  <div className="admin-event-filters admin-user-profile-search">
+                    <label className="admin-event-search">
+                      <i className="bi bi-search" aria-hidden="true" />
+                      <input
+                        type="text"
+                        value={routeUsername}
+                        readOnly
+                        aria-label="Viewing user profile"
+                      />
+                    </label>
+                    <button
+                      type="button"
+                      className="admin-clear-profile-button"
+                      onClick={returnToUsersList}
+                      aria-label="Clear selected username and return to all users"
+                      title="Back to all users"
+                    >
+                      <i className="bi bi-x-lg" aria-hidden="true" />
+                    </button>
+                  </div>
+                ) : (
                 <div className="admin-event-filters">
                   <label className="admin-event-search">
                     <i className="bi bi-search" aria-hidden="true" />
@@ -1987,9 +2141,18 @@ export default function Admin() {
                     />
                   </label>
                 </div>
+                )}
 
                 {/* USER LIST */}
-                {usersLoading ? (
+                {routeUsername ? (
+                  <div className="admin-user-profile-view">
+                    <MemberProfile
+                      profileUsername={routeUsername}
+                      embedded
+                      onReturn={returnToUsersList}
+                    />
+                  </div>
+                ) : usersLoading ? (
                   <p className="admin-empty">
                     Loading registered users...
                   </p>
@@ -2037,9 +2200,23 @@ export default function Admin() {
                           </div>
                         </div>
 
-                        {registeredUser.role !== 'admin' && (
-                          <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
-                        )}
+                        <div className="admin-user-card-actions">
+                          {registeredUser.role !== 'admin' && (
+                            <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
+                          )}
+
+                          {registeredUser.username && (
+                            <button
+                              type="button"
+                              className="adm-badges-toggle admin-user-view-button"
+                              onClick={() => viewRegisteredUser(registeredUser.username)}
+                              aria-label={`View ${registeredUser.name}'s public profile`}
+                            >
+                              <i className="bi bi-eye" aria-hidden="true" />
+                              View
+                            </button>
+                          )}
+                        </div>
 
                       </article>
                     ))}
