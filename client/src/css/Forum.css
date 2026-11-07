@@ -1059,3 +1059,105 @@
 @media (prefers-reduced-motion: reduce) {
   .forum-live-dot { animation: none; }
 }
+
+/* Mentions */
+.safe-text .mention {
+  padding: 0 4px;
+  border-radius: 6px;
+  background: #E6F1FB;
+  color: #1F65A0;
+  font-weight: 700;
+}
+
+.mention-box { position: relative; }
+.mention-box textarea { width: 100%; }
+
+.mention-list {
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 0;
+  z-index: 20;
+  width: min(280px, 100%);
+  margin: 0;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--shadow-md);
+  list-style: none;
+}
+
+.mention-list li {
+  display: flex;
+  flex-direction: column;
+  padding: 7px 10px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.mention-list li.is-active { background: var(--sky); }
+.mention-list strong { color: var(--navy); font-size: .88rem; }
+.mention-list small { color: var(--text-muted); font-size: .74rem; }
+
+/* Image attachments */
+.forum-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.forum-images figure {
+  position: relative;
+  width: 110px;
+  height: 110px;
+  margin: 0;
+}
+
+.forum-images figure img,
+.forum-images.is-view img {
+  width: 100%;
+  height: 100%;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+.forum-images figure button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--navy);
+  color: #fff;
+}
+
+.forum-image-add {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center;
+  justify-content: center;
+  gap: 4px !important;
+  width: 110px;
+  height: 110px;
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  color: var(--text-muted);
+  font-size: .8rem;
+  cursor: pointer;
+}
+
+.forum-image-add input { position: absolute; opacity: 0; pointer-events: none; }
+.forum-image-add:focus-within { outline: 3px solid var(--gold); }
+.forum-image-add i { font-size: 1.4rem; }
+
+.forum-images.is-view { margin: 4px 0 12px; }
+
+.forum-images.is-view a {
+  display: block;
+  width: min(220px, 45%);
+  aspect-ratio: 4 / 3;
+}

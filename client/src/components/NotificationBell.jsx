@@ -6,6 +6,7 @@ import { openUserStream } from '../lib/realtime';
 
 const TYPE_ICONS = {
   'forum-reply': 'bi-chat-dots',
+  'forum-mention': 'bi-at',
   'forum-moderation': 'bi-shield-exclamation',
   'forum-report-reviewed': 'bi-flag',
   'reverse-result': 'bi-arrow-repeat',
@@ -16,6 +17,7 @@ const TYPE_ICONS = {
 
 const MUTE_LABELS = {
   'forum-reply': 'Replies to discussions I follow',
+  'forum-mention': 'When someone @mentions me',
   'reverse-new': 'New Reverse Coding challenges',
   'news-digest': 'New Tech Brief editions',
 };

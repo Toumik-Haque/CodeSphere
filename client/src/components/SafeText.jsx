@@ -1,14 +1,17 @@
 // Renders user-written text with a small, safe formatting subset:
-//   ```code blocks```, `inline code`, **bold**, and http(s) links.
+//   ```code blocks```, `inline code`, **bold**, http(s) links and
+//   @[Name](userId) mentions.
 // Everything becomes React text nodes, so no HTML from users is ever
 // rendered (no scripts, event handlers or unsafe URLs).
 
-const INLINE = /(`[^`\n]+`|\*\*[^*\n]+\*\*|https?:\/\/[^\s<>"')\]]+)/g;
+const INLINE = /(@\[[^\]\n]{1,80}\]\([a-f0-9]{24}\)|`[^`\n]+`|\*\*[^*\n]+\*\*|https?:\/\/[^\s<>"')\]]+)/g;
 
 function renderInline(text, keyPrefix) {
   return text.split(INLINE).map((part, i) => {
     const key = `${keyPrefix}-${i}`;
     if (!part) return null;
+    const mention = part.match(/^@\[([^\]\n]{1,80})\]\([a-f0-9]{24}\)$/);
+    if (mention) return <span key={key} className="mention">@{mention[1]}</span>;
     if (part.startsWith('`') && part.endsWith('`') && part.length > 2) {
       return <code key={key}>{part.slice(1, -1)}</code>;
     }

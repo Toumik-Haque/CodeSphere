@@ -9,12 +9,14 @@ const {
   ForumFollow,
   ForumReport,
   ForumModeration,
+  ForumUpload,
 } = require('../models/Forum');
 const { protect, optionalAuth, requireStaff, hasStaffRole } = require('../middleware/authMiddleware');
 const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
 const { syncBadgesQuietly } = require('../utils/badges');
 const { pushToThread } = require('../utils/realtime');
+const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
 const {
   FORUM_CATEGORIES,
   POST_TYPES,
@@ -35,6 +37,8 @@ const reasonIds = new Set(REPORT_REASONS.map((r) => r.id));
 const limitThreads = createLimiter({ windowMs: 15 * 60 * 1000, max: 5, message: 'You can start up to 5 discussions every 15 minutes.' });
 const limitReplies = createLimiter({ windowMs: 10 * 60 * 1000, max: 20, message: 'You\'re replying very fast. Take a short break and try again.' });
 const limitReactions = createLimiter({ windowMs: 60 * 1000, max: 60 });
+const limitUploads = createLimiter({ windowMs: 60 * 60 * 1000, max: 15, message: 'You can upload up to 15 images an hour.' });
+const limitSearch = createLimiter({ windowMs: 60 * 1000, max: 60 });
 const limitReports = createLimiter({ windowMs: 60 * 60 * 1000, max: 10, message: 'You can send up to 10 reports an hour.' });
 
 // ---------- helpers ----------
@@ -77,8 +81,32 @@ function publicAuthor(user) {
   };
 }
 
+// Mentions are stored in the text as @[Display Name](userId).
+const MENTION = /@\[([^\]\n]{1,80})\]\(([a-f0-9]{24})\)/g;
+const MAX_MENTIONS = 5;
+const MAX_ATTACHMENTS = 3;
+
+const stripMentions = (text) => text.replace(MENTION, '@$1');
+
+function mentionedIds(text) {
+  return [...new Set([...text.matchAll(MENTION)].map((m) => m[2]))].slice(0, MAX_MENTIONS);
+}
+
+// Notify mentioned users (not the author; only real accounts).
+async function notifyMentions(text, author, { title, link }) {
+  const ids = mentionedIds(text).filter((id) => id !== String(author._id));
+  if (!ids.length) return;
+  const users = await User.find({ _id: { $in: ids } }).select('_id').lean();
+  await notify(users.map((u) => u._id), {
+    type: 'forum-mention',
+    title: `${author.name} mentioned you in "${title.slice(0, 80)}"`,
+    body: stripMentions(text).slice(0, 140),
+    link,
+  });
+}
+
 function preview(body) {
-  const text = body.replace(/```[\s\S]*?```/g, ' [code] ').replace(/\s+/g, ' ').trim();
+  const text = stripMentions(body).replace(/```[\s\S]*?```/g, ' [code] ').replace(/\s+/g, ' ').trim();
   return text.length > 220 ? `${text.slice(0, 217)}…` : text;
 }
 
@@ -284,8 +312,22 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
     });
     if (duplicate) return res.status(409).json({ message: 'You just posted this. Check your discussions.' });
 
-    const thread = await ForumThread.create({ ...value, author: req.user._id });
+    // Attach images this user uploaded and hasn't used yet.
+    const attachmentIds = (Array.isArray(req.body.attachments) ? req.body.attachments : []).filter(isId);
+    if (attachmentIds.length > MAX_ATTACHMENTS) return res.status(400).json({ message: `Up to ${MAX_ATTACHMENTS} images per post.` });
+    const uploads = attachmentIds.length
+      ? await ForumUpload.find({ _id: { $in: attachmentIds }, owner: req.user._id, used: false })
+      : [];
+    if (uploads.length !== attachmentIds.length) return res.status(400).json({ message: 'One of the images is no longer available. Upload it again.' });
+
+    const thread = await ForumThread.create({
+      ...value,
+      author: req.user._id,
+      attachments: uploads.map((u) => ({ url: u.url, fileId: u.fileId })),
+    });
+    if (uploads.length) await ForumUpload.updateMany({ _id: { $in: uploads.map((u) => u._id) } }, { $set: { used: true } });
     await ForumFollow.create({ user: req.user._id, thread: thread._id });
+    await notifyMentions(value.body, req.user, { title: thread.title, link: `/forum/${thread._id}` });
     const newBadges = await syncBadgesQuietly(req.user._id);
     return res.status(201).json({ id: String(thread._id), newBadges });
   } catch (error) {
@@ -340,6 +382,7 @@ router.get('/threads/:id', optionalAuth, async (req, res) => {
         ...threadCard(thread),
         viewCount: thread.viewCount + (mine ? 0 : 1),
         body: thread.body,
+        attachments: (thread.attachments || []).map((a) => ({ url: a.url })),
         reactions: thread.reactions,
         acceptedReply: thread.acceptedReply ? String(thread.acceptedReply) : null,
         editedAt: thread.editedAt,
@@ -399,6 +442,7 @@ router.delete('/threads/:id', protect, async (req, res) => {
 
     thread.status = 'deleted';
     await thread.save();
+    await deleteImages(thread.attachments);
     return res.json({ ok: true });
   } catch (error) {
     console.error('Forum delete error:', error);
@@ -459,6 +503,8 @@ router.post('/threads/:id/replies', protect, limitReplies, async (req, res) => {
       body: body.slice(0, 140),
       link: `/forum/${thread._id}#reply-${reply._id}`,
     });
+
+    await notifyMentions(body, req.user, { title: thread.title, link: `/forum/${thread._id}#reply-${reply._id}` });
 
     // Tell readers of this thread a reply arrived (ids only, no content).
     pushToThread(thread._id, 'reply', { replyId: String(reply._id), authorId: String(req.user._id) });
@@ -596,6 +642,47 @@ async function toggle(Model, req, res) {
 router.post('/threads/:id/bookmark', protect, (req, res) => toggle(ForumBookmark, req, res));
 router.post('/threads/:id/follow', protect, (req, res) => toggle(ForumFollow, req, res));
 
+// ---------- uploads and mentions ----------
+
+// POST /api/forum/uploads (multipart "image"): upload one image for a post.
+router.post('/uploads', protect, limitUploads, handleImageUpload, async (req, res) => {
+  try {
+    if (forumMuted(req.user)) return res.status(403).json({ message: mutedMessage(req.user) });
+
+    // Tidy up this user's images that were never attached (older than a day).
+    const stale = await ForumUpload.find({ owner: req.user._id, used: false, createdAt: { $lt: new Date(Date.now() - 86400000) } });
+    if (stale.length) {
+      await deleteImages(stale);
+      await ForumUpload.deleteMany({ _id: { $in: stale.map((s) => s._id) } });
+    }
+
+    const stored = await storeImage(req.file.buffer, req.user._id);
+    const saved = await ForumUpload.create({ owner: req.user._id, ...stored });
+    return res.status(201).json({ id: String(saved._id), url: saved.url });
+  } catch (error) {
+    if (error.status === 400) return res.status(400).json({ message: error.message });
+    console.error('Forum upload error:', error);
+    return res.status(502).json({ message: 'Could not upload the image. Try again.' });
+  }
+});
+
+// GET /api/forum/users?q=: people to @mention (names and year only).
+router.get('/users', protect, limitSearch, async (req, res) => {
+  try {
+    const q = cleanText(req.query.q || '').slice(0, 40);
+    if (q.length < 1) return res.json({ users: [] });
+    const pattern = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+    const users = await User.find({ name: pattern, _id: { $ne: req.user._id } })
+      .select('name yearOfStudy role').limit(8).lean();
+    return res.json({
+      users: users.map((u) => ({ id: String(u._id), name: u.name, year: u.role === 'admin' ? 'CodeSphere team' : u.yearOfStudy })),
+    });
+  } catch (error) {
+    console.error('Forum user search error:', error);
+    return res.status(500).json({ message: 'Could not search people.' });
+  }
+});
+
 // ---------- reports ----------
 
 // POST /api/forum/reports { targetType, targetId, reason, detail }
@@ -728,7 +815,10 @@ router.post('/admin/actions', protect, requireStaff('moderator'), async (req, re
       if (!thread || thread.status === 'deleted') return res.status(404).json({ message: 'Discussion not found.' });
       if (action === 'hide') thread.status = 'hidden';
       if (action === 'restore') thread.status = 'visible';
-      if (action === 'remove') thread.status = 'removed';
+      if (action === 'remove') {
+        thread.status = 'removed';
+        await deleteImages(thread.attachments);
+      }
       if (action === 'pin' || action === 'unpin') thread.pinned = action === 'pin';
       if (action === 'lock' || action === 'unlock') thread.locked = action === 'lock';
       if (action === 'move') {

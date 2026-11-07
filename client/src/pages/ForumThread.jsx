@@ -9,6 +9,7 @@ import { loadForumConfig, REACTIONS } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
 import { openThreadStream } from '../lib/realtime';
 import { useAuth } from '../context/AuthContext';
+import MentionTextarea from '../components/MentionTextarea';
 import { timeAgo } from '../lib/time';
 import '../css/Forum.css';
 
@@ -134,11 +135,11 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
           <button type="button" onClick={onCancel} aria-label="Cancel reply"><i className="bi bi-x" aria-hidden="true" /></button>
         </p>
       )}
-      <textarea
+      <MentionTextarea
         value={body}
-        onChange={(e) => setBody(e.target.value)}
+        onChange={setBody}
         rows={parentReply ? 3 : 4}
-        placeholder="Write a helpful, kind reply… (``` for code)"
+        placeholder="Write a helpful, kind reply… (``` for code, @ to mention)"
         maxLength={limit}
         required
         autoFocus={autoFocus}
@@ -413,6 +414,16 @@ export default function ForumThread() {
               />
             ) : (
               <SafeText text={thread.body} className="forum-thread-body" />
+            )}
+
+            {thread.attachments?.length > 0 && (
+              <div className="forum-images is-view">
+                {thread.attachments.map((img) => (
+                  <a key={img.url} href={img.url} target="_blank" rel="noopener noreferrer">
+                    <img src={img.url} alt="Attachment" loading="lazy" />
+                  </a>
+                ))}
+              </div>
             )}
 
             {thread.tags.length > 0 && (

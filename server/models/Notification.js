@@ -14,6 +14,7 @@ const notificationSchema = new mongoose.Schema(
       required: true,
       enum: [
         'forum-reply',
+        'forum-mention',
         'forum-moderation',
         'forum-report-reviewed',
         'reverse-result',
