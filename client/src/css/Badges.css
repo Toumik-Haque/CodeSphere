@@ -698,3 +698,40 @@
   color: var(--navy);
   font-size: .85rem;
 }
+
+/* Admin: staff roles */
+.adm-staff {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  width: 100%;
+  margin-top: 10px;
+}
+
+.adm-staff-label {
+  color: var(--navy);
+  font-size: .82rem;
+  font-weight: 700;
+}
+
+.adm-staff-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: #fff;
+  color: var(--navy);
+  font-size: .8rem;
+  font-weight: 700;
+}
+
+.adm-staff-chip.is-on {
+  border-color: #16A34A;
+  background: #ECFDF3;
+  color: #116B35;
+}
+
+.adm-staff-error { color: #B91C1C; }

@@ -635,6 +635,7 @@ router.post('/register', async (req, res) => {
         yearOfStudy: user.yearOfStudy,
         email: user.email,
         role: user.role,
+        staffRoles: user.staffRoles || [],
       },
     });
 
@@ -920,6 +921,7 @@ router.post('/login', async (req, res) => {
         yearOfStudy: user.yearOfStudy,
         email: user.email,
         role: user.role,
+        staffRoles: user.staffRoles || [],
       },
     });
 
@@ -946,6 +948,7 @@ router.get('/me', protect, async (req, res) => {
       yearOfStudy: req.user.yearOfStudy,
       email: req.user.email,
       role: req.user.role,
+      staffRoles: req.user.staffRoles || [],
       createdAt: req.user.createdAt,
     },
   });

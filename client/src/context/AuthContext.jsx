@@ -1,6 +1,7 @@
-import React, {
+import {
   createContext,
   useContext,
+  useEffect,
   useState,
 } from 'react';
 
@@ -22,6 +23,23 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(
     () => localStorage.getItem('codesphere_token')
   );
+
+  // Refresh the saved user from the server once per page load, so changes
+  // such as newly granted staff roles show up without signing in again.
+  useEffect(() => {
+    if (!localStorage.getItem('codesphere_token')) return undefined;
+    let cancelled = false;
+    apiRequest('/auth/me')
+      .then((data) => {
+        if (cancelled || !data?.user) return;
+        localStorage.setItem('codesphere_user', JSON.stringify(data.user));
+        setUser((current) => (current ? { ...current, ...data.user } : current));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   async function sendOtp(email) {
     return apiRequest('/auth/send-otp', {

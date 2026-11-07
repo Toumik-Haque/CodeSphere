@@ -1,7 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const { ReverseChallenge, ReverseAttempt, ReverseBookmark } = require('../models/Reverse');
-const { protect, adminOnly, optionalAuth } = require('../middleware/authMiddleware');
+const { protect, optionalAuth, requireStaff } = require('../middleware/authMiddleware');
+
+// Admins and challenge editors.
+const editorOnly = requireStaff('challenge-editor');
 const { createLimiter } = require('../utils/rateLimit');
 const { isConfigured, SUPPORTED_LANGUAGES } = require('../config/judge0');
 const { evaluate } = require('../utils/reverseJudge');
@@ -311,7 +314,7 @@ function validateChallenge(body) {
 }
 
 // GET /api/reverse/admin/all: every challenge (any status), full data.
-router.get('/admin/all', protect, adminOnly, async (req, res) => {
+router.get('/admin/all', protect, editorOnly, async (req, res) => {
   try {
     const challenges = await ReverseChallenge.find().sort({ updatedAt: -1 }).lean();
     const stats = await ReverseAttempt.aggregate([
@@ -338,7 +341,7 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
 });
 
 // POST /api/reverse/admin: create a draft.
-router.post('/admin', protect, adminOnly, async (req, res) => {
+router.post('/admin', protect, editorOnly, async (req, res) => {
   const { errors, value } = validateChallenge(req.body);
   for (const field of ['slug', 'title', 'format', 'level', 'topic', 'points', 'statement', 'tests']) {
     if (value[field] === undefined || value[field] === '') errors.push(`Missing: ${field}.`);
@@ -356,7 +359,7 @@ router.post('/admin', protect, adminOnly, async (req, res) => {
 
 // PUT /api/reverse/admin/:id: edit. Changing tests or the reference
 // solution clears validation (it must be re-validated before publishing).
-router.put('/admin/:id', protect, adminOnly, async (req, res) => {
+router.put('/admin/:id', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   const { errors, value } = validateChallenge(req.body);
   if (errors.length) return res.status(400).json({ message: errors[0], errors });
@@ -381,7 +384,7 @@ router.put('/admin/:id', protect, adminOnly, async (req, res) => {
 
 // POST /api/reverse/admin/:id/validate: the reference solution must pass
 // every test before the challenge can be published.
-router.post('/admin/:id/validate', protect, adminOnly, async (req, res) => {
+router.post('/admin/:id/validate', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   try {
     const challenge = await ReverseChallenge.findById(req.params.id);
@@ -404,7 +407,7 @@ router.post('/admin/:id/validate', protect, adminOnly, async (req, res) => {
 });
 
 // POST /api/reverse/admin/:id/publish { publishAt? }: publish now or later.
-router.post('/admin/:id/publish', protect, adminOnly, async (req, res) => {
+router.post('/admin/:id/publish', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   try {
     const challenge = await ReverseChallenge.findById(req.params.id);
@@ -435,7 +438,7 @@ router.post('/admin/:id/publish', protect, adminOnly, async (req, res) => {
 });
 
 // POST /api/reverse/admin/:id/retire: unpublish (keeps attempts/history).
-router.post('/admin/:id/retire', protect, adminOnly, async (req, res) => {
+router.post('/admin/:id/retire', protect, editorOnly, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Challenge not found.' });
   try {
     await ReverseChallenge.updateOne({ _id: req.params.id }, { $set: { status: 'retired', updatedBy: req.user._id } });

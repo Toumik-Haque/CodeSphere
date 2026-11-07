@@ -65,11 +65,18 @@ function HomePage() {
 
 // Protect routes that require authentication.
 // anyRole: any signed-in user (students and admins), e.g. forum posting.
-function ProtectedRoute({ children, adminOnly = false, anyRole = false }) {
+// staff: a staff role (moderator, news-editor, challenge-editor); admins and
+// students holding that role may enter.
+function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = null }) {
   const { user, token } = useAuth();
 
   if (!user || !token) {
     return <Navigate to="/login" replace />;
+  }
+
+  if (staff) {
+    const allowed = user.role === 'admin' || user.staffRoles?.includes(staff);
+    return allowed ? children : <Navigate to="/" replace />;
   }
 
   if (adminOnly && user.role !== 'admin') {
@@ -113,13 +120,13 @@ function AppRoutes() {
       <Route path="/forum" element={<Forum />} />
       <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
       <Route path="/forum/:id" element={<ForumThread />} />
-      <Route path="/admin/forum" element={<ProtectedRoute adminOnly><AdminForum /></ProtectedRoute>} />
+      <Route path="/admin/forum" element={<ProtectedRoute staff="moderator"><AdminForum /></ProtectedRoute>} />
       <Route path="/reverse-coding" element={<ReverseCoding />} />
       <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
-      <Route path="/admin/reverse-coding" element={<ProtectedRoute adminOnly><AdminReverse /></ProtectedRoute>} />
+      <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminReverse /></ProtectedRoute>} />
       <Route path="/news" element={<News />} />
       <Route path="/news/:slug" element={<News />} />
-      <Route path="/admin/news" element={<ProtectedRoute adminOnly><AdminNews /></ProtectedRoute>} />
+      <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminNews /></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />

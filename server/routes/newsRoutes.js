@@ -2,7 +2,7 @@ const express = require('express');
 const mongoose = require('mongoose');
 const { NewsSource, NewsItem, NewsDigest, NewsBookmark, NewsFetchLog } = require('../models/News');
 const { ForumThread, ForumFollow } = require('../models/Forum');
-const { protect, adminOnly, optionalAuth } = require('../middleware/authMiddleware');
+const { protect, optionalAuth, requireStaff } = require('../middleware/authMiddleware');
 const { NEWS_CATEGORIES, NEWS_LIMITS } = require('../data/news');
 const { toPlainText, canonicalUrl, ingestSource, ingestAll, notifyLiveDigests } = require('../utils/newsIngest');
 
@@ -161,7 +161,8 @@ router.post('/items/:id/bookmark', protect, async (req, res) => {
 
 // ---------- editors (admins) ----------
 
-const admin = [protect, adminOnly];
+// Admins and news editors.
+const admin = [protect, requireStaff('news-editor')];
 
 // Sources
 router.get('/admin/sources', admin, async (req, res) => {

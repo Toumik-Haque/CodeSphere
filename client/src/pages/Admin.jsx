@@ -13,6 +13,7 @@ import logo from '../assets/logo.svg';
 import '../css/Admin.css';
 import { Editor } from '@tinymce/tinymce-react';
 import AdminBadgeAwards from '../components/AdminBadgeAwards';
+import AdminStaffRoles from '../components/AdminStaffRoles';
 
 const initialForm = {
   title: '',
@@ -1981,7 +1982,10 @@ export default function Admin() {
                         </div>
 
                         {registeredUser.role !== 'admin' && (
-                          <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
+                          <>
+                            <AdminStaffRoles userId={registeredUser._id} initial={registeredUser.staffRoles || []} />
+                            <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
+                          </>
                         )}
 
                       </article>

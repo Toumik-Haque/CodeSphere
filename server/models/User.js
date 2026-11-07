@@ -47,6 +47,13 @@ const userSchema = new mongoose.Schema(
       type: [String],
       default: [],
     },
+    // Extra staff permissions an admin can grant to a student:
+    // moderator (forum), news-editor (Tech News), challenge-editor (Reverse Coding).
+    staffRoles: {
+      type: [String],
+      enum: ['moderator', 'news-editor', 'challenge-editor'],
+      default: [],
+    },
     // Notification types the student has muted (see utils/notify.js).
     mutedNotifications: {
       type: [String],

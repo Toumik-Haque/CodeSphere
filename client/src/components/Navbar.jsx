@@ -110,6 +110,13 @@ const Navbar = () => {
   const isAuthenticated = Boolean(user);
   const isAdmin = user?.role?.toLowerCase() === 'admin';
 
+  // Staff tools for students who hold a staff role (admins use the dashboard).
+  const staffLinks = isAdmin ? [] : [
+    { role: 'moderator', path: '/admin/forum', icon: 'bi-shield-lock', label: 'Forum moderation' },
+    { role: 'news-editor', path: '/admin/news', icon: 'bi-newspaper', label: 'Tech News editor' },
+    { role: 'challenge-editor', path: '/admin/reverse-coding', icon: 'bi-arrow-repeat', label: 'Reverse Coding editor' },
+  ].filter((link) => user?.staffRoles?.includes(link.role));
+
   const dashboardPath = isAdmin ? '/admin' : '/profile';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
@@ -271,6 +278,13 @@ const Navbar = () => {
               <i className="bi bi-speedometer2" aria-hidden="true" />
               <span>{dashboardLabel}</span>
             </Link>
+
+            {staffLinks.map((link) => (
+              <Link key={link.path} to={link.path} className="navbar-dropdown-item" onClick={closeMenu}>
+                <i className={`bi ${link.icon}`} aria-hidden="true" />
+                <span>{link.label}</span>
+              </Link>
+            ))}
 
             <button
               type="button"

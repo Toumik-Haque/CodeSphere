@@ -10,7 +10,7 @@ const {
   ForumReport,
   ForumModeration,
 } = require('../models/Forum');
-const { protect, adminOnly, optionalAuth } = require('../middleware/authMiddleware');
+const { protect, optionalAuth, requireStaff, hasStaffRole } = require('../middleware/authMiddleware');
 const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
 const { syncBadgesQuietly } = require('../utils/badges');
@@ -39,7 +39,8 @@ const limitReports = createLimiter({ windowMs: 60 * 60 * 1000, max: 10, message:
 // ---------- helpers ----------
 
 const isId = (id) => mongoose.Types.ObjectId.isValid(id);
-const isStaff = (user) => user?.role === 'admin';
+// Admins and forum moderators.
+const isStaff = (user) => hasStaffRole(user, 'moderator');
 const sameUser = (a, b) => Boolean(a && b) && String(a._id || a) === String(b._id || b);
 
 // Plain text only: drop control characters, normalise newlines, trim.
@@ -71,7 +72,7 @@ function publicAuthor(user) {
     name,
     initials: name.split(/\s+/).filter(Boolean).slice(0, 2).map((p) => p[0].toUpperCase()).join(''),
     year: user.role === 'admin' ? '' : user.yearOfStudy || '',
-    isStaff: user.role === 'admin',
+    isStaff: user.role === 'admin' || Boolean(user.staffRoles?.includes('moderator')),
   };
 }
 
@@ -220,14 +221,14 @@ router.get('/threads', optionalAuth, async (req, res) => {
     if (tab === 'trending') {
       // Score recent threads by replies, reactions and views.
       const recent = await ForumThread.find(filter).sort({ lastActivityAt: -1 }).limit(300)
-        .populate('author', 'name yearOfStudy role').lean();
+        .populate('author', 'name yearOfStudy role staffRoles').lean();
       recent.sort((a, b) => trendScore(b) - trendScore(a));
       total = recent.length;
       threads = recent.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
     } else {
       const query = ForumThread.find(filter, q ? { score: { $meta: 'textScore' } } : {});
       [threads, total] = await Promise.all([
-        query.sort(sort).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).populate('author', 'name yearOfStudy role').lean(),
+        query.sort(sort).skip((page - 1) * PAGE_SIZE).limit(PAGE_SIZE).populate('author', 'name yearOfStudy role staffRoles').lean(),
         ForumThread.countDocuments(filter),
       ]);
     }
@@ -296,7 +297,7 @@ router.post('/threads', protect, limitThreads, async (req, res) => {
 router.get('/threads/:id', optionalAuth, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Discussion not found.' });
   try {
-    const thread = await ForumThread.findById(req.params.id).populate('author', 'name yearOfStudy role').lean();
+    const thread = await ForumThread.findById(req.params.id).populate('author', 'name yearOfStudy role staffRoles').lean();
     const staff = isStaff(req.user);
     const mine = sameUser(thread?.author, req.user);
     if (!thread || (thread.status !== 'visible' && !staff && !(mine && thread.status === 'hidden'))) {
@@ -306,7 +307,7 @@ router.get('/threads/:id', optionalAuth, async (req, res) => {
     if (!mine) await ForumThread.updateOne({ _id: thread._id }, { $inc: { viewCount: 1 } });
 
     const replyFilter = { thread: thread._id, status: staff ? { $in: ['visible', 'hidden'] } : 'visible' };
-    const replies = await ForumReply.find(replyFilter).sort({ createdAt: 1 }).populate('author', 'name yearOfStudy role').lean();
+    const replies = await ForumReply.find(replyFilter).sort({ createdAt: 1 }).populate('author', 'name yearOfStudy role staffRoles').lean();
 
     let viewer = { signedIn: false };
     if (req.user) {
@@ -627,7 +628,7 @@ router.post('/reports', protect, limitReports, async (req, res) => {
 // ---------- moderation (admins) ----------
 
 // GET /api/forum/admin/reports?status=open
-router.get('/admin/reports', protect, adminOnly, async (req, res) => {
+router.get('/admin/reports', protect, requireStaff('moderator'), async (req, res) => {
   try {
     const status = ['open', 'resolved', 'dismissed'].includes(req.query.status) ? req.query.status : 'open';
     const reports = await ForumReport.find({ status }).sort({ createdAt: status === 'open' ? 1 : -1 }).limit(100)
@@ -682,7 +683,7 @@ router.get('/admin/reports', protect, adminOnly, async (req, res) => {
 });
 
 // GET /api/forum/admin/audit: latest moderator actions.
-router.get('/admin/audit', protect, adminOnly, async (req, res) => {
+router.get('/admin/audit', protect, requireStaff('moderator'), async (req, res) => {
   try {
     const actions = await ForumModeration.find().sort({ createdAt: -1 }).limit(100).populate('moderator', 'name').lean();
     res.json({
@@ -710,7 +711,7 @@ const REPORT_ACTIONS = ['resolve', 'dismiss'];
 
 // POST /api/forum/admin/actions
 //   { targetType, targetId, action, reason, category?, days?, reportId? }
-router.post('/admin/actions', protect, adminOnly, async (req, res) => {
+router.post('/admin/actions', protect, requireStaff('moderator'), async (req, res) => {
   const { targetType, targetId, action } = req.body;
   const reason = cleanText(req.body.reason || '').slice(0, 300);
   if (!isId(targetId)) return res.status(400).json({ message: 'Invalid target.' });
@@ -760,6 +761,9 @@ router.post('/admin/actions', protect, adminOnly, async (req, res) => {
     } else if (targetType === 'user' && USER_ACTIONS.includes(action)) {
       const user = await User.findById(targetId);
       if (!user || user.role === 'admin') return res.status(404).json({ message: 'Student not found.' });
+      if (user.staffRoles?.length && req.user.role !== 'admin') {
+        return res.status(403).json({ message: 'Only admins can pause staff members.' });
+      }
       if (action === 'mute') {
         const days = Math.min(Math.max(Number.parseInt(req.body.days, 10) || 1, 1), 30);
         user.forumMutedUntil = new Date(Date.now() + days * 86400000);

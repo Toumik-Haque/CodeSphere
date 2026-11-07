@@ -1,6 +1,7 @@
 const express = require('express');
 const User = require('../models/User');
-const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { protect, adminOnly, STAFF_ROLES } = require('../middleware/authMiddleware');
+const { notify } = require('../utils/notify');
 
 const router = express.Router();
 
@@ -51,6 +52,34 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
       success: false,
       message: 'Unable to fetch users.',
     });
+  }
+});
+
+// PUT /api/users/admin/:id/staff-roles { staffRoles: [] }: admins grant or
+// revoke staff roles (moderator, news-editor, challenge-editor).
+router.put('/admin/:id/staff-roles', protect, adminOnly, async (req, res) => {
+  try {
+    const roles = [...new Set(Array.isArray(req.body.staffRoles) ? req.body.staffRoles : [])]
+      .filter((r) => STAFF_ROLES.includes(r));
+    const user = await User.findOne({ _id: req.params.id, role: 'user' });
+    if (!user) return res.status(404).json({ message: 'Student not found.' });
+
+    const added = roles.filter((r) => !user.staffRoles.includes(r));
+    user.staffRoles = roles;
+    await user.save();
+
+    if (added.length) {
+      await notify(user._id, {
+        type: 'system',
+        title: `You're now a CodeSphere ${added.join(' & ')}. Thank you for helping!`,
+        body: 'Your staff tools are in the menu under your name.',
+        link: '/',
+      });
+    }
+    return res.json({ staffRoles: user.staffRoles });
+  } catch (error) {
+    console.error('Staff roles error:', error);
+    return res.status(500).json({ message: 'Could not update staff roles.' });
   }
 });
 
