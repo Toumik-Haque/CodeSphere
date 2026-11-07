@@ -252,6 +252,11 @@ router.post('/:id/team/respond', protect, async (req, res) => {
     const already = project.contributors.some((c) => String(c.user) === String(req.user._id) || c.name.toLowerCase() === req.user.name.toLowerCase());
     if (!already) project.contributors.push({ name: req.user.name, role: me.role, user: req.user._id });
     else project.contributors.forEach((c) => { if (c.name.toLowerCase() === req.user.name.toLowerCase()) c.user = req.user._id; });
+    // A team project needs the owner credited too (manual projects start with no credits).
+    const owner = await User.findById(project.owner).select('name');
+    if (owner && !project.contributors.some((c) => String(c.user) === String(owner._id) || c.name.toLowerCase() === owner.name.toLowerCase())) {
+      project.contributors.unshift({ name: owner.name, role: 'Owner', user: owner._id });
+    }
   } else {
     project.members = project.members.filter((m) => m !== me);
   }
