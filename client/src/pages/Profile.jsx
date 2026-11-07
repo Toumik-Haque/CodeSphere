@@ -10,6 +10,7 @@ import * as pdfjsLib from 'pdfjs-dist';
 import pdfWorker from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import ProfileBadges from '../components/ProfileBadges';
 import BadgeStrip from '../components/BadgeStrip';
+import { parseResumeText as parseResume, itemsToLines } from '../lib/resumeParser';
 
 pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorker;
 
@@ -186,105 +187,7 @@ const sectionConfig = [
    RESUME TEXT EXTRACTION & PARSING
 ========================================= */
 
-const normalizeText = (text) =>
-  text
-    .replace(/\r/g, '\n')
-    .replace(/[ \t]+/g, ' ')
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
-
-const findFirstMatch = (text, patterns) => {
-  for (const pattern of patterns) {
-    const match = text.match(pattern);
-    if (match?.[1]) return match[1].trim();
-  }
-  return '';
-};
-
-const parseResumeText = (rawText) => {
-  const text = normalizeText(rawText);
-  const lines = text.split('\n').map((line) => line.trim()).filter(Boolean);
-
-  const phoneMatches = text.match(
-    /(?:\+?\d{1,3}[\s.-]?)?(?:\d[\s.-]?){9,12}/g
-  ) || [];
-
-  const phone = phoneMatches
-    .map((value) => value.replace(/\D/g, ''))
-    .find((value) => value.length >= 10 && value.length <= 13) || '';
-
-  const ignoredNameLines = [
-    'resume', 'curriculum vitae', 'cv', 'profile',
-    'contact', 'career objective', 'objective',
-  ];
-
-  const name = lines.find((line) => {
-    const clean = line.replace(/[^a-zA-Z .'-]/g, '').trim();
-    return (
-      clean.length >= 4 &&
-      clean.length <= 55 &&
-      clean.split(/\s+/).length >= 2 &&
-      !ignoredNameLines.includes(clean.toLowerCase()) &&
-      !clean.includes('@')
-    );
-  }) || '';
-
-  const collegeName = lines.find((line) =>
-    /\b(university|college|institute|institution)\b/i.test(line)
-  ) || '';
-
-  const degree = findFirstMatch(text, [
-    /\b(B\.?\s?Tech(?:nology)?\.?)\b/i,
-    /\b(B\.?\s?E\.?)\b/i,
-    /\b(B\.?\s?C\.?\s?A\.?)\b/i,
-    /\b(B\.?\s?Sc\.?)\b/i,
-    /\b(M\.?\s?Tech(?:nology)?\.?)\b/i,
-    /\b(M\.?\s?C\.?\s?A\.?)\b/i,
-    /\b(M\.?\s?Sc\.?)\b/i,
-    /\b(Diploma)\b/i,
-  ]);
-
-  const department = departments.find((item) => {
-    if (item === 'Other') return false;
-    const keywords = item.toLowerCase().split(/\s+/);
-    return keywords.every((word) => text.toLowerCase().includes(word));
-  }) || '';
-
-  const graduationYear = findFirstMatch(text, [
-    /(?:expected\s+)?(?:year\s+of\s+)?graduation\s*[:-]?\s*((?:20)\d{2})/i,
-    /(?:passing|completion)\s+year\s*[:-]?\s*((?:20)\d{2})/i,
-  ]);
-
-  const currentYear = findFirstMatch(text, [
-    /\b(1st|2nd|3rd|4th)\s+year\b/i,
-  ]);
-
-  const yearOfStudy = currentYear
-    ? `${currentYear.charAt(0).toUpperCase()}${currentYear.slice(1)}`
-    : '';
-
-  const detectedSkills = skillOptions.filter((skill) => {
-    const escaped = skill.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    return new RegExp(`(^|[^a-zA-Z0-9])${escaped}([^a-zA-Z0-9]|$)`, 'i').test(text);
-  });
-
-  const extracted = {
-    name: name.replace(/\s{2,}/g, ' ').trim(),
-    phone,
-    collegeName,
-    degree,
-    department,
-    yearOfStudy,
-    graduationYear,
-    skills: detectedSkills,
-  };
-
-  return Object.fromEntries(
-    Object.entries(extracted).filter(([, value]) =>
-      Array.isArray(value) ? value.length > 0 : Boolean(value)
-    )
-  );
-};
+// Parsing lives in lib/resumeParser.js (sections, college, projects, links).
 
 const renderPdfPageToCanvas = async (page) => {
   const viewport = page.getViewport({ scale: 1.6 });
@@ -337,9 +240,8 @@ const extractResumeText = async (file, onProgress) => {
       const page = await pdf.getPage(pageNumber);
       const content = await page.getTextContent();
 
-      extractedText += content.items
-        .map((item) => item.str || '')
-        .join(' ') + '\n';
+      // Rebuild real lines from text positions (not one long line per page).
+      extractedText += `${itemsToLines(content.items)}\n`;
 
       onProgress?.({
         stage: 'Reading PDF',
@@ -554,7 +456,7 @@ function ResumeUpload({ profile, onApply, showToast }) {
         throw new Error('No readable text was found in this resume.');
       }
 
-      const extracted = parseResumeText(text);
+      const extracted = parseResume(text, { departments, skillOptions });
 
       if (Object.keys(extracted).length === 0) {
         throw new Error(
@@ -564,11 +466,16 @@ function ResumeUpload({ profile, onApply, showToast }) {
 
       setDraft(extracted);
 
-      setSelectedFields(
-        Object.fromEntries(
-          Object.keys(extracted).map((key) => [key, true])
-        )
-      );
+      // Projects and coding profiles are picked one by one.
+      setSelectedFields({
+        ...Object.fromEntries(
+          Object.keys(extracted)
+            .filter((key) => key !== 'projects' && key !== 'codingProfiles')
+            .map((key) => [key, true])
+        ),
+        ...Object.fromEntries((extracted.projects || []).map((_, i) => [`project:${i}`, true])),
+        ...Object.fromEntries((extracted.codingProfiles || []).map((_, i) => [`profile:${i}`, true])),
+      });
 
       showToast('Resume processed. Review the extracted information.', 'success');
     } catch (error) {
@@ -625,10 +532,26 @@ function ResumeUpload({ profile, onApply, showToast }) {
           }));
 
         updates.skills = [...existingSkills, ...newSkills];
-      } else {
+      } else if (!field.includes(':')) {
         updates[field] = draft[field];
       }
     });
+
+    // Projects: add the ticked ones whose title isn't on the profile yet.
+    const pickedProjects = (draft.projects || []).filter((_, i) => selectedFields[`project:${i}`]);
+    if (pickedProjects.length) {
+      const existing = profile.projects || [];
+      const titles = new Set(existing.map((p) => (p.title || '').toLowerCase().trim()));
+      updates.projects = [...existing, ...pickedProjects.filter((p) => !titles.has(p.title.toLowerCase().trim()))];
+    }
+
+    // Coding profiles: one per platform.
+    const pickedProfiles = (draft.codingProfiles || []).filter((_, i) => selectedFields[`profile:${i}`]);
+    if (pickedProfiles.length) {
+      const existing = profile.codingProfiles || [];
+      const platforms = new Set(existing.map((p) => p.platform));
+      updates.codingProfiles = [...existing, ...pickedProfiles.filter((p) => !platforms.has(p.platform))];
+    }
 
     onApply(updates);
     setDraft(null);
@@ -815,6 +738,50 @@ function ResumeUpload({ profile, onApply, showToast }) {
                     <span key={skill}>{skill}</span>
                   ))}
                 </div>
+              </div>
+            )}
+
+            {Array.isArray(draft.projects) && draft.projects.length > 0 && (
+              <div className="resume-review-list">
+                <h4><i className="bi bi-kanban" /> Projects ({draft.projects.length})</h4>
+                {draft.projects.map((project, i) => (
+                  <label key={`${project.title}-${i}`} className="resume-review-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedFields[`project:${i}`])}
+                      onChange={() => toggleField(`project:${i}`)}
+                    />
+                    <span>
+                      <strong>{project.title}</strong>
+                      <small>
+                        {[project.type, project.technologies].filter(Boolean).join(' · ')}
+                        {project.github && <> · <i className="bi bi-github" /> repo</>}
+                        {project.demo && <> · <i className="bi bi-box-arrow-up-right" /> demo</>}
+                      </small>
+                      {project.description && <em>{project.description}</em>}
+                    </span>
+                  </label>
+                ))}
+                <p className="resume-review-hint">You can edit each project in the Projects section after adding.</p>
+              </div>
+            )}
+
+            {Array.isArray(draft.codingProfiles) && draft.codingProfiles.length > 0 && (
+              <div className="resume-review-list">
+                <h4><i className="bi bi-terminal" /> Coding profiles ({draft.codingProfiles.length})</h4>
+                {draft.codingProfiles.map((item, i) => (
+                  <label key={item.url} className="resume-review-item">
+                    <input
+                      type="checkbox"
+                      checked={Boolean(selectedFields[`profile:${i}`])}
+                      onChange={() => toggleField(`profile:${i}`)}
+                    />
+                    <span>
+                      <strong>{item.platform}</strong>
+                      <small>{item.url}</small>
+                    </span>
+                  </label>
+                ))}
               </div>
             )}
           </div>

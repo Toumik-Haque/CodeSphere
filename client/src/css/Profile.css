@@ -1661,3 +1661,23 @@
     width: 100%;
   }
 }
+
+/* Resume review: projects and coding profiles */
+.resume-review-list { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 8px; }
+.resume-review-list h4 { display: flex; align-items: center; gap: 8px; margin: 6px 0 0; color: var(--navy, #10243A); font-size: .95rem; font-weight: 800; }
+.resume-review-item {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 10px 12px;
+  border: 1px solid rgba(16, 36, 58, .1);
+  border-radius: 12px;
+  background: #fff;
+  cursor: pointer;
+}
+.resume-review-item input { margin-top: 4px; }
+.resume-review-item > span { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.resume-review-item strong { color: var(--navy, #10243A); }
+.resume-review-item small { color: #617386; overflow-wrap: anywhere; }
+.resume-review-item em { color: #33475B; font-size: .85rem; font-style: normal; display: -webkit-box; overflow: hidden; -webkit-box-orient: vertical; -webkit-line-clamp: 2; }
+.resume-review-hint { margin: 0; color: #617386; font-size: .8rem; }
