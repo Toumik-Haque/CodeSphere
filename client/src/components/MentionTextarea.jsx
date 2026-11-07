@@ -41,7 +41,8 @@ export default function MentionTextarea({ value, onChange, ...props }) {
   const pick = (person) => {
     const el = ref.current;
     const caret = el.selectionStart;
-    const token = `@[${person.name}](${person.id}) `;
+    const label = person.name.replace(/[[\]()\n]/g, '').trim() || 'user';
+    const token = `@[${label}](${person.id}) `;
     const next = value.slice(0, query.start) + token + value.slice(caret);
     onChange(next);
     setQuery(null);
