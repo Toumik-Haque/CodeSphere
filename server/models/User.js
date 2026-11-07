@@ -58,6 +58,9 @@ const userSchema = new mongoose.Schema(
     // Profile photo (ImageKit) shown in the forum and leaderboards.
     avatarUrl: { type: String, default: '' },
     avatarFileId: { type: String, default: '' },
+    // Profile banner image (ImageKit).
+    bannerUrl: { type: String, default: '' },
+    bannerFileId: { type: String, default: '' },
     // Saved resume (PDF or image on ImageKit), visible only to its owner.
     resume: {
       url: { type: String, default: '' },

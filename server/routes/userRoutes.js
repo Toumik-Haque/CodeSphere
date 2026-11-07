@@ -92,6 +92,41 @@ router.delete('/me/resume', protect, async (req, res) => {
   res.json({ resume: null });
 });
 
+// ---------- Profile banner (bigger images allowed) ----------
+
+const bannerUploadMw = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
+  fileFilter: (req, file, cb) => (['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)
+    ? cb(null, true)
+    : cb(new Error('The banner must be a JPEG, PNG, WebP or GIF image.'))),
+});
+
+// PUT /api/users/me/banner  (multipart field "image", max 5 MB)
+router.put('/me/banner', protect, (req, res, next) => bannerUploadMw.single('image')(req, res, (error) => {
+  if (error) return res.status(400).json({ message: error.code === 'LIMIT_FILE_SIZE' ? 'The banner must be 5 MB or smaller.' : error.message });
+  if (!req.file) return res.status(400).json({ message: 'Choose an image.' });
+  return next();
+}), async (req, res) => {
+  try {
+    const stored = await storeImage(req.file.buffer, req.user._id, 'banners');
+    const old = req.user.bannerFileId;
+    await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: stored.url, bannerFileId: stored.fileId } });
+    if (old) await deleteImages([{ fileId: old }]);
+    res.json({ bannerUrl: stored.url });
+  } catch (error) {
+    res.status(error.status || 500).json({ message: error.status ? error.message : 'Could not upload the banner.' });
+  }
+});
+
+// DELETE /api/users/me/banner
+router.delete('/me/banner', protect, async (req, res) => {
+  const old = req.user.bannerFileId;
+  await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: '', bannerFileId: '' } });
+  if (old) await deleteImages([{ fileId: old }]);
+  res.json({ bannerUrl: '' });
+});
+
 // DELETE /api/users/me/avatar
 router.delete('/me/avatar', protect, async (req, res) => {
   const old = req.user.avatarFileId;

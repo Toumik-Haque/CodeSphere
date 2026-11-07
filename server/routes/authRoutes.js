@@ -952,6 +952,7 @@ router.get('/me', protect, async (req, res) => {
       role: req.user.role,
       staffRoles: req.user.staffRoles || [],
       avatarUrl: req.user.avatarUrl || '',
+      bannerUrl: req.user.bannerUrl || '',
       createdAt: req.user.createdAt,
     },
   });

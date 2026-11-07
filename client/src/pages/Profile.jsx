@@ -1172,7 +1172,7 @@ export default function Profile({ preview = false }) {
   );
 
   const [bannerImage, setBannerImage] = useState(() =>
-    preview ? '' : readImage(bannerStorageKey)
+    preview ? '' : user?.bannerUrl || readImage(bannerStorageKey)
   );
 
   const photoInputRef = useRef(null);
@@ -1236,6 +1236,32 @@ export default function Profile({ preview = false }) {
     return avatarUrl;
   };
 
+  const uploadBanner = async (fileOrBlob) => {
+    const form = new FormData();
+    form.append('image', fileOrBlob, fileOrBlob.name || 'banner.png');
+    const { bannerUrl } = await apiRequest('/users/me/banner', { method: 'PUT', body: form });
+    try {
+      localStorage.setItem(bannerStorageKey, bannerUrl);
+    } catch {
+      /* the server copy is what matters */
+    }
+    updateUser({ bannerUrl });
+    return bannerUrl;
+  };
+
+  // One-time move: a banner saved only in this browser goes to the server.
+  useEffect(() => {
+    if (preview || user?.bannerUrl) return;
+    const saved = readImage(bannerStorageKey);
+    if (!saved.startsWith('data:image/')) return;
+    fetch(saved)
+      .then((r) => r.blob())
+      .then((blob) => uploadBanner(new File([blob], 'banner.png', { type: blob.type || 'image/png' })))
+      .then((url) => setBannerImage(url))
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [preview, user?.bannerUrl, bannerStorageKey]);
+
   // One-time move: photos saved only in this browser go to the server.
   useEffect(() => {
     if (preview || user?.avatarUrl) return;
@@ -1259,17 +1285,20 @@ export default function Profile({ preview = false }) {
       return;
     }
 
-    if (file.size > IMAGE_SIZE_LIMIT) {
-      showToast('Please select an image smaller than 1 MB.', 'warning');
+    // Photo and banner are stored on the server (2 MB / 5 MB); the
+    // in-browser preview mode keeps the old small limit.
+    const isBanner = storageKey === bannerStorageKey;
+    const limit = preview ? IMAGE_SIZE_LIMIT : isBanner ? 5 * 1024 * 1024 : 2 * 1024 * 1024;
+    if (file.size > limit) {
+      showToast(`Please select an image smaller than ${Math.round(limit / 1024 / 1024)} MB.`, 'warning');
       event.target.value = '';
       return;
     }
 
     try {
-      // The profile photo is stored on the server so others (forum,
-      // leaderboard) can see it; the banner stays in this browser.
-      if (!preview && storageKey === photoStorageKey) {
-        const url = await uploadAvatar(file);
+      if (!preview) {
+        showToast(`Uploading ${imageLabel.toLowerCase()}…`);
+        const url = isBanner ? await uploadBanner(file) : await uploadAvatar(file);
         setImage(url);
         setError('');
         showToast(`${imageLabel} updated successfully!`);
