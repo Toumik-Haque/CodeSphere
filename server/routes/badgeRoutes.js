@@ -9,6 +9,7 @@ const {
   LEVELS,
   MAX_SHOWCASE,
   badgesById,
+  badgeLeaderboard,
   evaluateBadges,
   syncBadges,
   publicBadge,
@@ -26,6 +27,17 @@ router.get('/catalog', (req, res) => {
     badges: BADGES.map((badge) => ({ ...publicBadge(badge), type: badge.type })),
     maxShowcase: MAX_SHOWCASE,
   });
+});
+
+// GET /api/badges/leaderboard: top badge earners by XP, with the member's rank.
+router.get('/leaderboard', protect, async (req, res) => {
+  try {
+    const result = await badgeLeaderboard(req.user._id, 10);
+    return res.json(result);
+  } catch (error) {
+    console.error('Badges leaderboard error:', error);
+    return res.status(500).json({ message: 'Could not load the badge leaderboard.' });
+  }
 });
 
 // GET /api/badges/me: my stats, level, all badges with progress, showcase and

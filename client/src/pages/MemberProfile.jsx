@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import '../css/MemberProfile.css';
@@ -37,15 +37,25 @@ function TagList({ items }) {
   );
 }
 
-export default function MemberProfile() {
-  const { username } = useParams();
+export default function MemberProfile({
+  profileUsername,
+  embedded = false,
+  onReturn,
+}) {
+  const { username: routeUsername } = useParams();
+  const location = useLocation();
+  const username = profileUsername || routeUsername;
 
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [shareMessage, setShareMessage] = useState('');
+  const profileMatchesRoute =
+    member?.username?.toLowerCase() === username?.toLowerCase();
 
   useEffect(() => {
     let active = true;
+    const controller = new AbortController();
 
     const fetchMember = async () => {
       try {
@@ -54,7 +64,8 @@ export default function MemberProfile() {
         setMember(null);
 
         const response = await apiRequest(
-          `/users/profile/${encodeURIComponent(username)}`
+          `/users/profile/${encodeURIComponent(username)}`,
+          { signal: controller.signal }
         );
 
         if (active) {
@@ -75,6 +86,7 @@ export default function MemberProfile() {
 
     return () => {
       active = false;
+      controller.abort();
     };
   }, [username]);
 
@@ -88,16 +100,60 @@ export default function MemberProfile() {
     return safeUrl;
   };
 
+  const shareProfile = async () => {
+    const profileUrl = `${window.location.origin}/user/${encodeURIComponent(username)}`;
+
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `${member.name} on CodeSphere`,
+          text: `View ${member.name}'s CodeSphere profile`,
+          url: profileUrl,
+        });
+        setShareMessage('Profile shared.');
+      } else if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(profileUrl);
+        setShareMessage('Profile link copied.');
+      } else {
+        window.prompt('Copy this profile link:', profileUrl);
+        setShareMessage('Copy the profile link to share it.');
+      }
+    } catch (shareError) {
+      if (shareError.name !== 'AbortError') {
+        setShareMessage('Unable to share this profile. Please try again.');
+      }
+    }
+  };
+
   return (
-    <div className="member-profile-page">
-      <Navbar />
+    <div className={`member-profile-page${embedded ? ' dashboard-member-profile-embedded' : ''}`}>
+      {!embedded && <Navbar />}
 
       <main className="member-profile-container">
-        <Link to="/dashboard" className="member-profile-back">
-          ← Back to Dashboard
-        </Link>
+        {!embedded && (
+          <Link
+            to={
+              location.state?.from === '/user/discover'
+                ? '/user/discover'
+                : '/user'
+            }
+            className="member-profile-back"
+          >
+            <i
+              className={`bi ${
+                location.state?.from === '/user/discover'
+                  ? 'bi-arrow-left'
+                  : 'bi-grid-1x2'
+              }`}
+              aria-hidden="true"
+            />
+            {location.state?.from === '/user/discover'
+              ? 'Back to Search'
+              : 'Back to Dashboard'}
+          </Link>
+        )}
 
-        {loading ? (
+        {loading || (!error && !profileMatchesRoute) ? (
           <div className="member-profile-state">
             <div className="member-profile-spinner" />
             <p>Loading member profile...</p>
@@ -110,15 +166,32 @@ export default function MemberProfile() {
               {error ||
                 'This profile does not exist or is not available to you.'}
             </p>
-            <Link to="/dashboard" className="member-profile-home-button">
-              Go to Dashboard
-            </Link>
+            {embedded && onReturn ? (
+              <button
+                type="button"
+                className="member-profile-home-button"
+                onClick={onReturn}
+              >
+                Back to my profile
+              </button>
+            ) : (
+              <Link
+                to={
+                  location.state?.from === '/user/discover'
+                    ? '/user/discover'
+                    : '/user'
+                }
+                className="member-profile-home-button"
+              >
+                {location.state?.from === '/user/discover'
+                  ? 'Back to Search'
+                  : 'Go to Dashboard'}
+              </Link>
+            )}
           </div>
         ) : (
           <>
             <section className="member-profile-card">
-              <div className="member-profile-cover" />
-
               <div className="member-profile-header">
                 <div className="member-profile-avatar">
                   {member.profileImage?.url ? (
@@ -134,6 +207,38 @@ export default function MemberProfile() {
                 <div className="member-profile-identity">
                   <h1>{member.name}</h1>
                   <p className="member-profile-badge">@{member.username}</p>
+                  {(member.collegeName || member.degree) && (
+                    <div className="member-profile-meta">
+                      {member.collegeName && (
+                        <span>
+                          <i className="bi bi-mortarboard" aria-hidden="true" />
+                          {member.collegeName}
+                        </span>
+                      )}
+                      {member.degree && (
+                        <span>
+                          <i className="bi bi-book" aria-hidden="true" />
+                          {member.degree}
+                        </span>
+                      )}
+                    </div>
+                  )}
+                </div>
+                <div className="member-profile-share">
+                  <button
+                    className="member-profile-share-button"
+                    type="button"
+                    onClick={shareProfile}
+                    aria-label={`Share ${member.name}'s public profile`}
+                  >
+                    <i className="bi bi-share" aria-hidden="true" />
+                    <span>Share profile</span>
+                  </button>
+                  {shareMessage && (
+                    <span className="member-profile-share-message" role="status">
+                      {shareMessage}
+                    </span>
+                  )}
                 </div>
               </div>
 

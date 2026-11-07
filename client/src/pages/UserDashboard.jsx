@@ -1,6 +1,6 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Link, NavLink, Navigate, useLocation } from 'react-router-dom';
+import { Link, NavLink, Navigate, useLocation, useParams } from 'react-router-dom';
 
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
@@ -8,23 +8,39 @@ import Navbar from '../components/Navbar';
 import logo from '../assets/logo.svg';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
 import ProfileBadges from '../components/ProfileBadges';
+import DashboardDiscover from '../components/DashboardDiscover';
 import Profile from './Profile';
 import { calculateProfileCompletion } from '../lib/profileCompletion';
 import '../css/UserDashboard.css';
 
-const navigation = [
-  { label: 'Overview', path: '/dashboard/overview', icon: 'bi-grid-1x2' },
-  { label: 'My Badges', path: '/dashboard/milestone', icon: 'bi-award' },
-  { label: 'My Profile', path: '/dashboard/profile', icon: 'bi-person-lines-fill' },
-  { label: 'My Events', path: '/dashboard/activities', icon: 'bi-calendar-event' },
+const baseNavigation = [
+  { label: 'Overview', path: '/user/overview', icon: 'bi-grid-1x2' },
+  { label: 'My Badges', path: '/user/milestone', icon: 'bi-award' },
+  { label: 'My Profile', path: '/user/profile', icon: 'bi-person-lines-fill' },
+  { label: 'My Events', path: '/user/activities', icon: 'bi-calendar-event' },
 ];
 
-function DashboardNavigationLink({ item }) {
+function getNavigation(user) {
+  return [
+    ...baseNavigation,
+    {
+      label: 'Search',
+      path: user?.username
+        ? `/user/${encodeURIComponent(user.username)}`
+        : '/user/discover',
+      icon: 'bi-search',
+    },
+  ];
+}
+
+function DashboardNavigationLink({ item, forceActive = false }) {
   return (
     <NavLink
       to={item.path}
       end
-      className={({ isActive }) => `user-dashboard-nav-item ${isActive ? 'active' : ''}`}
+      className={({ isActive }) =>
+        `user-dashboard-nav-item ${isActive || forceActive ? 'active' : ''}`
+      }
     >
       <i className={`bi ${item.icon}`} aria-hidden="true" />
       <span>{item.label}</span>
@@ -109,8 +125,6 @@ function DashboardOverviewSection({ user }) {
     ].filter((step) => !step.complete).slice(0, 3),
     [profile]
   );
-  const firstName = profile.name?.trim()?.split(/\s+/)[0] || 'there';
-
   return (
     <>
       <header className="dashboard-page-heading">
@@ -150,16 +164,7 @@ function DashboardOverviewSection({ user }) {
           <DashboardProfileSidebar user={profile} completion={completion} />
 
           <div className="student-profile-main dashboard-overview-content">
-            <section className="profile-welcome-card">
-              <div>
-                <span className="profile-welcome-label">YOUR CODESPHERE JOURNEY</span>
-                <h2>Welcome, {firstName}!</h2>
-                <p>See how far you've come and find your next step in the community.</p>
-              </div>
-              <div className="profile-welcome-icon">
-                <i className="bi bi-stars" />
-              </div>
-            </section>
+            <ProfileBadges compact completion={completion} />
 
             {nextProfileSteps.length > 0 && (
               <section className="profile-next-steps">
@@ -169,7 +174,7 @@ function DashboardOverviewSection({ user }) {
                     <h2>Build your community profile</h2>
                     <p>A few details help people discover your skills and work.</p>
                   </div>
-                  <Link to="/dashboard/profile" className="profile-next-steps-link">
+                  <Link to="/user/profile" className="profile-next-steps-link">
                     Continue profile <i className="bi bi-arrow-right" />
                   </Link>
                 </div>
@@ -183,8 +188,6 @@ function DashboardOverviewSection({ user }) {
                 </ul>
               </section>
             )}
-
-            <ProfileBadges compact completion={completion} />
           </div>
         </div>
       )}
@@ -464,23 +467,34 @@ function EventRegistrationsSection() {
 export default function UserDashboard() {
   const { user } = useAuth();
   const location = useLocation();
+  const { username: routeUsername } = useParams();
 
-  const pathname = location.pathname.replace(/\/+$/, '') || '/dashboard';
+  const pathname = location.pathname.replace(/\/+$/, '') || '/user';
+  const navigation = getNavigation(user);
+  const isDashboardMemberProfile = Boolean(
+    routeUsername &&
+    !navigation.some((item) => item.path === pathname)
+  );
+  const dashboardMemberUsername = isDashboardMemberProfile ? routeUsername : '';
 
-  if (pathname === '/dashboard') {
-    return <Navigate to="/dashboard/overview" replace />;
+  if (pathname === '/user') {
+    return <Navigate to="/user/overview" replace />;
   }
 
-  if (pathname === '/dashboard/projects' || pathname === '/dashboard/skills') {
-    return <Navigate to="/dashboard/profile" replace />;
+  if (pathname === '/user/projects' || pathname === '/user/skills') {
+    return <Navigate to="/user/profile" replace />;
   }
 
-  if (pathname === '/dashboard/badges') {
-    return <Navigate to="/dashboard/milestone" replace />;
+  if (pathname === '/user/badges') {
+    return <Navigate to="/user/milestone" replace />;
   }
 
-  if (pathname === '/dashboard/settings') {
-    return <Navigate to="/dashboard/profile" replace />;
+  if (pathname === '/user/settings') {
+    return <Navigate to="/user/profile" replace />;
+  }
+
+  if (pathname === '/user/discover' && user?.username) {
+    return <Navigate to={`/user/${encodeURIComponent(user.username)}`} replace />;
   }
 
   return (
@@ -497,7 +511,11 @@ export default function UserDashboard() {
 
           <nav className="user-dashboard-navigation" aria-label="Dashboard navigation">
             {navigation.map((item) => (
-              <DashboardNavigationLink key={item.path} item={item} />
+              <DashboardNavigationLink
+                key={item.path}
+                item={item}
+                forceActive={isDashboardMemberProfile && item.label === 'Search'}
+              />
             ))}
           </nav>
 
@@ -520,16 +538,21 @@ export default function UserDashboard() {
 
         <div className="user-dashboard-main">
           <div className="user-dashboard-container">
-            {pathname === '/dashboard/overview' ? (
+            {pathname === '/user/overview' ? (
               <DashboardOverviewSection user={user} />
-            ) : pathname === '/dashboard/milestone' ? (
+            ) : pathname === '/user/milestone' ? (
               <ProfileSection view="milestone" />
-            ) : pathname === '/dashboard/profile' ? (
+            ) : pathname === '/user/profile' ? (
               <ProfileSection view="profile" />
-            ) : pathname === '/dashboard/activities' ? (
+            ) : pathname === '/user/activities' ? (
               <EventRegistrationsSection />
+            ) : user?.username &&
+              routeUsername?.toLowerCase() === user.username.toLowerCase() ? (
+              <DashboardDiscover user={user} />
+            ) : isDashboardMemberProfile ? (
+              <DashboardDiscover user={user} profileUsername={dashboardMemberUsername} />
             ) : (
-              <Navigate to="/dashboard/profile" replace />
+              <Navigate to="/user/profile" replace />
             )}
           </div>
         </div>
@@ -540,7 +563,13 @@ export default function UserDashboard() {
               key={item.path}
               to={item.path}
               end
-              className={({ isActive }) => `user-dashboard-mobile-item ${isActive ? 'active' : ''}`}
+              className={({ isActive }) =>
+                `user-dashboard-mobile-item ${
+                  isActive || (isDashboardMemberProfile && item.label === 'Search')
+                    ? 'active'
+                    : ''
+                }`
+              }
             >
               <i className={`bi ${item.icon}`} aria-hidden="true" />
               <span>{item.label.replace('My ', '')}</span>

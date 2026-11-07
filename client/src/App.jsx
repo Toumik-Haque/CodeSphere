@@ -43,7 +43,6 @@ import News from './pages/News';
 import AdminNews from './pages/AdminNews';
 
 import UserDashboard from './pages/UserDashboard';
-import MemberProfile from './pages/MemberProfile';
 
 function HomePage() {
   return (
@@ -75,7 +74,7 @@ function ProtectedRoute({ children, adminOnly = false, anyRole = false }) {
   }
 
   if (adminOnly && user.role !== 'admin') {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/user" replace />;
   }
 
   if (!adminOnly && !anyRole && user.role === 'admin') {
@@ -101,6 +100,19 @@ function ScrollToTop() {
 }
 
 function AppRoutes() {
+  const userPages = [
+    '/user',
+    '/user/overview',
+    '/user/milestone',
+    '/user/profile',
+    '/user/activities',
+    '/user/discover',
+    '/user/projects',
+    '/user/skills',
+    '/user/badges',
+    '/user/settings',
+  ];
+
   return (
     <Routes>
       {/* Public pages */}
@@ -138,27 +150,36 @@ function AppRoutes() {
         path="/profile"
         element={
           <ProtectedRoute>
-            <Navigate to="/dashboard/profile" replace />
+            <Navigate to="/user/profile" replace />
           </ProtectedRoute>
         }
       />
 
-      {/* Protected user dashboard */}
+      {/* Protected dashboard pages and member profiles */}
+      {userPages.map((path) => (
+        <Route
+          key={path}
+          path={path}
+          element={
+            <ProtectedRoute>
+              <UserDashboard />
+            </ProtectedRoute>
+          }
+        />
+      ))}
       <Route
-        path="/dashboard/*"
+        path="/user/:username"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute anyRole>
             <UserDashboard />
           </ProtectedRoute>
         }
       />
-
-      {/* Protected member profiles */}
       <Route
-        path="/:username"
+        path="/user/*"
         element={
           <ProtectedRoute>
-            <MemberProfile />
+            <UserDashboard />
           </ProtectedRoute>
         }
       />

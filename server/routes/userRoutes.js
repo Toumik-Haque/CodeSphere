@@ -126,6 +126,53 @@ router.get('/admin/all', protect, adminOnly, async (req, res) => {
   }
 });
 
+// GET /api/users/search?q=term (search profiles visible to signed-in members)
+router.get('/search', protect, async (req, res) => {
+  try {
+    const search =
+      typeof req.query.q === 'string'
+        ? req.query.q.trim()
+        : '';
+
+    if (search.length < 2 || search.length > 60) {
+      return res.status(400).json({
+        success: false,
+        message: 'Search must be between 2 and 60 characters.',
+      });
+    }
+
+    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const regex = new RegExp(escapedSearch, 'i');
+    const users = await User.find({
+      role: 'user',
+      _id: { $ne: req.user._id },
+      profileVisibility: { $ne: 'private' },
+      username: { $type: 'string', $ne: '' },
+      $or: [
+        { name: regex },
+        { username: regex },
+        { collegeName: regex },
+      ],
+    })
+      .select('name username collegeName profileImage')
+      .sort({ name: 1, username: 1 })
+      .limit(12)
+      .lean();
+
+    return res.json({
+      success: true,
+      users,
+    });
+  } catch (error) {
+    console.error('Search members error:', error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to search members.',
+    });
+  }
+});
+
 // GET CURRENT USER PROFILE
 // GET /api/users/profile
 router.get('/profile', protect, async (req, res) => {
@@ -613,7 +660,7 @@ router.get('/profile/:username', protect, async (req, res) => {
     const isOwner =
       member._id.toString() === req.user._id.toString();
 
-    if (!isOwner && member.profileVisibility !== 'members') {
+    if (!isOwner && member.profileVisibility === 'private') {
       return res.status(404).json({
         success: false,
         message: 'Member profile not found.',
