@@ -62,6 +62,28 @@ const projectSchema = new Schema({
   screenshots: [media],
 
   github: githubSnapshot,
+  githubUnavailable: { type: Boolean, default: false }, // repo deleted / made private since import
+  // Verified with a connected GitHub account.
+  ownershipVerified: {
+    kind: { type: String, enum: ['owner', 'contributor'] },
+    login: String,
+    at: Date,
+  },
+  // Team workspace: the owner invites members; invited members accept.
+  members: [{
+    user: { type: ObjectId, ref: 'User', required: true },
+    role: { type: String, maxlength: 60, default: 'Member' },
+    status: { type: String, enum: ['invited', 'active'], default: 'invited' },
+    invitedAt: { type: Date, default: Date.now },
+    joinedAt: Date,
+  }],
+  tasks: [{
+    title: { type: String, required: true, maxlength: 140 },
+    status: { type: String, enum: ['todo', 'doing', 'done'], default: 'todo' },
+    assignee: { type: ObjectId, ref: 'User' },
+    createdBy: { type: ObjectId, ref: 'User' },
+    updatedAt: { type: Date, default: Date.now },
+  }],
   githubNodeId: { type: String, default: undefined }, // duplicate detection
 
   visibility: { type: String, enum: ['public', 'unlisted'], default: 'public' },
@@ -92,7 +114,33 @@ const updateSchema = new Schema({
   kind: { type: String, enum: ['built', 'learned', 'blocker', 'next'], default: 'built' },
   body: { type: String, required: true, maxlength: 2000 },
   link: { type: String, default: '' },
+  reactions: {
+    like: [{ type: ObjectId, ref: 'User' }],
+    celebrate: [{ type: ObjectId, ref: 'User' }],
+    helpful: [{ type: ObjectId, ref: 'User' }],
+  },
+  commentCount: { type: Number, default: 0 },
 }, { timestamps: true });
+
+// Comments on Build in Public updates (moderated: reported comments hide).
+const commentSchema = new Schema({
+  update: { type: ObjectId, ref: 'ProjectUpdate', required: true, index: true },
+  project: { type: ObjectId, ref: 'Project', required: true },
+  author: { type: ObjectId, ref: 'User', required: true },
+  body: { type: String, required: true, maxlength: 1000 },
+  reports: [{ type: ObjectId, ref: 'User' }],
+  hidden: { type: Boolean, default: false },
+}, { timestamps: true });
+
+// Funnel analytics (kept 1 year).
+const eventSchema = new Schema({
+  name: { type: String, required: true, index: true },
+  user: { type: ObjectId, ref: 'User' },
+  project: { type: ObjectId, ref: 'Project' },
+  guided: { type: ObjectId, ref: 'GuidedProject' },
+  meta: { type: Object, default: {} },
+  createdAt: { type: Date, default: Date.now, expires: 60 * 60 * 24 * 365 },
+});
 
 // ---------- Guided projects (authored by CodeSphere) ----------
 const guidedSchema = new Schema({
@@ -132,6 +180,8 @@ progressSchema.index({ user: 1, guided: 1 }, { unique: true });
 module.exports = {
   Project: mongoose.model('Project', projectSchema),
   ProjectUpdate: mongoose.model('ProjectUpdate', updateSchema),
+  ProjectComment: mongoose.model('ProjectComment', commentSchema),
+  ProjectEvent: mongoose.model('ProjectEvent', eventSchema),
   GuidedProject: mongoose.model('GuidedProject', guidedSchema),
   GuidedProgress: mongoose.model('GuidedProgress', progressSchema),
   PROJECT_CATEGORIES: CATEGORIES,

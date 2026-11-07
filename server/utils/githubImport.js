@@ -53,10 +53,16 @@ async function gh(path, { accept = 'application/vnd.github+json', text = false }
   const headers = { Accept: accept, 'User-Agent': 'CodeSphere-Project-Hub', 'X-GitHub-Api-Version': '2022-11-28' };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   let response;
-  try {
-    response = await fetch(`https://api.github.com${path}`, { headers, redirect: 'error', signal: AbortSignal.timeout(TIMEOUT) });
-  } catch {
-    throw new ImportError(503, 'GitHub is not responding right now. Your details are kept; try again in a minute.');
+  // One retry: GitHub occasionally returns a brief 5xx.
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    try {
+      response = await fetch(`https://api.github.com${path}`, { headers, redirect: 'error', signal: AbortSignal.timeout(TIMEOUT) });
+    } catch {
+      if (attempt === 1) throw new ImportError(503, 'GitHub is not responding right now. Your details are kept; try again in a minute.');
+      continue;
+    }
+    if (response.status < 500 || attempt === 1) break;
+    await new Promise((resolve) => setTimeout(resolve, 800));
   }
   if (response.status === 404) return { notFound: true };
   if (response.status === 403 || response.status === 429) {
@@ -146,4 +152,21 @@ async function fetchRepoPreview(input) {
   return result;
 }
 
-module.exports = { parseGithubUrl, fetchRepoPreview, readmePreview, ImportError };
+// Is `login` among the repository's contributors? (first 100, public data)
+async function isContributor(owner, repo, login) {
+  const r = await gh(`/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/contributors?per_page=100`);
+  if (r.notFound || !Array.isArray(r.body)) return false;
+  return r.body.some((c) => String(c.login || '').toLowerCase() === String(login).toLowerCase());
+}
+
+/** Refresh a stored repository; resolves null when it is gone or private. */
+async function refreshRepo(url) {
+  try {
+    return (await fetchRepoPreview(url)).repository;
+  } catch (error) {
+    if (error.status === 404) return null;
+    throw error;
+  }
+}
+
+module.exports = { parseGithubUrl, fetchRepoPreview, readmePreview, isContributor, refreshRepo, ImportError };

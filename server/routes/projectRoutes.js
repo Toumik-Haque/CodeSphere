@@ -9,6 +9,7 @@ const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
 const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
 const { fetchRepoPreview, ImportError } = require('../utils/githubImport');
+const { track } = require('../utils/projectEvents');
 
 const router = express.Router();
 
@@ -29,6 +30,9 @@ const list = (v, maxItems, maxLen) => (Array.isArray(v) ? v : String(v || '').sp
 const initials = (name = '') => name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase();
 const isReviewer = (user) => Boolean(user) && (user.role === 'admin' || hasStaffRole(user, 'project-reviewer'));
 const isOwner = (project, user) => Boolean(user) && String(project.owner?._id || project.owner) === String(user._id);
+const memberOf = (project, user) => (user ? (project.members || []).find((m) => String(m.user?._id || m.user) === String(user._id)) : null);
+// Owner or an accepted team member.
+const canWork = (project, user) => isOwner(project, user) || memberOf(project, user)?.status === 'active';
 
 async function uniqueSlug(title) {
   const base = clean(title, 60).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'project';
@@ -89,6 +93,15 @@ function detail(p, viewer) {
     visibility: p.visibility,
     lastSyncedAt: p.lastSyncedAt,
     guided: p.guided ? { slug: p.guided.slug, title: p.guided.title } : null,
+    ownershipVerified: p.ownershipVerified?.kind ? { kind: p.ownershipVerified.kind, login: p.ownershipVerified.login } : null,
+    team: (p.members || []).filter((m) => m.status === 'active' && m.user?.name).map((m) => ({ ...person(m.user), role: m.role })),
+    ...(canWork(p, viewer) || staff ? {
+      githubUnavailable: p.githubUnavailable,
+      invites: (p.members || []).filter((m) => m.status === 'invited' && m.user?.name).map((m) => ({ ...person(m.user), role: m.role })),
+      tasks: (p.tasks || []).map((t) => ({ id: String(t._id), title: t.title, status: t.status, assignee: t.assignee?.name ? person(t.assignee) : null })),
+    } : {}),
+    myInvite: memberOf(p, viewer)?.status === 'invited' ? { role: memberOf(p, viewer).role } : null,
+    isMember: canWork(p, viewer),
     ...(mine || staff ? { reviewNote: p.reviewNote, authorshipConfirmed: p.authorshipConfirmed, submittedAt: p.submittedAt } : {}),
     canEdit: mine,
     canReview: staff,
@@ -170,8 +183,10 @@ const reviewersOf = async () => (await User.find({ $or: [{ role: 'admin' }, { st
 
 // POST /api/projects/github/preview { url }
 router.post('/github/preview', protect, previewLimiter, async (req, res) => {
+  track('github_import_started', { user: req.user._id });
   try {
     const preview = await fetchRepoPreview(req.body?.url);
+    track('github_import_succeeded', { user: req.user._id, meta: { repo: preview.repository.url } });
     const existing = await Project.findOne({ githubNodeId: preview.repository.nodeId, status: { $ne: 'rejected' } }).select('slug title owner status').lean();
     if (existing) {
       const own = String(existing.owner) === String(req.user._id);
@@ -179,6 +194,7 @@ router.post('/github/preview', protect, previewLimiter, async (req, res) => {
     }
     res.json(preview);
   } catch (error) {
+    track('github_import_failed', { user: req.user._id, meta: { status: error.status || 500 } });
     importErrorResponse(res, error);
   }
 });
@@ -215,6 +231,7 @@ router.post('/admin/:id/review', protect, async (req, res) => {
   switch (decision) {
     case 'approve':
       project.status = 'published';
+      if (!project.publishedAt) track('project_published', { user: project.owner, project: project._id, meta: { hoursToPublish: project.submittedAt ? Math.round((now - project.submittedAt) / 36e5) : null } });
       project.publishedAt = project.publishedAt || now;
       title = `Your project "${project.title}" is live in the Showcase 🎉`;
       break;
@@ -298,7 +315,8 @@ router.get('/guided/:slug', optionalAuth, async (req, res) => {
 router.post('/guided/:slug/start', protect, async (req, res) => {
   const g = await GuidedProject.findOne({ slug: String(req.params.slug), status: 'published' });
   if (!g) return res.status(404).json({ message: 'Guided project not found.' });
-  await GuidedProgress.updateOne({ user: req.user._id, guided: g._id }, { $setOnInsert: { done: [] } }, { upsert: true });
+  const started = await GuidedProgress.updateOne({ user: req.user._id, guided: g._id }, { $setOnInsert: { done: [] } }, { upsert: true });
+  if (started.upsertedCount) track('guided_project_started', { user: req.user._id, guided: g._id });
   res.json({ started: true });
 });
 
@@ -313,7 +331,11 @@ router.put('/guided/:slug/progress', protect, writeLimiter, async (req, res) => 
     const [m, t] = task.split(':').map(Number);
     if (!g.milestones[m] || !g.milestones[m].tasks[t]) return res.status(400).json({ message: 'Unknown task.' });
     const key = `${m}:${t}`;
+    const milestoneWasDone = g.milestones[m].tasks.every((_, i) => progress.done.includes(`${m}:${i}`));
     progress.done = req.body.done ? [...new Set([...progress.done, key])] : progress.done.filter((k) => k !== key);
+    if (!milestoneWasDone && g.milestones[m].tasks.every((_, i) => progress.done.includes(`${m}:${i}`))) {
+      track('milestone_completed', { user: req.user._id, guided: g._id, meta: { milestone: m } });
+    }
   }
   if ('repoUrl' in (req.body || {})) {
     if (req.body.repoUrl && !safeUrl(req.body.repoUrl)) return res.status(400).json({ message: 'The repository link must start with https://' });
@@ -434,6 +456,7 @@ router.post('/', protect, writeLimiter, async (req, res) => {
       sourceType: snapshot ? 'github' : 'manual',
       ...(snapshot ? { github: snapshot, githubNodeId: snapshot.nodeId, lastSyncedAt: new Date() } : {}),
     });
+    track('project_draft_created', { user: req.user._id, project: project._id, meta: { source: project.sourceType } });
     res.status(201).json({ id: String(project._id), slug: project.slug });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ message: 'This repository is already listed on CodeSphere.' });
@@ -447,6 +470,8 @@ router.get('/edit/:id', protect, async (req, res) => {
   if (!project) return;
   await project.populate('owner', 'name avatarUrl');
   await project.populate('guided', 'slug title');
+  await project.populate('members.user', 'name avatarUrl');
+  await project.populate('tasks.assignee', 'name avatarUrl');
   res.json({ project: detail(project, req.user), problems: submissionProblems(project) });
 });
 
@@ -475,6 +500,7 @@ router.post('/:id/submit', protect, writeLimiter, async (req, res) => {
   project.status = 'pending_review';
   project.submittedAt = new Date();
   await project.save();
+  track('project_submitted', { user: req.user._id, project: project._id });
   await notify(await reviewersOf(), { type: 'project', title: `Project to review: ${project.title}`, body: `Submitted by ${req.user.name}`, link: '/admin/projects' });
   res.json({ status: project.status });
 });
@@ -517,8 +543,10 @@ router.post('/:id/github', protect, writeLimiter, async (req, res) => {
     const preview = await fetchRepoPreview(req.body?.url);
     const dup = await Project.findOne({ githubNodeId: preview.repository.nodeId, _id: { $ne: project._id }, status: { $ne: 'rejected' } }).select('slug').lean();
     if (dup) throw new ImportError(409, 'This repository is already listed on CodeSphere.', { existing: dup.slug });
+    if (project.githubNodeId !== preview.repository.nodeId) project.ownershipVerified = undefined;
     project.github = snapshotFrom(preview.repository);
     project.githubNodeId = preview.repository.nodeId;
+    project.githubUnavailable = false;
     project.lastSyncedAt = new Date();
     await project.save();
     res.json({ github: project.github });
@@ -580,15 +608,29 @@ router.delete('/:id/media/:mediaId', protect, async (req, res) => {
 
 router.get('/:id/updates', optionalAuth, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Project not found.' });
-  const project = await Project.findById(req.params.id).select('owner status');
-  if (!project || (project.status !== 'published' && !isOwner(project, req.user) && !isReviewer(req.user))) return res.status(404).json({ message: 'Project not found.' });
+  const project = await Project.findById(req.params.id).select('owner status members');
+  if (!project || (project.status !== 'published' && !canWork(project, req.user) && !isReviewer(req.user))) return res.status(404).json({ message: 'Project not found.' });
   const updates = await ProjectUpdate.find({ project: project._id }).populate('author', 'name avatarUrl').sort({ createdAt: -1 }).limit(50);
-  res.json({ updates: updates.map((u) => ({ id: String(u._id), kind: u.kind, body: u.body, link: u.link, createdAt: u.createdAt, author: person(u.author), mine: isOwner({ owner: u.author }, req.user) })) });
+  const me = req.user ? String(req.user._id) : '';
+  res.json({
+    updates: updates.map((u) => ({
+      id: String(u._id),
+      kind: u.kind,
+      body: u.body,
+      link: u.link,
+      createdAt: u.createdAt,
+      author: person(u.author),
+      mine: isOwner({ owner: u.author }, req.user),
+      commentCount: u.commentCount || 0,
+      reactions: Object.fromEntries(['like', 'celebrate', 'helpful'].map((k) => [k, { count: (u.reactions?.[k] || []).length, mine: (u.reactions?.[k] || []).some((id) => String(id) === me) }])),
+    })),
+  });
 });
 
 router.post('/:id/updates', protect, updateLimiter, async (req, res) => {
-  const project = await loadOwned(req, res);
-  if (!project) return;
+  if (!isId(req.params.id)) return res.status(404).json({ message: 'Project not found.' });
+  const project = await Project.findById(req.params.id);
+  if (!project || !canWork(project, req.user)) return res.status(404).json({ message: 'Project not found.' });
   const body = clean(req.body?.body, 2000);
   if (body.length < 5) return res.status(400).json({ message: 'Write a little more about your progress.' });
   const link = safeUrl(req.body?.link);
@@ -600,6 +642,7 @@ router.post('/:id/updates', protect, updateLimiter, async (req, res) => {
     body,
     link,
   });
+  track('project_update_created', { user: req.user._id, project: project._id });
   res.status(201).json({ id: String(update._id) });
 });
 
@@ -614,13 +657,16 @@ router.delete('/:id/updates/:updateId', protect, async (req, res) => {
 // ---------- Project page (public when published) ----------
 
 router.get('/:slug', optionalAuth, async (req, res) => {
-  const project = await Project.findOne({ slug: String(req.params.slug) }).populate('owner', 'name avatarUrl').populate('guided', 'slug title');
-  const allowed = project && (project.status === 'published' || isOwner(project, req.user) || isReviewer(req.user));
+  const project = await Project.findOne({ slug: String(req.params.slug) }).populate('owner', 'name avatarUrl').populate('guided', 'slug title')
+    .populate('members.user', 'name avatarUrl').populate('tasks.assignee', 'name avatarUrl');
+  const allowed = project && (project.status === 'published' || canWork(project, req.user) || memberOf(project, req.user) || isReviewer(req.user));
   if (!allowed) return res.status(404).json({ message: 'Project not found.' });
   if (project.status === 'published' && !isOwner(project, req.user)) {
     await Project.updateOne({ _id: project._id }, { $inc: { views: 1 } });
   }
   res.json({ project: detail(project, req.user) });
 });
+
+router.helpers = { isReviewer, isOwner, memberOf, canWork, person, clean, safeUrl, isId, card };
 
 module.exports = router;

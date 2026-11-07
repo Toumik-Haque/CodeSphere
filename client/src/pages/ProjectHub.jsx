@@ -7,6 +7,7 @@ import { apiRequest } from '../lib/api';
 import { CATEGORIES, LEVELS, categoryOf } from '../lib/projects';
 import { timeAgo } from '../lib/time';
 import ProjectCard from '../components/ProjectCard';
+import GithubConnect from '../components/GithubConnect';
 import '../css/Projects.css';
 
 function GuidedCard({ g }) {
@@ -54,7 +55,18 @@ export default function ProjectHub() {
 
   useEffect(() => {
     apiRequest('/projects?featured=1').then((r) => setFeatured(r.items.slice(0, 3))).catch(() => {});
+    apiRequest('/projects/track', { method: 'POST', body: JSON.stringify({ name: 'project_hub_viewed' }) }).catch(() => {});
   }, []);
+
+  const [invites, setInvites] = useState([]);
+  useEffect(() => {
+    if (!user) return undefined;
+    let cancelled = false;
+    apiRequest('/projects/team/invites').then((r) => !cancelled && setInvites(r.invites)).catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
 
   useEffect(() => {
     let cancelled = false;
@@ -164,6 +176,18 @@ export default function ProjectHub() {
           {tab === 'mine' && user && (
             !mine ? <div className="ph-card ph-skeleton" /> : (
               <>
+                <GithubConnect outcome={params.get('github')} />
+                {invites.length > 0 && (
+                  <section className="ph-invites">
+                    <h2 className="ph-h2"><i className="bi bi-envelope-open" aria-hidden="true" /> Team invitations</h2>
+                    {invites.map((i) => (
+                      <Link key={i.projectId} to={`/projects/${i.slug}`} className="ph-invite">
+                        <strong>{i.title}</strong>
+                        <span>{i.owner?.name} invited you as {i.role}: open to accept or decline</span>
+                      </Link>
+                    ))}
+                  </section>
+                )}
                 <h2 className="ph-h2">Your projects</h2>
                 {mine.projects.length === 0
                   ? <div className="ph-empty"><p>Nothing yet. Import a project from GitHub or add one manually.</p></div>

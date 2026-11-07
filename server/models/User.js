@@ -58,6 +58,12 @@ const userSchema = new mongoose.Schema(
     // Profile photo (ImageKit) shown in the forum and leaderboards.
     avatarUrl: { type: String, default: '' },
     avatarFileId: { type: String, default: '' },
+    // Connected GitHub identity (Project Hub verification). No token is stored.
+    github: {
+      id: Number,
+      login: String,
+      connectedAt: Date,
+    },
     // Profile banner image (ImageKit).
     bannerUrl: { type: String, default: '' },
     bannerFileId: { type: String, default: '' },

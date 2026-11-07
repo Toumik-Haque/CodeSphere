@@ -269,9 +269,19 @@ export default function ProjectEditor() {
           {id && project?.github && (
             <div className="pe-card">
               <GithubPreview repo={{ ...project.github, repo: project.github.repo, fetchedAt: project.github.fetchedAt }} />
-              <button type="button" className="ph-btn" onClick={() => action('sync', null, (r) => setProject((p) => ({ ...p, github: { ...p.github, ...r.github }, lastSyncedAt: r.lastSyncedAt })))}>
-                <i className="bi bi-arrow-repeat" aria-hidden="true" /> Refresh from GitHub
-              </button>
+              <div className="ap-actions">
+                <button type="button" className="ph-btn" onClick={() => action('sync', null, (r) => setProject((p) => ({ ...p, github: { ...p.github, ...r.github }, lastSyncedAt: r.lastSyncedAt })))}>
+                  <i className="bi bi-arrow-repeat" aria-hidden="true" /> Refresh from GitHub
+                </button>
+                {project.ownershipVerified
+                  ? <span className="pd-verified"><i className="bi bi-patch-check-fill" aria-hidden="true" /> Verified {project.ownershipVerified.kind} (@{project.ownershipVerified.login})</span>
+                  : (
+                    <button type="button" className="ph-btn" onClick={() => action('verify-github', null, (r) => setProject((p) => ({ ...p, ownershipVerified: r.ownershipVerified })))}>
+                      <i className="bi bi-patch-check" aria-hidden="true" /> Verify with GitHub
+                    </button>
+                  )}
+              </div>
+              {!project.ownershipVerified && <small className="ph-muted">Verification needs your GitHub account connected (My projects → Connect GitHub).</small>}
             </div>
           )}
 

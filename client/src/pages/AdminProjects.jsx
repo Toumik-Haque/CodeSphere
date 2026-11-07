@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { categoryOf } from '../lib/projects';
 import { timeAgo } from '../lib/time';
+import ProjectAnalytics from '../components/ProjectAnalytics';
+import GuidedEditor from '../components/GuidedEditor';
 import '../css/Projects.css';
 
 const TABS = [
@@ -12,7 +14,10 @@ const TABS = [
   ['changes_requested', 'Changes requested'],
   ['rejected', 'Rejected'],
   ['archived', 'Unpublished'],
+  ['analytics', 'Analytics'],
+  ['guided', 'Guided projects'],
 ];
+const QUEUE_TABS = ['pending_review', 'published', 'changes_requested', 'rejected', 'archived'];
 
 const CHECKLIST = [
   'Explains the problem and what was built',
@@ -95,6 +100,7 @@ export default function AdminProjects() {
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
+    if (!QUEUE_TABS.includes(tab)) return undefined;
     let cancelled = false;
     apiRequest(`/projects/admin/queue?status=${tab}`).then((r) => !cancelled && setData(r)).catch((e) => !cancelled && setMessage(e.message));
     return () => {
@@ -116,7 +122,9 @@ export default function AdminProjects() {
             ))}
           </div>
           {message && <p className="ph-ok" role="status">{message}</p>}
-          {!data ? <div className="ph-card ph-skeleton" /> : data.items.length === 0 ? <div className="ph-empty"><p>Nothing here.</p></div> : (
+          {tab === 'analytics' && <ProjectAnalytics />}
+          {tab === 'guided' && <GuidedEditor />}
+          {!QUEUE_TABS.includes(tab) ? null : !data ? <div className="ph-card ph-skeleton" /> : data.items.length === 0 ? <div className="ph-empty"><p>Nothing here.</p></div> : (
             <div className="ap-list">{data.items.map((p) => <ReviewCard key={p.id} p={p} onDone={(m) => { setMessage(m); reload(); }} />)}</div>
           )}
         </div>

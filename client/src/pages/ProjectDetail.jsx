@@ -5,88 +5,12 @@ import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
 import { STATUS, categoryOf } from '../lib/projects';
 import { formatDate, timeAgo } from '../lib/time';
+import ProjectTeam from '../components/ProjectTeam';
+import ProjectUpdates from '../components/ProjectUpdates';
+
+// Outbound clicks for analytics (fire and forget).
+const trackClick = (name, projectId) => apiRequest('/projects/track', { method: 'POST', body: JSON.stringify({ name, projectId }) }).catch(() => {});
 import '../css/Projects.css';
-
-const UPDATE_KINDS = {
-  built: { label: 'Built', icon: 'bi-hammer' },
-  learned: { label: 'Learned', icon: 'bi-lightbulb' },
-  blocker: { label: 'Blocker', icon: 'bi-cone-striped' },
-  next: { label: 'Next', icon: 'bi-arrow-right-circle' },
-};
-
-function Updates({ project }) {
-  const [items, setItems] = useState(null);
-  const [form, setForm] = useState({ kind: 'built', body: '', link: '' });
-  const [error, setError] = useState('');
-  const [version, setVersion] = useState(0);
-
-  useEffect(() => {
-    let cancelled = false;
-    apiRequest(`/projects/${project.id}/updates`).then((r) => !cancelled && setItems(r.updates)).catch(() => !cancelled && setItems([]));
-    return () => {
-      cancelled = true;
-    };
-  }, [project.id, version]);
-
-  const post = async (e) => {
-    e.preventDefault();
-    setError('');
-    try {
-      await apiRequest(`/projects/${project.id}/updates`, { method: 'POST', body: JSON.stringify(form) });
-      setForm({ kind: 'built', body: '', link: '' });
-      setVersion((v) => v + 1);
-    } catch (err) {
-      setError(err.message);
-    }
-  };
-
-  const remove = async (id) => {
-    if (!window.confirm('Delete this update?')) return;
-    await apiRequest(`/projects/${project.id}/updates/${id}`, { method: 'DELETE' });
-    setVersion((v) => v + 1);
-  };
-
-  if (!items) return null;
-  if (!items.length && !project.canEdit) return null;
-
-  return (
-    <section className="pd-block">
-      <h2><i className="bi bi-broadcast" aria-hidden="true" /> Build in Public</h2>
-      {project.canEdit && (
-        <form className="pd-update-form" onSubmit={post}>
-          <div className="pd-kinds" role="radiogroup" aria-label="Update type">
-            {Object.entries(UPDATE_KINDS).map(([id, k]) => (
-              <button key={id} type="button" role="radio" aria-checked={form.kind === id} className={form.kind === id ? 'active' : ''} onClick={() => setForm((f) => ({ ...f, kind: id }))}>
-                <i className={`bi ${k.icon}`} aria-hidden="true" /> {k.label}
-              </button>
-            ))}
-          </div>
-          <textarea rows={3} value={form.body} onChange={(e) => setForm((f) => ({ ...f, body: e.target.value }))} maxLength={2000} placeholder="What did you build or learn? What's blocking you? What's next?" aria-label="Update" />
-          <div className="pd-update-row">
-            <input type="url" value={form.link} onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))} placeholder="Optional link (commit, PR, demo…)" aria-label="Link" />
-            <button type="submit" className="btn btn-gold">Post update</button>
-          </div>
-          {error && <p className="ph-error">{error}</p>}
-        </form>
-      )}
-      {items.length === 0 ? <p className="ph-muted">No updates yet. Share your progress as you build.</p> : (
-        <ol className="pd-updates">
-          {items.map((u) => (
-            <li key={u.id}>
-              <span className={`pd-kind kind-${u.kind}`}><i className={`bi ${UPDATE_KINDS[u.kind]?.icon}`} aria-hidden="true" /> {UPDATE_KINDS[u.kind]?.label}</span>
-              <p>{u.body}</p>
-              <small>
-                {u.author?.name} · {timeAgo(u.createdAt)}
-                {u.link && <> · <a href={u.link} target="_blank" rel="noopener noreferrer nofollow">link</a></>}
-                {(u.mine || project.canReview) && <> · <button type="button" className="ph-linkbtn" onClick={() => remove(u.id)}>Delete</button></>}
-              </small>
-            </li>
-          ))}
-        </ol>
-      )}
-    </section>
-  );
-}
 
 export default function ProjectDetail() {
   const { slug } = useParams();
@@ -135,13 +59,15 @@ export default function ProjectDetail() {
                 <h1>{p.title}</h1>
                 {p.summary && <p>{p.summary}</p>}
                 <div className="pd-hero-actions">
-                  {p.demoUrl && <a href={p.demoUrl} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-gold"><i className="bi bi-box-arrow-up-right" aria-hidden="true" /> Live demo</a>}
-                  {p.github?.url && <a href={p.github.url} target="_blank" rel="noopener noreferrer nofollow" className="pd-ghost"><i className="bi bi-github" aria-hidden="true" /> View source on GitHub</a>}
+                  {p.demoUrl && <a href={p.demoUrl} target="_blank" rel="noopener noreferrer nofollow" className="btn btn-gold" onClick={() => trackClick('project_demo_clicked', p.id)}><i className="bi bi-box-arrow-up-right" aria-hidden="true" /> Live demo</a>}
+                  {p.github?.url && <a href={p.github.url} target="_blank" rel="noopener noreferrer nofollow" className="pd-ghost" onClick={() => trackClick('github_source_clicked', p.id)}><i className="bi bi-github" aria-hidden="true" /> View source on GitHub</a>}
                   {p.videoUrl && <a href={p.videoUrl} target="_blank" rel="noopener noreferrer nofollow" className="pd-ghost"><i className="bi bi-play-circle" aria-hidden="true" /> Demo video</a>}
                   {p.canEdit && <Link to={`/projects/${p.id}/edit`} className="pd-ghost"><i className="bi bi-pencil" aria-hidden="true" /> Edit</Link>}
                 </div>
+                {p.githubUnavailable && <p className="pd-warning"><i className="bi bi-exclamation-triangle" aria-hidden="true" /> We can&apos;t reach this project&apos;s GitHub repository any more. Update the link in the editor.</p>}
                 <p className="pd-by">
                   Built by <strong>{p.owner?.name}</strong>
+                  {p.ownershipVerified && <span className="pd-verified" title={`Verified with GitHub as @${p.ownershipVerified.login}`}><i className="bi bi-patch-check-fill" aria-hidden="true" /> Verified {p.ownershipVerified.kind}</span>}
                   {p.contributors.length > 1 && <> and {p.contributors.length - 1} more</>}
                   {p.publishedAt && <> · published {formatDate(p.publishedAt)}</>}
                   {p.guided && <> · from the guided project <Link to={`/projects/guided/${p.guided.slug}`}>{p.guided.title}</Link></>}
@@ -187,7 +113,8 @@ export default function ProjectDetail() {
                   </section>
                 )}
 
-                <Updates project={p} />
+                <ProjectTeam project={p} onChange={load} />
+                <ProjectUpdates project={p} />
               </div>
 
               <aside className="pd-side">
