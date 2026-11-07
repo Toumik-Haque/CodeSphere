@@ -7,7 +7,8 @@ export default function DashboardProfileSidebar({
   onPhotoChange,
   bannerInputRef,
   onBannerChange,
-  defaultBanner = '',
+  // The CodeSphere banner (client/public) for everyone without their own.
+  defaultBanner = '/default-profile-banner.webp',
   showBadges = false,
 }) {
   const name = user?.name || 'CodeSphere Member';
@@ -24,9 +25,9 @@ export default function DashboardProfileSidebar({
 
   return (
     <aside className="student-profile-sidebar">
-      <section className="student-identity-card">
+      <section className={`student-identity-card ${bannerImage || defaultBanner ? 'has-cover' : ''}`}>
         {(bannerImage || defaultBanner) && (
-          <div className="student-cover" style={{ backgroundImage: `url(${bannerImage || defaultBanner})` }}>
+          <div className="student-cover" style={{ backgroundImage: `url("${encodeURI(bannerImage || defaultBanner)}")` }}>
             {bannerInputRef && onBannerChange && (
               <>
                 <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onBannerChange} />

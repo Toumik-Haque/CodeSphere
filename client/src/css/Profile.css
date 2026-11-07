@@ -1742,3 +1742,24 @@
 .resume-saved .resume-file-info strong { overflow-wrap: anywhere; }
 .resume-saved-actions { display: flex; align-items: center; gap: 6px; }
 .resume-saved-actions a { text-decoration: none; }
+
+/* Profile banner (dashboard sidebar) */
+.student-identity-card.has-cover { padding-top: 0; }
+.student-cover {
+  position: relative;
+  height: 112px;
+  background-color: #0b1a2b;
+  background-position: center;
+  background-size: cover;
+}
+.student-identity-card.has-cover .student-avatar { margin-top: -46px; }
+.profile-banner-upload-button {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 7px 10px;
+}
+@media (max-width: 767.98px) {
+  .student-cover { height: 92px; }
+  .student-identity-card.has-cover .student-avatar { margin-top: -40px; }
+}
