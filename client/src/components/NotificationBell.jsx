@@ -15,6 +15,7 @@ const TYPE_ICONS = {
   'news-daily': 'bi-lightning-charge',
   hackathon: 'bi-trophy',
   'host-review': 'bi-megaphone',
+  project: 'bi-rocket-takeoff',
   system: 'bi-info-circle',
 };
 

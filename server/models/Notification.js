@@ -23,6 +23,7 @@ const notificationSchema = new mongoose.Schema(
         'news-daily',
         'hackathon',
         'host-review',
+        'project',
         'system',
       ],
     },

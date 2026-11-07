@@ -50,6 +50,11 @@ import AdminHackathons from './pages/AdminHackathons';
 import HostSubmit from './pages/HostSubmit';
 import MyHosting from './pages/MyHosting';
 import AdminReview from './pages/AdminReview';
+import ProjectHub from './pages/ProjectHub';
+import ProjectDetail from './pages/ProjectDetail';
+import ProjectEditor from './pages/ProjectEditor';
+import GuidedProject from './pages/GuidedProject';
+import AdminProjects from './pages/AdminProjects';
 
 function HomePage() {
   return (
@@ -139,6 +144,12 @@ function AppRoutes() {
       <Route path="/host/:kind/new" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
       <Route path="/host/:kind/:id/edit" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
       <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminReview /></ProtectedRoute>} />
+      <Route path="/projects" element={<ProjectHub />} />
+      <Route path="/projects/new" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
+      <Route path="/projects/guided/:slug" element={<GuidedProject />} />
+      <Route path="/projects/:id/edit" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
+      <Route path="/projects/:slug" element={<ProjectDetail />} />
+      <Route path="/admin/projects" element={<ProtectedRoute staff="project-reviewer"><AdminProjects /></ProtectedRoute>} />
       <Route path="/hackathons" element={<Hackathons />} />
       <Route path="/hackathons/:slug" element={<HackathonDetail />} />
       <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminHackathons /></ProtectedRoute>} />
