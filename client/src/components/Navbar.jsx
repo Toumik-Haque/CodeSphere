@@ -92,6 +92,22 @@ function NavGroup({ item, pathname }) {
   );
 }
 
+// Is the first solid background under (x, y), ignoring the header, dark?
+// Returns null when only media (video/image) or nothing is behind it.
+function isDarkAt(x, y, nav) {
+  for (const el of document.elementsFromPoint(x, y)) {
+    if (nav.contains(el)) continue;
+    if (['VIDEO', 'IMG', 'CANVAS', 'IFRAME'].includes(el.tagName)) return null;
+    const m = getComputedStyle(el).backgroundColor.match(/rgba?\(([\d.]+),\s*([\d.]+),\s*([\d.]+)(?:,\s*([\d.]+))?/);
+    if (!m) continue;
+    const alpha = m[4] === undefined ? 1 : Number(m[4]);
+    if (alpha < 0.5) continue;
+    const [r, g, b] = [m[1], m[2], m[3]].map(Number);
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b < 110;
+  }
+  return null;
+}
+
 const Navbar = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -134,6 +150,36 @@ const Navbar = () => {
 
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Light text when the (transparent) header sits over a dark section.
+  const navRef = useRef(null);
+  const [onDark, setOnDark] = useState(false);
+  useEffect(() => {
+    let frame = 0;
+    const check = () => {
+      frame = 0;
+      const nav = navRef.current;
+      if (!nav) return;
+      const y = Math.round(nav.getBoundingClientRect().height / 2);
+      const votes = [0.3, 0.45, 0.6]
+        .map((f) => isDarkAt(Math.round(window.innerWidth * f), y, nav))
+        .filter((v) => v !== null);
+      setOnDark(votes.length > 0 && votes.filter(Boolean).length * 2 > votes.length);
+    };
+    const schedule = () => {
+      if (!frame) frame = requestAnimationFrame(check);
+    };
+    schedule();
+    const late = setTimeout(schedule, 400); // after page content renders
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule);
+    return () => {
+      cancelAnimationFrame(frame);
+      clearTimeout(late);
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+    };
+  }, [location.pathname]);
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -312,7 +358,8 @@ const Navbar = () => {
   return (
     <>
       <nav
-        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${
+        ref={navRef}
+        className={`navbar navbar-expand-lg py-3 sticky-top codesphere-navbar ${onDark ? 'navbar-on-dark' : ''} ${
           isScrolled ? 'navbar-scrolled' : ''
         }`}
         aria-label="Main navigation"
