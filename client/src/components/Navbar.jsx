@@ -20,7 +20,8 @@ const navItems = [
   {
     label: 'Discover',
     children: [
-      { label: 'Events', path: '/events', icon: 'bi-calendar-event', description: 'Workshops, hackathons and meetups' },
+      { label: 'Hackathons', path: '/hackathons', icon: 'bi-trophy', description: 'Club hackathons + live ones from the web' },
+      { label: 'Events', path: '/events', icon: 'bi-calendar-event', description: 'Workshops, talks and meetups' },
       { label: 'Tech News', path: '/news', icon: 'bi-newspaper', description: 'The weekly CodeSphere Tech Brief' },
       { label: 'Open Source', path: '/open-source', icon: 'bi-github', description: 'Contribute and find programs' },
     ],
@@ -116,6 +117,7 @@ const Navbar = () => {
     { role: 'news-editor', path: '/admin/news', icon: 'bi-newspaper', label: 'Tech News editor' },
     { role: 'challenge-editor', path: '/admin/reverse-coding', icon: 'bi-arrow-repeat', label: 'Reverse Coding editor' },
     { role: 'challenge-editor', path: '/admin/materials', icon: 'bi-journal-bookmark', label: 'Study Guide editor' },
+    { role: 'hackathon-organizer', path: '/admin/hackathons', icon: 'bi-trophy', label: 'Hackathon organizer' },
   ].filter((link) => user?.staffRoles?.includes(link.role));
 
   const dashboardPath = isAdmin ? '/admin' : '/profile';

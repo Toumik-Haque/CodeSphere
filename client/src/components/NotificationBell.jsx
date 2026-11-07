@@ -12,6 +12,7 @@ const TYPE_ICONS = {
   'reverse-result': 'bi-arrow-repeat',
   'reverse-new': 'bi-arrow-repeat',
   'news-digest': 'bi-newspaper',
+  hackathon: 'bi-trophy',
   system: 'bi-info-circle',
 };
 

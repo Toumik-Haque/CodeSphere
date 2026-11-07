@@ -44,6 +44,9 @@ import News from './pages/News';
 import AdminNews from './pages/AdminNews';
 import Materials from './pages/Materials';
 import AdminMaterials from './pages/AdminMaterials';
+import Hackathons from './pages/Hackathons';
+import HackathonDetail from './pages/HackathonDetail';
+import AdminHackathons from './pages/AdminHackathons';
 
 function HomePage() {
   return (
@@ -129,6 +132,9 @@ function AppRoutes() {
       <Route path="/materials" element={<Materials />} />
       <Route path="/materials/:slug" element={<Materials />} />
       <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminMaterials /></ProtectedRoute>} />
+      <Route path="/hackathons" element={<Hackathons />} />
+      <Route path="/hackathons/:slug" element={<HackathonDetail />} />
+      <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminHackathons /></ProtectedRoute>} />
       <Route path="/news" element={<News />} />
       <Route path="/news/:slug" element={<News />} />
       <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminNews /></ProtectedRoute>} />

@@ -39,6 +39,8 @@ const newsRoutes = require('./routes/newsRoutes');
 const realtimeRoutes = require('./routes/realtimeRoutes');
 const newsletterRoutes = require('./routes/newsletterRoutes');
 const guideRoutes = require('./routes/guideRoutes');
+const hackathonRoutes = require('./routes/hackathonRoutes');
+const { startHackathonSync } = require('./utils/hackathonSync');
 const { startNewsScheduler } = require('./utils/newsIngest');
 
 app.use('/api/auth', authRoutes);
@@ -57,6 +59,7 @@ app.use('/api/news', newsRoutes);
 app.use('/api/realtime', realtimeRoutes);
 app.use('/api/newsletter', newsletterRoutes);
 app.use('/api/guides', guideRoutes);
+app.use('/api/hackathons', hackathonRoutes);
 
 const PORT = process.env.PORT || 5000;
 
@@ -71,6 +74,8 @@ async function startServer() {
 
     // Daily feed fetching + scheduled digest announcements (NEWS_SCHEDULER=off to disable).
     startNewsScheduler();
+    // Live hackathons from Devpost, Devfolio, Unstop, Hack2Skill, HackerEarth (HACKATHON_SYNC=off to disable).
+    startHackathonSync();
 
     app.listen(PORT, () => {
       console.log(`CodeSphere API running on port ${PORT}`);

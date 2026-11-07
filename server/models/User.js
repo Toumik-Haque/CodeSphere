@@ -51,7 +51,7 @@ const userSchema = new mongoose.Schema(
     // moderator (forum), news-editor (Tech News), challenge-editor (Reverse Coding).
     staffRoles: {
       type: [String],
-      enum: ['moderator', 'news-editor', 'challenge-editor'],
+      enum: ['moderator', 'news-editor', 'challenge-editor', 'hackathon-organizer'],
       default: [],
     },
     // Opted in to the weekly Tech Brief email.

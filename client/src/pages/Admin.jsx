@@ -1146,6 +1146,10 @@ export default function Admin() {
                     <i className="bi bi-newspaper" aria-hidden="true" />
                     <span><strong>Tech News editor</strong><small>Review stories, sources and weekly digests</small></span>
                   </Link>
+                  <Link to="/admin/hackathons" className="admin-tool">
+                    <i className="bi bi-trophy" aria-hidden="true" />
+                    <span><strong>Hackathons</strong><small>Run club hackathons and judge projects</small></span>
+                  </Link>
                   <Link to="/admin/materials" className="admin-tool">
                     <i className="bi bi-journal-bookmark" aria-hidden="true" />
                     <span><strong>Study Guide</strong><small>Write and publish learning materials</small></span>

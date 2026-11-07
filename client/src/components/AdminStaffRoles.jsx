@@ -5,6 +5,7 @@ const ROLES = [
   { id: 'moderator', label: 'Moderator', icon: 'bi-shield-lock', help: 'Forum reports and moderation' },
   { id: 'news-editor', label: 'News editor', icon: 'bi-newspaper', help: 'Tech News review and digests' },
   { id: 'challenge-editor', label: 'Challenge editor', icon: 'bi-arrow-repeat', help: 'Reverse Coding authoring' },
+  { id: 'hackathon-organizer', label: 'Hackathon organizer', icon: 'bi-trophy', help: 'Run club hackathons and judge submissions' },
 ];
 
 // Admin: grant or revoke a student's staff roles.
