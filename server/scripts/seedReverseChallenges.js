@@ -4,6 +4,7 @@
 // Usage (from server/):
 //   node scripts/seedReverseChallenges.js            publish all
 //   node scripts/seedReverseChallenges.js --draft    keep as drafts
+//   node scripts/seedReverseChallenges.js --pack=reverseSeedPack2   another set
 //
 // If Judge0 is configured, each reference solution is validated against
 // every test first; challenges that fail stay as drafts. Without Judge0 the
@@ -15,7 +16,10 @@ const mongoose = require('mongoose');
 const { ReverseChallenge } = require('../models/Reverse');
 const { isConfigured, activeRunner } = require('../config/codeRunner');
 const { evaluate } = require('../utils/reverseJudge');
-const seeds = require('../data/reverseSeed');
+// --pack=<file in data/> loads another set, e.g. --pack=reverseSeedPack2
+const packArg = process.argv.find((a) => a.startsWith('--pack='));
+const packName = packArg ? packArg.slice(7).replace(/[^\w-]/g, '') : 'reverseSeed';
+const seeds = require(`../data/${packName}`);
 
 const keepDraft = process.argv.includes('--draft');
 
