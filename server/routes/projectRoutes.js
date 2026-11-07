@@ -24,9 +24,11 @@ const validateProject = (data) => {
     title,
     description,
     technologies,
+    type,
     githubUrl,
     liveUrl,
     status,
+    featured,
   } = data;
 
   if (
@@ -43,6 +45,13 @@ const validateProject = (data) => {
     description.trim().length > 1000
   ) {
     return 'Description is required and must be under 1000 characters.';
+  }
+
+  if (
+    type !== undefined &&
+    (typeof type !== 'string' || type.trim().length > 80)
+  ) {
+    return 'Project type must be under 80 characters.';
   }
 
   if (
@@ -72,6 +81,10 @@ const validateProject = (data) => {
     !['Completed', 'In Progress', 'Planning'].includes(status)
   ) {
     return 'Invalid project status.';
+  }
+
+  if (featured !== undefined && typeof featured !== 'boolean') {
+    return 'Featured must be true or false.';
   }
 
   return null;
@@ -131,6 +144,7 @@ router.post('/', protect, async (req, res) => {
       technologies: (req.body.technologies || [])
         .map((item) => item.trim())
         .filter(Boolean),
+      type: (req.body.type || '').trim(),
       githubUrl: (req.body.githubUrl || '').trim(),
       liveUrl: (req.body.liveUrl || '').trim(),
       status: req.body.status || 'Completed',
@@ -176,6 +190,7 @@ router.patch('/:id', protect, async (req, res) => {
       'title',
       'description',
       'technologies',
+      'type',
       'githubUrl',
       'liveUrl',
       'status',
@@ -204,21 +219,16 @@ router.patch('/:id', protect, async (req, res) => {
         .filter(Boolean);
     }
 
+    if (updates.type !== undefined) {
+      updates.type = updates.type.trim();
+    }
+
     if (updates.githubUrl !== undefined) {
       updates.githubUrl = updates.githubUrl.trim();
     }
 
     if (updates.liveUrl !== undefined) {
       updates.liveUrl = updates.liveUrl.trim();
-    }
-
-    if (updates.featured !== undefined) {
-      if (typeof updates.featured !== 'boolean') {
-        return res.status(400).json({
-          success: false,
-          message: 'Featured must be true or false.',
-        });
-      }
     }
 
     if (Object.keys(updates).length === 0) {

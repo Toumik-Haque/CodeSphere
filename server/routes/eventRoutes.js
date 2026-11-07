@@ -389,7 +389,9 @@ router.get('/my-registrations', protect, memberOnly, async (req, res) => {
       .sort({ registeredAt: -1 })
       .lean();
 
-    return res.json({ registrations });
+    return res.json({
+      registrations: registrations.filter((registration) => registration.event),
+    });
   } catch (error) {
     console.error('Fetch my registrations error:', error.message);
 
@@ -662,6 +664,11 @@ router.delete('/:id', protect, adminOnly, async (req, res) => {
         message: 'Event not found.',
       });
     }
+
+    await Promise.all([
+      Registration.deleteMany({ event: event._id }),
+      Attendance.deleteMany({ event: event._id }),
+    ]);
 
     if (event.bannerImage?.publicId) {
       try {

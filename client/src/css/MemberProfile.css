@@ -170,6 +170,35 @@
   background: #fff0eb;
 }
 
+.member-profile-projects {
+  display: grid;
+  gap: 12px;
+}
+
+.member-profile-project {
+  padding: 15px;
+  border: 1px solid #eee3df;
+  border-radius: 9px;
+}
+
+.member-profile-project h4 {
+  margin: 0 0 8px;
+  color: #183047;
+  font-size: 13px;
+}
+
+.member-profile-project p {
+  margin: 0 0 10px;
+  color: #647589;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.member-profile-project .member-profile-tags {
+  margin: 0 0 12px;
+}
+
 .member-profile-empty {
   margin: 0;
   color: #647589;

@@ -70,10 +70,65 @@ const userSchema = new mongoose.Schema(
       },
     },
 
+    bannerImage: {
+      url: {
+        type: String,
+        default: '',
+      },
+      fileId: {
+        type: String,
+        default: '',
+      },
+    },
+
     bio: {
       type: String,
       trim: true,
       maxlength: 500,
+      default: '',
+    },
+
+    phone: {
+      type: String,
+      trim: true,
+      maxlength: 30,
+      default: '',
+    },
+
+    city: {
+      type: String,
+      trim: true,
+      maxlength: 100,
+      default: '',
+    },
+
+    gender: {
+      type: String,
+      enum: ['', 'Male', 'Female', 'Prefer not to say', 'Other'],
+      default: '',
+    },
+
+    dateOfBirth: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    degree: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    department: {
+      type: String,
+      trim: true,
+      default: '',
+    },
+
+    graduationYear: {
+      type: String,
+      trim: true,
       default: '',
     },
 
@@ -102,6 +157,37 @@ const userSchema = new mongoose.Schema(
 
     skills: {
       type: [String],
+      default: [],
+    },
+
+    skillDetails: {
+      type: [{
+        name: { type: String, trim: true, required: true },
+        level: {
+          type: String,
+          enum: ['Beginner', 'Intermediate', 'Advanced'],
+          default: 'Intermediate',
+        },
+      }],
+      default: [],
+    },
+
+    codingProfiles: {
+      type: [{
+        platform: { type: String, trim: true, required: true },
+        url: { type: String, trim: true, required: true },
+      }],
+      default: [],
+    },
+
+    achievements: {
+      type: [{
+        title: { type: String, trim: true, required: true },
+        category: { type: String, trim: true, default: '' },
+        issuer: { type: String, trim: true, default: '' },
+        year: { type: String, trim: true, default: '' },
+        link: { type: String, trim: true, default: '' },
+      }],
       default: [],
     },
 

@@ -1,4 +1,4 @@
-import React, {
+import {
   createContext,
   useContext,
   useState,
@@ -124,6 +124,14 @@ export function AuthProvider({ children }) {
     return data.user;
   }
 
+  function updateUser(updatedUser) {
+    setUser((currentUser) => {
+      const nextUser = { ...currentUser, ...updatedUser };
+      localStorage.setItem('codesphere_user', JSON.stringify(nextUser));
+      return nextUser;
+    });
+  }
+
   function logout() {
     localStorage.removeItem('codesphere_token');
     localStorage.removeItem('codesphere_user');
@@ -144,6 +152,7 @@ export function AuthProvider({ children }) {
         forgotPassword,
         verifyResetOtp,
         resetPassword,
+        updateUser,
         logout,
       }}
     >

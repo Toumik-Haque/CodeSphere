@@ -32,8 +32,8 @@ function handleProfileUpload(req, res, next) {
         success: false,
         message:
           error.code === 'LIMIT_FILE_SIZE'
-            ? 'Profile picture must be 5 MB or smaller.'
-            : error.message || 'Invalid profile picture.',
+            ? 'Image must be 5 MB or smaller.'
+            : error.message || 'Invalid image.',
       });
     }
 

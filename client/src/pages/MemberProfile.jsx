@@ -152,8 +152,23 @@ export default function MemberProfile() {
                     </div>
 
                     <div>
+                      <span>Degree</span>
+                      <strong>{member.degree || 'Not added'}</strong>
+                    </div>
+
+                    <div>
+                      <span>Department / Branch</span>
+                      <strong>{member.department || 'Not added'}</strong>
+                    </div>
+
+                    <div>
                       <span>Year of study</span>
                       <strong>{member.yearOfStudy || 'Not added'}</strong>
+                    </div>
+
+                    <div>
+                      <span>Expected graduation</span>
+                      <strong>{member.graduationYear || 'Not added'}</strong>
                     </div>
                   </div>
                 </ProfileSection>
@@ -169,6 +184,91 @@ export default function MemberProfile() {
                 <ProfileSection title="Learning goals">
                   <TagList items={member.learningGoals} />
                 </ProfileSection>
+
+                {member.codingProfiles?.length > 0 && (
+                  <ProfileSection title="Coding profiles">
+                    <div className="member-profile-links">
+                      {member.codingProfiles.map((profile) => (
+                        <a
+                          key={`${profile.platform}-${profile.url}`}
+                          href={openExternalLink(profile.url)}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {profile.platform} ↗
+                        </a>
+                      ))}
+                    </div>
+                  </ProfileSection>
+                )}
+
+                {member.projects?.length > 0 && (
+                  <ProfileSection title="Projects">
+                    <div className="member-profile-projects">
+                      {member.projects.map((project) => (
+                        <article
+                          className="member-profile-project"
+                          key={project._id}
+                        >
+                          <h4>{project.title}</h4>
+                          <p>{project.description}</p>
+                          {project.technologies?.length > 0 && (
+                            <TagList items={project.technologies} />
+                          )}
+                          <div className="member-profile-links">
+                            {project.githubUrl && (
+                              <a
+                                href={openExternalLink(project.githubUrl)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Source code ↗
+                              </a>
+                            )}
+                            {project.liveUrl && (
+                              <a
+                                href={openExternalLink(project.liveUrl)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Live demo ↗
+                              </a>
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </ProfileSection>
+                )}
+
+                {member.achievements?.length > 0 && (
+                  <ProfileSection title="Achievements & certifications">
+                    <div className="member-profile-projects">
+                      {member.achievements.map((achievement, index) => (
+                        <article
+                          className="member-profile-project"
+                          key={`${achievement.title}-${index}`}
+                        >
+                          <h4>{achievement.title}</h4>
+                          <p>
+                            {[achievement.category, achievement.issuer, achievement.year]
+                              .filter(Boolean)
+                              .join(' · ') || 'Achievement'}
+                          </p>
+                          {achievement.link && (
+                            <a
+                              href={openExternalLink(achievement.link)}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                            >
+                              View proof ↗
+                            </a>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  </ProfileSection>
+                )}
 
                 <ProfileSection title="Connect">
                   <div className="member-profile-links">

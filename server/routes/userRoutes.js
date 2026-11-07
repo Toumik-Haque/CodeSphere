@@ -1,5 +1,6 @@
 const express = require('express');
 const User = require('../models/User');
+const Project = require('../models/Project');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 
 const router = express.Router();
@@ -7,6 +8,16 @@ const router = express.Router();
 const imagekit = require('../config/imagekit');
 const { toFile } = require('@imagekit/nodejs');
 const handleProfileUpload = require('../middleware/profileUpload');
+
+const isValidHttpUrl = (value) => {
+  if (!value) return true;
+
+  try {
+    return ['http:', 'https:'].includes(new URL(value).protocol);
+  } catch {
+    return false;
+  }
+};
 
 // Reserved usernames that cannot be used by members
 const reservedUsernames = [
@@ -51,12 +62,22 @@ const allowedProfileFields = [
   'name',
   'username',
   'bio',
+  'phone',
+  'city',
+  'gender',
+  'dateOfBirth',
+  'degree',
+  'department',
+  'graduationYear',
   'github',
   'linkedin',
   'portfolio',
   'technicalInterests',
   'skills',
+  'skillDetails',
   'learningGoals',
+  'codingProfiles',
+  'achievements',
   'collegeName',
   'yearOfStudy',
   'profileVisibility',
@@ -233,6 +254,16 @@ router.patch('/profile', protect, async (req, res) => {
     }
 
     if (
+      updates.gender !== undefined &&
+      !['', 'Male', 'Female', 'Prefer not to say', 'Other'].includes(updates.gender)
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid gender selection.',
+      });
+    }
+
+    if (
       updates.yearOfStudy !== undefined &&
       !['1st Year', '2nd Year', '3rd Year', '4th Year'].includes(
         updates.yearOfStudy
@@ -265,6 +296,120 @@ router.patch('/profile', protect, async (req, res) => {
         updates[field] = updates[field]
           .map((item) => item.trim())
           .filter(Boolean);
+      }
+    }
+
+    const objectArrayFields = {
+      skillDetails: {
+        required: ['name'],
+        allowed: ['name', 'level'],
+      },
+      codingProfiles: {
+        required: ['platform', 'url'],
+        allowed: ['platform', 'url'],
+      },
+      achievements: {
+        required: ['title'],
+        allowed: ['title', 'category', 'issuer', 'year', 'link'],
+      },
+    };
+
+    for (const [field, rules] of Object.entries(objectArrayFields)) {
+      if (updates[field] === undefined) continue;
+
+      if (
+        !Array.isArray(updates[field]) ||
+        updates[field].length > 100 ||
+        !updates[field].every((item) =>
+          item &&
+          typeof item === 'object' &&
+          !Array.isArray(item) &&
+          rules.required.every((key) => typeof item[key] === 'string') &&
+          Object.entries(item).every(([key, value]) =>
+            rules.allowed.includes(key) && typeof value === 'string'
+          )
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} must be an array of valid profile entries.`,
+        });
+      }
+
+      updates[field] = updates[field].map((item) =>
+        Object.fromEntries(
+          Object.entries(item).map(([key, value]) => [key, value.trim()])
+        )
+      );
+
+      if (
+        updates[field].some((item) =>
+          rules.required.some((key) => !item[key]) ||
+          (field === 'codingProfiles' && !isValidHttpUrl(item.url)) ||
+          (field === 'achievements' && !isValidHttpUrl(item.link))
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} contains a missing required value or invalid URL.`,
+        });
+      }
+    }
+
+    if (
+      updates.skillDetails?.some(
+        ({ level }) =>
+          level !== undefined &&
+          !['Beginner', 'Intermediate', 'Advanced'].includes(level)
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid skill proficiency level.',
+      });
+    }
+
+    const stringFields = {
+      name: { maxLength: 80, required: true },
+      bio: { maxLength: 500 },
+      phone: { maxLength: 30 },
+      city: { maxLength: 100 },
+      collegeName: { maxLength: 150, required: true },
+      dateOfBirth: { maxLength: 30 },
+      degree: { maxLength: 100 },
+      department: { maxLength: 150 },
+      graduationYear: { maxLength: 4 },
+      github: { maxLength: 500 },
+      linkedin: { maxLength: 500 },
+      portfolio: { maxLength: 500 },
+    };
+
+    for (const [field, rules] of Object.entries(stringFields)) {
+      if (updates[field] !== undefined) {
+        if (
+          typeof updates[field] !== 'string' ||
+          updates[field].trim().length > rules.maxLength ||
+          (rules.required && !updates[field].trim())
+        ) {
+          return res.status(400).json({
+            success: false,
+            message: `${field} must be a${rules.required ? ' non-empty' : ''} string of at most ${rules.maxLength} characters.`,
+          });
+        }
+
+        updates[field] = updates[field].trim();
+      }
+    }
+
+    for (const field of ['github', 'linkedin', 'portfolio']) {
+      if (
+        updates[field] !== undefined &&
+        !isValidHttpUrl(updates[field])
+      ) {
+        return res.status(400).json({
+          success: false,
+          message: `${field} must be a valid HTTP or HTTPS URL.`,
+        });
       }
     }
 
@@ -320,10 +465,13 @@ router.post(
       if (!req.file) {
         return res.status(400).json({
           success: false,
-          message: 'Please select a profile picture.',
+          message: 'Please select an image.',
         });
       }
 
+      const imageField = req.query.type === 'banner' ? 'bannerImage' : 'profileImage';
+      const imageFolder = imageField === 'bannerImage' ? 'banners' : 'profiles';
+      const imageLabel = imageField === 'bannerImage' ? 'Banner' : 'Profile picture';
       const user = await User.findById(req.user._id);
 
       if (!user) {
@@ -338,13 +486,13 @@ router.post(
           req.file.buffer,
           req.file.originalname
         ),
-        fileName: `profile-${user._id}-${Date.now()}`,
-        folder: '/codesphere/profiles',
+        fileName: `${imageFolder}-${user._id}-${Date.now()}`,
+        folder: `/codesphere/${imageFolder}`,
       });
 
-      const oldFileId = user.profileImage?.fileId;
+      const oldFileId = user[imageField]?.fileId;
 
-      user.profileImage = {
+      user[imageField] = {
         url: uploadedImage.url,
         fileId: uploadedImage.fileId,
       };
@@ -365,8 +513,8 @@ router.post(
 
       return res.json({
         success: true,
-        message: 'Profile picture updated successfully.',
-        profileImage: user.profileImage,
+        message: `${imageLabel} updated successfully.`,
+        [imageField]: user[imageField],
       });
     } catch (error) {
       console.error('Profile image upload error:', error);
@@ -385,7 +533,7 @@ router.post(
 
       return res.status(500).json({
         success: false,
-        message: 'Unable to upload profile picture.',
+        message: 'Unable to upload image.',
       });
     }
   }
@@ -395,6 +543,7 @@ router.post(
 // DELETE /api/users/profile/image
 router.delete('/profile/image', protect, async (req, res) => {
   try {
+    const imageField = req.query.type === 'banner' ? 'bannerImage' : 'profileImage';
     const user = await User.findById(req.user._id);
 
     if (!user) {
@@ -404,9 +553,9 @@ router.delete('/profile/image', protect, async (req, res) => {
       });
     }
 
-    const oldFileId = user.profileImage?.fileId;
+    const oldFileId = user[imageField]?.fileId;
 
-    user.profileImage = {
+    user[imageField] = {
       url: '',
       fileId: '',
     };
@@ -426,7 +575,7 @@ router.delete('/profile/image', protect, async (req, res) => {
 
     return res.json({
       success: true,
-      message: 'Profile picture removed successfully.',
+      message: `${imageField === 'bannerImage' ? 'Banner' : 'Profile picture'} removed successfully.`,
     });
   } catch (error) {
     console.error('Remove profile image error:', error.message);
@@ -450,7 +599,7 @@ router.get('/profile/:username', protect, async (req, res) => {
       role: 'user',
     })
       .select(
-        'name username collegeName yearOfStudy profileImage bio github linkedin portfolio technicalInterests skills learningGoals profileVisibility createdAt'
+      'name username collegeName degree department yearOfStudy graduationYear profileImage bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements profileVisibility createdAt'
       )
       .lean();
 
@@ -475,6 +624,19 @@ router.get('/profile/:username', protect, async (req, res) => {
     if (!isOwner) {
       delete member.profileVisibility;
     }
+
+    const legacyGithubProfile = member.codingProfiles?.find(
+      (profile) => profile.platform?.toLowerCase() === 'github'
+    );
+    member.github = member.github || legacyGithubProfile?.url || '';
+    member.codingProfiles = (member.codingProfiles || []).filter(
+      (profile) => profile.platform?.toLowerCase() !== 'github'
+    );
+
+    member.projects = await Project.find({ user: member._id })
+      .sort({ featured: -1, updatedAt: -1 })
+      .select('title description technologies type githubUrl liveUrl status featured')
+      .lean();
 
     return res.json({
       success: true,
