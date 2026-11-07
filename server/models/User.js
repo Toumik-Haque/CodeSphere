@@ -196,11 +196,6 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
 
-    profileVisibility: {
-      type: String,
-      enum: ['members', 'private'],
-      default: 'members',
-    },
     // Self-reported by the Profile page when the profile reaches 100%.
     profileComplete: {
       type: Boolean,

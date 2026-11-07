@@ -80,7 +80,6 @@ const allowedProfileFields = [
   'achievements',
   'collegeName',
   'yearOfStudy',
-  'profileVisibility',
 ];
 
 // GET ALL REGISTERED USERS (EXCLUDING ADMINS)
@@ -171,7 +170,6 @@ router.get('/search', protect, async (req, res) => {
     const users = await User.find({
       role: 'user',
       _id: { $ne: req.user._id },
-      profileVisibility: { $ne: 'private' },
       username: { $type: 'string', $ne: '' },
       $or: [
         { name: regex },
@@ -312,16 +310,6 @@ router.patch('/profile', protect, async (req, res) => {
       return res.status(400).json({
         success: false,
         message: 'Name cannot be empty.',
-      });
-    }
-
-    if (
-      updates.profileVisibility !== undefined &&
-      !['members', 'private'].includes(updates.profileVisibility)
-    ) {
-      return res.status(400).json({
-        success: false,
-        message: 'Invalid profile visibility setting.',
       });
     }
 
@@ -671,7 +659,7 @@ router.get('/profile/:username', protect, async (req, res) => {
       role: 'user',
     })
       .select(
-      'name username collegeName degree department yearOfStudy graduationYear profileImage bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements profileVisibility createdAt'
+      'name username collegeName degree department yearOfStudy graduationYear profileImage bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements createdAt'
       )
       .lean();
 
@@ -680,21 +668,6 @@ router.get('/profile/:username', protect, async (req, res) => {
         success: false,
         message: 'Member profile not found.',
       });
-    }
-
-    const isOwner =
-      member._id.toString() === req.user._id.toString();
-
-    if (!isOwner && member.profileVisibility === 'private') {
-      return res.status(404).json({
-        success: false,
-        message: 'Member profile not found.',
-      });
-    }
-
-    // Do not expose profile visibility to other members.
-    if (!isOwner) {
-      delete member.profileVisibility;
     }
 
     const legacyGithubProfile = member.codingProfiles?.find(

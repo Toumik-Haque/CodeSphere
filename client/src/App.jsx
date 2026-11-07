@@ -55,8 +55,8 @@ function HomePage() {
         <Hero />
         <Events />
         <PlaygroundHighlight />
-        <TeamCarousel />
         <About />
+        <TeamCarousel />
         <CTA />
       </main>
 
