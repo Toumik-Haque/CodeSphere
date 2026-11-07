@@ -222,7 +222,7 @@ export default function ReverseChallenge() {
 
           {!data.judgeReady && (
             <p className="rc-notice" role="status">
-              <i className="bi bi-info-circle" aria-hidden="true" /> Run and Submit are turned off until the code runner (Judge0) is connected. You can still read the challenge and draft your solution; it saves in this browser.
+              <i className="bi bi-info-circle" aria-hidden="true" /> Run and Submit are turned off until code running is turned back on. You can still read the challenge and draft your solution; it saves in this browser.
             </p>
           )}
 

@@ -104,7 +104,7 @@ export default function ReverseCoding() {
 
           {data && !data.judgeReady && (
             <p className="rc-notice" role="status">
-              <i className="bi bi-info-circle" aria-hidden="true" /> You can read and draft solutions, but running and submitting code is turned off until the CodeSphere team connects the code runner (Judge0).
+              <i className="bi bi-info-circle" aria-hidden="true" /> You can read and draft solutions, but running and submitting code is turned off until the CodeSphere team turns code running back on.
             </p>
           )}
 

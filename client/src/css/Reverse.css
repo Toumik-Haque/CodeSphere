@@ -698,3 +698,7 @@
 }
 
 .rc-guide-links a { color: var(--gold); font-weight: 700; }
+
+.rc-runner { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin: 0 0 14px; color: var(--text-muted); font-size: .88rem; }
+.rc-runner strong { color: var(--navy); }
+.rc-runner i { color: var(--gold); }

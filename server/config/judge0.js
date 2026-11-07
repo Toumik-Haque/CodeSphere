@@ -47,8 +47,10 @@ function headers() {
   return result;
 }
 
+// A key, or a self-hosted URL. The RapidAPI URL alone (no key) doesn't count.
 function isConfigured() {
-  return Boolean(process.env.JUDGE0_API_KEY || process.env.JUDGE0_URL);
+  const url = process.env.JUDGE0_URL || '';
+  return Boolean(process.env.JUDGE0_API_KEY || (url && !/rapidapi\.com/i.test(url)));
 }
 
 // Resolve the newest matching Judge0 language for each playground language.

@@ -1,7 +1,7 @@
 // Reverse Coding evaluator: runs code against tests through Judge0 (never on
 // this server) and compares outputs using the challenge's output policy.
 
-const { runCode } = require('../config/judge0');
+const { runCode, runBatch } = require('../config/codeRunner');
 
 function normalise(text, policy) {
   const value = String(text ?? '').replace(/\r\n?/g, '\n');
@@ -38,14 +38,35 @@ async function evaluate(challenge, language, code, tests) {
   let passed = 0;
   let runtimeMs = 0;
   let verdict = 'accepted';
+  const runTest = (test) => runCode(language, code, {
+    stdin: test.input,
+    cpuTimeLimit: challenge.timeLimit,
+    memoryLimitKb: challenge.memoryLimitKb,
+  });
+
+  // Preferred: every test in one request (compile once). Otherwise run the
+  // first test alone (a compile error fails everything cheaply), then the
+  // rest in parallel; the runner caps how many run at once.
+  let runs = await runBatch(language, code, tests.map((t) => t.input), {
+    cpuTimeLimit: challenge.timeLimit,
+    memoryLimitKb: challenge.memoryLimitKb,
+  });
+  if (!runs) {
+    const first = tests.length ? await runTest(tests[0]) : null;
+    const firstBroken = first && ['compile-error', 'service-error'].includes(first.status);
+    const rest = firstBroken ? [] : await Promise.all(tests.slice(1).map(runTest));
+    runs = first ? [first, ...rest] : [];
+  }
+  // A compile error (or a down checker) applies to every test: report it once.
+  if (runs.length && ['compile-error', 'service-error'].includes(runs[0].status)) runs = [runs[0]];
 
   for (let i = 0; i < tests.length; i += 1) {
     const test = tests[i];
-    const run = await runCode(language, code, {
-      stdin: test.input,
-      cpuTimeLimit: challenge.timeLimit,
-      memoryLimitKb: challenge.memoryLimitKb,
-    });
+    const run = runs[i];
+    if (!run) {
+      results.push({ index: i + 1, hidden: test.hidden, status: 'skipped' });
+      continue;
+    }
     runtimeMs = Math.max(runtimeMs, run.timeMs || 0);
 
     let status;
@@ -66,14 +87,6 @@ async function evaluate(challenge, language, code, tests) {
         actual: run.stdout.slice(0, 2000),
         error: run.error ? run.error.slice(0, 2000) : '',
       });
-
-    // A compile error or a broken checker affects every test: stop early.
-    if (status === 'compile-error' || status === 'system-error') {
-      for (let j = i + 1; j < tests.length; j += 1) {
-        results.push({ index: j + 1, hidden: tests[j].hidden, status: 'skipped' });
-      }
-      break;
-    }
   }
 
   return { verdict, passed, total: tests.length, runtimeMs: runtimeMs || null, results };

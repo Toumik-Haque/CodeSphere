@@ -6,7 +6,7 @@ const { protect, optionalAuth, requireStaff } = require('../middleware/authMiddl
 // Admins and challenge editors.
 const editorOnly = requireStaff('challenge-editor');
 const { createLimiter } = require('../utils/rateLimit');
-const { isConfigured, SUPPORTED_LANGUAGES } = require('../config/judge0');
+const { isConfigured, activeRunner, SUPPORTED_LANGUAGES } = require('../config/codeRunner');
 const { evaluate } = require('../utils/reverseJudge');
 const { syncBadgesQuietly } = require('../utils/badges');
 const { notify } = require('../utils/notify');
@@ -178,7 +178,7 @@ async function prepare(req, res) {
     return null;
   }
   if (!isConfigured()) {
-    res.status(503).json({ message: 'The code runner isn\'t set up on this server yet (Judge0 key missing). Ask the CodeSphere team.' });
+    res.status(503).json({ message: 'Code running is turned off on this server. Ask the CodeSphere team.' });
     return null;
   }
   const key = String(req.user._id);
@@ -337,6 +337,7 @@ router.get('/admin/all', protect, editorOnly, async (req, res) => {
       levels: LEVELS,
       languages: SUPPORTED_LANGUAGES,
       judgeReady: isConfigured(),
+      runner: activeRunner(),
     });
   } catch (error) {
     console.error('Reverse admin list error:', error);
@@ -394,7 +395,7 @@ router.post('/admin/:id/validate', protect, editorOnly, async (req, res) => {
     const challenge = await ReverseChallenge.findById(req.params.id);
     if (!challenge) return res.status(404).json({ message: 'Challenge not found.' });
     if (!challenge.referenceSolution?.code) return res.status(400).json({ message: 'Add a reference solution first.' });
-    if (!isConfigured()) return res.status(503).json({ message: 'Validation needs the Judge0 code runner (key missing).' });
+    if (!isConfigured()) return res.status(503).json({ message: 'Validation needs the code runner (CODE_RUNNER is off).' });
 
     // Show admins every test's details (they're allowed to see hidden ones).
     const asPublic = challenge.tests.map((t) => ({ ...t.toObject(), hidden: false }));
