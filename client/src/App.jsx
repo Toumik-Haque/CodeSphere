@@ -19,7 +19,6 @@ import ExplorePlatform from './components/ExplorePlatform';
 import Events from './components/Events';
 import TeamCarousel from './components/TeamCarousel';
 import CTA from './components/CTA';
-import PlaygroundHighlight from './components/PlaygroundHighlight';
 import About from './components/About';
 import Footer from './components/Footer';
 
@@ -71,7 +70,6 @@ function HomePage() {
         <ExplorePlatform />
         <Events />
         <About />
-        <PlaygroundHighlight />
         <TeamCarousel />
         <CTA />
       </main>
