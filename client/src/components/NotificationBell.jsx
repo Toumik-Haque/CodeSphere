@@ -1,10 +1,16 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { createPortal } from 'react-dom';
 import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
 import { openUserStream } from '../lib/realtime';
+import { useAuth } from '../context/AuthContext';
+import RichTextEditor from './RichTextEditor';
+import BroadcastOptions from './BroadcastOptions';
+import '../css/Updates.css';
 
 const TYPE_ICONS = {
+  announcement: 'bi-megaphone',
   'forum-reply': 'bi-chat-dots',
   'forum-mention': 'bi-at',
   'forum-moderation': 'bi-shield-exclamation',
@@ -32,10 +38,21 @@ const POLL_MS = 5 * 60000;
 
 // Bell with unread count and a dropdown of recent notifications.
 export default function NotificationBell({ compact = false }) {
+  const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);
   const [showPrefs, setShowPrefs] = useState(false);
+  const [publisherOpen, setPublisherOpen] = useState(false);
+  const [updateTitle, setUpdateTitle] = useState('');
+  const [updateBody, setUpdateBody] = useState('');
+  const [updateFiles, setUpdateFiles] = useState([]);
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
+  const [publishing, setPublishing] = useState(false);
+  const [publisherMessage, setPublisherMessage] = useState('');
+  const [publisherError, setPublisherError] = useState('');
+  const [preferenceError, setPreferenceError] = useState('');
   const ref = useRef(null);
+  const isAdmin = user?.role === 'admin';
 
   const load = useCallback(() => apiRequest('/notifications?limit=15').then(setData).catch(() => {}), []);
 
@@ -65,6 +82,15 @@ export default function NotificationBell({ compact = false }) {
     };
   }, [open]);
 
+  useEffect(() => {
+    if (!publisherOpen) return undefined;
+    const onKey = (event) => {
+      if (event.key === 'Escape' && !publishing) setPublisherOpen(false);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [publisherOpen, publishing]);
+
   const markAll = async () => {
     await apiRequest('/notifications/read', { method: 'POST', body: JSON.stringify({}) }).catch(() => {});
     load();
@@ -79,6 +105,76 @@ export default function NotificationBell({ compact = false }) {
     const muted = data.muted.includes(type) ? data.muted.filter((t) => t !== type) : [...data.muted, type];
     const r = await apiRequest('/notifications/preferences', { method: 'PUT', body: JSON.stringify({ muted }) }).catch(() => null);
     if (r) setData((d) => ({ ...d, muted: r.muted }));
+  };
+
+  const updateEmailPreference = async (optOut) => {
+    setPreferenceError('');
+    try {
+      const result = await apiRequest('/notifications/preferences', {
+        method: 'PUT',
+        body: JSON.stringify({ updateEmailsOptOut: optOut }),
+      });
+      setData((current) => ({ ...current, updateEmailsOptOut: result.updateEmailsOptOut }));
+    } catch (error) {
+      setPreferenceError(error.message || 'Could not update email preferences.');
+    }
+  };
+
+  const selectUpdateFiles = (event) => {
+    const files = Array.from(event.target.files || []);
+    const allowedTypes = new Set([
+      'image/jpeg',
+      'image/png',
+      'image/webp',
+      'image/gif',
+      'application/pdf',
+    ]);
+    const invalidFile = files.find((file) => !allowedTypes.has(file.type) || file.size > 10 * 1024 * 1024);
+    if (invalidFile) {
+      setPublisherError(`${invalidFile.name} is unsupported or larger than 10 MB.`);
+      event.target.value = '';
+      return;
+    }
+    if (updateFiles.length + files.length > 5) {
+      setPublisherError('Attach no more than 5 files.');
+      event.target.value = '';
+      return;
+    }
+    setPublisherError('');
+    setUpdateFiles((current) => [...current, ...files]);
+    event.target.value = '';
+  };
+
+  const publishUpdate = async (event) => {
+    event.preventDefault();
+    setPublisherMessage('');
+    setPublisherError('');
+    if (!updateTitle.trim() || !updateBody.replace(/<[^>]*>/g, ' ').trim()) {
+      setPublisherError('Add a title and update text before publishing.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('title', updateTitle.trim());
+    formData.append('body', updateBody);
+    formData.append('sendNotification', String(broadcastOptions.sendNotification));
+    formData.append('sendEmail', String(broadcastOptions.sendEmail));
+    updateFiles.forEach((file) => formData.append('media', file));
+    setPublishing(true);
+    try {
+      const result = await apiRequest('/announcements', { method: 'POST', body: formData });
+      setUpdateTitle('');
+      setUpdateBody('');
+      setUpdateFiles([]);
+      setBroadcastOptions({ sendNotification: true, sendEmail: true });
+      setPublisherOpen(false);
+      setPublisherMessage(result.message || 'Update published.');
+      await load();
+    } catch (error) {
+      setPublisherError(error.message || 'Could not publish the update.');
+    } finally {
+      setPublishing(false);
+    }
   };
 
   const unread = data?.unread || 0;
@@ -111,6 +207,24 @@ export default function NotificationBell({ compact = false }) {
             </div>
           </div>
 
+          {isAdmin && (
+            <button
+              type="button"
+              className="notif-publish-update"
+              onClick={() => {
+                setPublisherError('');
+                setPublisherMessage('');
+                setPublisherOpen(true);
+              }}
+            >
+              <i className="bi bi-megaphone" aria-hidden="true" />
+              Publish community update
+              <i className="bi bi-arrow-up-right" aria-hidden="true" />
+            </button>
+          )}
+
+          {publisherMessage && <p className="notif-publish-success" role="status">{publisherMessage}</p>}
+
           {showPrefs && data && (
             <div className="notif-prefs">
               <p>Notify me about:</p>
@@ -120,6 +234,17 @@ export default function NotificationBell({ compact = false }) {
                   {MUTE_LABELS[type] || type}
                 </label>
               ))}
+              {user?.role === 'user' && (
+                <label>
+                  <input
+                    type="checkbox"
+                    checked={!data.updateEmailsOptOut}
+                    onChange={(event) => updateEmailPreference(!event.target.checked)}
+                  />
+                  Community update emails
+                </label>
+              )}
+              {preferenceError && <small className="notif-preference-error" role="alert">{preferenceError}</small>}
               <small>Moderation and account messages are always shown.</small>
             </div>
           )}
@@ -142,6 +267,105 @@ export default function NotificationBell({ compact = false }) {
           </ul>
         </div>
       )}
+
+      {publisherOpen && isAdmin && createPortal((
+        <div
+          className="update-publisher-backdrop"
+          role="presentation"
+          onMouseDown={(event) => {
+            if (event.target === event.currentTarget && !publishing) setPublisherOpen(false);
+          }}
+        >
+          <form
+            className="update-publisher"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="update-publisher-title"
+            onSubmit={publishUpdate}
+          >
+            <header className="update-publisher-header">
+              <div>
+                <span>COMMUNITY ANNOUNCEMENT</span>
+                <h2 id="update-publisher-title">Publish an update</h2>
+                <p>Share a formatted update with CodeSphere members.</p>
+              </div>
+              <button
+                type="button"
+                className="update-publisher-close"
+                onClick={() => setPublisherOpen(false)}
+                disabled={publishing}
+                aria-label="Close update publisher"
+              >
+                <i className="bi bi-x-lg" aria-hidden="true" />
+              </button>
+            </header>
+
+            <div className="update-publisher-fields">
+              <label className="update-publisher-label" htmlFor="update-title">Title</label>
+              <input
+                id="update-title"
+                className="update-publisher-title-input"
+                type="text"
+                value={updateTitle}
+                onChange={(event) => setUpdateTitle(event.target.value)}
+                maxLength={120}
+                placeholder="What should everyone know?"
+                required
+              />
+              <span className="update-publisher-label">Update details</span>
+              <RichTextEditor
+                value={updateBody}
+                onChange={setUpdateBody}
+                height={260}
+                placeholder="Write your update..."
+              />
+              <div className="update-media-row">
+                <label className="update-media-picker">
+                  <i className="bi bi-paperclip" aria-hidden="true" />
+                  Add images or PDFs
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif,application/pdf"
+                    multiple
+                    onChange={selectUpdateFiles}
+                  />
+                </label>
+                <small>Up to 5 files · 10 MB each</small>
+              </div>
+              {updateFiles.length > 0 && (
+                <ul className="update-file-list">
+                  {updateFiles.map((file, index) => (
+                    <li key={`${file.name}-${file.lastModified}-${index}`}>
+                      <i className={`bi ${file.type === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-image'}`} aria-hidden="true" />
+                      <span>{file.name}</span>
+                      <button
+                        type="button"
+                        onClick={() => setUpdateFiles((current) => current.filter((_, fileIndex) => fileIndex !== index))}
+                        aria-label={`Remove ${file.name}`}
+                      >
+                        <i className="bi bi-x" aria-hidden="true" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
+            </div>
+
+            {publisherError && <p className="update-publisher-error" role="alert">{publisherError}</p>}
+            <footer className="update-publisher-footer">
+              <span>Choose how to notify members when you publish</span>
+              <div>
+                <button type="button" className="update-publisher-cancel" onClick={() => setPublisherOpen(false)} disabled={publishing}>Cancel</button>
+                <button type="submit" className="update-publisher-submit" disabled={publishing}>
+                  <i className={`bi ${publishing ? 'bi-arrow-repeat' : 'bi-send'}`} aria-hidden="true" />
+                  {publishing ? 'Publishing…' : 'Publish update'}
+                </button>
+              </div>
+            </footer>
+          </form>
+        </div>
+      ), document.body)}
     </div>
   );
 }

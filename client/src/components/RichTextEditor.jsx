@@ -12,7 +12,13 @@ const COLORS = [
   '#9333EA', 'Purple',
 ];
 
-export default function RichTextEditor({ value, onChange, height = 360, placeholder = '' }) {
+export default function RichTextEditor({
+  value,
+  onChange,
+  height = 360,
+  placeholder = '',
+  contentStyle = '',
+}) {
   return (
     <Editor
       apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
@@ -28,8 +34,8 @@ export default function RichTextEditor({ value, onChange, height = 360, placehol
         placeholder,
         plugins: ['lists', 'link', 'table', 'wordcount', 'code', 'codesample', 'autolink'],
         toolbar:
-          'undo redo | blocks | bold italic underline strikethrough | forecolor backcolor | '
-          + 'alignleft aligncenter alignright | bullist numlist | link blockquote codesample table | removeformat',
+          'undo redo | bold italic underline strikethrough | forecolor backcolor | '
+          + 'alignleft aligncenter alignright | bullist numlist | link blockquote codesample table | removeformat | blocks',
         block_formats: 'Paragraph=p; Heading=h2; Subheading=h3; Small heading=h4; Code=pre',
         color_map: COLORS,
         custom_colors: true,
@@ -48,7 +54,7 @@ export default function RichTextEditor({ value, onChange, height = 360, placehol
           body { font-family: Arial, sans-serif; font-size: 15px; color: #183047; line-height: 1.7; padding: 8px; }
           pre { background: #0E1B2B; color: #E2E8F0; padding: 12px; border-radius: 8px; }
           blockquote { border-left: 4px solid #F07868; margin-left: 0; padding-left: 12px; color: #475569; }
-        `,
+        ` + contentStyle,
       }}
     />
   );

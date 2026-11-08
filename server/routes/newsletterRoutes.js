@@ -42,6 +42,10 @@ router.get('/unsubscribe', async (req, res) => {
       await User.updateOne({ _id: userId }, { $set: { dailyNewsOptIn: false } });
       return res.send(page('Daily emails stopped', 'You won\'t get Today in Tech by email any more. You can turn it back on from the Tech News page.'));
     }
+    if (req.query.list === 'updates') {
+      await User.updateOne({ _id: userId }, { $set: { updateEmailsOptOut: true } });
+      return res.send(page('Update emails stopped', 'You won\'t receive CodeSphere update emails any more. You can turn them back on in your notification preferences.'));
+    }
     await User.updateOne({ _id: userId }, { $set: { newsletterOptIn: false } });
     return res.send(page('You\'re unsubscribed', 'You won\'t get the CodeSphere Tech Brief by email any more. You can subscribe again on the Tech News page.'));
   } catch (error) {

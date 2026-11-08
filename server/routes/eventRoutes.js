@@ -13,6 +13,7 @@ const Attendance = require('../models/Attendance');
 const Registration = require('../models/Registration');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const { syncBadgesQuietly } = require('../utils/badges');
+const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 
 const router = express.Router();
 
@@ -487,6 +488,15 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
       createdBy: req.user._id,
     });
 
+    if (event.status === 'published') {
+      await broadcastUpdate({
+        title: `New event: ${event.title}`,
+        body: getPlainText(event.description).slice(0, 400),
+        link: `/events/${event.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
+
     return res.status(201).json({
       message: 'Event created successfully.',
       event,
@@ -611,7 +621,17 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
       };
     }
 
+    const wasPublished = existing.status === 'published';
     await existing.save();
+
+    if (!wasPublished && existing.status === 'published') {
+      await broadcastUpdate({
+        title: `New event: ${existing.title}`,
+        body: getPlainText(existing.description).slice(0, 400),
+        link: `/events/${existing.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
 
     // Delete the previous image only after the update succeeds.
     if ((uploadedBanner || shouldRemoveBanner) && oldBanner.publicId) {

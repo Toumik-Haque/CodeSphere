@@ -372,6 +372,8 @@ export default function EventDetails() {
                   <div
                     className={`event-view-description-wrap ${
                       descriptionExpanded ? 'is-expanded' : 'is-collapsed'
+                    } ${
+                      descriptionCanExpand && !descriptionExpanded ? 'has-fade' : ''
                     }`}
                     ref={descriptionRef}
                   >

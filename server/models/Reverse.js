@@ -60,6 +60,9 @@ const challengeSchema = new Schema(
 
     status: { type: String, enum: ['draft', 'published', 'retired'], default: 'draft', index: true },
     publishedAt: { type: Date, default: null },
+    sendNotification: { type: Boolean, default: true },
+    sendEmail: { type: Boolean, default: true },
+    notifiedAt: { type: Date, default: null },
     featured: { type: Boolean, default: false },
     validatedAt: { type: Date, default: null },
     validationNote: { type: String, default: '' },

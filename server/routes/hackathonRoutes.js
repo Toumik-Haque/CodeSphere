@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
 const { Hackathon, HackathonTeam, HackathonSubmission, ExternalHackathon, HackathonSync } = require('../models/Hackathon');
 const { protect, optionalAuth, requireStaff, hasStaffRole } = require('../middleware/authMiddleware');
 const { notify } = require('../utils/notify');
+const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { createLimiter } = require('../utils/rateLimit');
 const { syncExternalHackathons, SOURCE_NAMES } = require('../utils/hackathonSync');
 const { validateHackathon } = require('../utils/hackathonValidate');
@@ -204,6 +205,14 @@ router.post('/admin', organizer, async (req, res) => {
   if (error) return res.status(400).json({ message: error });
   try {
     const h = await Hackathon.create({ ...data, createdBy: req.user._id });
+    if (h.status === 'published') {
+      await broadcastUpdate({
+        title: `New hackathon: ${h.title}`,
+        body: h.tagline || h.description.slice(0, 400),
+        link: `/hackathons/${h.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
     res.status(201).json({ id: String(h._id), slug: h.slug });
   } catch (e) {
     res.status(e.code === 11000 ? 409 : 500).json({ message: e.code === 11000 ? 'That URL slug is taken.' : 'Could not save.' });
@@ -215,8 +224,19 @@ router.put('/admin/:id', organizer, async (req, res) => {
   const { data, error } = validateHackathon(req.body || {});
   if (error) return res.status(400).json({ message: error });
   try {
-    const h = await Hackathon.findByIdAndUpdate(req.params.id, data, { new: true });
+    const h = await Hackathon.findById(req.params.id);
     if (!h) return res.status(404).json({ message: 'Not found.' });
+    const wasPublished = h.status === 'published';
+    Object.assign(h, data);
+    await h.save();
+    if (!wasPublished && h.status === 'published') {
+      await broadcastUpdate({
+        title: `New hackathon: ${h.title}`,
+        body: h.tagline || h.description.slice(0, 400),
+        link: `/hackathons/${h.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
     res.json({ id: String(h._id), slug: h.slug });
   } catch (e) {
     res.status(e.code === 11000 ? 409 : 500).json({ message: e.code === 11000 ? 'That URL slug is taken.' : 'Could not save.' });
@@ -253,12 +273,25 @@ router.post('/admin/:id/results', manageById, async (req, res) => {
   await h.save();
   if (publish && !wasPublished) {
     const teams = await HackathonTeam.find({ hackathon: h._id }).select('members').lean();
-    await notify(teams.flatMap((t) => t.members), {
-      type: 'hackathon',
-      title: `Results are out for ${h.title}`,
-      body: 'See the winners and every project in the gallery.',
-      link: `/hackathons/${h.slug}`,
-    });
+    const teamMembers = [...new Set(teams.flatMap((t) => t.members).map(String))];
+    const broadcastOptions = getBroadcastOptions(req.body);
+    if (broadcastOptions.sendNotification) {
+      await notify(teamMembers, {
+        type: 'hackathon',
+        title: `Results are out for ${h.title}`,
+        body: 'See the winners and every project in the gallery.',
+        link: `/hackathons/${h.slug}`,
+      });
+    }
+    if (req.user.role === 'admin') {
+      await broadcastUpdate({
+        title: `Hackathon results are live: ${h.title}`,
+        body: 'See the final results and celebrate the teams.',
+        link: `/hackathons/${h.slug}`,
+        notificationExcludeUserIds: teamMembers,
+        ...broadcastOptions,
+      });
+    }
   }
   res.json({ resultsPublished: h.resultsPublished });
 });

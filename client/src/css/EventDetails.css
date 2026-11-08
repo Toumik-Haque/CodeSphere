@@ -197,7 +197,7 @@
   max-height: 340px;
 }
 
-.event-view-description-wrap.is-collapsed::after {
+.event-view-description-wrap.has-fade::after {
   position: absolute;
   right: 0;
   bottom: 0;
@@ -484,12 +484,13 @@
 .event-view-description {
   color: #183047;
   font-size: 15px;
-  line-height: 1.8;
+  line-height: 1.55;
+  white-space: normal;
   overflow-wrap: anywhere;
 }
 
 .event-view-description p {
-  margin-bottom: 14px;
+  margin: 0 0 4px;
 }
 
 .event-view-description h1,
@@ -497,18 +498,30 @@
 .event-view-description h3,
 .event-view-description h4 {
   color: #142d45;
-  line-height: 1.4;
-  margin: 22px 0 12px;
+  line-height: 1.3;
+  margin: 14px 0 5px;
+}
+
+.event-view-description > :first-child {
+  margin-top: 0;
 }
 
 .event-view-description ul,
 .event-view-description ol {
-  padding-left: 25px;
-  margin: 12px 0 18px;
+  padding-left: 22px;
+  margin: 4px 0;
 }
 
 .event-view-description li {
-  margin-bottom: 6px;
+  margin-bottom: 1px;
+}
+
+.event-view-description li:last-child {
+  margin-bottom: 0;
+}
+
+.event-view-description li > p {
+  margin: 0;
 }
 
 .event-view-description a {
@@ -519,22 +532,29 @@
 
 .event-view-description blockquote {
   border-left: 4px solid #f07868;
-  padding: 10px 16px;
-  margin: 18px 0;
+  padding: 8px 12px;
+  margin: 10px 0;
   background: #fff0ed;
   border-radius: 0 8px 8px 0;
+}
+
+.event-view-description pre {
+  margin: 10px 0;
+  padding: 10px 12px;
+  overflow-x: auto;
+  border-radius: 8px;
 }
 
 .event-view-description table {
   width: 100%;
   border-collapse: collapse;
-  margin: 16px 0;
+  margin: 10px 0;
 }
 
 .event-view-description th,
 .event-view-description td {
   border: 1px solid #eee3df;
-  padding: 9px 12px;
+  padding: 7px 9px;
   text-align: left;
 }
 /* Community-hosted events */

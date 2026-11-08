@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { formatDate, timeAgo } from '../lib/time';
 import DailyNewsAdmin from '../components/DailyNewsAdmin';
+import BroadcastOptions from '../components/BroadcastOptions';
 import '../css/News.css';
 
 const STATUSES = ['candidate', 'reviewing', 'approved', 'published', 'rejected', 'archived'];
@@ -92,6 +93,7 @@ function DigestBuilder({ digest, approved, onDone, onMessage }) {
   }));
   const [publishAt, setPublishAt] = useState('');
   const [createDiscussion, setCreateDiscussion] = useState(true);
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const set = (k) => (e) => setF((x) => ({ ...x, [k]: e.target.value }));
   const byId = new Map(approved.map((i) => [i.id, i]));
   const published = digest?.status === 'published';
@@ -123,7 +125,11 @@ function DigestBuilder({ digest, approved, onDone, onMessage }) {
       await apiRequest(`/news/admin/digests/${digest.id}`, { method: 'PUT', body: JSON.stringify(payload()) });
       const r = await apiRequest(`/news/admin/digests/${digest.id}/publish`, {
         method: 'POST',
-        body: JSON.stringify({ publishAt: publishAt ? new Date(publishAt).toISOString() : undefined, createDiscussion }),
+        body: JSON.stringify({
+          publishAt: publishAt ? new Date(publishAt).toISOString() : undefined,
+          createDiscussion,
+          ...broadcastOptions,
+        }),
       });
       onMessage(r.scheduled ? `Scheduled for ${formatDate(r.publishedAt)}.` : 'Published! Students have been notified.');
       onDone();
@@ -189,6 +195,7 @@ function DigestBuilder({ digest, approved, onDone, onMessage }) {
           <>
             <label className="news-check"><input type="checkbox" checked={createDiscussion} onChange={(e) => setCreateDiscussion(e.target.checked)} /> Open a forum discussion for the question</label>
             <input type="datetime-local" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} aria-label="Publish at (optional)" />
+            <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
             <button type="button" className="news-btn ok" onClick={publish}><i className="bi bi-broadcast" aria-hidden="true" /> {publishAt ? 'Schedule' : 'Publish now'}</button>
           </>
         )}

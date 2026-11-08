@@ -5,6 +5,7 @@ import { apiRequest } from '../lib/api';
 import { PHASES, SOURCES } from '../lib/hackathons';
 import { timeAgo } from '../lib/time';
 import HackathonJudging from '../components/HackathonJudging';
+import BroadcastOptions from '../components/BroadcastOptions';
 import '../css/Hackathons.css';
 
 // <input type="datetime-local"> wants local time without a zone.
@@ -50,6 +51,7 @@ export default function AdminHackathons() {
   const [message, setMessage] = useState('');
   const [syncing, setSyncing] = useState(false);
   const [version, setVersion] = useState(0);
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
@@ -66,6 +68,7 @@ export default function AdminHackathons() {
   const open = (h) => {
     setForm(h ? toForm(h) : { ...EMPTY });
     setEditingId(h?.id || null);
+    setBroadcastOptions({ sendNotification: true, sendEmail: true });
     setJudgingId(null);
     setMessage('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -73,7 +76,7 @@ export default function AdminHackathons() {
 
   const save = async (status) => {
     try {
-      const body = JSON.stringify({ ...toPayload(form), status: status || form.status });
+      const body = JSON.stringify({ ...toPayload(form), status: status || form.status, ...broadcastOptions });
       if (editingId) await apiRequest(`/hackathons/admin/${editingId}`, { method: 'PUT', body });
       else setEditingId((await apiRequest('/hackathons/admin', { method: 'POST', body })).id);
       setForm((f) => ({ ...f, status: status || f.status }));
@@ -117,6 +120,7 @@ export default function AdminHackathons() {
         <div className="container">
           <div className="hk-admin-head">
             <h1><i className="bi bi-trophy" aria-hidden="true" /> Hackathons</h1>
+            <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
             <div className="hk-form-actions">
               <Link to="/hackathons" className="hk-btn">View page</Link>
               <button type="button" className="btn btn-gold" onClick={() => open(null)}><i className="bi bi-plus-lg" aria-hidden="true" /> New hackathon</button>

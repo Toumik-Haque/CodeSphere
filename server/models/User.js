@@ -241,6 +241,7 @@ const userSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+    updateEmailsOptOut: { type: Boolean, default: false },
     // Notification types the student has muted (see utils/notify.js).
     mutedNotifications: {
       type: [String],

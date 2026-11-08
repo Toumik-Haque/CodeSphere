@@ -6,6 +6,7 @@ import { categoryOf } from '../lib/projects';
 import { timeAgo } from '../lib/time';
 import ProjectAnalytics from '../components/ProjectAnalytics';
 import GuidedEditor from '../components/GuidedEditor';
+import BroadcastOptions from '../components/BroadcastOptions';
 import '../css/Projects.css';
 
 const TABS = [
@@ -33,13 +34,14 @@ function ReviewCard({ p, onDone }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const cat = categoryOf(p.category);
 
   const decide = async (decision) => {
     setBusy(true);
     setError('');
     try {
-      await apiRequest(`/projects/admin/${p.id}/review`, { method: 'POST', body: JSON.stringify({ decision, note }) });
+      await apiRequest(`/projects/admin/${p.id}/review`, { method: 'POST', body: JSON.stringify({ decision, note, ...broadcastOptions }) });
       onDone(`${p.title}: ${decision}`);
     } catch (e) {
       setError(e.message);
@@ -79,7 +81,12 @@ function ReviewCard({ p, onDone }) {
       </details>
       <textarea rows={2} value={note} onChange={(e) => setNote(e.target.value)} maxLength={1000} placeholder="Note for the student (required to request changes or reject)" aria-label="Review note" />
       <div className="ap-actions">
-        {p.status !== 'published' && <button type="button" className="btn btn-gold" disabled={busy} onClick={() => decide('approve')}>Approve & publish</button>}
+        {p.status !== 'published' && (
+          <>
+            <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
+            <button type="button" className="btn btn-gold" disabled={busy} onClick={() => decide('approve')}>Approve & publish</button>
+          </>
+        )}
         {p.status === 'published' && (p.featured
           ? <button type="button" className="ph-btn" disabled={busy} onClick={() => decide('unfeature')}>Unfeature</button>
           : <button type="button" className="ph-btn" disabled={busy} onClick={() => decide('feature')}><i className="bi bi-star" aria-hidden="true" /> Feature</button>)}

@@ -9,8 +9,8 @@ const { createLimiter } = require('../utils/rateLimit');
 const { isConfigured, activeRunner, SUPPORTED_LANGUAGES } = require('../config/codeRunner');
 const { evaluate } = require('../utils/reverseJudge');
 const { syncBadgesQuietly } = require('../utils/badges');
-const { notify } = require('../utils/notify');
-const User = require('../models/User');
+const { getBroadcastOptions } = require('../utils/broadcast');
+const { notifyLiveChallenges } = require('../utils/reverseNotifications');
 const StudyGuide = require('../models/StudyGuide');
 
 const router = express.Router();
@@ -424,17 +424,12 @@ router.post('/admin/:id/publish', protect, editorOnly, async (req, res) => {
     const wasLive = challenge.status === 'published';
     challenge.status = 'published';
     challenge.publishedAt = publishAt;
+    Object.assign(challenge, getBroadcastOptions(req.body));
+    if (!wasLive) challenge.notifiedAt = null;
     challenge.updatedBy = req.user._id;
     await challenge.save();
 
-    if (!wasLive && publishAt <= new Date()) {
-      const students = await User.find({ role: 'user' }).select('_id').lean();
-      await notify(students.map((s) => s._id), {
-        type: 'reverse-new',
-        title: `New ${challenge.level} Reverse Coding challenge: ${challenge.title}`,
-        link: `/reverse-coding/${challenge.slug}`,
-      });
-    }
+    if (publishAt <= new Date()) await notifyLiveChallenges();
     return res.json({ ok: true, publishedAt: challenge.publishedAt });
   } catch (error) {
     console.error('Reverse publish error:', error);

@@ -5,7 +5,7 @@ const sanitizeHtml = require('sanitize-html');
 const User = require('../models/User');
 const { NewsSource, NewsItem, NewsDigest, NewsFetchLog } = require('../models/News');
 const { NEWS_LIMITS } = require('../data/news');
-const { notify } = require('./notify');
+const { broadcastUpdate } = require('./broadcast');
 const { sendDigestNewsletter } = require('./newsletter');
 
 // ---------- text and URL safety ----------
@@ -192,18 +192,21 @@ async function ingestAll(trigger = 'manual') {
 async function notifyLiveDigests() {
   const due = await NewsDigest.find({ status: 'published', publishedAt: { $lte: new Date() }, notifiedAt: null });
   if (!due.length) return;
-  const students = (await User.find({ role: 'user' }).select('_id').lean()).map((u) => u._id);
   for (const digest of due) {
-    await notify(students, {
-      type: 'news-digest',
+    const subscribers = await User.find({ role: 'user', newsletterOptIn: true }).select('_id').lean();
+    await broadcastUpdate({
       title: `This week's CodeSphere Tech Brief is ready: ${digest.title}`,
+      body: digest.intro,
       link: `/news/${digest.slug}`,
+      emailExcludeUserIds: subscribers.map((user) => user._id),
+      sendNotification: digest.sendNotification,
+      sendEmail: digest.sendEmail,
     });
     digest.notifiedAt = new Date();
     await digest.save();
 
     // Email opted-in students once (skipped if Brevo isn't configured).
-    if (!digest.emailedAt) {
+    if (digest.sendEmail && !digest.emailedAt) {
       const result = await sendDigestNewsletter(digest);
       if (!result.skipped) {
         digest.emailedAt = new Date();

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { CATEGORIES, LEVELS } from '../lib/projects';
+import BroadcastOptions from './BroadcastOptions';
 
 const EMPTY = {
   title: '', slug: '', summary: '', level: 'Beginner', category: 'web', estHours: 8, order: 100, status: 'published',
@@ -23,6 +24,7 @@ export default function GuidedEditor() {
   const [editingId, setEditingId] = useState(null);
   const [msg, setMsg] = useState('');
   const [version, setVersion] = useState(0);
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
@@ -41,7 +43,7 @@ export default function GuidedEditor() {
     e.preventDefault();
     setMsg('');
     try {
-      const body = JSON.stringify({ ...form, milestones: form.milestones.map((m) => ({ ...m, tasks: m.tasks.split('\n') })) });
+      const body = JSON.stringify({ ...form, ...broadcastOptions, milestones: form.milestones.map((m) => ({ ...m, tasks: m.tasks.split('\n') })) });
       if (editingId) await apiRequest(`/projects/admin/guided/${editingId}`, { method: 'PUT', body });
       else setEditingId((await apiRequest('/projects/admin/guided', { method: 'POST', body })).id);
       setMsg('Saved.');
@@ -63,7 +65,7 @@ export default function GuidedEditor() {
     <div>
       <div className="pa-head">
         <h2>Guided projects</h2>
-        <button type="button" className="btn btn-gold" onClick={() => { setForm({ ...EMPTY }); setEditingId(null); setMsg(''); }}><i className="bi bi-plus-lg" aria-hidden="true" /> New guided project</button>
+        <button type="button" className="btn btn-gold" onClick={() => { setForm({ ...EMPTY }); setEditingId(null); setBroadcastOptions({ sendNotification: true, sendEmail: true }); setMsg(''); }}><i className="bi bi-plus-lg" aria-hidden="true" /> New guided project</button>
       </div>
       {msg && <p className="ph-ok" role="status">{msg}</p>}
 
@@ -101,6 +103,9 @@ export default function GuidedEditor() {
                   <button type="button" aria-label="Remove resource" onClick={() => setM(i, 'resources', m.resources.filter((_, j) => j !== ri))}><i className="bi bi-x-lg" /></button>
                 </div>
               ))}
+              {(!editingId || items?.find((item) => item.id === editingId)?.status !== 'published') && form.status === 'published' && (
+                <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
+              )}
               <div className="ap-actions">
                 <button type="button" className="ph-btn" onClick={() => setM(i, 'resources', [...m.resources, { title: '', url: '' }])}><i className="bi bi-link-45deg" aria-hidden="true" /> Add resource</button>
                 {form.milestones.length > 1 && <button type="button" className="ph-btn danger" onClick={() => setForm((f) => ({ ...f, milestones: f.milestones.filter((_, j) => j !== i) }))}>Remove milestone</button>}
@@ -126,7 +131,7 @@ export default function GuidedEditor() {
             </div>
             <div className="ap-actions">
               <Link to={`/projects/guided/${g.slug}`} className="ph-btn">Open</Link>
-              <button type="button" className="ph-btn" onClick={() => { setForm(toForm(g)); setEditingId(g.id); setMsg(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
+              <button type="button" className="ph-btn" onClick={() => { setForm(toForm(g)); setEditingId(g.id); setBroadcastOptions({ sendNotification: true, sendEmail: true }); setMsg(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
             </div>
           </div>
         ))}

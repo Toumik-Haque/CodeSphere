@@ -11,11 +11,12 @@ import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
 import logo from '../assets/logo.svg';
 import '../css/Admin.css';
-import { Editor } from '@tinymce/tinymce-react';
 import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
+import RichTextEditor from '../components/RichTextEditor';
 import AdminBadgeAwards from '../components/AdminBadgeAwards';
 import AdminStaffRoles from '../components/AdminStaffRoles';
 import MemberProfile from './MemberProfile';
+import BroadcastOptions from '../components/BroadcastOptions';
 
 const initialForm = {
   title: '',
@@ -193,6 +194,7 @@ export default function Admin() {
 
   const [form, setForm] = useState(initialForm);
   const [editingId, setEditingId] = useState(null);
+  const [eventBroadcastOptions, setEventBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
 
   const [selectedImage, setSelectedImage] = useState(null);
   const [imagePreview, setImagePreview] = useState('');
@@ -275,6 +277,7 @@ export default function Admin() {
 
     setForm(initialForm);
     setEditingId(null);
+    setEventBroadcastOptions({ sendNotification: true, sendEmail: true });
     setRemoveEventImage(false);
 
     if (eventImageInputRef.current) {
@@ -290,6 +293,7 @@ export default function Admin() {
 
   function startEditing(event) {
     clearEventImagePreview();
+    setEventBroadcastOptions({ sendNotification: true, sendEmail: true });
 
     setEditingId(event._id);
 
@@ -439,6 +443,8 @@ export default function Admin() {
       formData.append('linkedinPostLink', form.linkedinPostLink.trim());
       formData.append('instagramPostLink', form.instagramPostLink.trim());
       formData.append('status', form.status);
+      formData.append('sendNotification', String(eventBroadcastOptions.sendNotification));
+      formData.append('sendEmail', String(eventBroadcastOptions.sendEmail));
 
       if (selectedImage) {
         formData.append('bannerImage', selectedImage);
@@ -474,15 +480,15 @@ export default function Admin() {
   async function togglePublish(event) {
     clearFeedback();
 
-    try {
-      const status =
-        event.status === 'published'
-          ? 'draft'
-          : 'published';
+    if (event.status !== 'published') {
+      startEditing({ ...event, status: 'published' });
+      return;
+    }
 
+    try {
       const result = await apiRequest(`/events/${event._id}`, {
         method: 'PATCH',
-        body: JSON.stringify({ status }),
+        body: JSON.stringify({ status: 'draft' }),
       });
 
       setMessage(result.message || 'Event status updated.');
@@ -550,6 +556,7 @@ export default function Admin() {
   const showCoreMemberForm = activeCoreMemberTab === 'form';
   const [coreMemberForm, setCoreMemberForm] = useState(initialCoreMemberForm);
   const [editingCoreMemberId, setEditingCoreMemberId] = useState(null);
+  const [memberBroadcastOptions, setMemberBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
 
   const [coreMemberImage, setCoreMemberImage] = useState(null);
   const [coreMemberImagePreview, setCoreMemberImagePreview] = useState('');
@@ -613,6 +620,7 @@ export default function Admin() {
 
     setCoreMemberForm(initialCoreMemberForm);
     setEditingCoreMemberId(null);
+    setMemberBroadcastOptions({ sendNotification: true, sendEmail: true });
     setRemoveCoreMemberImage(false);
 
     if (coreMemberImageInputRef.current) {
@@ -734,6 +742,8 @@ export default function Admin() {
       formData.append('githubLink', coreMemberForm.githubLink.trim());
       formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
       formData.append('instagramLink', coreMemberForm.instagramLink.trim());
+      formData.append('sendNotification', String(memberBroadcastOptions.sendNotification));
+      formData.append('sendEmail', String(memberBroadcastOptions.sendEmail));
 
       if (coreMemberImage) {
         formData.append('image', coreMemberImage);
@@ -1797,10 +1807,9 @@ export default function Admin() {
                           Description *
                         </label>
 
-                        <Editor
-                          apiKey={import.meta.env.VITE_TINYMCE_API_KEY}
+                        <RichTextEditor
                           value={form.description}
-                          onEditorChange={(content) => {
+                          onChange={(content) => {
                             updateField({
                               target: {
                                 name: 'description',
@@ -1808,65 +1817,13 @@ export default function Admin() {
                               },
                             });
                           }}
-                          init={{
-                            height: 350,
-                            menubar: false,
-                            branding: false,
-                            promotion: false,
-                            statusbar: true,
-                            resize: true,
-
-                            plugins: [
-                              'lists',
-                              'link',
-                              'table',
-                              'wordcount',
-                              'code',
-                            ],
-
-                            toolbar:
-                              'undo redo | blocks | ' +
-                              'bold italic underline strikethrough | ' +
-                              'forecolor backcolor | ' +
-                              'alignleft aligncenter alignright alignjustify | ' +
-                              'bullist numlist | ' +
-                              'link table blockquote | ' +
-                              'removeformat',
-
-                            color_map: [
-                              '#F07868', 'CodeSphere Coral',
-                              '#142D45', 'Navy',
-                              '#183047', 'Dark Text',
-                              '#647589', 'Muted',
-                              '#FFFFFF', 'White',
-                              '#000000', 'Black',
-                              '#FF0000', 'Red',
-                              '#008000', 'Green',
-                              '#0000FF', 'Blue',
-                              '#FFFF00', 'Yellow',
-                              '#800080', 'Purple',
-                            ],
-
-                            custom_colors: true,
-
-                            content_style: `
-                             body {
-                               font-family: Arial, sans-serif;
-                               font-size: 14px;
-                               color: #183047;
-                               line-height: 1.7;
-                               padding: 8px;
-                             }
-                     
-                             h1, h2, h3 {
-                               color: #142D45;
-                             }
-                     
-                             a {
-                               color: #F07868;
-                             }
-                           `,
-                          }}
+                          height={350}
+                          placeholder="Write the event description..."
+                          contentStyle="
+                            body { white-space: normal; }
+                            p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre, table { margin: 0; }
+                            li { margin: 0; }
+                          "
                         />
 
                         <small>
@@ -2043,6 +2000,11 @@ export default function Admin() {
                         />
                       </div>
 
+                      {(form.status === 'published' || !editingId) && (
+                        <div className="admin-form-field admin-field-full">
+                          <BroadcastOptions value={eventBroadcastOptions} onChange={setEventBroadcastOptions} />
+                        </div>
+                      )}
                       <div className="admin-form-actions admin-field-full">
                         <button
                           className="admin-secondary-button admin-cancel-button"
@@ -2217,15 +2179,12 @@ export default function Admin() {
                           </div>
                         </div>
 
-                        {registeredUser.role !== 'admin' && (
-                          <>
-                            <AdminStaffRoles userId={registeredUser._id} initial={registeredUser.staffRoles || []} />
-                            <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
-                          </>
-                        )}
                         <div className="admin-user-card-actions">
                           {registeredUser.role !== 'admin' && (
-                            <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
+                            <>
+                              <AdminStaffRoles userId={registeredUser._id} initial={registeredUser.staffRoles || []} />
+                              <AdminBadgeAwards userId={registeredUser._id} userName={registeredUser.name} />
+                            </>
                           )}
 
                           {registeredUser.username && (
@@ -2647,6 +2606,11 @@ export default function Admin() {
                         />
                       </div>
 
+                      {!editingCoreMemberId && (
+                        <div className="admin-form-field admin-field-full">
+                          <BroadcastOptions value={memberBroadcastOptions} onChange={setMemberBroadcastOptions} />
+                        </div>
+                      )}
                       <div className="admin-form-actions admin-field-full">
                         <button
                           type="button"

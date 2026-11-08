@@ -20,6 +20,7 @@ router.get('/', protect, async (req, res) => {
       unread,
       muted: req.user.mutedNotifications || [],
       mutable: MUTABLE_TYPES,
+      updateEmailsOptOut: Boolean(req.user.updateEmailsOptOut),
     });
   } catch (error) {
     console.error('Notifications error:', error);
@@ -42,12 +43,21 @@ router.post('/read', protect, async (req, res) => {
   }
 });
 
-// PUT /api/notifications/preferences { muted: [] }: mute notification types.
+// PUT /api/notifications/preferences { muted?: [], updateEmailsOptOut?: boolean }.
 router.put('/preferences', protect, async (req, res) => {
   try {
-    const muted = (Array.isArray(req.body.muted) ? req.body.muted : []).filter((t) => MUTABLE_TYPES.includes(t));
-    await User.updateOne({ _id: req.user._id }, { $set: { mutedNotifications: muted } });
-    res.json({ muted });
+    const set = {};
+    if (Array.isArray(req.body.muted)) {
+      set.mutedNotifications = req.body.muted.filter((t) => MUTABLE_TYPES.includes(t));
+    }
+    if (typeof req.body.updateEmailsOptOut === 'boolean') {
+      set.updateEmailsOptOut = req.body.updateEmailsOptOut;
+    }
+    await User.updateOne({ _id: req.user._id }, { $set: set });
+    res.json({
+      muted: set.mutedNotifications || req.user.mutedNotifications || [],
+      updateEmailsOptOut: set.updateEmailsOptOut ?? Boolean(req.user.updateEmailsOptOut),
+    });
   } catch (error) {
     console.error('Notifications prefs error:', error);
     res.status(500).json({ message: 'Could not save your preferences.' });

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SafeText from '../components/SafeText';
+import BroadcastOptions from '../components/BroadcastOptions';
 import { apiRequest } from '../lib/api';
 import '../css/Materials.css';
 
@@ -17,6 +18,7 @@ export default function AdminMaterials() {
   const [preview, setPreview] = useState(false);
   const [message, setMessage] = useState('');
   const [version, setVersion] = useState(0);
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
@@ -33,6 +35,7 @@ export default function AdminMaterials() {
   const open = (g) => {
     setForm(g ? toForm(g) : { ...EMPTY });
     setEditingId(g?.id || null);
+    setBroadcastOptions({ sendNotification: true, sendEmail: true });
     setPreview(false);
     setMessage('');
     window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -40,7 +43,7 @@ export default function AdminMaterials() {
 
   const save = async (status) => {
     try {
-      const body = JSON.stringify({ ...toPayload(form), status: status || form.status });
+      const body = JSON.stringify({ ...toPayload(form), status: status || form.status, ...broadcastOptions });
       if (editingId) await apiRequest(`/guides/admin/${editingId}`, { method: 'PUT', body });
       else setEditingId((await apiRequest('/guides/admin', { method: 'POST', body })).id);
       setForm((f) => ({ ...f, status: status || f.status }));
@@ -117,6 +120,7 @@ export default function AdminMaterials() {
               </button>
 
               <div className="mat-form-actions">
+                <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
                 <button type="button" className="mat-btn" onClick={() => { setForm(null); setEditingId(null); }}>Close</button>
                 <button type="button" className="mat-btn" onClick={() => save()}>Save</button>
                 {form.status !== 'published'

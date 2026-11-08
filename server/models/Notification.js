@@ -13,6 +13,7 @@ const notificationSchema = new mongoose.Schema(
       type: String,
       required: true,
       enum: [
+        'announcement',
         'forum-reply',
         'forum-mention',
         'forum-moderation',
