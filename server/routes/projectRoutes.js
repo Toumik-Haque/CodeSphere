@@ -7,6 +7,7 @@ const { Project, ProjectUpdate, GuidedProject, GuidedProgress, PROJECT_CATEGORIE
 const { protect, optionalAuth, hasStaffRole } = require('../middleware/authMiddleware');
 const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
+const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
 const { fetchRepoPreview, ImportError } = require('../utils/githubImport');
 const { track } = require('../utils/projectEvents');
@@ -227,6 +228,7 @@ router.post('/admin/:id/review', protect, async (req, res) => {
   if (['changes', 'reject'].includes(decision) && note.length < 5) return res.status(400).json({ message: 'Write a short note so the student knows what to do.' });
 
   const now = new Date();
+  const wasPublished = project.status === 'published';
   let title = '';
   switch (decision) {
     case 'approve':
@@ -265,6 +267,15 @@ router.post('/admin/:id/review', protect, async (req, res) => {
   await project.save();
   if (title) {
     await notify(project.owner, { type: 'project', title, body: note, link: `/projects/${project.slug}` });
+  }
+  if (req.user.role === 'admin' && decision === 'approve' && !wasPublished) {
+    await broadcastUpdate({
+      title: `New community project: ${project.title}`,
+      body: project.summary,
+      link: `/projects/${project.slug}`,
+      notificationExcludeUserIds: [project.owner],
+      ...getBroadcastOptions(req.body),
+    });
   }
   res.json({ status: project.status, featured: project.featured });
 });

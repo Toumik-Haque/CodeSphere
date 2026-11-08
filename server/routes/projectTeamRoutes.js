@@ -8,6 +8,7 @@ const { Project, ProjectUpdate, ProjectComment, ProjectEvent, GuidedProject, Gui
 const { protect } = require('../middleware/authMiddleware');
 const { createLimiter } = require('../utils/rateLimit');
 const { notify } = require('../utils/notify');
+const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { track } = require('../utils/projectEvents');
 const { helpers } = require('./projectRoutes');
 const { isContributor, ImportError } = require('../utils/githubImport');
@@ -136,6 +137,14 @@ router.post('/admin/guided', protect, async (req, res) => {
   if (error) return res.status(400).json({ message: error });
   try {
     const g = await GuidedProject.create(data);
+    if (req.user.role === 'admin') {
+      await broadcastUpdate({
+        title: `New guided project: ${g.title}`,
+        body: g.summary,
+        link: `/projects/guided/${g.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
     res.status(201).json({ id: String(g._id), slug: g.slug });
   } catch (e) {
     res.status(e.code === 11000 ? 409 : 500).json({ message: e.code === 11000 ? 'That slug is taken.' : 'Could not save.' });
@@ -148,8 +157,19 @@ router.put('/admin/guided/:id', protect, async (req, res) => {
   const { data, error } = readGuided(req.body || {});
   if (error) return res.status(400).json({ message: error });
   try {
-    const g = await GuidedProject.findByIdAndUpdate(req.params.id, data, { new: true });
-    if (!g) return res.status(404).json({ message: 'Not found.' });
+    const existing = await GuidedProject.findById(req.params.id);
+    if (!existing) return res.status(404).json({ message: 'Not found.' });
+    const wasPublished = existing.status === 'published';
+    Object.assign(existing, data);
+    const g = await existing.save();
+    if (req.user.role === 'admin' && !wasPublished && g.status === 'published') {
+      await broadcastUpdate({
+        title: `New guided project: ${g.title}`,
+        body: g.summary,
+        link: `/projects/guided/${g.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
     res.json({ id: String(g._id), slug: g.slug });
   } catch (e) {
     res.status(e.code === 11000 ? 409 : 500).json({ message: e.code === 11000 ? 'That slug is taken.' : 'Could not save.' });

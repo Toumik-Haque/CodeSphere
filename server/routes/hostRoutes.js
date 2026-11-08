@@ -11,6 +11,7 @@ const User = require('../models/User');
 const { Hackathon, HackathonTeam, HackathonSubmission } = require('../models/Hackathon');
 const { protect, hasStaffRole } = require('../middleware/authMiddleware');
 const { notify } = require('../utils/notify');
+const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { createLimiter } = require('../utils/rateLimit');
 const { storeImage, deleteImages } = require('../utils/forumMedia');
 const sanitizeDescription = require('../utils/sanitizeDescription');
@@ -252,6 +253,17 @@ router.post('/admin/:kind/:id/review', protect, async (req, res) => {
     body: decision === 'approve' ? (note || 'Thanks for hosting with CodeSphere.') : note,
     link: decision === 'approve' ? path : '/host',
   });
+  if (decision === 'approve' && req.user.role === 'admin') {
+    await broadcastUpdate({
+      title: `New community ${kind}: ${doc.title}`,
+      body: kind === 'event'
+        ? htmlToText(doc.description).slice(0, 400)
+        : doc.tagline || doc.description.slice(0, 400),
+      link: path,
+      notificationExcludeUserIds: [doc.createdBy],
+      ...getBroadcastOptions(req.body),
+    });
+  }
   res.json({ reviewStatus: doc.reviewStatus, published: doc.status === 'published' });
 });
 

@@ -3,6 +3,7 @@ const mongoose = require('mongoose');
 const StudyGuide = require('../models/StudyGuide');
 const { ReverseChallenge } = require('../models/Reverse');
 const { protect, requireStaff } = require('../middleware/authMiddleware');
+const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 
 const router = express.Router();
 
@@ -120,6 +121,14 @@ router.post('/admin', editor, async (req, res) => {
   if (errors.length) return res.status(400).json({ message: errors[0] });
   try {
     const guide = await StudyGuide.create({ ...value, status: req.body.status === 'published' ? 'published' : 'draft', updatedBy: req.user._id });
+    if (guide.status === 'published') {
+      await broadcastUpdate({
+        title: `New study guide: ${guide.title}`,
+        body: guide.summary,
+        link: `/materials/${guide.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
     return res.status(201).json({ id: String(guide._id) });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ message: 'That slug is already used.' });
@@ -133,12 +142,23 @@ router.put('/admin/:id', editor, async (req, res) => {
   const { errors, value } = guideInput(req.body);
   if (errors.length) return res.status(400).json({ message: errors[0] });
   try {
+    const guide = await StudyGuide.findById(req.params.id);
+    if (!guide) return res.status(404).json({ message: 'Guide not found.' });
+    const wasPublished = guide.status === 'published';
     const status = ['draft', 'published'].includes(req.body.status) ? req.body.status : undefined;
-    const result = await StudyGuide.updateOne(
-      { _id: req.params.id },
-      { $set: { ...value, ...(status ? { status } : {}), updatedBy: req.user._id } },
-    );
-    if (!result.matchedCount) return res.status(404).json({ message: 'Guide not found.' });
+    Object.assign(guide, value, {
+      ...(status ? { status } : {}),
+      updatedBy: req.user._id,
+    });
+    await guide.save();
+    if (!wasPublished && guide.status === 'published') {
+      await broadcastUpdate({
+        title: `New study guide: ${guide.title}`,
+        body: guide.summary,
+        link: `/materials/${guide.slug}`,
+        ...getBroadcastOptions(req.body),
+      });
+    }
     return res.json({ ok: true });
   } catch (error) {
     if (error.code === 11000) return res.status(409).json({ message: 'That slug is already used.' });

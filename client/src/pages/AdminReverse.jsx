@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { formatDate } from '../lib/time';
+import BroadcastOptions from '../components/BroadcastOptions';
 import '../css/Reverse.css';
 
 const EMPTY = {
@@ -109,6 +110,7 @@ export default function AdminReverse() {
   const [message, setMessage] = useState('');
   const [validation, setValidation] = useState(null);
   const [publishAt, setPublishAt] = useState('');
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const [version, setVersion] = useState(0);
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
@@ -128,6 +130,7 @@ export default function AdminReverse() {
     setEditingId(c?.id || null);
     setValidation(null);
     setMessage('');
+    setBroadcastOptions({ sendNotification: true, sendEmail: true });
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -151,7 +154,8 @@ export default function AdminReverse() {
   const run = async (path, body, success) => {
     setMessage('');
     try {
-      const r = await apiRequest(`/reverse/admin/${editingId}/${path}`, { method: 'POST', body: JSON.stringify(body || {}) });
+      const requestBody = path === 'publish' ? { ...body, ...broadcastOptions } : body || {};
+      const r = await apiRequest(`/reverse/admin/${editingId}/${path}`, { method: 'POST', body: JSON.stringify(requestBody) });
       if (path === 'validate') setValidation(r);
       setMessage(success || r.note || 'Done.');
       reload();
@@ -273,6 +277,7 @@ export default function AdminReverse() {
                 {editingId && (
                   <>
                     <button type="button" className="rc-run" onClick={() => run('validate')} disabled={!data?.judgeReady}><i className="bi bi-patch-check" aria-hidden="true" /> Validate</button>
+                    <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
                     <input type="datetime-local" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} aria-label="Publish at (optional)" />
                     <button type="button" className="rc-submit" onClick={() => run('publish', publishAt ? { publishAt: new Date(publishAt).toISOString() } : {}, publishAt ? 'Scheduled.' : 'Published.')} disabled={!current?.validatedAt}>
                       <i className="bi bi-broadcast" aria-hidden="true" /> {publishAt ? 'Schedule' : 'Publish now'}

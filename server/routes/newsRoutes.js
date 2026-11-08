@@ -5,6 +5,7 @@ const { ForumThread, ForumFollow } = require('../models/Forum');
 const { protect, optionalAuth, requireStaff } = require('../middleware/authMiddleware');
 const { NEWS_CATEGORIES, NEWS_LIMITS } = require('../data/news');
 const { toPlainText, canonicalUrl, ingestSource, ingestAll, notifyLiveDigests } = require('../utils/newsIngest');
+const { getBroadcastOptions } = require('../utils/broadcast');
 const { DailyNews, DailyBrief, DailyNewsSync } = require('../models/DailyNews');
 const { syncDailyNews, pickDiverse, istDay, heat } = require('../utils/dailyNews');
 
@@ -537,6 +538,7 @@ router.post('/admin/digests/:id/publish', admin, async (req, res) => {
     digest.status = 'published';
     digest.publishedAt = publishAt;
     digest.publishedBy = req.user._id;
+    Object.assign(digest, getBroadcastOptions(req.body));
     await digest.save();
     await NewsItem.updateMany({ _id: { $in: ids } }, { $set: { status: 'published', digest: digest._id } });
     await notifyLiveDigests();

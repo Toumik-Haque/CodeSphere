@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import SafeText from '../components/SafeText';
+import BroadcastOptions from '../components/BroadcastOptions';
 import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
 import '../css/Host.css';
@@ -17,6 +18,7 @@ function ReviewCard({ item, onDone }) {
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
 
   const decide = async (decision) => {
     if (decision === 'reject' && note.trim().length < 5) {
@@ -26,7 +28,7 @@ function ReviewCard({ item, onDone }) {
     setBusy(true);
     setError('');
     try {
-      await apiRequest(`/host/admin/${item.kind}/${item.id}/review`, { method: 'POST', body: JSON.stringify({ decision, note }) });
+      await apiRequest(`/host/admin/${item.kind}/${item.id}/review`, { method: 'POST', body: JSON.stringify({ decision, note, ...broadcastOptions }) });
       onDone(decision === 'approve' ? `Approved "${item.title}". It is live now.` : `Sent "${item.title}" back with your note.`);
     } catch (e) {
       setError(e.message);
@@ -102,7 +104,12 @@ function ReviewCard({ item, onDone }) {
             placeholder={item.reviewStatus === 'approved' ? 'Reason for taking it down (sent to the host)…' : 'Reason / note for the host (required to reject)…'}
             aria-label="Note for the host" />
           <div className="host-actions">
-            {item.reviewStatus !== 'approved' && <button type="button" className="btn btn-gold" disabled={busy} onClick={() => decide('approve')}><i className="bi bi-check-lg" aria-hidden="true" /> Approve & publish</button>}
+            {item.reviewStatus !== 'approved' && (
+              <>
+                <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
+                <button type="button" className="btn btn-gold" disabled={busy} onClick={() => decide('approve')}><i className="bi bi-check-lg" aria-hidden="true" /> Approve & publish</button>
+              </>
+            )}
             <button type="button" className="review-reject" disabled={busy} onClick={() => decide('reject')}>
               <i className="bi bi-x-lg" aria-hidden="true" /> {item.reviewStatus === 'approved' ? 'Unpublish with reason' : 'Reject with reason'}
             </button>

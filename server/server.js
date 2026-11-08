@@ -34,6 +34,7 @@ const challengeRoutes = require('./routes/challengeRoutes');
 const leaderboardRoutes = require('./routes/leaderboardRoutes');
 const badgeRoutes = require('./routes/badgeRoutes');
 const notificationRoutes = require('./routes/notificationRoutes');
+const announcementRoutes = require('./routes/announcementRoutes');
 const forumRoutes = require('./routes/forumRoutes');
 const reverseRoutes = require('./routes/reverseRoutes');
 const newsRoutes = require('./routes/newsRoutes');
@@ -48,6 +49,7 @@ const githubRoutes = require('./routes/githubRoutes');
 const { startProjectSync } = require('./utils/projectSync');
 const { startHackathonSync } = require('./utils/hackathonSync');
 const { startNewsScheduler } = require('./utils/newsIngest');
+const { startReverseNotifications } = require('./utils/reverseNotifications');
 const { startDailyNews } = require('./utils/dailyNews');
 
 app.use('/api/auth', authRoutes);
@@ -61,6 +63,7 @@ app.use('/api/challenges', challengeRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/badges', badgeRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/announcements', announcementRoutes);
 app.use('/api/forum', forumRoutes);
 app.use('/api/reverse', reverseRoutes);
 app.use('/api/news', newsRoutes);
@@ -86,6 +89,7 @@ async function startServer() {
 
     // Daily feed fetching + scheduled digest announcements (NEWS_SCHEDULER=off to disable).
     startNewsScheduler();
+    startReverseNotifications();
     // Daily news from Hacker News, DEV, RSS (+ GNews/NewsData if keys are set). DAILY_NEWS=off to disable.
     startDailyNews();
     // Live hackathons from Devpost, Devfolio, Unstop, Hack2Skill, HackerEarth (HACKATHON_SYNC=off to disable).

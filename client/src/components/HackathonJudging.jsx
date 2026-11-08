@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../lib/api';
+import BroadcastOptions from './BroadcastOptions';
 import '../css/Hackathons.css';
 
 // Teams, submissions, ranking and result publishing for one hackathon.
@@ -8,6 +9,7 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
   const [data, setData] = useState(null);
   const [msg, setMsg] = useState('');
   const [version, setVersion] = useState(0);
+  const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
 
   useEffect(() => {
     let cancelled = false;
@@ -31,9 +33,9 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
   };
 
   const setResults = async (published) => {
-    if (published && !window.confirm('Publish results? Every participant will be notified.')) return;
+    if (published && !window.confirm('Publish the results with the selected notification options?')) return;
     try {
-      await apiRequest(`/hackathons/admin/${id}/results`, { method: 'POST', body: JSON.stringify({ published }) });
+      await apiRequest(`/hackathons/admin/${id}/results`, { method: 'POST', body: JSON.stringify({ published, ...broadcastOptions }) });
       setMsg(published ? 'Results published.' : 'Results hidden.');
       setVersion((v) => v + 1);
       onChanged();
@@ -44,6 +46,7 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
 
   return (
     <div className="hk-judging">
+      {!h.resultsPublished && <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />}
       <div className="hk-judging-head">
         <h3>{data.teams.length} teams · {data.submissions.length} submissions</h3>
         {h.resultsPublished

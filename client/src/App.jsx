@@ -26,6 +26,7 @@ import Login from './pages/Login';
 import Register from './pages/Register';
 import ResetPassword from './pages/ResetPassword';
 import Admin from './pages/Admin';
+import UpdateDetails from './pages/UpdateDetails';
 import EventsPage from './pages/EventsPage';
 import EventDetails from './pages/EventDetails';
 import Team from './pages/Team';
@@ -163,6 +164,7 @@ function AppRoutes() {
       {/* Public pages */}
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
+      <Route path="/updates/:id" element={<UpdateDetails />} />
       <Route path="/team" element={<Team />} />
       <Route path="/contact" element={<Contact />} />
       <Route path="/open-source" element={<OpenSource />} />

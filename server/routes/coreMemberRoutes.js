@@ -9,6 +9,7 @@ const { toFile } = require('@imagekit/nodejs');
 const CoreMember = require('../models/CoreMember');
 const { sortCoreMembers } = require('../utils/coreMemberRoleOrder');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
+const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 
 const router = express.Router();
 
@@ -211,6 +212,13 @@ router.post(
           publicId: uploadedImage.publicId,
           provider: uploadedImage.provider,
         },
+      });
+
+      await broadcastUpdate({
+        title: `Meet a new CodeSphere team member: ${member.name}`,
+        body: member.role,
+        link: '/team',
+        ...getBroadcastOptions(req.body),
       });
 
       return res.status(201).json({
