@@ -232,7 +232,7 @@ router.get('/admin/export', protect, adminOnly, async (req, res) => {
   try {
     const users = await User.find({ role: 'user' })
       .select(
-        'name username email collegeName yearOfStudy degree department graduationYear city bio github linkedin portfolio technicalInterests skills skillDetails codingProfiles achievements learningGoals profileComplete createdAt'
+        'name email phone city gender dateOfBirth bio collegeName yearOfStudy degree department graduationYear github linkedin portfolio technicalInterests skills skillDetails codingProfiles achievements learningGoals profileComplete createdAt'
       )
       .sort({ createdAt: -1 })
       .lean();

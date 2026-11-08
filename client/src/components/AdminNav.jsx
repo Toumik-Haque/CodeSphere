@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, NavLink, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.svg';
+import logo from '../assets/logo.png';
 import { WORKSPACE, TOOLS } from '../lib/adminNav';
 import '../css/Admin.css';
 

@@ -14,6 +14,7 @@ export default function AdminStaffRoles({ userId, initial = [] }) {
   const [roles, setRoles] = useState(initial);
   const [saving, setSaving] = useState('');
   const [message, setMessage] = useState('');
+  const [open, setOpen] = useState(false);
 
   const toggle = async (role) => {
     const next = roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role];
@@ -30,22 +31,34 @@ export default function AdminStaffRoles({ userId, initial = [] }) {
   };
 
   return (
-    <div className="adm-staff" aria-label="Staff roles">
-      <span className="adm-staff-label"><i className="bi bi-person-badge" aria-hidden="true" /> Staff roles:</span>
-      {ROLES.map((role) => (
-        <button
-          key={role.id}
-          type="button"
-          className={`adm-staff-chip ${roles.includes(role.id) ? 'is-on' : ''}`}
-          onClick={() => toggle(role.id)}
-          disabled={saving === role.id}
-          aria-pressed={roles.includes(role.id)}
-          title={role.help}
-        >
-          <i className={`bi ${roles.includes(role.id) ? 'bi-check-circle-fill' : role.icon}`} aria-hidden="true" /> {role.label}
-        </button>
-      ))}
-      {message && <small className="adm-staff-error">{message}</small>}
+    <div className={`adm-staff ${open ? 'is-open' : ''}`} aria-label="Staff roles">
+      <button
+        type="button"
+        className="adm-badges-toggle adm-staff-toggle"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+      >
+        <i className="bi bi-person-badge" aria-hidden="true" /> Staff roles
+        <i className={`bi ${open ? 'bi-chevron-up' : 'bi-chevron-down'}`} aria-hidden="true" />
+      </button>
+      {open && (
+        <div className="adm-badges-panel adm-staff-panel">
+          {ROLES.map((role) => (
+            <button
+              key={role.id}
+              type="button"
+              className={`adm-staff-chip ${roles.includes(role.id) ? 'is-on' : ''}`}
+              onClick={() => toggle(role.id)}
+              disabled={saving === role.id}
+              aria-pressed={roles.includes(role.id)}
+              title={role.help}
+            >
+              <i className={`bi ${roles.includes(role.id) ? 'bi-check-circle-fill' : role.icon}`} aria-hidden="true" /> {role.label}
+            </button>
+          ))}
+          {message && <small className="adm-staff-error" role="status">{message}</small>}
+        </div>
+      )}
     </div>
   );
 }

@@ -104,41 +104,37 @@ function csvCell(value) {
 function createUsersCsv(users) {
   const columns = [
     ['Name', (user) => user.name],
-    ['Username', (user) => user.username],
     ['Email', (user) => user.email],
+    ['Phone', (user) => user.phone],
+    ['City', (user) => user.city],
+    ['Gender', (user) => user.gender],
+    ['Date of birth', (user) => user.dateOfBirth],
+    ['Bio', (user) => user.bio],
     ['College', (user) => user.collegeName],
     ['Year of study', (user) => user.yearOfStudy],
     ['Degree', (user) => user.degree],
     ['Department', (user) => user.department],
     ['Graduation year', (user) => user.graduationYear],
-    ['City', (user) => user.city],
-    [
-      'Public profile URL',
-      (user) => user.username
-        ? `${window.location.origin}/user/${encodeURIComponent(user.username)}`
-        : '',
-    ],
-    ['Bio', (user) => user.bio],
     ['Skills', (user) => (user.skills || []).join('; ')],
     ['Technical interests', (user) => (user.technicalInterests || []).join('; ')],
     ['Learning goals', (user) => (user.learningGoals || []).join('; ')],
     ['Skill levels', (user) => (user.skillDetails || [])
       .map((skill) => `${skill.name} (${skill.level})`)
       .join('; ')],
-    ['GitHub', (user) => user.github],
-    ['LinkedIn', (user) => user.linkedin],
-    ['Portfolio', (user) => user.portfolio],
+    ['GitHub URL', (user) => user.github],
+    ['LinkedIn URL', (user) => user.linkedin],
+    ['Portfolio URL', (user) => user.portfolio],
     ['Coding profiles', (user) => (user.codingProfiles || [])
-      .map((profile) => `${profile.platform}: ${profile.url}`)
+      .map((profile) => `${profile.platform || 'Other'}: ${profile.url}`)
       .join('; ')],
     ['Achievements', (user) => (user.achievements || [])
       .map((achievement) => [
-        achievement.title,
-        achievement.category,
-        achievement.issuer,
-        achievement.year,
-        achievement.link,
-      ].filter(Boolean).join(' - '))
+        achievement.title && `Title: ${achievement.title}`,
+        achievement.category && `Category: ${achievement.category}`,
+        achievement.issuer && `Issuer: ${achievement.issuer}`,
+        achievement.year && `Year: ${achievement.year}`,
+        achievement.link && `Link: ${achievement.link}`,
+      ].filter(Boolean).join(' | '))
       .join('; ')],
     ['Profile complete', (user) => user.profileComplete ? 'Yes' : 'No'],
     ['Registered at', (user) => user.createdAt
@@ -1924,7 +1920,7 @@ export default function Admin() {
                 {!routeUsername && (
                   <p className="admin-export-note">
                     <i className="bi bi-info-circle" aria-hidden="true" />
-                    Downloads all registered users as an Excel-compatible CSV, regardless of the current search. The file includes profile and academic details; share it carefully.
+                    Downloads all registered users as an Excel-compatible CSV, regardless of the current search. It includes personal, education, skills, and labeled profile-link details (but not usernames); share it carefully.
                   </p>
                 )}
 

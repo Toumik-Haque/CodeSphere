@@ -5,7 +5,7 @@ import { Link, NavLink, Navigate, useLocation, useParams } from 'react-router-do
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
-import logo from '../assets/logo.svg';
+import logo from '../assets/logo.png';
 import CodingStats from '../components/CodingStats';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
 import ProfileBadges from '../components/ProfileBadges';

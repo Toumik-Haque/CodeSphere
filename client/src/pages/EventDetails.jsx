@@ -7,7 +7,7 @@ import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
 import DOMPurify from 'dompurify';
 import '../css/EventDetails.css';
-import brand from '../assets/brand.svg';
+import brand from '../assets/logo.png';
 
 function formatDate(value, options = {}) {
   if (!value) return 'Date to be announced';

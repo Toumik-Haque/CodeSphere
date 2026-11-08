@@ -3,7 +3,7 @@ import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import '../css/Events.css';
-import brand from '../assets/brand.svg';
+import brand from '../assets/logo.png';
 
 export default function Events() {
   const [events, setEvents] = useState([]);
