@@ -83,6 +83,27 @@ function HomePage() {
 // anyRole: any signed-in user (students and admins), e.g. forum posting.
 // staff: a staff role (moderator, news-editor, challenge-editor); admins and
 // students holding that role may enter.
+// Guests may only see these pages; everything else asks them to sign in first
+// and brings them back to the page they wanted afterwards.
+const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/reset-password']);
+
+function SignInGate({ children }) {
+  const { user, token } = useAuth();
+  const location = useLocation();
+
+  if ((!user || !token) && !PUBLIC_PATHS.has(location.pathname)) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search + location.hash }}
+      />
+    );
+  }
+
+  return children;
+}
+
 function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = null }) {
   const { user, token } = useAuth();
 
@@ -159,8 +180,9 @@ function AppRoutes() {
   ];
 
   return (
+    <SignInGate>
     <Routes>
-      {/* Public pages */}
+      {/* Guests can open only the home page and the sign-in pages (see SignInGate). */}
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/updates/:id" element={<UpdateDetails />} />
@@ -268,6 +290,7 @@ function AppRoutes() {
       {/* Unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </SignInGate>
   );
 }
 

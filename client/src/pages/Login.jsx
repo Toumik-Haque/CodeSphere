@@ -1,10 +1,18 @@
 import React, { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
 export default function Login() {
   const { user, login } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
+  // The page a guest tried to open before being asked to sign in.
+  const from = location.state?.from;
+  const returnTo = (signedIn) => (
+    typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && from !== '/login'
+      ? from
+      : signedIn.role === 'admin' ? '/admin' : '/user'
+  );
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -15,7 +23,7 @@ export default function Login() {
   if (user) {
     return (
       <Navigate
-        to={user.role === 'admin' ? '/admin' : '/user'}
+        to={returnTo(user)}
         replace
       />
     );
@@ -29,10 +37,7 @@ export default function Login() {
     try {
       const loggedInUser = await login(email, password);
 
-      navigate(
-        loggedInUser.role === 'admin' ? '/admin' : '/user',
-        { replace: true }
-      );
+      navigate(returnTo(loggedInUser), { replace: true });
     } catch (err) {
       setError(err.message || 'Unable to sign in. Please try again.');
     } finally {
@@ -51,7 +56,7 @@ export default function Login() {
         <h1>Sign in to CodeSphere</h1>
 
         <p className="auth-subtitle">
-          Continue your journey with the community.
+          {from ? 'Sign in or create an account to explore the rest of CodeSphere.' : 'Continue your journey with the community.'}
         </p>
 
         {error && (
@@ -111,7 +116,7 @@ export default function Login() {
         </button>
 
         <p className="auth-switch">
-          New to CodeSphere? <Link to="/register">Create an account</Link>
+          New to CodeSphere? <Link to="/register" state={from ? { from } : undefined}>Create an account</Link>
         </p>
 
         <Link to="/" className="auth-home">
