@@ -56,6 +56,19 @@ const teamSchema = new Schema(
 teamSchema.index({ hackathon: 1, name: 1 }, { unique: true, collation: { locale: 'en', strength: 2 } });
 teamSchema.index({ hackathon: 1, members: 1 });
 
+// An uploaded file (pitch deck, prototype build, screenshot), stored on ImageKit.
+const fileSchema = new Schema(
+  {
+    url: { type: String, required: true },
+    fileId: { type: String, default: '' },
+    name: { type: String, trim: true, maxlength: 140, default: '' },
+    size: { type: Number, default: 0 },
+    type: { type: String, default: '' },
+    uploadedAt: { type: Date, default: Date.now },
+  },
+  { _id: false },
+);
+
 const submissionSchema = new Schema(
   {
     hackathon: { type: ObjectId, ref: 'Hackathon', required: true, index: true },
@@ -63,12 +76,28 @@ const submissionSchema = new Schema(
     title: { type: String, required: true, trim: true, maxlength: 100 },
     tagline: { type: String, trim: true, maxlength: 200, default: '' },
     description: { type: String, maxlength: 8000, default: '' },
+    // Structured write-up (like SIH / Devfolio): each part has its own box.
+    problem: { type: String, maxlength: 3000, default: '' },
+    solution: { type: String, maxlength: 3000, default: '' },
+    challenges: { type: String, maxlength: 3000, default: '' },
+    impact: { type: String, maxlength: 3000, default: '' },
     track: { type: String, trim: true, maxlength: 60, default: '' },
     techStack: [{ type: String, trim: true, maxlength: 30 }],
     repoUrl: { type: String, trim: true, default: '' },
     demoUrl: { type: String, trim: true, default: '' },
     videoUrl: { type: String, trim: true, default: '' },
     deckUrl: { type: String, trim: true, default: '' },
+    deckFile: { type: fileSchema, default: undefined },
+    prototypeFile: { type: fileSchema, default: undefined },
+    screenshots: { type: [fileSchema], default: [] },
+    // draft: saved but not handed in; submitted: final (judged, shown in the gallery).
+    // Older submissions have no status and count as submitted.
+    status: { type: String, enum: ['draft', 'submitted'], default: 'draft', index: true },
+    submittedAt: Date,
+    // Organiser review
+    review: { type: String, enum: ['new', 'shortlisted', 'rejected'], default: 'new' },
+    score: { type: Number, min: 0, max: 100 },
+    judgeNote: { type: String, trim: true, maxlength: 2000, default: '' },
     lastEditedBy: { type: ObjectId, ref: 'User' },
     award: { type: String, trim: true, maxlength: 80, default: '' },
     rank: { type: Number, min: 1, max: 100 },

@@ -198,7 +198,7 @@ export default function AdminHackathons() {
                   <span className="hk-muted">{h.teams} teams · {h.submissions} submissions</span>
                   <div className="hk-form-actions">
                     <button type="button" className="hk-btn" onClick={() => open(h)}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
-                    <button type="button" className="hk-btn" onClick={() => setJudgingId(judgingId === h.id ? null : h.id)}><i className="bi bi-clipboard-check" aria-hidden="true" /> Teams & judging</button>
+                    <button type="button" className={judgingId === h.id ? 'hk-btn' : 'btn btn-gold'} onClick={() => setJudgingId(judgingId === h.id ? null : h.id)} aria-expanded={judgingId === h.id}><i className="bi bi-inboxes" aria-hidden="true" /> {judgingId === h.id ? 'Hide submissions' : `Submissions (${h.submissions})`}</button>
                     {h.status === 'published' && <Link className="hk-btn" to={`/hackathons/${h.slug}`}>Open</Link>}
                   </div>
                 </div>

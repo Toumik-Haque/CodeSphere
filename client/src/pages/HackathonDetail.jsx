@@ -4,13 +4,13 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SafeText from '../components/SafeText';
 import HackathonJudging from '../components/HackathonJudging';
+import HackathonSubmission, { SubmissionDetails, SubmissionLinks } from '../components/HackathonSubmission';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
-import { countdown, isPast, PHASES } from '../lib/hackathons';
+import { isPast, PHASES } from '../lib/hackathons';
 import '../css/Hackathons.css';
 
 const fmt = (d) => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
-const EMPTY_SUB = { title: '', tagline: '', description: '', track: '', techStack: '', repoUrl: '', demoUrl: '', videoUrl: '', deckUrl: '' };
 
 function Timeline({ h }) {
   const steps = [
@@ -43,14 +43,9 @@ function ProjectCard({ s, showAward }) {
       {s.techStack?.length > 0 && <div className="hk-themes">{s.techStack.map((t) => <span key={t}>{t}</span>)}</div>}
       <details>
         <summary>About the project</summary>
-        <div className="hk-project-desc"><SafeText text={s.description} /></div>
+        <SubmissionDetails s={s} withLinks={false} />
       </details>
-      <div className="hk-project-links">
-        {s.repoUrl && <a href={s.repoUrl} target="_blank" rel="noopener noreferrer nofollow"><i className="bi bi-github" aria-hidden="true" /> Code</a>}
-        {s.demoUrl && <a href={s.demoUrl} target="_blank" rel="noopener noreferrer nofollow"><i className="bi bi-play-circle" aria-hidden="true" /> Live demo</a>}
-        {s.videoUrl && <a href={s.videoUrl} target="_blank" rel="noopener noreferrer nofollow"><i className="bi bi-camera-video" aria-hidden="true" /> Video</a>}
-        {s.deckUrl && <a href={s.deckUrl} target="_blank" rel="noopener noreferrer nofollow"><i className="bi bi-file-earmark-slides" aria-hidden="true" /> Slides</a>}
-      </div>
+      <SubmissionLinks s={s} />
     </article>
   );
 }
@@ -164,86 +159,6 @@ function TeamPanel({ h, team, reload, slug }) {
   );
 }
 
-function SubmissionForm({ h, team, submission, slug, reload }) {
-  const [form, setForm] = useState(() => (submission ? { ...EMPTY_SUB, ...submission, techStack: (submission.techStack || []).join(', ') } : EMPTY_SUB));
-  const [editing, setEditing] = useState(!submission);
-  const [msg, setMsg] = useState('');
-  const [busy, setBusy] = useState(false);
-  const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
-
-  if (!team) return null;
-  if (submission && !editing) {
-    return (
-      <section className="hk-panel hk-submitted">
-        <h2><i className="bi bi-check-circle-fill" aria-hidden="true" /> Project submitted</h2>
-        <ProjectCard s={submission} showAward={h.resultsPublished} />
-        {h.canSubmit && <button type="button" className="hk-btn" onClick={() => setEditing(true)}><i className="bi bi-pencil" aria-hidden="true" /> Edit submission</button>}
-        {msg && <p className="hk-ok" role="status">{msg}</p>}
-      </section>
-    );
-  }
-  if (!h.canSubmit) {
-    return (
-      <section className="hk-panel">
-        <h2><i className="bi bi-upload" aria-hidden="true" /> Submission</h2>
-        <p>{!isPast(h.submissionStart) ? `Submissions open ${fmt(h.submissionStart)}. Start building!` : 'Submissions are closed.'}</p>
-      </section>
-    );
-  }
-  const tooSmall = team.members.length < h.teamMin;
-
-  const submit = async (e) => {
-    e.preventDefault();
-    setBusy(true);
-    setMsg('');
-    try {
-      const r = await apiRequest(`/hackathons/${slug}/submission`, { method: 'PUT', body: JSON.stringify(form) });
-      setMsg(r.message);
-      setEditing(false);
-      reload();
-    } catch (err) {
-      setMsg(err.message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  return (
-    <form className="hk-panel hk-submit-form" onSubmit={submit}>
-      <h2><i className="bi bi-upload" aria-hidden="true" /> {submission ? 'Edit your project' : 'Submit your project'}</h2>
-      <p className="hk-muted">Closes {fmt(h.submissionEnd)} ({countdown(h.submissionEnd)}). Any team member can edit until then.</p>
-      {tooSmall && <p className="hk-error">Your team needs at least {h.teamMin} members before you can submit.</p>}
-      <div className="hk-form-grid">
-        <label>Project name *<input value={form.title} onChange={set('title')} maxLength={100} required /></label>
-        <label>One-line pitch<input value={form.tagline} onChange={set('tagline')} maxLength={200} placeholder="What does it do, in one sentence?" /></label>
-        {h.tracks.length > 0 && (
-          <label>Track
-            <select value={form.track} onChange={set('track')}>
-              <option value="">Choose a track</option>
-              {h.tracks.map((t) => <option key={t}>{t}</option>)}
-            </select>
-          </label>
-        )}
-        <label>Tech stack<input value={form.techStack} onChange={set('techStack')} placeholder="React, Node, MongoDB" /></label>
-        <label className="wide">Description *
-          <textarea value={form.description} onChange={set('description')} rows={7} maxLength={8000} required
-            placeholder={'The problem, your solution, how it works, and what you would build next.'} />
-        </label>
-        <label>GitHub / code link<input type="url" value={form.repoUrl} onChange={set('repoUrl')} placeholder="https://github.com/…" /></label>
-        <label>Live demo / prototype<input type="url" value={form.demoUrl} onChange={set('demoUrl')} placeholder="https://… (Vercel, Figma, etc.)" /></label>
-        <label>Demo video<input type="url" value={form.videoUrl} onChange={set('videoUrl')} placeholder="https://youtu.be/…" /></label>
-        <label>Slides / pitch deck<input type="url" value={form.deckUrl} onChange={set('deckUrl')} placeholder="https://…" /></label>
-      </div>
-      <p className="hk-muted">Add at least one of: code, live demo or video.</p>
-      <div className="hk-form-actions">
-        <button type="submit" className="btn btn-gold" disabled={busy || tooSmall}>{busy ? 'Saving…' : submission ? 'Save changes' : 'Submit project'}</button>
-        {submission && <button type="button" className="hk-btn" onClick={() => setEditing(false)}>Cancel</button>}
-      </div>
-      {msg && <p className="hk-error" role="alert">{msg}</p>}
-    </form>
-  );
-}
-
 export default function HackathonDetail() {
   const { slug } = useParams();
   const [data, setData] = useState(null);
@@ -309,6 +224,18 @@ export default function HackathonDetail() {
 
             <div className="container hk-detail-layout">
               <div className="hk-detail-main">
+                {h.canManage && (
+                  <section className="hk-panel">
+                    <h2><i className="bi bi-clipboard-check" aria-hidden="true" /> You host this</h2>
+                    <p className="hk-muted">Review submissions, score and rank projects, and publish results.</p>
+                    <details>
+                      <summary className="hk-btn">Open submissions & judging</summary>
+                      <HackathonJudging id={h.id} showEmails={false} onChanged={reload} />
+                    </details>
+                    <Link to={`/host/hackathon/${h.id}/edit`} className="hk-btn" style={{ marginTop: 8 }}>Edit listing</Link>
+                  </section>
+                )}
+                {data.team && <HackathonSubmission key={data.submission?.updatedAt || 'new'} h={h} team={data.team} submission={data.submission} slug={slug} reload={reload} ProjectCard={ProjectCard} />}
                 {data.gallery.length > 0 && (
                   <section className="hk-block">
                     <h2>{h.resultsPublished ? '🏆 Winners & projects' : 'Project gallery'}</h2>
@@ -355,19 +282,7 @@ export default function HackathonDetail() {
               </div>
 
               <aside className="hk-detail-side">
-                {h.canManage && (
-                  <section className="hk-panel">
-                    <h2><i className="bi bi-clipboard-check" aria-hidden="true" /> You host this</h2>
-                    <p className="hk-muted">Manage teams, rank projects and publish results.</p>
-                    <details>
-                      <summary className="hk-btn">Open teams & judging</summary>
-                      <HackathonJudging id={h.id} showEmails={false} onChanged={reload} />
-                    </details>
-                    <Link to={`/host/hackathon/${h.id}/edit`} className="hk-btn" style={{ marginTop: 8 }}>Edit listing</Link>
-                  </section>
-                )}
                 <TeamPanel h={h} team={data.team} slug={slug} reload={reload} />
-                {data.team && <SubmissionForm key={data.submission?.updatedAt || 'new'} h={h} team={data.team} submission={data.submission} slug={slug} reload={reload} />}
                 <section className="hk-panel">
                   <h2><i className="bi bi-calendar3" aria-hidden="true" /> Timeline</h2>
                   <Timeline h={h} />
