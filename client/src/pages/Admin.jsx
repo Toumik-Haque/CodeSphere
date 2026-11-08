@@ -9,7 +9,7 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import logo from '../assets/logo.svg';
+import logo from '../assets/logo.png';
 import '../css/Admin.css';
 import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
 import RichTextEditor from '../components/RichTextEditor';

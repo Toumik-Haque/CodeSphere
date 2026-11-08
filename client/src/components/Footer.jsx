@@ -1,7 +1,7 @@
 
 
 import { Link } from 'react-router-dom';
-import logo from '../assets/brand-dark.png';
+import logo from '../assets/logo-dark.png';
 import '../css/Footer.css';
 
 const navLinks = [

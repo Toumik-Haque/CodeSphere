@@ -2,7 +2,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import logo from '../assets/logo.svg';
+import logo from '../assets/logo.png';
 import NotificationBell from './NotificationBell';
 import '../css/Navbar.css';
 
