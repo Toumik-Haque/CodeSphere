@@ -100,6 +100,35 @@ export default function AdminHackathons() {
     }
   };
 
+  // Delete straight from the list. With submissions in, the title must be typed
+  // to confirm, because every team, project and uploaded file goes with it.
+  const removeHackathon = async (h) => {
+    const plural = (n, word) => `${n} ${word}${n === 1 ? '' : 's'}`;
+    const what = `${plural(h.teams, 'team')} and ${plural(h.submissions, 'submission')}`;
+    if (h.submissions > 0) {
+      const typed = window.prompt(`Delete "${h.title}" with ${what} (and their uploaded files)? This cannot be undone.\n\nType the hackathon name to confirm:`);
+      if (typed === null) return;
+      if (typed.trim() !== h.title.trim()) {
+        setMessage('The name did not match, so nothing was deleted.');
+        return;
+      }
+    } else if (!window.confirm(`Delete "${h.title}" (${what})? This cannot be undone.`)) {
+      return;
+    }
+    try {
+      await apiRequest(`/hackathons/admin/${h.id}`, { method: 'DELETE' });
+      if (editingId === h.id) {
+        setForm(null);
+        setEditingId(null);
+      }
+      if (judgingId === h.id) setJudgingId(null);
+      setMessage(`Deleted "${h.title}".`);
+      reload();
+    } catch (e) {
+      setMessage(e.message);
+    }
+  };
+
   const syncNow = async () => {
     setSyncing(true);
     try {
@@ -200,6 +229,7 @@ export default function AdminHackathons() {
                     <button type="button" className="hk-btn" onClick={() => open(h)}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
                     <button type="button" className={judgingId === h.id ? 'hk-btn' : 'btn btn-gold'} onClick={() => setJudgingId(judgingId === h.id ? null : h.id)} aria-expanded={judgingId === h.id}><i className="bi bi-inboxes" aria-hidden="true" /> {judgingId === h.id ? 'Hide submissions' : `Submissions (${h.submissions})`}</button>
                     {h.status === 'published' && <Link className="hk-btn" to={`/hackathons/${h.slug}`}>Open</Link>}
+                    <button type="button" className="hk-btn hk-btn-danger" onClick={() => removeHackathon(h)} aria-label={`Delete ${h.title}`}><i className="bi bi-trash3" aria-hidden="true" /> Delete</button>
                   </div>
                 </div>
                 {judgingId === h.id && <HackathonJudging id={h.id} onChanged={reload} />}

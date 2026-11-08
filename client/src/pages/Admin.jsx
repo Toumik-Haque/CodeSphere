@@ -9,7 +9,8 @@ import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../components/Navbar';
-import logo from '../assets/logo.svg';
+import { AdminSidebar, AdminMobileNav } from '../components/AdminNav';
+import { WORKSPACE } from '../lib/adminNav';
 import '../css/Admin.css';
 import { sortCoreMembers } from '../utils/coreMemberRoleOrder';
 import RichTextEditor from '../components/RichTextEditor';
@@ -48,10 +49,6 @@ const categories = [
 
 const MAX_IMAGE_SIZE = 5 * 1024 * 1024;
 
-const LINKEDIN_URL = 'https://www.linkedin.com/company/codesphereagemc/';
-const INSTAGRAM_URL = 'https://www.instagram.com/codesphereagemc/';
-const GITHUB_URL = 'https://github.com/codesphere-agemc';
-const WHATSAPP_URL = 'https://chat.whatsapp.com/FDGLH2yMpFuDJJBx448afz';
 
 function toDateTimeLocal(value) {
   if (!value) return '';
@@ -168,7 +165,7 @@ export default function Admin() {
   // --------------------------------------------------
 
   const [activeSection, setActiveSection] = useState(
-    routeUsername || location.state?.activeSection === 'users' ? 'users' : 'home'
+    routeUsername ? 'users' : (WORKSPACE.some((w) => w.section === location.state?.activeSection) ? location.state.activeSection : 'home')
   );
   const [activeEventTab, setActiveEventTab] = useState('manage');
 
@@ -1110,25 +1107,6 @@ export default function Admin() {
   }
 
   // --------------------------------------------------
-  // REUSABLE NAVIGATION BUTTON
-  // --------------------------------------------------
-
-  function NavigationButton({ section, icon, children }) {
-    return (
-      <button
-        type="button"
-        className={`admin-nav-item ${activeSection === section ? 'active' : ''
-          }`}
-        onClick={() => goToSection(section)}
-        aria-current={activeSection === section ? 'page' : undefined}
-      >
-        <i className={icon} aria-hidden="true" />
-        <span>{children}</span>
-      </button>
-    );
-  }
-
-  // --------------------------------------------------
   // RENDER
   // --------------------------------------------------
 
@@ -1157,109 +1135,7 @@ export default function Admin() {
         {/* ================================================
           DESKTOP SIDEBAR
          ================================================ */}
-        <aside className="admin-sidebar">
-          <Link to="/">
-            <img src={logo} alt="Codesphere Logo" />
-          </Link>
-
-          <div className="admin-sidebar-label">
-            WORKSPACE
-          </div>
-
-          <nav
-            className="admin-navigation"
-            aria-label="Admin navigation"
-          >
-            <NavigationButton
-              section="home"
-              icon="bi bi-grid-1x2-fill"
-            >
-              Dashboard
-            </NavigationButton>
-
-            <NavigationButton
-              section="events"
-              icon="bi bi-calendar-event"
-            >
-              Events
-            </NavigationButton>
-
-            <NavigationButton
-              section="users"
-              icon="bi bi-person-lines-fill"
-            >
-              Users
-            </NavigationButton>
-
-            <NavigationButton
-              section="attendance"
-              icon="bi bi-clipboard-check"
-            >
-              Attendance
-            </NavigationButton>
-
-            <NavigationButton
-              section="coreMembers"
-              icon="bi bi-people"
-            >
-              Team Members
-            </NavigationButton>
-          </nav>
-
-          <div className="admin-sidebar-bottom">
-            <div className="admin-social-section">
-              <h6>CodeSphere Socials</h6>
-
-              <p>Manage social account of your community</p>
-
-              <div className="admin-social-links">
-                <a
-                  href={LINKEDIN_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LinkedIn"
-                  title="LinkedIn"
-                >
-                  <i className="bi bi-linkedin" />
-                </a>
-
-                <a
-                  href={INSTAGRAM_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  title="Instagram"
-                >
-                  <i className="bi bi-instagram" />
-                </a>
-
-                <a
-                  href={GITHUB_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="GitHub"
-                  title="GitHub"
-                >
-                  <i className="bi bi-github" />
-                </a>
-
-                <a
-                  href={WHATSAPP_URL}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="WhatsApp"
-                  title="WhatsApp"
-                >
-                  <i className="bi bi-whatsapp" />
-                </a>
-              </div>
-            </div>
-
-            <div className="admin-sidebar-footer">
-              © {new Date().getFullYear()} CodeSphere
-            </div>
-          </div>
-        </aside>
+        <AdminSidebar active={activeSection} onSelect={goToSection} />
 
         {/* ================================================
           MAIN WORKSPACE
@@ -1300,38 +1176,6 @@ export default function Admin() {
                       from one place.
                     </p>
                   </div>
-                </div>
-
-                {/* COMMUNITY TOOLS (separate staff pages) */}
-                <div className="admin-tools" aria-label="Community tools">
-                  <Link to="/admin/forum" className="admin-tool">
-                    <i className="bi bi-shield-lock" aria-hidden="true" />
-                    <span><strong>Forum moderation</strong><small>Report queue, actions and audit trail</small></span>
-                  </Link>
-                  <Link to="/admin/news" className="admin-tool">
-                    <i className="bi bi-newspaper" aria-hidden="true" />
-                    <span><strong>Tech News editor</strong><small>Review stories, sources and weekly digests</small></span>
-                  </Link>
-                  <Link to="/admin/projects" className="admin-tool">
-                    <i className="bi bi-kanban" aria-hidden="true" />
-                    <span><strong>Project submissions</strong><small>Review, publish and feature Project Hub entries</small></span>
-                  </Link>
-                  <Link to="/admin/review" className="admin-tool">
-                    <i className="bi bi-inbox" aria-hidden="true" />
-                    <span><strong>Review hosted listings</strong><small>Approve or reject events and hackathons from students</small></span>
-                  </Link>
-                  <Link to="/admin/hackathons" className="admin-tool">
-                    <i className="bi bi-trophy" aria-hidden="true" />
-                    <span><strong>Hackathons</strong><small>Run club hackathons and judge projects</small></span>
-                  </Link>
-                  <Link to="/admin/materials" className="admin-tool">
-                    <i className="bi bi-journal-bookmark" aria-hidden="true" />
-                    <span><strong>Study Guide</strong><small>Write and publish learning materials</small></span>
-                  </Link>
-                  <Link to="/admin/reverse-coding" className="admin-tool">
-                    <i className="bi bi-arrow-repeat" aria-hidden="true" />
-                    <span><strong>Reverse Coding</strong><small>Author, validate and publish challenges</small></span>
-                  </Link>
                 </div>
 
                 {/* OVERVIEW */}
@@ -2789,60 +2633,7 @@ export default function Admin() {
         {/* ================================================
           MOBILE BOTTOM NAVIGATION
       ================================================ */}
-        <nav
-          className="admin-mobile-nav"
-          aria-label="Mobile admin navigation"
-        >
-          <button
-            type="button"
-            className={activeSection === 'home' ? 'active' : ''}
-            onClick={() => goToSection('home')}
-            aria-current={activeSection === 'home' ? 'page' : undefined}
-          >
-            <i className="bi bi-grid-1x2-fill" />
-            <span>Home</span>
-          </button>
-
-          <button
-            type="button"
-            className={activeSection === 'events' ? 'active' : ''}
-            onClick={() => goToSection('events')}
-            aria-current={activeSection === 'events' ? 'page' : undefined}
-          >
-            <i className="bi bi-calendar-event" />
-            <span>Events</span>
-          </button>
-
-          <button
-            type="button"
-            className={activeSection === 'users' ? 'active' : ''}
-            onClick={() => goToSection('users')}
-            aria-current={activeSection === 'users' ? 'page' : undefined}
-          >
-            <i className="bi bi-person-lines-fill" />
-            <span>Users</span>
-          </button>
-
-          <button
-            type="button"
-            className={activeSection === 'attendance' ? 'active' : ''}
-            onClick={() => goToSection('attendance')}
-            aria-current={activeSection === 'attendance' ? 'page' : undefined}
-          >
-            <i className="bi bi-clipboard-check" />
-            <span>Attendance</span>
-          </button>
-
-          <button
-            type="button"
-            className={activeSection === 'coreMembers' ? 'active' : ''}
-            onClick={() => goToSection('coreMembers')}
-            aria-current={activeSection === 'coreMembers' ? 'page' : undefined}
-          >
-            <i className="bi bi-people" />
-            <span>Team</span>
-          </button>
-        </nav>
+        <AdminMobileNav active={activeSection} onSelect={goToSection} />
 
       </main>
     </>

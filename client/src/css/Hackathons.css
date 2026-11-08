@@ -686,3 +686,6 @@ html[data-nav-hidden="true"] .hk-toolbar.is-stuck {
   .hk-sub-layout { grid-template-columns: 1fr; }
   .hk-sub-check { position: static; order: -1; }
 }
+
+.hk-btn.hk-btn-danger { color: #B91C1C; }
+.hk-btn.hk-btn-danger:hover:not(:disabled) { border-color: #B91C1C; background: #FEF2F2; color: #991B1B; }

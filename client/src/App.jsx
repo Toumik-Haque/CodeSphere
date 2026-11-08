@@ -58,6 +58,7 @@ import GuidedProject from './pages/GuidedProject';
 import AdminProjects from './pages/AdminProjects';
 
 import UserDashboard from './pages/UserDashboard';
+import { AdminToolLayout } from './components/AdminNav';
 
 function HomePage() {
   return (
@@ -194,29 +195,29 @@ function AppRoutes() {
       <Route path="/forum" element={<Forum />} />
       <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
       <Route path="/forum/:id" element={<ForumThread />} />
-      <Route path="/admin/forum" element={<ProtectedRoute staff="moderator"><AdminForum /></ProtectedRoute>} />
+      <Route path="/admin/forum" element={<ProtectedRoute staff="moderator"><AdminToolLayout><AdminForum /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/reverse-coding" element={<ReverseCoding />} />
       <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
-      <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminReverse /></ProtectedRoute>} />
+      <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminToolLayout><AdminReverse /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/materials" element={<Materials />} />
       <Route path="/materials/:slug" element={<Materials />} />
-      <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminMaterials /></ProtectedRoute>} />
+      <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminToolLayout><AdminMaterials /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/host" element={<ProtectedRoute anyRole><MyHosting /></ProtectedRoute>} />
       <Route path="/host/:kind/new" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
       <Route path="/host/:kind/:id/edit" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
-      <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminReview /></ProtectedRoute>} />
+      <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminToolLayout><AdminReview /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/projects" element={<ProjectHub />} />
       <Route path="/projects/new" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
       <Route path="/projects/guided/:slug" element={<GuidedProject />} />
       <Route path="/projects/:id/edit" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
       <Route path="/projects/:slug" element={<ProjectDetail />} />
-      <Route path="/admin/projects" element={<ProtectedRoute staff="project-reviewer"><AdminProjects /></ProtectedRoute>} />
+      <Route path="/admin/projects" element={<ProtectedRoute staff="project-reviewer"><AdminToolLayout><AdminProjects /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/hackathons" element={<Hackathons />} />
       <Route path="/hackathons/:slug" element={<HackathonDetail />} />
-      <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminHackathons /></ProtectedRoute>} />
+      <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminToolLayout><AdminHackathons /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/news" element={<News />} />
       <Route path="/news/:slug" element={<News />} />
-      <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminNews /></ProtectedRoute>} />
+      <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminToolLayout><AdminNews /></AdminToolLayout></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />

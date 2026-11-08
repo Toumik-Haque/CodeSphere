@@ -2458,3 +2458,177 @@
   color: #617287;
   font-size: .8rem;
 }
+
+/* =========================================================
+   SHARED ADMIN NAVIGATION (dashboard + staff tool pages)
+========================================================= */
+
+/* Two groups in the sidebar: Workspace and Community tools */
+.admin-sidebar-label-gap {
+  margin-top: 22px;
+}
+
+.admin-sidebar .admin-sidebar-label {
+  margin-bottom: 10px;
+}
+
+.admin-sidebar .admin-navigation {
+  gap: 3px;
+}
+
+.admin-sidebar .admin-nav-item {
+  min-height: 40px;
+  padding: 9px 13px;
+  font-size: 13.5px;
+}
+
+.admin-sidebar > a:first-child {
+  margin-bottom: 18px;
+}
+
+.admin-sidebar a.admin-nav-item {
+  color: var(--admin-muted);
+  text-decoration: none;
+}
+
+.admin-sidebar a.admin-nav-item:hover,
+.admin-sidebar a.admin-nav-item.active {
+  color: var(--admin-primary);
+}
+
+.admin-sidebar .admin-nav-item:focus-visible {
+  outline: 3px solid rgba(227, 77, 48, 0.25);
+  outline-offset: 1px;
+}
+
+.admin-sidebar .admin-sidebar-bottom {
+  padding-top: 16px;
+}
+
+/* Staff tool pages: content sits beside the fixed sidebar */
+.admin-tool-content {
+  min-width: 0;
+  margin-left: var(--admin-sidebar-width);
+}
+
+/* Phone: bottom bar with a Tools button and sheet */
+.admin-tools-sheet {
+  display: none;
+}
+
+@media (max-width: 800px) {
+  .admin-tool-content {
+    margin-left: 0;
+    padding-bottom: 76px;
+  }
+
+  .admin-mobile-nav.admin-mobile-nav-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+
+  .admin-mobile-nav button span {
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .admin-tools-sheet {
+    position: fixed;
+    inset: 0;
+    z-index: 1200;
+    display: flex;
+    align-items: flex-end;
+  }
+
+  .admin-tools-sheet-backdrop {
+    position: absolute;
+    inset: 0;
+    border: 0;
+    background: rgba(9, 24, 39, 0.45);
+  }
+
+  .admin-tools-sheet-panel {
+    position: relative;
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    padding: 14px 14px calc(86px + env(safe-area-inset-bottom));
+    border-radius: 20px 20px 0 0;
+    background: #fff;
+    box-shadow: 0 -10px 40px rgba(9, 24, 39, 0.2);
+    animation: admin-sheet-in 0.22s ease-out;
+  }
+
+  .admin-tools-sheet-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 4px 8px;
+    color: #142d45;
+    font-size: 15px;
+  }
+
+  .admin-tools-sheet-head button {
+    display: grid;
+    width: 34px;
+    height: 34px;
+    place-items: center;
+    border: 0;
+    border-radius: 50%;
+    background: #f1f4f8;
+    color: #142d45;
+  }
+
+  .admin-tools-sheet-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 10px;
+    border-radius: 12px;
+    color: #142d45;
+    text-decoration: none;
+  }
+
+  .admin-tools-sheet-item i {
+    display: grid;
+    flex: none;
+    width: 38px;
+    height: 38px;
+    place-items: center;
+    border-radius: 11px;
+    background: #fff0eb;
+    color: var(--admin-primary, #e34d30);
+    font-size: 17px;
+  }
+
+  .admin-tools-sheet-item span {
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  .admin-tools-sheet-item strong {
+    font-size: 14px;
+  }
+
+  .admin-tools-sheet-item small {
+    color: #8793a1;
+    font-size: 12px;
+  }
+
+  .admin-tools-sheet-item.active,
+  .admin-tools-sheet-item:hover {
+    background: #fff6f2;
+    color: var(--admin-primary, #e34d30);
+  }
+}
+
+@keyframes admin-sheet-in {
+  from { transform: translateY(30px); opacity: 0; }
+  to { transform: none; opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .admin-tools-sheet-panel { animation: none; }
+}
