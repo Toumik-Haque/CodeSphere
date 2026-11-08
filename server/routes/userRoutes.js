@@ -337,7 +337,7 @@ router.get('/search', protect, async (req, res) => {
         { collegeName: regex },
       ],
     })
-      .select('name username collegeName profileImage')
+      .select('name username collegeName profileImage avatarUrl')
       .sort({ name: 1, username: 1 })
       .limit(12)
       .lean();
@@ -824,7 +824,7 @@ router.get('/profile/:username', protect, async (req, res) => {
       role: 'user',
     })
       .select(
-      'name username collegeName degree department yearOfStudy graduationYear profileImage bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements createdAt'
+      'name username collegeName degree department yearOfStudy graduationYear profileImage avatarUrl bannerImage bannerUrl bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements createdAt'
       )
       .lean();
 

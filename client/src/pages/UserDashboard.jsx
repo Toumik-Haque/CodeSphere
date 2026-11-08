@@ -521,8 +521,8 @@ export default function UserDashboard() {
 
           <div className="user-dashboard-sidebar-bottom">
             <div className="user-dashboard-account">
-              {user?.profileImage?.url ? (
-                <img src={user.profileImage.url} alt="" />
+              {(user?.profileImage?.url || user?.avatarUrl) ? (
+                <img src={user.profileImage?.url || user.avatarUrl} alt="" />
               ) : (
                 <span className="user-dashboard-account-avatar">
                   {user?.name?.trim()?.[0]?.toUpperCase() || 'U'}

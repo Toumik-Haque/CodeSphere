@@ -194,9 +194,9 @@ export default function MemberProfile({
             <section className="member-profile-card">
               <div className="member-profile-header">
                 <div className="member-profile-avatar">
-                  {member.profileImage?.url ? (
+                  {(member.profileImage?.url || member.avatarUrl) ? (
                     <img
-                      src={member.profileImage.url}
+                      src={member.profileImage?.url || member.avatarUrl}
                       alt={member.name}
                     />
                   ) : (
