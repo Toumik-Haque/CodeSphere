@@ -1,0 +1,277 @@
+/* Landing page: "Choose your path" map of the platform */
+
+.explore {
+  padding: 40px 0 75px;
+}
+
+.explore-panel {
+  --accent: #4fb3ff;
+  --accent-soft: rgba(79, 179, 255, 0.16);
+  position: relative;
+  overflow: hidden;
+  padding: clamp(22px, 4.5vw, 52px);
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-radius: clamp(20px, 3vw, 28px);
+  background:
+    radial-gradient(circle at 88% 0%, var(--accent-soft), transparent 42%),
+    radial-gradient(circle at 0% 100%, rgba(240, 90, 54, 0.14), transparent 40%),
+    linear-gradient(135deg, rgba(16, 36, 58, 0.95), rgba(20, 45, 71, 0.9));
+  box-shadow: 0 20px 50px rgba(9, 24, 39, 0.35);
+  color: #fff;
+  transition: background 0.4s ease;
+}
+
+/* Faint grid, like a game map */
+.explore-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 34px 34px;
+  mask-image: linear-gradient(180deg, #000, transparent 85%);
+  pointer-events: none;
+}
+
+.explore-panel > * { position: relative; }
+
+.explore-panel[data-level='learn'] { --accent: #4fb3ff; --accent-soft: rgba(79, 179, 255, 0.18); }
+.explore-panel[data-level='build'] { --accent: #ff8568; --accent-soft: rgba(255, 133, 104, 0.2); }
+.explore-panel[data-level='compete'] { --accent: #b69cff; --accent-soft: rgba(182, 156, 255, 0.2); }
+.explore-panel[data-level='connect'] { --accent: #3ddc97; --accent-soft: rgba(61, 220, 151, 0.18); }
+
+/* Heading */
+.explore-head { max-width: 620px; margin-bottom: 28px; }
+
+.explore-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border: 1px solid rgba(255, 133, 104, 0.45);
+  border-radius: 999px;
+  background: rgba(240, 90, 54, 0.12);
+  color: var(--gold-light, #ff8568);
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.explore-head h2 {
+  margin: 14px 0 8px;
+  color: #fff;
+  font-family: 'Manrope', 'DM Sans', sans-serif;
+  font-size: clamp(1.7rem, 4vw, 2.6rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.1;
+}
+
+.explore-head h2 span { color: var(--gold-light, #ff8568); }
+.explore-head p { margin: 0; color: rgba(255, 255, 255, 0.72); }
+
+/* Level path */
+.explore-levels {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 12px;
+  margin-bottom: 26px;
+}
+
+/* The line joining the level nodes */
+.explore-levels::before {
+  content: '';
+  position: absolute;
+  top: 27px;
+  left: 28px;
+  right: 28px;
+  height: 2px;
+  background: repeating-linear-gradient(90deg, rgba(255, 255, 255, 0.25) 0 8px, transparent 8px 14px);
+}
+
+.explore-level {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: left;
+  cursor: pointer;
+}
+
+.explore-level-node {
+  display: grid;
+  flex: none;
+  width: 56px;
+  height: 56px;
+  place-items: center;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 16px;
+  background: #13273d;
+  font-size: 22px;
+  transform: rotate(45deg);
+  transition: border-color 0.25s, background 0.25s, box-shadow 0.25s, transform 0.25s;
+}
+
+.explore-level-node i { transform: rotate(-45deg); }
+
+.explore-level-text { display: flex; flex-direction: column; line-height: 1.2; }
+.explore-level-text small { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0.7; }
+.explore-level-text strong { font-size: 1.02rem; font-weight: 750; }
+
+.explore-level:hover .explore-level-node { border-color: rgba(255, 255, 255, 0.5); transform: rotate(45deg) scale(1.05); }
+.explore-level:focus-visible { outline: none; }
+.explore-level:focus-visible .explore-level-node { box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.6); }
+
+.explore-level.is-done .explore-level-node { border-color: rgba(255, 255, 255, 0.45); }
+
+.explore-level.is-active { color: #fff; }
+.explore-level.is-active .explore-level-node {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #0d1d2e;
+  box-shadow: 0 0 0 6px var(--accent-soft), 0 10px 26px var(--accent-soft);
+}
+
+/* Body: intro + quests */
+.explore-body {
+  display: grid;
+  grid-template-columns: minmax(0, 0.8fr) minmax(0, 2fr);
+  gap: clamp(18px, 3vw, 32px);
+  align-items: start;
+}
+
+.explore-intro {
+  padding: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.05);
+  animation: explore-in 0.35s ease both;
+}
+
+.explore-intro-tag { color: var(--accent); font-size: 0.8rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; }
+.explore-intro p { margin: 8px 0 18px; color: rgba(255, 255, 255, 0.82); font-size: 0.95rem; line-height: 1.6; }
+
+.explore-xp-bar { height: 8px; overflow: hidden; border-radius: 999px; background: rgba(255, 255, 255, 0.12); }
+.explore-xp-bar span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background: linear-gradient(90deg, var(--gold, #f05a36), var(--accent));
+  transition: width 0.5s ease;
+}
+.explore-xp small { display: block; margin-top: 8px; color: rgba(255, 255, 255, 0.7); font-size: 0.78rem; font-weight: 600; }
+.explore-xp i { color: var(--accent); }
+
+.explore-quests {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.explore-quests li { animation: explore-in 0.35s ease both; animation-delay: var(--delay); }
+
+.explore-quest {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  height: 100%;
+  padding: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+  text-decoration: none;
+  transition: transform 0.2s ease, border-color 0.2s ease, background 0.2s ease;
+}
+
+.explore-quest:hover,
+.explore-quest:focus-visible {
+  border-color: var(--accent);
+  background: rgba(255, 255, 255, 0.1);
+  color: #fff;
+  transform: translateY(-3px);
+  outline: none;
+}
+
+.explore-quest-icon {
+  display: grid;
+  flex: none;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: 12px;
+  background: var(--accent-soft);
+  color: var(--accent);
+  font-size: 20px;
+}
+
+.explore-quest-text { display: flex; flex: 1; min-width: 0; flex-direction: column; gap: 2px; }
+.explore-quest-text strong { font-size: 0.98rem; font-weight: 750; }
+.explore-quest-text span { color: rgba(255, 255, 255, 0.65); font-size: 0.84rem; }
+
+.explore-quest-chip {
+  flex: none;
+  padding: 4px 10px;
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  color: var(--accent);
+  font-size: 0.72rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.explore-quest-go { flex: none; color: rgba(255, 255, 255, 0.45); transition: color 0.2s, transform 0.2s; }
+.explore-quest:hover .explore-quest-go { color: var(--accent); transform: translate(2px, -2px); }
+
+/* Live numbers */
+.explore-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 12px;
+  margin: 26px 0 0;
+  padding-top: 22px;
+  border-top: 1px dashed rgba(255, 255, 255, 0.18);
+}
+
+.explore-stats > div { display: flex; flex-direction: column-reverse; gap: 2px; }
+.explore-stats dt { color: rgba(255, 255, 255, 0.62); font-size: 0.8rem; font-weight: 600; }
+.explore-stats dd { margin: 0; font-family: 'Manrope', 'DM Sans', sans-serif; font-size: clamp(1.5rem, 3vw, 2rem); font-weight: 800; }
+
+@keyframes explore-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .explore-intro, .explore-quests li { animation: none; }
+  .explore-quest, .explore-level-node, .explore-xp-bar span { transition: none; }
+}
+
+/* Tablet */
+@media (max-width: 991.98px) {
+  .explore-body { grid-template-columns: 1fr; }
+}
+
+/* Phone: compact level row, single-column quests */
+@media (max-width: 575.98px) {
+  .explore { padding: 24px 0 50px; }
+  .explore-levels { gap: 4px; }
+  .explore-levels::before { top: 21px; left: 12%; right: 12%; }
+  .explore-level { flex-direction: column; gap: 8px; text-align: center; }
+  .explore-level-node { width: 42px; height: 42px; border-radius: 12px; font-size: 17px; }
+  .explore-level-text small { display: none; }
+  .explore-level-text strong { font-size: 0.82rem; }
+  .explore-quests { grid-template-columns: 1fr; gap: 10px; }
+  .explore-quest { padding: 13px; }
+  .explore-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

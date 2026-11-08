@@ -46,6 +46,7 @@ const hostRoutes = require('./routes/hostRoutes');
 const projectRoutes = require('./routes/projectRoutes');
 const projectTeamRoutes = require('./routes/projectTeamRoutes');
 const githubRoutes = require('./routes/githubRoutes');
+const statsRoutes = require('./routes/statsRoutes');
 const { startProjectSync } = require('./utils/projectSync');
 const { startHackathonSync } = require('./utils/hackathonSync');
 const { startNewsScheduler } = require('./utils/newsIngest');
@@ -75,6 +76,7 @@ app.use('/api/host', hostRoutes);
 app.use('/api/projects', projectTeamRoutes); // before projectRoutes (it has a /:slug catch-all)
 app.use('/api/projects', projectRoutes);
 app.use('/api/github', githubRoutes);
+app.use('/api/stats', statsRoutes);
 
 const PORT = process.env.PORT || 5000;
 

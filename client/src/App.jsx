@@ -15,6 +15,7 @@ import VideoBackground from './components/VideoBackground';
 import BadgeCelebration from './components/BadgeCelebration';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import ExplorePlatform from './components/ExplorePlatform';
 import Events from './components/Events';
 import TeamCarousel from './components/TeamCarousel';
 import CTA from './components/CTA';
@@ -67,10 +68,10 @@ function HomePage() {
 
       <main>
         <Hero />
+        <ExplorePlatform />
         <Events />
         <About />
         <PlaygroundHighlight />
-        <About />
         <TeamCarousel />
         <CTA />
       </main>
