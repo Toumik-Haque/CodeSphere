@@ -1406,6 +1406,9 @@ export default function Profile({
           name: skill.name || skill,
           level: skill.level || 'Intermediate',
         }));
+      } else if (field === 'codingProfiles' || field === 'achievements') {
+        // Drop database ids; the server allows only the entry's own fields.
+        payload[field] = (updatedProfile[field] || []).map((entry) => Object.fromEntries(Object.entries(entry).filter(([key]) => key !== '_id')));
       } else {
         payload[field] = updatedProfile[field];
       }
@@ -1534,12 +1537,40 @@ export default function Profile({
     );
   };
 
-  const applyResumeDetails = async (updates) => {
-    return persistProfile(
-      { ...profile, ...updates },
-      'Resume details have been added to your profile!',
-      Object.keys(updates)
-    );
+  const applyResumeDetails = async ({ projects, ...updates }) => {
+    // Projects live in their own collection (/portfolio-projects), so the
+    // new ones are created one by one rather than saved on the profile.
+    const existingIds = new Set((profile.projects || []).map((p) => p._id).filter(Boolean));
+    const newProjects = (projects || []).filter((p) => !p._id || !existingIds.has(p._id));
+
+    // The server accepts only { platform, url } per coding profile (no _id).
+    // GitHub is stored in its own field.
+    if (updates.codingProfiles) {
+      const github = updates.codingProfiles.find((p) => p.platform?.toLowerCase() === 'github');
+      if (github && !profile.github) updates.github = github.url;
+      updates.codingProfiles = updates.codingProfiles
+        .filter((p) => p.platform?.toLowerCase() !== 'github')
+        .map(({ platform, url }) => ({ platform, url }));
+    }
+
+    let ok = true;
+    if (Object.keys(updates).length) {
+      ok = await persistProfile(
+        { ...profile, ...updates },
+        'Resume details have been added to your profile!',
+        Object.keys(updates)
+      );
+    }
+    if (!ok) return false;
+
+    if (preview) {
+      if (newProjects.length) setProfile((current) => ({ ...current, projects: [...current.projects, ...newProjects] }));
+      return true;
+    }
+    for (const project of newProjects) {
+      if (!(await saveProjectEntry(project))) return false;
+    }
+    return true;
   };
 
   const saveProjectEntry = async (item, projectId) => {

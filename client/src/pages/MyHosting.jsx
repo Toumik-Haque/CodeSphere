@@ -97,7 +97,7 @@ export default function MyHosting() {
                       </Link>
                       {item.kind === 'hackathon' && item.reviewStatus === 'approved' && (
                         <button type="button" className="host-btn" onClick={() => setJudging(judging === item.id ? null : item.id)}>
-                          <i className="bi bi-clipboard-check" aria-hidden="true" /> Teams & judging
+                          <i className="bi bi-inboxes" aria-hidden="true" /> Submissions & judging
                         </button>
                       )}
                       {item.reviewStatus !== 'approved' && <button type="button" className="host-link-danger" onClick={() => withdraw(item)}>Withdraw</button>}

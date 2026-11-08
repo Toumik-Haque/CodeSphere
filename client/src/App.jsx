@@ -15,10 +15,10 @@ import VideoBackground from './components/VideoBackground';
 import BadgeCelebration from './components/BadgeCelebration';
 import Navbar from './components/Navbar';
 import Hero from './components/Hero';
+import ExplorePlatform from './components/ExplorePlatform';
 import Events from './components/Events';
 import TeamCarousel from './components/TeamCarousel';
 import CTA from './components/CTA';
-import PlaygroundHighlight from './components/PlaygroundHighlight';
 import About from './components/About';
 import Footer from './components/Footer';
 
@@ -58,6 +58,7 @@ import GuidedProject from './pages/GuidedProject';
 import AdminProjects from './pages/AdminProjects';
 
 import UserDashboard from './pages/UserDashboard';
+import { AdminToolLayout } from './components/AdminNav';
 
 function HomePage() {
   return (
@@ -67,9 +68,8 @@ function HomePage() {
 
       <main>
         <Hero />
+        <ExplorePlatform />
         <Events />
-        <About />
-        <PlaygroundHighlight />
         <About />
         <TeamCarousel />
         <CTA />
@@ -84,6 +84,27 @@ function HomePage() {
 // anyRole: any signed-in user (students and admins), e.g. forum posting.
 // staff: a staff role (moderator, news-editor, challenge-editor); admins and
 // students holding that role may enter.
+// Guests may only see these pages; everything else asks them to sign in first
+// and brings them back to the page they wanted afterwards.
+const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/reset-password']);
+
+function SignInGate({ children }) {
+  const { user, token } = useAuth();
+  const location = useLocation();
+
+  if ((!user || !token) && !PUBLIC_PATHS.has(location.pathname)) {
+    return (
+      <Navigate
+        to="/login"
+        replace
+        state={{ from: location.pathname + location.search + location.hash }}
+      />
+    );
+  }
+
+  return children;
+}
+
 function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = null }) {
   const { user, token } = useAuth();
 
@@ -160,8 +181,9 @@ function AppRoutes() {
   ];
 
   return (
+    <SignInGate>
     <Routes>
-      {/* Public pages */}
+      {/* Guests can open only the home page and the sign-in pages (see SignInGate). */}
       <Route path="/" element={<HomePage />} />
       <Route path="/events" element={<EventsPage />} />
       <Route path="/updates/:id" element={<UpdateDetails />} />
@@ -173,29 +195,29 @@ function AppRoutes() {
       <Route path="/forum" element={<Forum />} />
       <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
       <Route path="/forum/:id" element={<ForumThread />} />
-      <Route path="/admin/forum" element={<ProtectedRoute staff="moderator"><AdminForum /></ProtectedRoute>} />
+      <Route path="/admin/forum" element={<ProtectedRoute staff="moderator"><AdminToolLayout><AdminForum /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/reverse-coding" element={<ReverseCoding />} />
       <Route path="/reverse-coding/:slug" element={<ReverseChallenge />} />
-      <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminReverse /></ProtectedRoute>} />
+      <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminToolLayout><AdminReverse /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/materials" element={<Materials />} />
       <Route path="/materials/:slug" element={<Materials />} />
-      <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminMaterials /></ProtectedRoute>} />
+      <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminToolLayout><AdminMaterials /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/host" element={<ProtectedRoute anyRole><MyHosting /></ProtectedRoute>} />
       <Route path="/host/:kind/new" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
       <Route path="/host/:kind/:id/edit" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
-      <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminReview /></ProtectedRoute>} />
+      <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminToolLayout><AdminReview /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/projects" element={<ProjectHub />} />
       <Route path="/projects/new" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
       <Route path="/projects/guided/:slug" element={<GuidedProject />} />
       <Route path="/projects/:id/edit" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
       <Route path="/projects/:slug" element={<ProjectDetail />} />
-      <Route path="/admin/projects" element={<ProtectedRoute staff="project-reviewer"><AdminProjects /></ProtectedRoute>} />
+      <Route path="/admin/projects" element={<ProtectedRoute staff="project-reviewer"><AdminToolLayout><AdminProjects /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/hackathons" element={<Hackathons />} />
       <Route path="/hackathons/:slug" element={<HackathonDetail />} />
-      <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminHackathons /></ProtectedRoute>} />
+      <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminToolLayout><AdminHackathons /></AdminToolLayout></ProtectedRoute>} />
       <Route path="/news" element={<News />} />
       <Route path="/news/:slug" element={<News />} />
-      <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminNews /></ProtectedRoute>} />
+      <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminToolLayout><AdminNews /></AdminToolLayout></ProtectedRoute>} />
 
       {/* Authentication pages */}
       <Route path="/login" element={<Login />} />
@@ -269,6 +291,7 @@ function AppRoutes() {
       {/* Unknown routes */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </SignInGate>
   );
 }
 

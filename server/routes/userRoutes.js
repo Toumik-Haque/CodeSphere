@@ -50,6 +50,19 @@ const resumeView = (r) => (r?.url ? { url: r.url, name: r.name, size: r.size, ty
 // GET /api/users/me/resume
 router.get('/me/resume', protect, (req, res) => res.json({ resume: resumeView(req.user.resume) }));
 
+// Coding profile stats (problems solved, contributions, ratings) for the Overview.
+// GET /api/users/me/coding-stats
+router.get('/me/coding-stats', protect, async (req, res) => {
+  try {
+    const { codingStatsForUser } = require('../utils/codingStats');
+    const user = await User.findById(req.user._id).select('github codingProfiles').lean();
+    return res.json({ success: true, ...(await codingStatsForUser(user || {})) });
+  } catch (error) {
+    console.error('Coding stats error:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load coding stats.' });
+  }
+});
+
 // PUT /api/users/me/resume  (multipart field "resume", max 5 MB)
 router.put('/me/resume', protect, (req, res, next) => resumeUpload.single('resume')(req, res, (error) => {
   if (error) return res.status(400).json({ message: error.code === 'LIMIT_FILE_SIZE' ? 'The resume must be 5 MB or smaller.' : error.message });
@@ -337,7 +350,7 @@ router.get('/search', protect, async (req, res) => {
         { collegeName: regex },
       ],
     })
-      .select('name username collegeName profileImage')
+      .select('name username collegeName profileImage avatarUrl')
       .sort({ name: 1, username: 1 })
       .limit(12)
       .lean();
@@ -813,8 +826,24 @@ router.delete('/profile/image', protect, async (req, res) => {
 });
 
 
-// GET ANOTHER MEMBER'S PROFILE
+// A member's public coding stats, for their profile page.
+// GET /api/users/profile/:username/coding-stats
+router.get('/profile/:username/coding-stats', protect, async (req, res) => {
+  try {
+    const { codingStatsForUser } = require('../utils/codingStats');
+    const member = await User.findOne({ username: req.params.username.toLowerCase().trim(), role: 'user' })
+      .select('github codingProfiles')
+      .lean();
+    if (!member) return res.status(404).json({ success: false, message: 'Member profile not found.' });
+    return res.json({ success: true, ...(await codingStatsForUser(member)) });
+  } catch (error) {
+    console.error('Member coding stats error:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load coding stats.' });
+  }
+});
+
 // GET /api/users/profile/:username
+// GET ANOTHER MEMBER'S PROFILE
 router.get('/profile/:username', protect, async (req, res) => {
   try {
     const username = req.params.username.toLowerCase().trim();
@@ -824,7 +853,7 @@ router.get('/profile/:username', protect, async (req, res) => {
       role: 'user',
     })
       .select(
-      'name username collegeName degree department yearOfStudy graduationYear profileImage bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements createdAt'
+      'name username collegeName degree department yearOfStudy graduationYear profileImage avatarUrl bannerImage bannerUrl bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements createdAt'
       )
       .lean();
 

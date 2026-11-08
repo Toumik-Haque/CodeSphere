@@ -33,14 +33,17 @@ function memberSince(date) {
     : '—';
 }
 
+// Profile photo, or coloured initials when there is none (or it fails to load).
 function Avatar({ row, size = 'md' }) {
+  const [broken, setBroken] = useState(false);
+  const photo = row.avatar && !broken;
   return (
     <span
-      className={`lb-avatar lb-avatar-${size}`}
+      className={`lb-avatar lb-avatar-${size} ${photo ? 'has-photo' : ''}`}
       style={{ background: avatarColor(row.initials + row.year) }}
       aria-hidden="true"
     >
-      {row.initials}
+      {photo ? <img src={row.avatar} alt="" loading="lazy" onError={() => setBroken(true)} /> : row.initials}
     </span>
   );
 }

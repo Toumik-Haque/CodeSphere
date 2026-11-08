@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import logo from '../assets/logo.png';
+import CodingStats from '../components/CodingStats';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
 import ProfileBadges from '../components/ProfileBadges';
 import DashboardDiscover from '../components/DashboardDiscover';
@@ -165,6 +166,7 @@ function DashboardOverviewSection({ user }) {
 
           <div className="student-profile-main dashboard-overview-content">
             <ProfileBadges compact completion={completion} />
+            <CodingStats />
 
             {nextProfileSteps.length > 0 && (
               <section className="profile-next-steps">
@@ -521,8 +523,8 @@ export default function UserDashboard() {
 
           <div className="user-dashboard-sidebar-bottom">
             <div className="user-dashboard-account">
-              {user?.profileImage?.url ? (
-                <img src={user.profileImage.url} alt="" />
+              {(user?.profileImage?.url || user?.avatarUrl) ? (
+                <img src={user.profileImage?.url || user.avatarUrl} alt="" />
               ) : (
                 <span className="user-dashboard-account-avatar">
                   {user?.name?.trim()?.[0]?.toUpperCase() || 'U'}

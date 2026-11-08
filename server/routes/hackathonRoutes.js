@@ -8,6 +8,7 @@ const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { createLimiter } = require('../utils/rateLimit');
 const { syncExternalHackathons, SOURCE_NAMES } = require('../utils/hackathonSync');
 const { validateHackathon } = require('../utils/hackathonValidate');
+const submissionFiles = require('../utils/hackathonFiles');
 
 const router = express.Router();
 const organizer = [protect, requireStaff('hackathon-organizer')];
@@ -31,6 +32,7 @@ const manageBySubmission = manager(async (req) => (isId(req.params.id) ? (await 
 const teamLimiter = createLimiter({ windowMs: 60 * 60 * 1000, max: 30, message: 'Too many team changes. Try again later.' });
 
 const isId = (id) => mongoose.Types.ObjectId.isValid(id);
+const HANDED_IN = { status: { $ne: 'draft' } };
 const clean = (v, max) => String(v ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max);
 const safeUrl = (url) => {
   const s = clean(url, 500);
@@ -83,7 +85,7 @@ function card(h, counts = {}) {
 async function countsFor(ids) {
   const [teams, subs] = await Promise.all([
     HackathonTeam.aggregate([{ $match: { hackathon: { $in: ids } } }, { $group: { _id: '$hackathon', n: { $sum: 1 } } }]),
-    HackathonSubmission.aggregate([{ $match: { hackathon: { $in: ids } } }, { $group: { _id: '$hackathon', n: { $sum: 1 } } }]),
+    HackathonSubmission.aggregate([{ $match: { hackathon: { $in: ids }, ...HANDED_IN } }, { $group: { _id: '$hackathon', n: { $sum: 1 } } }]),
   ]);
   const map = {};
   teams.forEach((t) => { map[t._id] = { ...(map[t._id] || {}), teams: t.n }; });
@@ -93,12 +95,23 @@ async function countsFor(ids) {
 
 const member = (u) => ({ id: String(u._id), name: u.name, initials: initials(u.name), year: u.yearOfStudy || '' });
 
-function submissionView(s, { withAward }) {
+const fileView = (f) => (f?.url ? { url: f.url, name: f.name, size: f.size, type: f.type } : null);
+
+function submissionView(s, { withAward, withReview = false }) {
   return {
     id: String(s._id),
     title: s.title,
     tagline: s.tagline,
     description: s.description,
+    problem: s.problem || '',
+    solution: s.solution || '',
+    challenges: s.challenges || '',
+    impact: s.impact || '',
+    deckFile: fileView(s.deckFile),
+    prototypeFile: fileView(s.prototypeFile),
+    screenshots: (s.screenshots || []).map(fileView).filter(Boolean),
+    status: s.status || 'submitted',
+    submittedAt: s.submittedAt || (s.status ? null : s.createdAt),
     track: s.track,
     techStack: s.techStack,
     repoUrl: s.repoUrl,
@@ -108,6 +121,7 @@ function submissionView(s, { withAward }) {
     updatedAt: s.updatedAt,
     team: s.team?.name ? { name: s.team.name, members: (s.team.members || []).map(member) } : undefined,
     ...(withAward ? { award: s.award, rank: s.rank } : {}),
+    ...(withReview ? { review: s.review || 'new', score: s.score ?? null, judgeNote: s.judgeNote || '' } : {}),
   };
 }
 
@@ -185,18 +199,19 @@ router.get('/admin/:id', manageById, async (req, res) => {
   if (!h) return res.status(404).json({ message: 'Not found.' });
   const [teams, subs] = await Promise.all([
     HackathonTeam.find({ hackathon: h._id }).populate('members', 'name email yearOfStudy').sort({ createdAt: 1 }).lean(),
-    HackathonSubmission.find({ hackathon: h._id }).populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name yearOfStudy' } }).sort({ rank: 1, updatedAt: -1 }).lean(),
+    HackathonSubmission.find({ hackathon: h._id }).populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name yearOfStudy' } }).sort({ rank: 1, submittedAt: 1, updatedAt: -1 }).lean(),
   ]);
   res.json({
     hackathon: { ...card(h), description: h.description, rules: h.rules },
     teams: teams.map((t) => ({
       id: String(t._id),
       name: t.name,
-      submitted: subs.some((s) => String(s.team?._id) === String(t._id)),
+      submitted: subs.some((s) => String(s.team?._id) === String(t._id) && s.status !== 'draft'),
+      draft: subs.some((s) => String(s.team?._id) === String(t._id) && s.status === 'draft'),
       // Student hosts see names only; staff organisers also see emails.
       members: t.members.map((u) => ({ ...member(u), ...(hasStaffRole(req.user, 'hackathon-organizer') ? { email: u.email } : {}) })),
     })),
-    submissions: subs.map((s) => submissionView(s, { withAward: true })),
+    submissions: subs.map((s) => submissionView(s, { withAward: true, withReview: true })),
   });
 });
 
@@ -247,18 +262,72 @@ router.delete('/admin/:id', organizer, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });
   const h = await Hackathon.findByIdAndDelete(req.params.id);
   if (!h) return res.status(404).json({ message: 'Not found.' });
+  const subs = await HackathonSubmission.find({ hackathon: h._id }).lean();
   await Promise.all([HackathonTeam.deleteMany({ hackathon: h._id }), HackathonSubmission.deleteMany({ hackathon: h._id })]);
+  await submissionFiles.removeFiles(subs.flatMap(submissionFiles.filesOf));
   res.json({ message: 'Deleted.' });
 });
 
 // Judge a submission: award label + rank.
+// Only the fields sent are changed.
 router.put('/admin/submissions/:id', manageBySubmission, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });
-  const rank = req.body.rank === '' || req.body.rank == null ? undefined : Math.min(100, Math.max(1, Number(req.body.rank) || 1));
-  const update = rank ? { award: clean(req.body.award, 80), rank } : { award: clean(req.body.award, 80), $unset: { rank: 1 } };
-  const s = await HackathonSubmission.findByIdAndUpdate(req.params.id, update, { new: true });
+  const b = req.body || {};
+  const set = {};
+  const unset = {};
+  const numberOrUnset = (key, min, max) => {
+    if (!(key in b)) return;
+    if (b[key] === '' || b[key] == null) unset[key] = 1;
+    else set[key] = Math.min(max, Math.max(min, Math.round(Number(b[key]) || min)));
+  };
+  if ('award' in b) set.award = clean(b.award, 80);
+  numberOrUnset('rank', 1, 100);
+  numberOrUnset('score', 0, 100);
+  if ('judgeNote' in b) set.judgeNote = clean(b.judgeNote, 2000);
+  if ('review' in b) {
+    if (!['new', 'shortlisted', 'rejected'].includes(b.review)) return res.status(400).json({ message: 'Unknown review status.' });
+    set.review = b.review;
+  }
+  const s = await HackathonSubmission.findByIdAndUpdate(
+    req.params.id,
+    { ...(Object.keys(set).length ? { $set: set } : {}), ...(Object.keys(unset).length ? { $unset: unset } : {}) },
+    { new: true },
+  );
   if (!s) return res.status(404).json({ message: 'Not found.' });
-  res.json({ award: s.award, rank: s.rank });
+  res.json({ award: s.award, rank: s.rank, review: s.review, score: s.score ?? null, judgeNote: s.judgeNote });
+});
+
+// Spreadsheet of every submission, for offline judging.
+// GET /api/hackathons/admin/:id/submissions.csv
+router.get('/admin/:id/submissions.csv', manageById, async (req, res) => {
+  if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });
+  const h = await Hackathon.findById(req.params.id).select('slug').lean();
+  if (!h) return res.status(404).json({ message: 'Not found.' });
+  const subs = await HackathonSubmission.find({ hackathon: h._id })
+    .populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name email' } })
+    .sort({ rank: 1, submittedAt: 1 })
+    .lean();
+  const showEmails = hasStaffRole(req.user, 'hackathon-organizer');
+  const cell = (v) => {
+    const text = String(v ?? '').replace(/\r?\n/g, ' ');
+    // Stop spreadsheet formulas, then quote.
+    return `"${(/^[=+\-@]/.test(text) ? `'${text}` : text).replace(/"/g, '""')}"`;
+  };
+  const header = ['Team', 'Members', 'Project', 'Track', 'Status', 'Submitted at', 'Review', 'Score', 'Rank', 'Award',
+    'Pitch', 'Problem', 'Solution', 'Tech stack', 'Deck', 'Prototype file', 'Code', 'Demo', 'Video', 'Screenshots', 'Judge notes'];
+  const rows = subs.map((s) => [
+    s.team?.name,
+    (s.team?.members || []).map((m) => (showEmails ? `${m.name} <${m.email}>` : m.name)).join('; '),
+    s.title, s.track, s.status || 'submitted', s.submittedAt ? new Date(s.submittedAt).toISOString() : '',
+    s.review || 'new', s.score ?? '', s.rank ?? '', s.award,
+    s.tagline, s.problem, s.solution, (s.techStack || []).join(', '),
+    s.deckFile?.url || s.deckUrl, s.prototypeFile?.url, s.repoUrl, s.demoUrl, s.videoUrl,
+    (s.screenshots || []).map((f) => f.url).join(' '), s.judgeNote,
+  ]);
+  const csv = [header, ...rows].map((r) => r.map(cell).join(',')).join('\r\n');
+  res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+  res.setHeader('Content-Disposition', `attachment; filename="${h.slug}-submissions.csv"`);
+  res.send(`\uFEFF${csv}`);
 });
 
 // Publish (or hide) results; participants are notified when published.
@@ -335,7 +404,7 @@ router.get('/:slug', optionalAuth, async (req, res) => {
   // The project gallery opens once submissions close.
   let gallery = [];
   if (now > h.submissionEnd || h.resultsPublished) {
-    const subs = await HackathonSubmission.find({ hackathon: h._id })
+    const subs = await HackathonSubmission.find({ hackathon: h._id, ...HANDED_IN })
       .populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name yearOfStudy' } })
       .sort(h.resultsPublished ? { rank: 1, createdAt: 1 } : { createdAt: 1 })
       .lean();
@@ -428,7 +497,8 @@ router.post('/:slug/teams/leave', protect, teamLimiter, async (req, res) => {
   if (!team) return res.status(400).json({ message: 'You are not in a team.' });
   team.members = team.members.filter((m) => String(m) !== String(req.user._id));
   if (!team.members.length) {
-    await HackathonSubmission.deleteOne({ team: team._id });
+    const sub = await HackathonSubmission.findOneAndDelete({ team: team._id }).lean();
+    await submissionFiles.removeFiles(submissionFiles.filesOf(sub));
     await team.deleteOne();
     return res.json({ message: 'You left and the empty team was removed.' });
   }
@@ -452,16 +522,44 @@ router.delete('/:slug/teams/members/:userId', protect, async (req, res) => {
   res.json({ message: 'Removed.' });
 });
 
-// PUT /api/hackathons/:slug/submission — create or update your team's project
-router.put('/:slug/submission', protect, async (req, res) => {
+// Shared checks for a team member changing their submission.
+async function submissionContext(req, res) {
   const h = await inOpenRegistration(req, res);
-  if (!h) return;
-  if (!windows(h).canSubmit) return res.status(400).json({ message: 'Submissions are not open right now.' });
+  if (!h) return null;
+  if (!windows(h).canSubmit) {
+    res.status(400).json({ message: 'Submissions are not open right now.' });
+    return null;
+  }
   const team = await myTeam(h._id, req.user._id);
-  if (!team) return res.status(400).json({ message: 'Join or create a team first.' });
-  if (team.members.length < h.teamMin) return res.status(400).json({ message: `Your team needs at least ${h.teamMin} members to submit.` });
+  if (!team) {
+    res.status(400).json({ message: 'Join or create a team first.' });
+    return null;
+  }
+  return { h, team };
+}
 
+// What a final submission must include (like SIH / Devfolio / Unstop).
+function missingForFinal(s) {
+  const missing = [];
+  if ((s.title || '').length < 3) missing.push('project name');
+  if ((s.problem || '').length < 30) missing.push('problem statement (30+ characters)');
+  if ((s.solution || '').length < 30) missing.push('your solution (30+ characters)');
+  if (!s.deckFile?.url && !s.deckUrl) missing.push('pitch deck (upload a PPT/PDF or add a link)');
+  if (!s.prototypeFile?.url && !s.demoUrl && !s.repoUrl && !s.videoUrl) missing.push('prototype (upload a file, or add a demo, code or video link)');
+  return missing;
+}
+
+// PUT /api/hackathons/:slug/submission  { ...fields, action: 'draft' | 'submit' }
+// Saves your team's project. "submit" hands in the final version (it can still
+// be edited until the deadline); "draft" just saves your progress.
+router.put('/:slug/submission', protect, async (req, res) => {
+  const ctx = await submissionContext(req, res);
+  if (!ctx) return;
+  const { h, team } = ctx;
   const b = req.body || {};
+  const final = b.action === 'submit';
+  if (final && team.members.length < h.teamMin) return res.status(400).json({ message: `Your team needs at least ${h.teamMin} members to submit.` });
+
   const links = { repoUrl: b.repoUrl, demoUrl: b.demoUrl, videoUrl: b.videoUrl, deckUrl: b.deckUrl };
   for (const [key, value] of Object.entries(links)) {
     if (value && !safeUrl(value)) return res.status(400).json({ message: `${key.replace('Url', '')} link must start with http:// or https://` });
@@ -470,6 +568,10 @@ router.put('/:slug/submission', protect, async (req, res) => {
     title: clean(b.title, 100),
     tagline: clean(b.tagline, 200),
     description: clean(b.description, 8000),
+    problem: clean(b.problem, 3000),
+    solution: clean(b.solution, 3000),
+    challenges: clean(b.challenges, 3000),
+    impact: clean(b.impact, 3000),
     track: h.tracks.includes(b.track) ? b.track : '',
     techStack: (Array.isArray(b.techStack) ? b.techStack : String(b.techStack || '').split(','))
       .map((t) => clean(t, 30)).filter(Boolean).slice(0, 12),
@@ -479,26 +581,100 @@ router.put('/:slug/submission', protect, async (req, res) => {
     deckUrl: safeUrl(b.deckUrl),
     lastEditedBy: req.user._id,
   };
-  if (data.title.length < 3) return res.status(400).json({ message: 'Give your project a name.' });
-  if (data.description.length < 30) return res.status(400).json({ message: 'Describe your project in at least 30 characters.' });
-  if (!data.repoUrl && !data.demoUrl && !data.videoUrl) return res.status(400).json({ message: 'Add at least one link: code, live demo or video.' });
+  if (data.title.length < 3) return res.status(400).json({ message: 'Give your project a name (3+ characters).' });
 
-  const existed = await HackathonSubmission.exists({ team: team._id });
+  const existing = await HackathonSubmission.findOne({ team: team._id }).lean();
+  const wasFinal = existing && existing.status !== 'draft';
+  // Once handed in, a submission stays final; edits must keep it complete.
+  if (final || wasFinal) {
+    const missing = missingForFinal({ ...existing, ...data });
+    if (missing.length) return res.status(400).json({ message: `Before you submit, add: ${missing.join(', ')}.`, missing });
+    data.status = 'submitted';
+    if (!wasFinal) data.submittedAt = new Date();
+  } else {
+    data.status = 'draft';
+  }
+
   const s = await HackathonSubmission.findOneAndUpdate(
     { team: team._id },
     { $set: data, $setOnInsert: { hackathon: h._id, team: team._id } },
     { upsert: true, new: true },
   );
   const others = team.members.filter((m) => String(m) !== String(req.user._id));
-  if (others.length) {
+  if (others.length && (final || wasFinal)) {
     await notify(others, {
       type: 'hackathon',
-      title: `${req.user.name} ${existed ? 'updated' : 'submitted'} your team's project`,
+      title: `${req.user.name} ${wasFinal ? 'updated' : 'submitted'} your team's project`,
       body: `${data.title} · ${h.title}`,
       link: `/hackathons/${h.slug}`,
     });
   }
-  res.json({ id: String(s._id), message: existed ? 'Submission updated.' : 'Project submitted!' });
+  const message = !final && !wasFinal ? 'Draft saved. Submit it before the deadline.' : wasFinal ? 'Submission updated.' : 'Project submitted! 🎉';
+  res.json({ id: String(s._id), status: s.status, message });
+});
+
+// POST /api/hackathons/:slug/submission/files/:kind  (multipart "file")
+// kind: deck | prototype | screenshot. Starts a draft if there is none yet.
+router.post('/:slug/submission/files/:kind', protect, teamLimiter, async (req, res, next) => {
+  const ctx = await submissionContext(req, res);
+  if (!ctx) return;
+  req.ctx = ctx;
+  next();
+}, submissionFiles.receive, async (req, res) => {
+  const { h, team } = req.ctx;
+  const { kind } = req.params;
+  try {
+    let s = await HackathonSubmission.findOne({ team: team._id });
+    if (kind === 'screenshot' && (s?.screenshots?.length || 0) >= submissionFiles.MAX_SCREENSHOTS) {
+      return res.status(400).json({ message: `You can add up to ${submissionFiles.MAX_SCREENSHOTS} screenshots.` });
+    }
+    const file = await submissionFiles.store(req.file, req.fileType, `/codesphere/hackathons/${h._id}/${team._id}`);
+    if (!s) {
+      s = new HackathonSubmission({ hackathon: h._id, team: team._id, title: `${team.name}'s project`, status: 'draft' });
+    }
+    let replaced = null;
+    if (kind === 'screenshot') s.screenshots.push(file);
+    else {
+      const key = kind === 'deck' ? 'deckFile' : 'prototypeFile';
+      replaced = s[key];
+      s[key] = file;
+    }
+    s.lastEditedBy = req.user._id;
+    await s.save();
+    if (replaced?.fileId) await submissionFiles.removeFiles([replaced]);
+    res.status(201).json({ file: fileView(file), submission: submissionView(s.toObject(), { withAward: false }) });
+  } catch (error) {
+    console.error('Hackathon file upload error:', error.message);
+    res.status(500).json({ message: 'Could not upload the file. Try again.' });
+  }
+});
+
+// DELETE /api/hackathons/:slug/submission/files/:kind?url=  (url picks the screenshot)
+router.delete('/:slug/submission/files/:kind', protect, async (req, res) => {
+  const ctx = await submissionContext(req, res);
+  if (!ctx) return;
+  const { kind } = req.params;
+  if (!submissionFiles.KINDS[kind]) return res.status(404).json({ message: 'Unknown upload type.' });
+  const s = await HackathonSubmission.findOne({ team: ctx.team._id });
+  if (!s) return res.status(404).json({ message: 'Nothing to remove.' });
+  let removed = null;
+  if (kind === 'screenshot') {
+    const index = s.screenshots.findIndex((f) => f.url === req.query.url);
+    if (index < 0) return res.status(404).json({ message: 'Screenshot not found.' });
+    [removed] = s.screenshots.splice(index, 1);
+  } else {
+    const key = kind === 'deck' ? 'deckFile' : 'prototypeFile';
+    removed = s[key];
+    s[key] = undefined;
+    // A final submission must keep a deck and a prototype.
+    if (s.status !== 'draft' && missingForFinal(s.toObject()).length) {
+      return res.status(400).json({ message: `Your submission needs a ${kind === 'deck' ? 'pitch deck' : 'prototype'}. Upload a new one to replace it instead.` });
+    }
+  }
+  s.lastEditedBy = req.user._id;
+  await s.save();
+  if (removed?.fileId) await submissionFiles.removeFiles([removed]);
+  res.json({ submission: submissionView(s.toObject(), { withAward: false }) });
 });
 
 module.exports = router;

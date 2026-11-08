@@ -96,8 +96,8 @@ export default function DashboardDiscover({ user, profileUsername }) {
           aria-label="Return to your public profile"
           title="Your public profile"
         >
-          {currentUser?.profileImage?.url ? (
-            <img src={currentUser.profileImage.url} alt="" />
+          {(currentUser?.profileImage?.url || currentUser?.avatarUrl) ? (
+            <img src={currentUser.profileImage?.url || currentUser.avatarUrl} alt="" />
           ) : (
             getInitials(currentUser?.name || 'User')
           )}
@@ -149,8 +149,8 @@ export default function DashboardDiscover({ user, profileUsername }) {
                     }
                   >
                     <span className="dashboard-discover-avatar">
-                      {member.profileImage?.url ? (
-                        <img src={member.profileImage.url} alt="" />
+                      {(member.profileImage?.url || member.avatarUrl) ? (
+                        <img src={member.profileImage?.url || member.avatarUrl} alt="" />
                       ) : (
                         getInitials(member.name)
                       )}

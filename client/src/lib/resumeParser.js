@@ -180,6 +180,7 @@ const PROFILE_HOSTS = [
   [/codeforces\.com\/profile\/([A-Za-z0-9_.-]+)/i, 'Codeforces'],
   [/hackerrank\.com\/(?:profile\/)?([A-Za-z0-9_]+)\/?$/i, 'HackerRank'],
   [/geeksforgeeks\.org\/(?:user|profile)\/([A-Za-z0-9_]+)/i, 'GeeksforGeeks'],
+  [/atcoder\.jp\/users\/([A-Za-z0-9_]+)/i, 'AtCoder'],
   [/hackerearth\.com\/@([A-Za-z0-9_]+)/i, 'HackerEarth'],
 ];
 

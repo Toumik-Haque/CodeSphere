@@ -1763,3 +1763,29 @@
   .student-cover { height: 92px; }
   .student-identity-card.has-cover .student-avatar { margin-top: -40px; }
 }
+
+/* Keep the avatar a fixed circle on the banner, clear of the name below */
+.student-identity-card.has-cover .student-avatar {
+  z-index: 1;
+  flex: none;
+  box-sizing: border-box;
+  width: 96px;
+  min-width: 96px;
+  max-width: 96px;
+  height: 96px;
+  min-height: 96px;
+  max-height: 96px;
+  aspect-ratio: 1;
+  margin-bottom: 6px;
+}
+.student-identity-card.has-cover .student-avatar img {
+  display: block;
+  max-height: 100%;
+}
+.student-identity-card.has-cover .student-identity-content { padding-top: 10px; }
+@media (max-width: 767.98px) {
+  .student-identity-card.has-cover .student-avatar {
+    width: 80px; min-width: 80px; max-width: 80px;
+    height: 80px; min-height: 80px; max-height: 80px;
+  }
+}

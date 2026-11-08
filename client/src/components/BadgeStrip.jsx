@@ -16,7 +16,7 @@ export default function BadgeStrip() {
     };
   }, []);
 
-  if (!data) return null;
+  if (!Array.isArray(data?.badges)) return null;
   const earned = data.badges.filter((b) => b.earned);
   const pinned = new Set(data.showcase || []);
   earned.sort((a, b) => (pinned.has(b.id) - pinned.has(a.id)) || new Date(b.earnedAt) - new Date(a.earnedAt));
