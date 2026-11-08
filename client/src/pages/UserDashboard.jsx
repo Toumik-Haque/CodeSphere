@@ -6,6 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import logo from '../assets/logo.svg';
+import CodingStats from '../components/CodingStats';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
 import ProfileBadges from '../components/ProfileBadges';
 import DashboardDiscover from '../components/DashboardDiscover';
@@ -165,6 +166,7 @@ function DashboardOverviewSection({ user }) {
 
           <div className="student-profile-main dashboard-overview-content">
             <ProfileBadges compact completion={completion} />
+            <CodingStats />
 
             {nextProfileSteps.length > 0 && (
               <section className="profile-next-steps">

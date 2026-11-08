@@ -50,6 +50,19 @@ const resumeView = (r) => (r?.url ? { url: r.url, name: r.name, size: r.size, ty
 // GET /api/users/me/resume
 router.get('/me/resume', protect, (req, res) => res.json({ resume: resumeView(req.user.resume) }));
 
+// Coding profile stats (problems solved, contributions, ratings) for the Overview.
+// GET /api/users/me/coding-stats
+router.get('/me/coding-stats', protect, async (req, res) => {
+  try {
+    const { codingStatsForUser } = require('../utils/codingStats');
+    const user = await User.findById(req.user._id).select('github codingProfiles').lean();
+    return res.json({ success: true, ...(await codingStatsForUser(user || {})) });
+  } catch (error) {
+    console.error('Coding stats error:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load coding stats.' });
+  }
+});
+
 // PUT /api/users/me/resume  (multipart field "resume", max 5 MB)
 router.put('/me/resume', protect, (req, res, next) => resumeUpload.single('resume')(req, res, (error) => {
   if (error) return res.status(400).json({ message: error.code === 'LIMIT_FILE_SIZE' ? 'The resume must be 5 MB or smaller.' : error.message });
