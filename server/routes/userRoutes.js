@@ -826,7 +826,6 @@ router.delete('/profile/image', protect, async (req, res) => {
 });
 
 
-// GET ANOTHER MEMBER'S PROFILE
 // A member's public coding stats, for their profile page.
 // GET /api/users/profile/:username/coding-stats
 router.get('/profile/:username/coding-stats', protect, async (req, res) => {
@@ -844,6 +843,7 @@ router.get('/profile/:username/coding-stats', protect, async (req, res) => {
 });
 
 // GET /api/users/profile/:username
+// GET ANOTHER MEMBER'S PROFILE
 router.get('/profile/:username', protect, async (req, res) => {
   try {
     const username = req.params.username.toLowerCase().trim();
