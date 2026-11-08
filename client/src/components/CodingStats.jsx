@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
+import '../css/CodingStats.css';
 
 // "At a glance" stats from the member's coding profiles, for the Overview.
 const ICONS = {
@@ -15,38 +16,42 @@ const ICONS = {
 
 const format = (value) => (typeof value === 'number' ? value.toLocaleString('en-IN') : value);
 
-export default function CodingStats() {
+// With a username it shows that member's public stats; without, your own.
+export default function CodingStats({ username }) {
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
 
   useEffect(() => {
     const controller = new AbortController();
-    apiRequest('/users/me/coding-stats', { signal: controller.signal })
+    apiRequest(username ? `/users/profile/${encodeURIComponent(username)}/coding-stats` : '/users/me/coding-stats', { signal: controller.signal })
       .then(setData)
       .catch((loadError) => {
         if (loadError.name !== 'AbortError') setError(loadError.message || 'Unable to load coding stats.');
       });
     return () => controller.abort();
-  }, []);
+  }, [username]);
 
   if (error) return null;
 
   const stats = data?.stats || [];
+  if (username && data && stats.length === 0) return null;
 
   return (
     <section className="profile-section-card coding-stats-card">
       <div className="coding-stats-head">
         <div>
           <h2>Coding at a glance</h2>
-          <p>Live from your linked coding profiles.</p>
+          <p>Live from {username ? 'their' : 'your'} linked coding profiles.</p>
         </div>
-        <Link to="/user/profile" className="profile-next-steps-link">
-          Manage profiles <i className="bi bi-arrow-right" />
-        </Link>
+        {!username && (
+          <Link to="/user/profile" className="profile-next-steps-link">
+            Manage profiles <i className="bi bi-arrow-right" />
+          </Link>
+        )}
       </div>
 
       {!data ? (
-        <p className="coding-stats-empty">Loading your coding stats…</p>
+        <p className="coding-stats-empty">Loading coding stats…</p>
       ) : stats.length === 0 ? (
         <p className="coding-stats-empty">
           Add your GitHub, LeetCode, Codeforces, CodeChef, AtCoder, GeeksforGeeks or HackerRank

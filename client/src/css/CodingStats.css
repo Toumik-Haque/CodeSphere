@@ -1,0 +1,24 @@
+/* Coding at a glance (Overview) */
+.coding-stats-card { margin-top: 18px; padding: 20px; border: 1px solid var(--profile-border, #e5e9f0); border-radius: 15px; background: #fff; }
+.member-profile-content .coding-stats-card { margin: 0 0 18px; }
+.coding-stats-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin-bottom: 14px; }
+.coding-stats-head h2 { margin: 0 0 4px; color: var(--profile-navy, #153653); font-size: 18px; font-weight: 750; }
+.coding-stats-head p, .coding-stats-empty { margin: 0; color: #64748b; font-size: 14px; }
+.coding-stats-totals { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+.coding-stats-totals > div { padding: 14px; border-radius: 12px; background: #fff4ec; text-align: center; }
+.coding-stats-totals strong { display: block; color: var(--profile-orange-dark, #d9480f); font-size: 24px; font-weight: 800; }
+.coding-stats-totals span { color: #475569; font-size: 12.5px; }
+.coding-stats-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; }
+.coding-stat { padding: 14px; border: 1px solid var(--profile-border, #e5e9f0); border-radius: 12px; background: #fff; }
+.coding-stat header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.coding-stat header > i { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 9px; background: #f1f5f9; color: var(--profile-navy, #153653); font-size: 17px; }
+.coding-stat h3 { margin: 0; color: var(--profile-navy, #153653); font-size: 15px; font-weight: 700; }
+.coding-stat header a { color: var(--profile-orange-dark, #d9480f); font-size: 12.5px; text-decoration: none; }
+.coding-stat dl { margin: 0; }
+.coding-stat dl > div { display: flex; justify-content: space-between; gap: 8px; padding: 5px 0; border-top: 1px dashed #e2e8f0; font-size: 13px; }
+.coding-stat dt { color: #64748b; font-weight: 500; }
+.coding-stat dd { margin: 0; color: var(--profile-navy, #153653); font-weight: 700; text-align: right; }
+.coding-stat.is-unavailable p { margin: 0; color: #94a3b8; font-size: 12.5px; }
+@media (max-width: 575.98px) {
+  .coding-stats-totals { grid-template-columns: 1fr; }
+}

@@ -827,6 +827,22 @@ router.delete('/profile/image', protect, async (req, res) => {
 
 
 // GET ANOTHER MEMBER'S PROFILE
+// A member's public coding stats, for their profile page.
+// GET /api/users/profile/:username/coding-stats
+router.get('/profile/:username/coding-stats', protect, async (req, res) => {
+  try {
+    const { codingStatsForUser } = require('../utils/codingStats');
+    const member = await User.findOne({ username: req.params.username.toLowerCase().trim(), role: 'user' })
+      .select('github codingProfiles')
+      .lean();
+    if (!member) return res.status(404).json({ success: false, message: 'Member profile not found.' });
+    return res.json({ success: true, ...(await codingStatsForUser(member)) });
+  } catch (error) {
+    console.error('Member coding stats error:', error.message);
+    return res.status(500).json({ success: false, message: 'Unable to load coding stats.' });
+  }
+});
+
 // GET /api/users/profile/:username
 router.get('/profile/:username', protect, async (req, res) => {
   try {

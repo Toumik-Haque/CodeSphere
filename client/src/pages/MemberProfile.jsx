@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
+import CodingStats from '../components/CodingStats';
 import '../css/MemberProfile.css';
 
 function getInitials(name = '') {
@@ -243,6 +244,8 @@ export default function MemberProfile({
               </div>
 
               <div className="member-profile-content">
+                <CodingStats username={member.username} />
+
                 <ProfileSection title="About me">
                   <p className="member-profile-bio">
                     {member.bio || 'This member has not added a bio yet.'}
