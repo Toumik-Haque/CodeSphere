@@ -1793,3 +1793,6 @@ button.lb-rules-link { border: 0; background: none; }
   }
   .lb-how .lb-rules li i { margin-top: 3px; }
 }
+
+.lb-avatar.has-photo { overflow: hidden; }
+.lb-avatar.has-photo img { display: block; width: 100%; height: 100%; object-fit: cover; }
