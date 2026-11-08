@@ -346,6 +346,11 @@
 /* Mobile menu toggle */
 
 .codesphere-menu-toggle {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  flex: 0 0 44px;
+  place-items: center;
   color: #10243A !important;
 }
 
@@ -743,8 +748,8 @@
 
 @media (max-width: 991.98px) {
   .navbar-logo-img {
-    width: 48px;
-    height: 48px;
+    width: min(220px, 62vw);
+    height: auto;
   }
 
   .navbar-admin-container {
@@ -759,8 +764,11 @@
   }
 
   .navbar-logo-img {
-    width: min(190px, 55vw);
-    height: 43px;
+    width: min(190px, 62vw);
+  }
+
+  .codesphere-menu-toggle i {
+    font-size: 1.7rem;
   }
 
   .codesphere-mobile-menu {
