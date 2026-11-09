@@ -15,10 +15,17 @@ function getInitials(name = '') {
     .toUpperCase();
 }
 
-function ProfileSection({ title, children }) {
+function ProfileSection({ title, icon, className = '', children }) {
   return (
-    <section className="member-profile-section">
-      <h3>{title}</h3>
+    <section className={`member-profile-section ${className}`.trim()}>
+      <h3>
+        {icon && (
+          <span className="member-profile-section-icon" aria-hidden="true">
+            <i className={`bi ${icon}`} />
+          </span>
+        )}
+        {title}
+      </h3>
       {children}
     </section>
   );
@@ -90,6 +97,13 @@ export default function MemberProfile({
       controller.abort();
     };
   }, [username]);
+
+  const joinedDate = member?.createdAt
+    ? new Date(member.createdAt).toLocaleDateString('en-IN', {
+        month: 'long',
+        year: 'numeric',
+      })
+    : '';
 
   const openExternalLink = (url) => {
     if (!url) return null;
@@ -192,7 +206,7 @@ export default function MemberProfile({
           </div>
         ) : (
           <>
-            <section className="member-profile-card">
+            <section className="member-profile-hero">
               <div className="member-profile-header">
                 <div className="member-profile-avatar">
                   {member.profileImage?.url ? (
@@ -207,24 +221,32 @@ export default function MemberProfile({
 
                 <div className="member-profile-identity">
                   <h1>{member.name}</h1>
-                  <p className="member-profile-badge">@{member.username}</p>
-                  {(member.collegeName || member.degree) && (
-                    <div className="member-profile-meta">
-                      {member.collegeName && (
-                        <span>
-                          <i className="bi bi-mortarboard" aria-hidden="true" />
-                          {member.collegeName}
-                        </span>
-                      )}
-                      {member.degree && (
-                        <span>
-                          <i className="bi bi-book" aria-hidden="true" />
-                          {member.degree}
-                        </span>
-                      )}
-                    </div>
-                  )}
+                  <span className="member-profile-badge">
+                    <i className="bi bi-patch-check-fill" aria-hidden="true" />
+                    @{member.username}
+                  </span>
+                  <div className="member-profile-meta">
+                    {member.collegeName && (
+                      <span>
+                        <i className="bi bi-mortarboard" aria-hidden="true" />
+                        {member.collegeName}
+                      </span>
+                    )}
+                    {member.degree && (
+                      <span>
+                        <i className="bi bi-book" aria-hidden="true" />
+                        {member.degree}
+                      </span>
+                    )}
+                    {joinedDate && (
+                      <span>
+                        <i className="bi bi-calendar3" aria-hidden="true" />
+                        Member since {joinedDate}
+                      </span>
+                    )}
+                  </div>
                 </div>
+
                 <div className="member-profile-share">
                   <button
                     className="member-profile-share-button"
@@ -242,17 +264,27 @@ export default function MemberProfile({
                   )}
                 </div>
               </div>
+            </section>
 
-              <div className="member-profile-content">
+            <div className="member-profile-content">
+              <div className="member-profile-main">
                 <CodingStats username={member.username} />
 
-                <ProfileSection title="About me">
+                <ProfileSection
+                  title="About me"
+                  icon="bi-person-lines-fill"
+                  className="member-profile-section-wide"
+                >
                   <p className="member-profile-bio">
                     {member.bio || 'This member has not added a bio yet.'}
                   </p>
                 </ProfileSection>
 
-                <ProfileSection title="Academic information">
+                <ProfileSection
+                  title="Academic information"
+                  icon="bi-mortarboard-fill"
+                  className="member-profile-section-wide"
+                >
                   <div className="member-profile-details">
                     <div>
                       <span>College / Institution</span>
@@ -281,20 +313,31 @@ export default function MemberProfile({
                   </div>
                 </ProfileSection>
 
-                <ProfileSection title="Technical interests">
-                  <TagList items={member.technicalInterests} />
-                </ProfileSection>
-
-                <ProfileSection title="Skills">
+                <ProfileSection title="Skills" icon="bi-stars">
                   <TagList items={(member.skillDetails?.length ? member.skillDetails.map((skill) => typeof skill === 'string' ? skill : skill?.name) : member.skills) || []} />
                 </ProfileSection>
 
-                <ProfileSection title="Learning goals">
+                <ProfileSection title="Technical interests" icon="bi-lightbulb">
+                  <TagList items={member.technicalInterests} />
+                </ProfileSection>
+
+                <ProfileSection
+                  title="Learning goals"
+                  icon="bi-bullseye"
+                  className="member-profile-section-wide"
+                >
                   <TagList items={member.learningGoals} />
                 </ProfileSection>
 
+              </div>
+
+              <aside className="member-profile-rail">
                 {member.codingProfiles?.length > 0 && (
-                  <ProfileSection title="Coding profiles">
+                  <ProfileSection
+                    title="Coding profiles"
+                    icon="bi-terminal"
+                    className="member-profile-section-rail"
+                  >
                     <div className="member-profile-links">
                       {member.codingProfiles.map((profile) => (
                         <a
@@ -310,75 +353,11 @@ export default function MemberProfile({
                   </ProfileSection>
                 )}
 
-                {member.projects?.length > 0 && (
-                  <ProfileSection title="Projects">
-                    <div className="member-profile-projects">
-                      {member.projects.map((project) => (
-                        <article
-                          className="member-profile-project"
-                          key={project._id}
-                        >
-                          <h4>{project.title}</h4>
-                          <p>{project.description}</p>
-                          {project.technologies?.length > 0 && (
-                            <TagList items={project.technologies} />
-                          )}
-                          <div className="member-profile-links">
-                            {project.githubUrl && (
-                              <a
-                                href={openExternalLink(project.githubUrl)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Source code ↗
-                              </a>
-                            )}
-                            {project.liveUrl && (
-                              <a
-                                href={openExternalLink(project.liveUrl)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                              >
-                                Live demo ↗
-                              </a>
-                            )}
-                          </div>
-                        </article>
-                      ))}
-                    </div>
-                  </ProfileSection>
-                )}
-
-                {member.achievements?.length > 0 && (
-                  <ProfileSection title="Achievements & certifications">
-                    <div className="member-profile-projects">
-                      {member.achievements.map((achievement, index) => (
-                        <article
-                          className="member-profile-project"
-                          key={`${achievement.title}-${index}`}
-                        >
-                          <h4>{achievement.title}</h4>
-                          <p>
-                            {[achievement.category, achievement.issuer, achievement.year]
-                              .filter(Boolean)
-                              .join(' · ') || 'Achievement'}
-                          </p>
-                          {achievement.link && (
-                            <a
-                              href={openExternalLink(achievement.link)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              View proof ↗
-                            </a>
-                          )}
-                        </article>
-                      ))}
-                    </div>
-                  </ProfileSection>
-                )}
-
-                <ProfileSection title="Connect">
+                <ProfileSection
+                  title="Connect"
+                  icon="bi-link-45deg"
+                  className="member-profile-section-rail"
+                >
                   <div className="member-profile-links">
                     {member.github && (
                       <a
@@ -419,8 +398,96 @@ export default function MemberProfile({
                       )}
                   </div>
                 </ProfileSection>
+              </aside>
+
+              <div className="member-profile-extra">
+                {member.projects?.length > 0 && (
+                  <ProfileSection title="Projects" icon="bi-kanban">
+                    <div className="member-profile-projects">
+                      {member.projects.map((project) => (
+                        <article
+                          className="member-profile-project"
+                          key={project._id}
+                        >
+                          <div className="member-profile-project-head">
+                            <span className="member-profile-project-icon" aria-hidden="true">
+                              <i className="bi bi-code-slash" />
+                            </span>
+                            <h4>{project.title}</h4>
+                          </div>
+                          <p>{project.description}</p>
+                          {project.technologies?.length > 0 && (
+                            <TagList items={project.technologies} />
+                          )}
+                          <div className="member-profile-links">
+                            {project.githubUrl && (
+                              <a
+                                href={openExternalLink(project.githubUrl)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Source code ↗
+                              </a>
+                            )}
+                            {project.liveUrl && (
+                              <a
+                                href={openExternalLink(project.liveUrl)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                Live demo ↗
+                              </a>
+                            )}
+                          </div>
+                        </article>
+                      ))}
+                    </div>
+                  </ProfileSection>
+                )}
+
+                {member.achievements?.length > 0 && (
+                  <ProfileSection
+                    title="Achievements & certifications"
+                    icon="bi-trophy"
+                  >
+                    <div className="member-profile-projects">
+                      {member.achievements.map((achievement, index) => (
+                        <article
+                          className="member-profile-project member-profile-achievement"
+                          key={`${achievement.title}-${index}`}
+                        >
+                          <div className="member-profile-project-head">
+                            <span
+                              className="member-profile-project-icon member-profile-achievement-icon"
+                              aria-hidden="true"
+                            >
+                              <i className="bi bi-trophy" />
+                            </span>
+                            <h4>{achievement.title}</h4>
+                          </div>
+                          <p>
+                            {[achievement.category, achievement.issuer, achievement.year]
+                              .filter(Boolean)
+                              .join(' · ') || 'Achievement'}
+                          </p>
+                          {achievement.link && (
+                            <div className="member-profile-links">
+                              <a
+                                href={openExternalLink(achievement.link)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                View proof ↗
+                              </a>
+                            </div>
+                          )}
+                        </article>
+                      ))}
+                    </div>
+                  </ProfileSection>
+                )}
               </div>
-            </section>
+            </div>
           </>
         )}
       </main>

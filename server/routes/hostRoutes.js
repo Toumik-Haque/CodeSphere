@@ -13,6 +13,7 @@ const { protect, hasStaffRole } = require('../middleware/authMiddleware');
 const { notify } = require('../utils/notify');
 const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { createLimiter } = require('../utils/rateLimit');
+const { adminIds } = require('../utils/accounts');
 const { storeImage, deleteImages } = require('../utils/forumMedia');
 const sanitizeDescription = require('../utils/sanitizeDescription');
 const { validateHackathon, clean, safeUrl } = require('../utils/hackathonValidate');
@@ -133,10 +134,13 @@ const bannerOf = (doc, kind) => (kind === 'event' ? doc.bannerImage?.url : doc.b
 const canReview = (user, kind) => user.role === 'admin' || (kind === 'hackathon' && hasStaffRole(user, 'hackathon-organizer'));
 
 async function reviewers(kind) {
-  const filter = kind === 'hackathon'
-    ? { $or: [{ role: 'admin' }, { staffRoles: 'hackathon-organizer' }] }
-    : { role: 'admin' };
-  return (await User.find(filter).select('_id').lean()).map((u) => u._id);
+  const [admins, staff] = await Promise.all([
+    adminIds(),
+    kind === 'hackathon'
+      ? User.find({ staffRoles: 'hackathon-organizer' }).select('_id').lean()
+      : [],
+  ]);
+  return [...admins, ...staff.map((u) => u._id)];
 }
 
 function view(doc, kind) {

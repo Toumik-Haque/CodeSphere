@@ -164,7 +164,7 @@
 
 .student-profile-layout {
   display: grid;
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr);
   align-items: start;
   gap: 25px;
 }
@@ -200,9 +200,14 @@
   overflow: hidden;
   padding-top: 24px;
   border: 1px solid var(--profile-border);
-  border-radius: 15px;
+  border-radius: 18px;
   background: var(--profile-white);
   box-shadow: var(--profile-shadow);
+  transition: box-shadow 200ms ease;
+}
+
+.student-identity-card:hover {
+  box-shadow: 0 14px 34px rgba(21, 54, 83, 0.14);
 }
 
 .student-avatar {
@@ -266,15 +271,17 @@
 }
 
 .student-identity-content {
-  padding: 16px 22px 20px;
-  text-align: center;
+  padding: 12px 22px 18px;
+  text-align: left;
 }
 
 .student-identity-content h2 {
-  margin: 0 0 5px;
+  margin: 0 0 4px;
   color: var(--profile-navy);
   font-size: 20px;
   font-weight: 750;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
   overflow-wrap: anywhere;
 }
 
@@ -290,32 +297,16 @@
   font-weight: 700;
 }
 
-.student-member-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  padding: 6px 10px;
-  border: 1px solid #f5ded2;
-  border-radius: 30px;
-  background: var(--profile-peach-soft);
-  color: var(--profile-navy);
-  font-size: 10px;
-  font-weight: 700;
-  margin-top: 5px;
-}
-
-.student-member-badge i {
-  color: var(--profile-orange);
-  font-size: 12px;
-}
-
 .student-identity-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  padding: 14px 20px;
-  border-top: 1px solid var(--profile-border);
+  margin: 0 16px 16px;
+  padding: 12px 14px;
+  border: 1px solid #edf0f3;
+  border-radius: 12px;
+  background: #f7f9fc;
   color: var(--profile-muted);
   font-size: 11px;
 }
@@ -413,6 +404,10 @@
   gap: 18px;
 }
 
+.profile-next-steps-copy {
+  min-width: 0;
+}
+
 .profile-next-steps-heading .profile-welcome-label {
   margin-bottom: 5px;
 }
@@ -431,18 +426,58 @@
   line-height: 1.6;
 }
 
+.profile-next-steps-ring {
+  display: grid;
+  width: 78px;
+  height: 78px;
+  flex: 0 0 auto;
+  place-items: center;
+  border-radius: 50%;
+  background: conic-gradient(
+    var(--profile-orange) var(--profile-progress, 0%),
+    #f0e3db 0
+  );
+}
+
+.profile-next-steps-ring > div {
+  display: flex;
+  width: 62px;
+  height: 62px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--profile-white);
+}
+
+.profile-next-steps-ring strong {
+  color: var(--profile-navy);
+  font-size: 15px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.profile-next-steps-ring small {
+  margin-top: 1px;
+  color: var(--profile-muted);
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .profile-next-steps-link {
   display: inline-flex;
-  min-height: 38px;
+  min-height: 40px;
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 0 12px;
-  border-radius: 8px;
+  padding: 0 16px;
+  border-radius: 9px;
   background: var(--profile-orange);
   color: #fff;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 750;
   text-decoration: none;
   transition: background 160ms ease, transform 160ms ease;
@@ -456,10 +491,10 @@
 
 .profile-next-steps ul {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 9px 18px;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
   margin: 17px 0 0;
-  padding: 14px 0 0;
+  padding: 17px 0 0;
   border-top: 1px solid var(--profile-border);
   list-style: none;
 }
@@ -467,15 +502,50 @@
 .profile-next-steps li {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
+  padding: 11px 13px;
+  border: 1px solid #eef2f6;
+  border-radius: 11px;
+  background: #f9fbfd;
   color: var(--profile-text);
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+
+.profile-next-steps-plus {
+  display: grid;
+  width: 22px;
+  height: 22px;
+  flex: 0 0 22px;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--profile-peach-soft);
+  color: var(--profile-orange);
+  font-size: 10px;
+}
+
+.profile-next-steps-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 16px;
+  padding-top: 16px;
+  border-top: 1px solid var(--profile-border);
+}
+
+.profile-next-steps-footer > span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  color: var(--profile-muted);
   font-size: 11px;
   line-height: 1.5;
 }
 
-.profile-next-steps li i {
+.profile-next-steps-footer > span i {
   color: var(--profile-orange);
-  font-size: 10px;
+  font-size: 12px;
 }
 
 /* =========================================
@@ -1113,7 +1183,7 @@
 
 @media (max-width: 900px) {
   .student-profile-layout {
-    grid-template-columns: 250px minmax(0, 1fr);
+    grid-template-columns: 300px minmax(0, 1fr);
     gap: 17px;
   }
 
@@ -1199,8 +1269,7 @@
   }
 
   .profile-next-steps-heading {
-    align-items: flex-start;
-    flex-direction: column;
+    align-items: center;
   }
 
   .profile-section-card {
@@ -1269,6 +1338,15 @@
   .profile-next-steps ul {
     grid-template-columns: 1fr;
     gap: 8px;
+  }
+
+  .profile-next-steps-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .profile-next-steps-footer .profile-next-steps-link {
+    justify-content: center;
   }
 
   .profile-edit-form,
@@ -1747,48 +1825,43 @@
 .student-identity-card.has-cover { padding-top: 0; }
 .student-cover {
   position: relative;
-  height: 112px;
+  width: 100%;
+  aspect-ratio: 1600 / 533;
   background-color: #0b1a2b;
   background-position: center;
   background-size: cover;
 }
-.student-identity-card.has-cover .student-avatar { margin-top: -46px; }
-.profile-banner-upload-button {
+.student-cover::after {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  padding: 7px 10px;
-}
-@media (max-width: 767.98px) {
-  .student-cover { height: 92px; }
-  .student-identity-card.has-cover .student-avatar { margin-top: -40px; }
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    rgba(11, 26, 43, 0.02) 35%,
+    rgba(11, 26, 43, 0.48) 100%
+  );
+  content: "";
+  pointer-events: none;
 }
 
-/* Keep the avatar a fixed circle on the banner, clear of the name below */
+/* Avatar overlaps the lower-left corner, keeping the banner artwork visible. */
 .student-identity-card.has-cover .student-avatar {
   z-index: 1;
   flex: none;
   box-sizing: border-box;
-  width: 96px;
-  min-width: 96px;
-  max-width: 96px;
-  height: 96px;
-  min-height: 96px;
-  max-height: 96px;
+  width: clamp(70px, 25%, 96px);
+  height: auto;
   aspect-ratio: 1;
-  margin-bottom: 6px;
+  margin: clamp(-48px, -13%, -34px) auto 6px clamp(16px, 6%, 22px);
+  border: 4px solid #fff;
+  box-shadow:
+    0 0 0 4px rgba(255, 255, 255, 0.45),
+    0 12px 26px rgba(21, 54, 83, 0.24);
 }
 .student-identity-card.has-cover .student-avatar img {
   display: block;
   max-height: 100%;
 }
-.student-identity-card.has-cover .student-identity-content { padding-top: 10px; }
-@media (max-width: 767.98px) {
-  .student-identity-card.has-cover .student-avatar {
-    width: 80px; min-width: 80px; max-width: 80px;
-    height: 80px; min-height: 80px; max-height: 80px;
-  }
-}
+.student-identity-card.has-cover .student-identity-content { padding-top: 9px; }
 
 /* =========================================
    DANGER ZONE (ACCOUNT DELETION)

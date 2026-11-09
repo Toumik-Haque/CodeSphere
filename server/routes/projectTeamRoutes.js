@@ -12,6 +12,7 @@ const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { track } = require('../utils/projectEvents');
 const { helpers } = require('./projectRoutes');
 const { isContributor, ImportError } = require('../utils/githubImport');
+const { adminIds } = require('../utils/accounts');
 
 const { isReviewer, isOwner, memberOf, canWork, person, clean, safeUrl, isId } = helpers;
 const router = express.Router();
@@ -443,7 +444,8 @@ router.post('/:id/updates/:updateId/comments/:commentId/report', protect, async 
     comment.hidden = true;
     await comment.save();
     await ProjectUpdate.updateOne({ _id: update._id }, { $inc: { commentCount: -1 } });
-    const reviewers = (await User.find({ $or: [{ role: 'admin' }, { staffRoles: 'project-reviewer' }] }).select('_id').lean()).map((u) => u._id);
+    const staff = await User.find({ staffRoles: 'project-reviewer' }).select('_id').lean();
+    const reviewers = [...(await adminIds()), ...staff.map((u) => u._id)];
     await notify(reviewers, { type: 'project', title: `A comment was hidden after ${REPORTS_TO_HIDE} reports`, body: `On "${project.title}": ${comment.body.slice(0, 120)}`, link: `/projects/${project.slug}` });
   }
   res.json({ message: 'Thanks, the team will take a look.' });

@@ -11,6 +11,7 @@ const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
 const { fetchRepoPreview, ImportError } = require('../utils/githubImport');
 const { track } = require('../utils/projectEvents');
+const { adminIds } = require('../utils/accounts');
 
 const router = express.Router();
 
@@ -176,7 +177,13 @@ async function loadOwned(req, res) {
   return project;
 }
 
-const reviewersOf = async () => (await User.find({ $or: [{ role: 'admin' }, { staffRoles: 'project-reviewer' }] }).select('_id').lean()).map((u) => u._id);
+const reviewersOf = async () => {
+  const [admins, staff] = await Promise.all([
+    adminIds(),
+    User.find({ staffRoles: 'project-reviewer' }).select('_id').lean(),
+  ]);
+  return [...admins, ...staff.map((u) => u._id)];
+};
 
 // =====================================================================
 // GitHub preview

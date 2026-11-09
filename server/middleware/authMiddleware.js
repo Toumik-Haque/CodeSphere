@@ -1,5 +1,5 @@
 const jwt = require('jsonwebtoken');
-const User = require('../models/User');
+const { findAccountById } = require('../utils/accounts');
 
 async function protect(req, res, next) {
   try {
@@ -11,7 +11,7 @@ async function protect(req, res, next) {
     }
 
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    const user = await User.findById(decoded.id);
+    const user = await findAccountById(decoded.id);
 
     if (!user) {
       return res.status(401).json({ message: 'Account not found.' });
@@ -44,7 +44,7 @@ async function optionalAuth(req, res, next) {
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = await User.findById(decoded.id);
+    req.user = await findAccountById(decoded.id);
   } catch {
     // Invalid or expired token: continue as a guest.
   }

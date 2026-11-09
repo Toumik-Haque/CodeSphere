@@ -9,6 +9,7 @@ const EmailOtp = require('../models/EmailOtp');
 const PasswordResetOtp = require('../models/PasswordResetOtp');
 const { protect } = require('../middleware/authMiddleware');
 const { generateUniqueUsername } = require('../utils/username');
+const { findAccountByEmail } = require('../utils/accounts');
 
 const router = express.Router();
 
@@ -416,7 +417,7 @@ router.post('/send-otp', async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({ email });
+    const existingUser = await findAccountByEmail(email);
 
     if (existingUser) {
       return res.status(409).json({
@@ -600,9 +601,7 @@ router.post('/register', async (req, res) => {
       });
     }
 
-    const existingUser = await User.findOne({
-      email: normalizedEmail,
-    });
+    const existingUser = await findAccountByEmail(normalizedEmail);
 
     if (existingUser) {
       return res.status(409).json({
@@ -630,7 +629,6 @@ router.post('/register', async (req, res) => {
           collegeName: collegeName.trim(),
           yearOfStudy,
           profileImage: { url: '', fileId: '' },
-          bannerImage: { url: '', fileId: '' },
           bio: '',
           phone: '',
           city: '',
@@ -722,7 +720,6 @@ router.post('/register', async (req, res) => {
         role: user.role,
         staffRoles: user.staffRoles || [],
         profileImage: user.profileImage,
-        bannerImage: user.bannerImage,
       },
     });
 
@@ -759,7 +756,7 @@ router.post('/forgot-password', async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email });
+    const user = await findAccountByEmail(email);
 
     // Show an error if the account does not exist.
     if (!user) {
@@ -936,7 +933,7 @@ router.post('/reset-password', async (req, res) => {
       });
     }
 
-    const user = await User.findOne({ email }).select('+password');
+    const user = await findAccountByEmail(email, { withPassword: true });
 
     if (!user) {
       await PasswordResetOtp.deleteOne({ _id: record._id });
@@ -986,9 +983,7 @@ router.post('/login', async (req, res) => {
       });
     }
 
-    const user = await User.findOne({
-      email: normalizeEmail(email),
-    }).select('+password');
+    const user = await findAccountByEmail(normalizeEmail(email), { withPassword: true });
 
     if (!user || !(await bcrypt.compare(password, user.password))) {
       return res.status(401).json({
@@ -1010,7 +1005,6 @@ router.post('/login', async (req, res) => {
         role: user.role,
         staffRoles: user.staffRoles || [],
         profileImage: user.profileImage,
-        bannerImage: user.bannerImage,
       },
     });
 
@@ -1039,7 +1033,6 @@ router.get('/me', protect, async (req, res) => {
       role: req.user.role,
       staffRoles: req.user.staffRoles || [],
       profileImage: req.user.profileImage,
-      bannerImage: req.user.bannerImage,
       createdAt: req.user.createdAt,
     },
   });
