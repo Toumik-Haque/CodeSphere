@@ -158,7 +158,7 @@ const sectionConfig = [
   },
   {
     id: 'learning',
-    title: 'Skills & Learning',
+    title: 'Interests & Learning Goals',
     subtitle: 'Your interests and learning goals',
     icon: 'bi-lightbulb',
     fields: [
@@ -426,7 +426,7 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
   useEffect(() => {
     if (preview) return undefined;
     let cancelled = false;
-    apiRequest('/users/me/resume').then((r) => !cancelled && setSavedResume(r.resume)).catch(() => {});
+    apiRequest('/users/me/resume').then((r) => !cancelled && setSavedResume(r.resume)).catch(() => { });
     return () => {
       cancelled = true;
     };
@@ -659,265 +659,265 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       </button>
 
       {resumeOpen && (
-      <>
-      {savedResume && (
-        <div className="resume-saved">
-          <span className="resume-file-icon">
-            <i className={`bi ${savedResume.type === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image'}`} />
-          </span>
-          <div className="resume-file-info">
-            <strong>{savedResume.name}</strong>
-            <small>
-              Saved {new Date(savedResume.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
-              {' · '}{Math.max(1, Math.round(savedResume.size / 1024))} KB
-            </small>
-          </div>
-          <div className="resume-saved-actions">
-            <a href={savedResume.url} target="_blank" rel="noopener noreferrer" className="profile-action-button">
-              <i className="bi bi-eye" /> View
-            </a>
-            <a href={`${savedResume.url}?ik-attachment=true`} className="profile-icon-button" title="Download" aria-label="Download resume">
-              <i className="bi bi-download" />
-            </a>
-            <button type="button" className="profile-icon-button" onClick={deleteSavedResume} title="Delete" aria-label="Delete saved resume">
-              <i className="bi bi-trash" />
-            </button>
-          </div>
-        </div>
-      )}
-
-      <div className="resume-upload-area">
-        <input
-          ref={inputRef}
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
-          hidden
-          onChange={handleFile}
-        />
-
-        <div className="resume-upload-icon">
-          <i className="bi bi-cloud-arrow-up" />
-        </div>
-
-        <div className="resume-upload-copy">
-          <h3>{savedResume ? 'Upload a new version' : 'Upload your resume'}</h3>
-          <p>
-            Choose a PDF or image file. We'll extract details that can help
-            complete your CodeSphere profile.
-          </p>
-          <small>PDF, JPG, JPEG or PNG · Maximum 5 MB</small>
-        </div>
-
-        <button
-          type="button"
-          className="profile-action-button profile-primary-button"
-          onClick={() => inputRef.current?.click()}
-          disabled={isProcessing}
-        >
-          <i className="bi bi-upload" /> Choose file
-        </button>
-      </div>
-
-      {fileName && (
-        <div className="resume-file-row">
-          <span className="resume-file-icon">
-            <i className="bi bi-file-earmark-pdf" />
-          </span>
-          <div className="resume-file-info">
-            <strong>{fileName}</strong>
-            <small>{isProcessing ? 'Reading your resume...' : savingResume ? 'Saving to your account...' : 'Selected resume'}</small>
-          </div>
-          {!isProcessing && (
-            <button
-              type="button"
-              className="profile-icon-button"
-              onClick={discardResume}
-              aria-label="Remove selected resume"
-              title="Remove"
-            >
-              <i className="bi bi-x-lg" />
-            </button>
-          )}
-        </div>
-      )}
-
-      {isProcessing && (
-        <div className="resume-processing">
-          <div className="resume-processing-heading">
-            <span><i className="bi bi-cpu" /> {progressLabel || 'Preparing resume...'}</span>
-            <strong>{progress}%</strong>
-          </div>
-          <div className="resume-progress-track">
-            <div
-              className="resume-progress-fill"
-              style={{ width: `${progress}%` }}
-            />
-          </div>
-          <small>
-            Please keep this page open while your resume is being processed.
-          </small>
-        </div>
-      )}
-
-      {draft && (
-        <div className="resume-review">
-          <div className="resume-review-heading">
-            <div>
-              <span className="resume-review-label">REVIEW BEFORE APPLYING</span>
-              <h3>We found these details</h3>
-              <p>Check the information carefully. You can edit it before adding it to your profile.</p>
+        <>
+          {savedResume && (
+            <div className="resume-saved">
+              <span className="resume-file-icon">
+                <i className={`bi ${savedResume.type === 'application/pdf' ? 'bi-file-earmark-pdf' : 'bi-file-earmark-image'}`} />
+              </span>
+              <div className="resume-file-info">
+                <strong>{savedResume.name}</strong>
+                <small>
+                  Saved {new Date(savedResume.uploadedAt).toLocaleDateString('en-IN', { day: 'numeric', month: 'short', year: 'numeric' })}
+                  {' · '}{Math.max(1, Math.round(savedResume.size / 1024))} KB
+                </small>
+              </div>
+              <div className="resume-saved-actions">
+                <a href={savedResume.url} target="_blank" rel="noopener noreferrer" className="profile-action-button">
+                  <i className="bi bi-eye" /> View
+                </a>
+                <a href={`${savedResume.url}?ik-attachment=true`} className="profile-icon-button" title="Download" aria-label="Download resume">
+                  <i className="bi bi-download" />
+                </a>
+                <button type="button" className="profile-icon-button" onClick={deleteSavedResume} title="Delete" aria-label="Delete saved resume">
+                  <i className="bi bi-trash" />
+                </button>
+              </div>
             </div>
-            <span className="resume-found-count">
-              {Object.keys(draft).length} fields
-            </span>
-          </div>
+          )}
 
-          <div className="resume-review-fields">
-            {Object.entries(fieldLabels).map(([field, label]) => {
-              if (!draft[field]) return null;
+          <div className="resume-upload-area">
+            <input
+              ref={inputRef}
+              type="file"
+              accept=".pdf,.jpg,.jpeg,.png,.webp,application/pdf,image/jpeg,image/png,image/webp"
+              hidden
+              onChange={handleFile}
+            />
 
-              return (
-                <div className="resume-review-field" key={field}>
-                  <label className="resume-review-check">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(selectedFields[field])}
-                      onChange={() => toggleField(field)}
-                    />
-                    <span>{label}</span>
-                  </label>
+            <div className="resume-upload-icon">
+              <i className="bi bi-cloud-arrow-up" />
+            </div>
 
-                  {field === 'department' ? (
-                    <select
-                      value={draft[field]}
-                      onChange={(event) => updateDraft(field, event.target.value)}
-                    >
-                      <option value="">Select department</option>
-                      {departments.map((department) => (
-                        <option key={department} value={department}>{department}</option>
-                      ))}
-                    </select>
-                  ) : field === 'degree' ? (
-                    <select
-                      value={draft[field]}
-                      onChange={(event) => updateDraft(field, event.target.value)}
-                    >
-                      {['B.Tech', 'B.E.', 'BCA', 'B.Sc', 'M.Tech', 'MCA', 'M.Sc', 'Diploma', 'Other'].map((degree) => (
-                        <option key={degree} value={degree}>{degree}</option>
-                      ))}
-                    </select>
-                  ) : field === 'yearOfStudy' ? (
-                    <select
-                      value={draft[field]}
-                      onChange={(event) => updateDraft(field, event.target.value)}
-                    >
-                      {['1st Year', '2nd Year', '3rd Year', '4th Year'].map((year) => (
-                        <option key={year} value={year}>{year}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <input
-                      type="text"
-                      value={draft[field]}
-                      onChange={(event) => updateDraft(field, event.target.value)}
-                    />
-                  )}
-                </div>
-              );
-            })}
-
-            {Array.isArray(draft.skills) && draft.skills.length > 0 && (
-              <div className="resume-review-skills">
-                <label className="resume-review-check">
-                  <input
-                    type="checkbox"
-                    checked={Boolean(selectedFields.skills)}
-                    onChange={() => toggleField('skills')}
-                  />
-                  <span>Technical skills ({draft.skills.length})</span>
-                </label>
-
-                <div className="resume-detected-skills">
-                  {draft.skills.map((skill) => (
-                    <span key={skill}>{skill}</span>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            {Array.isArray(draft.projects) && draft.projects.length > 0 && (
-              <div className="resume-review-list">
-                <h4><i className="bi bi-kanban" /> Projects ({draft.projects.length})</h4>
-                {draft.projects.map((project, i) => (
-                  <label key={`${project.title}-${i}`} className="resume-review-item">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(selectedFields[`project:${i}`])}
-                      onChange={() => toggleField(`project:${i}`)}
-                    />
-                    <span>
-                      <strong>{project.title}</strong>
-                      <small>
-                        {[project.type, project.technologies].filter(Boolean).join(' · ')}
-                        {project.github && <> · <i className="bi bi-github" /> repo</>}
-                        {project.demo && <> · <i className="bi bi-box-arrow-up-right" /> demo</>}
-                      </small>
-                      {project.description && <em>{project.description}</em>}
-                    </span>
-                  </label>
-                ))}
-                <p className="resume-review-hint">You can edit each project in the Projects section after adding.</p>
-              </div>
-            )}
-
-            {Array.isArray(draft.codingProfiles) && draft.codingProfiles.length > 0 && (
-              <div className="resume-review-list">
-                <h4><i className="bi bi-terminal" /> Coding profiles ({draft.codingProfiles.length})</h4>
-                {draft.codingProfiles.map((item, i) => (
-                  <label key={item.url} className="resume-review-item">
-                    <input
-                      type="checkbox"
-                      checked={Boolean(selectedFields[`profile:${i}`])}
-                      onChange={() => toggleField(`profile:${i}`)}
-                    />
-                    <span>
-                      <strong>{item.platform}</strong>
-                      <small>{item.url}</small>
-                    </span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-
-          <div className="resume-review-actions">
-            <button
-              type="button"
-              className="profile-action-button"
-              onClick={discardResume}
-            >
-              Discard
-            </button>
+            <div className="resume-upload-copy">
+              <h3>{savedResume ? 'Upload a new version' : 'Upload your resume'}</h3>
+              <p>
+                Choose a PDF or image file. We'll extract details that can help
+                complete your CodeSphere profile.
+              </p>
+              <small>PDF, JPG, JPEG or PNG · Maximum 5 MB</small>
+            </div>
 
             <button
               type="button"
               className="profile-action-button profile-primary-button"
-              onClick={applyExtractedDetails}
+              onClick={() => inputRef.current?.click()}
+              disabled={isProcessing}
             >
-              <i className="bi bi-check2-circle" /> Apply selected details
+              <i className="bi bi-upload" /> Choose file
             </button>
           </div>
-        </div>
-      )}
 
-      <div className="resume-privacy-note">
-        <i className="bi bi-shield-lock" />
-        <span>
-          Your resume is read in your browser and saved to your account so you
-          can view it any time. Only you can see it here; delete it whenever you like.
-        </span>
-      </div>
-      </>
+          {fileName && (
+            <div className="resume-file-row">
+              <span className="resume-file-icon">
+                <i className="bi bi-file-earmark-pdf" />
+              </span>
+              <div className="resume-file-info">
+                <strong>{fileName}</strong>
+                <small>{isProcessing ? 'Reading your resume...' : savingResume ? 'Saving to your account...' : 'Selected resume'}</small>
+              </div>
+              {!isProcessing && (
+                <button
+                  type="button"
+                  className="profile-icon-button"
+                  onClick={discardResume}
+                  aria-label="Remove selected resume"
+                  title="Remove"
+                >
+                  <i className="bi bi-x-lg" />
+                </button>
+              )}
+            </div>
+          )}
+
+          {isProcessing && (
+            <div className="resume-processing">
+              <div className="resume-processing-heading">
+                <span><i className="bi bi-cpu" /> {progressLabel || 'Preparing resume...'}</span>
+                <strong>{progress}%</strong>
+              </div>
+              <div className="resume-progress-track">
+                <div
+                  className="resume-progress-fill"
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+              <small>
+                Please keep this page open while your resume is being processed.
+              </small>
+            </div>
+          )}
+
+          {draft && (
+            <div className="resume-review">
+              <div className="resume-review-heading">
+                <div>
+                  <span className="resume-review-label">REVIEW BEFORE APPLYING</span>
+                  <h3>We found these details</h3>
+                  <p>Check the information carefully. You can edit it before adding it to your profile.</p>
+                </div>
+                <span className="resume-found-count">
+                  {Object.keys(draft).length} fields
+                </span>
+              </div>
+
+              <div className="resume-review-fields">
+                {Object.entries(fieldLabels).map(([field, label]) => {
+                  if (!draft[field]) return null;
+
+                  return (
+                    <div className="resume-review-field" key={field}>
+                      <label className="resume-review-check">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedFields[field])}
+                          onChange={() => toggleField(field)}
+                        />
+                        <span>{label}</span>
+                      </label>
+
+                      {field === 'department' ? (
+                        <select
+                          value={draft[field]}
+                          onChange={(event) => updateDraft(field, event.target.value)}
+                        >
+                          <option value="">Select department</option>
+                          {departments.map((department) => (
+                            <option key={department} value={department}>{department}</option>
+                          ))}
+                        </select>
+                      ) : field === 'degree' ? (
+                        <select
+                          value={draft[field]}
+                          onChange={(event) => updateDraft(field, event.target.value)}
+                        >
+                          {['B.Tech', 'B.E.', 'BCA', 'B.Sc', 'M.Tech', 'MCA', 'M.Sc', 'Diploma', 'Other'].map((degree) => (
+                            <option key={degree} value={degree}>{degree}</option>
+                          ))}
+                        </select>
+                      ) : field === 'yearOfStudy' ? (
+                        <select
+                          value={draft[field]}
+                          onChange={(event) => updateDraft(field, event.target.value)}
+                        >
+                          {['1st Year', '2nd Year', '3rd Year', '4th Year'].map((year) => (
+                            <option key={year} value={year}>{year}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <input
+                          type="text"
+                          value={draft[field]}
+                          onChange={(event) => updateDraft(field, event.target.value)}
+                        />
+                      )}
+                    </div>
+                  );
+                })}
+
+                {Array.isArray(draft.skills) && draft.skills.length > 0 && (
+                  <div className="resume-review-skills">
+                    <label className="resume-review-check">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(selectedFields.skills)}
+                        onChange={() => toggleField('skills')}
+                      />
+                      <span>Technical skills ({draft.skills.length})</span>
+                    </label>
+
+                    <div className="resume-detected-skills">
+                      {draft.skills.map((skill) => (
+                        <span key={skill}>{skill}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {Array.isArray(draft.projects) && draft.projects.length > 0 && (
+                  <div className="resume-review-list">
+                    <h4><i className="bi bi-kanban" /> Projects ({draft.projects.length})</h4>
+                    {draft.projects.map((project, i) => (
+                      <label key={`${project.title}-${i}`} className="resume-review-item">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedFields[`project:${i}`])}
+                          onChange={() => toggleField(`project:${i}`)}
+                        />
+                        <span>
+                          <strong>{project.title}</strong>
+                          <small>
+                            {[project.type, project.technologies].filter(Boolean).join(' · ')}
+                            {project.github && <> · <i className="bi bi-github" /> repo</>}
+                            {project.demo && <> · <i className="bi bi-box-arrow-up-right" /> demo</>}
+                          </small>
+                          {project.description && <em>{project.description}</em>}
+                        </span>
+                      </label>
+                    ))}
+                    <p className="resume-review-hint">You can edit each project in the Projects section after adding.</p>
+                  </div>
+                )}
+
+                {Array.isArray(draft.codingProfiles) && draft.codingProfiles.length > 0 && (
+                  <div className="resume-review-list">
+                    <h4><i className="bi bi-terminal" /> Coding profiles ({draft.codingProfiles.length})</h4>
+                    {draft.codingProfiles.map((item, i) => (
+                      <label key={item.url} className="resume-review-item">
+                        <input
+                          type="checkbox"
+                          checked={Boolean(selectedFields[`profile:${i}`])}
+                          onChange={() => toggleField(`profile:${i}`)}
+                        />
+                        <span>
+                          <strong>{item.platform}</strong>
+                          <small>{item.url}</small>
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="resume-review-actions">
+                <button
+                  type="button"
+                  className="profile-action-button"
+                  onClick={discardResume}
+                >
+                  Discard
+                </button>
+
+                <button
+                  type="button"
+                  className="profile-action-button profile-primary-button"
+                  onClick={applyExtractedDetails}
+                >
+                  <i className="bi bi-check2-circle" /> Apply selected details
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="resume-privacy-note">
+            <i className="bi bi-shield-lock" />
+            <span>
+              Your resume is read in your browser and saved to your account so you
+              can view it any time. Only you can see it here; delete it whenever you like.
+            </span>
+          </div>
+        </>
       )}
     </section>
   );
@@ -1023,19 +1023,19 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
     const form = isCollection
       ? { ...item }
       : Object.fromEntries(
-          section.fields.map((field) => [
-            field.name,
-            field.type === 'date'
-              ? normalizeDateInput(profile[field.name])
-              : profile[field.name] ?? '',
-          ])
+        section.fields.map((field) => [
+          field.name,
+          field.type === 'date'
+            ? normalizeDateInput(profile[field.name])
+            : profile[field.name] ?? '',
+        ])
       );
     if (section.id === 'codingProfiles') {
       if (!codingPlatforms.includes(form.platform)) {
-      form.customPlatform = form.platform || '';
-      form.platform = 'Other';
+        form.customPlatform = form.platform || '';
+        form.platform = 'Other';
       } else {
-      form.customPlatform = '';
+        form.customPlatform = '';
       }
     }
 
@@ -1090,10 +1090,10 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
 
   const summary = hasPersonal
     ? [
-        profile.username ? `@${profile.username}` : '',
-        profile.phone,
-        profile.city,
-      ].filter(Boolean).join(' · ')
+      profile.username ? `@${profile.username}` : '',
+      profile.phone,
+      profile.city,
+    ].filter(Boolean).join(' · ')
     : hasEducation
       ? [profile.collegeName, profile.department, profile.yearOfStudy].filter(Boolean).join(' · ')
       : hasLearning
@@ -1104,9 +1104,9 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
           ? [profile.github, profile.linkedin, profile.portfolio].filter(Boolean).length
             ? `${[profile.github, profile.linkedin, profile.portfolio].filter(Boolean).length} links added`
             : section.subtitle
-        : isCollection
-          ? `${savedItems.length} ${savedItems.length === 1 ? 'entry' : 'entries'} added`
-          : section.subtitle;
+          : isCollection
+            ? `${savedItems.length} ${savedItems.length === 1 ? 'entry' : 'entries'} added`
+            : section.subtitle;
 
   return (
     <section className={`profile-builder-section ${expanded ? 'is-expanded' : ''}`}>
@@ -1604,8 +1604,8 @@ export default function Profile({
       setProfile((current) => {
         const projects = projectId
           ? current.projects.map((project) =>
-              project._id === projectId ? savedProject : project
-            )
+            project._id === projectId ? savedProject : project
+          )
           : [...current.projects, savedProject];
         return { ...current, projects };
       });
@@ -1987,7 +1987,7 @@ export default function Profile({
                         key={section.id}
                         section={section}
                         profile={profile}
-                        onSave={updateEntry}
+                        onSave={section.collection ? updateEntry : updateSimpleSection}
                         onAdd={addEntry}
                         onDelete={deleteEntry}
                       />
