@@ -75,8 +75,6 @@ const emptyProfile = {
 };
 
 const IMAGE_SIZE_LIMIT = 5 * 1024 * 1024;
-// Default profile banner (client/public), used until a student uploads one.
-const DEFAULT_BANNER = '/default-profile-banner.webp';
 const RESUME_SIZE_LIMIT = 5 * 1024 * 1024;
 
 const normalizeProject = (project) => ({
@@ -1372,7 +1370,6 @@ export default function Profile({
   const [deleteError, setDeleteError] = useState('');
 
   const photoInputRef = useRef(null);
-  const bannerInputRef = useRef(null);
   const toastTimerRef = useRef(null);
   const toastIdRef = useRef(0);
 
@@ -1447,7 +1444,7 @@ export default function Profile({
     }
   };
 
-  const handleImageChange = async (event, imageLabel, kind = 'profile') => {
+  const handleImageChange = async (event, imageLabel) => {
     const file = event.target.files?.[0];
     if (!file) return;
 
@@ -1466,11 +1463,11 @@ export default function Profile({
     try {
       if (preview) {
         const imageData = await readImageFile(file);
-        setProfile((current) => ({ ...current, [kind === 'banner' ? 'bannerImage' : 'profileImage']: { url: imageData } }));
+        setProfile((current) => ({ ...current, profileImage: { url: imageData } }));
       } else {
         const body = new FormData();
         body.append('profileImage', file);
-        await apiRequest(`/users/profile/image${kind === 'banner' ? '?type=banner' : ''}`, { method: 'POST', body });
+        await apiRequest('/users/profile/image', { method: 'POST', body });
         const refreshed = await loadProfile();
         if (!refreshed) {
           showToast('Image uploaded, but your profile could not be refreshed.', 'error');
@@ -1868,9 +1865,6 @@ export default function Profile({
                   completion={completion}
                   photoInputRef={photoInputRef}
                   onPhotoChange={(event) => handleImageChange(event, 'Profile photo')}
-                  bannerInputRef={bannerInputRef}
-                  onBannerChange={(event) => handleImageChange(event, 'Banner image', 'banner')}
-                  defaultBanner={DEFAULT_BANNER}
                   showBadges={!preview}
                 />
 
@@ -2015,7 +2009,7 @@ export default function Profile({
 
                       <div className="profile-danger-body">
                         <p className="profile-danger-warning">
-                          Once you delete your account, there is no going back. This will permanently remove your profile, photo, banner, resume, earned badges, and personal project showcase entries.
+                          Once you delete your account, there is no going back. This will permanently remove your profile, photo, resume, earned badges, and personal project showcase entries.
                         </p>
 
                         {!deleteConfirmOpen ? (

@@ -162,7 +162,7 @@ function DashboardOverviewSection({ user }) {
         </section>
       ) : (
         <div className="student-profile-layout dashboard-section-layout dashboard-overview-layout">
-          <DashboardProfileSidebar user={profile} completion={completion} dashboardCard />
+          <DashboardProfileSidebar user={profile} completion={completion} />
 
           <div className="student-profile-main dashboard-overview-content">
             <ProfileBadges compact completion={completion} />
@@ -171,23 +171,44 @@ function DashboardOverviewSection({ user }) {
             {nextProfileSteps.length > 0 && (
               <section className="profile-next-steps">
                 <div className="profile-next-steps-heading">
-                  <div>
+                  <div className="profile-next-steps-copy">
                     <span className="profile-welcome-label">A GOOD NEXT STEP</span>
                     <h2>Build your community profile</h2>
                     <p>A few details help people discover your skills and work.</p>
                   </div>
-                  <Link to="/user/profile" className="profile-next-steps-link">
-                    Continue profile <i className="bi bi-arrow-right" />
-                  </Link>
+
+                  <div
+                    className="profile-next-steps-ring"
+                    style={{ '--profile-progress': `${completion}%` }}
+                    aria-label={`Profile ${completion}% complete`}
+                  >
+                    <div>
+                      <strong>{completion}%</strong>
+                      <small>complete</small>
+                    </div>
+                  </div>
                 </div>
+
                 <ul>
                   {nextProfileSteps.map((step) => (
                     <li key={step.label}>
-                      <i className="bi bi-circle" aria-hidden="true" />
+                      <span className="profile-next-steps-plus" aria-hidden="true">
+                        <i className="bi bi-plus-lg" />
+                      </span>
                       {step.label}
                     </li>
                   ))}
                 </ul>
+
+                <div className="profile-next-steps-footer">
+                  <span>
+                    <i className="bi bi-stars" aria-hidden="true" />
+                    Manage coding profiles and more from your profile.
+                  </span>
+                  <Link to="/user/profile" className="profile-next-steps-link">
+                    Continue profile <i className="bi bi-arrow-right" />
+                  </Link>
+                </div>
               </section>
             )}
           </div>

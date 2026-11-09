@@ -1,5 +1,4 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import '../css/CodingStats.css';
 
@@ -43,11 +42,6 @@ export default function CodingStats({ username }) {
           <h2>Coding at a glance</h2>
           <p>Live from {username ? 'their' : 'your'} linked coding profiles.</p>
         </div>
-        {!username && (
-          <Link to="/user/profile" className="profile-next-steps-link">
-            Manage profiles <i className="bi bi-arrow-right" />
-          </Link>
-        )}
       </div>
 
       {!data ? (

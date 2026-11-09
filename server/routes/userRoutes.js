@@ -104,27 +104,6 @@ router.delete('/me/resume', protect, async (req, res) => {
   res.json({ resume: null });
 });
 
-// PUT /api/users/me/banner (legacy adapter; multipart field "image", max 5 MB)
-router.put('/me/banner', protect, handleProfileUpload('image'), async (req, res) => {
-  try {
-    await saveProfileImage(req.user, 'banner', req.file.buffer);
-    res.json({ bannerImage: req.user.bannerImage });
-  } catch (error) {
-    res.status(error.status || 500).json({ message: error.status ? error.message : 'Could not upload the banner.' });
-  }
-});
-
-// DELETE /api/users/me/banner
-router.delete('/me/banner', protect, async (req, res) => {
-  try {
-    await removeProfileImage(req.user, 'banner');
-    res.json({ bannerImage: req.user.bannerImage });
-  } catch (error) {
-    console.error('Remove banner error:', error.message);
-    res.status(500).json({ message: 'Could not remove the banner.' });
-  }
-});
-
 // DELETE /api/users/me/avatar
 router.delete('/me/avatar', protect, async (req, res) => {
   try {
@@ -717,14 +696,12 @@ router.post(
   handleProfileUpload('profileImage'),
   async (req, res) => {
     try {
-      const kind = req.query.type === 'banner' ? 'banner' : 'avatar';
-      await saveProfileImage(req.user, kind, req.file.buffer);
-      const imageField = kind === 'banner' ? 'bannerImage' : 'profileImage';
+      await saveProfileImage(req.user, 'avatar', req.file.buffer);
 
       return res.json({
         success: true,
-        message: `${kind === 'banner' ? 'Banner' : 'Profile photo'} updated successfully.`,
-        [imageField]: req.user[imageField],
+        message: 'Profile photo updated successfully.',
+        profileImage: req.user.profileImage,
       });
     } catch (error) {
       console.error('Profile image upload error:', error);
@@ -740,12 +717,11 @@ router.post(
 // DELETE /api/users/profile/image
 router.delete('/profile/image', protect, async (req, res) => {
   try {
-    const kind = req.query.type === 'banner' ? 'banner' : 'avatar';
-    await removeProfileImage(req.user, kind);
+    await removeProfileImage(req.user, 'avatar');
 
     return res.json({
       success: true,
-      message: `${kind === 'banner' ? 'Banner' : 'Profile picture'} removed successfully.`,
+      message: 'Profile picture removed successfully.',
     });
   } catch (error) {
     console.error('Remove profile image error:', error.message);
@@ -785,7 +761,7 @@ router.get('/profile/:username', protect, async (req, res) => {
       role: 'user',
     })
       .select(
-      'name username collegeName degree department yearOfStudy graduationYear profileImage bannerImage bio github linkedin portfolio technicalInterests skills skillDetails learningGoals codingProfiles achievements createdAt'
+      'name username collegeName degree department yearOfStudy graduationYear profileImage bio github linkedin portfolio technicalInterests skills skillDetails learningGoals codingProfiles achievements createdAt'
       )
       .lean();
 
@@ -845,9 +821,6 @@ const deleteSelfAccount = async (req, res) => {
     const mediaToDelete = [];
     if (req.user.profileImage?.fileId) {
       mediaToDelete.push({ fileId: req.user.profileImage.fileId });
-    }
-    if (req.user.bannerImage?.fileId) {
-      mediaToDelete.push({ fileId: req.user.bannerImage.fileId });
     }
     if (req.user.resume?.fileId) {
       mediaToDelete.push({ fileId: req.user.resume.fileId });

@@ -2300,6 +2300,11 @@
   padding: 0 0 24px;
 }
 
+.admin-user-profile-view .dashboard-member-profile-embedded .member-profile-hero {
+  border-radius: 16px;
+  box-shadow: 0 16px 36px rgba(20, 45, 69, .12);
+}
+
 @media (max-width: 800px) {
   .admin-users-heading {
     flex-direction: column;

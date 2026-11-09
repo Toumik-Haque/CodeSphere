@@ -5,18 +5,13 @@ export default function DashboardProfileSidebar({
   completion,
   photoInputRef,
   onPhotoChange,
-  bannerInputRef,
-  onBannerChange,
-  // The CodeSphere banner (client/public) for everyone without their own.
+  // The single CodeSphere banner (client/public) used for every member.
   defaultBanner = '/default-profile-banner.webp',
   showBadges = false,
-  dashboardCard = false,
 }) {
   const name = user?.name || 'CodeSphere Member';
   const username = user?.username;
   const profileImage = user?.profileImage?.url;
-  // Everyone gets the CodeSphere banner until they upload their own.
-  const bannerImage = user?.bannerImage?.url || '';
   const joinedDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-IN', {
         month: 'long',
@@ -26,23 +21,11 @@ export default function DashboardProfileSidebar({
 
   return (
     <aside className="student-profile-sidebar">
-      <section className={`student-identity-card ${bannerImage || defaultBanner ? 'has-cover' : ''} ${dashboardCard ? 'dashboard-identity-card' : ''}`}>
-        {(bannerImage || defaultBanner) && (
-          <div className="student-cover" style={{ backgroundImage: `url("${encodeURI(bannerImage || defaultBanner)}")` }}>
-            {bannerInputRef && onBannerChange && (
-              <>
-                <input ref={bannerInputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={onBannerChange} />
-                <button
-                  type="button"
-                  className="profile-image-upload-button profile-banner-upload-button"
-                  onClick={() => bannerInputRef.current?.click()}
-                >
-                  <i className="bi bi-camera" /> {bannerImage ? 'Change banner' : 'Add banner'}
-                </button>
-              </>
-            )}
-          </div>
-        )}
+      <section className="student-identity-card has-cover">
+        <div
+          className="student-cover"
+          style={{ backgroundImage: `url("${encodeURI(defaultBanner)}")` }}
+        />
         <div className="student-avatar">
           {profileImage ? (
             <img src={profileImage} alt={name} />
@@ -74,21 +57,8 @@ export default function DashboardProfileSidebar({
 
         <div className="student-identity-content">
           <h2>{name}</h2>
-          {user?.email && (
-            <p>
-              {dashboardCard && <i className="bi bi-envelope" aria-hidden="true" />}
-              {user.email}
-            </p>
-          )}
-          {username && (
-            <p>
-              {dashboardCard && <i className="bi bi-at" aria-hidden="true" />}
-              @{username}
-            </p>
-          )}
-          <span className="student-member-badge">
-            <i className="bi bi-patch-check-fill" /> CodeSphere Member
-          </span>
+          {user?.email && <p>{user.email}</p>}
+          {username && <p>@{username}</p>}
           {showBadges && <BadgeStrip />}
         </div>
 

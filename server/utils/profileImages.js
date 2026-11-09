@@ -5,10 +5,6 @@ const IMAGE_CONFIG = {
     field: 'profileImage',
     folder: 'user-photo',
   },
-  banner: {
-    field: 'bannerImage',
-    folder: 'user-banners',
-  },
 };
 
 function profileImageValues(user, kind) {

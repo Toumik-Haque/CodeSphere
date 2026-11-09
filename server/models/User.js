@@ -70,17 +70,6 @@ const userSchema = new mongoose.Schema(
       },
     },
 
-    bannerImage: {
-      url: {
-        type: String,
-        default: '',
-      },
-      fileId: {
-        type: String,
-        default: '',
-      },
-    },
-
     bio: {
       type: String,
       trim: true,

@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
+const Admin = require('../models/Admin');
 const User = require('../models/User');
 const readline = require('node:readline/promises');
 
@@ -25,9 +26,12 @@ async function main() {
 
     await mongoose.connect(process.env.MONGODB_URI);
 
-    const existingUser = await User.findOne({ email });
+    const [existingAdmin, existingUser] = await Promise.all([
+      Admin.findOne({ email }),
+      User.findOne({ email }),
+    ]);
 
-    if (existingUser) {
+    if (existingAdmin || existingUser) {
       throw new Error(
         'That email already exists. This script will not promote an existing account.'
       );
@@ -35,7 +39,7 @@ async function main() {
 
     const hashedPassword = await bcrypt.hash(password, 8);
 
-    await User.create({
+    await Admin.create({
       name,
       email,
       password: hashedPassword,

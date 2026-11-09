@@ -323,15 +323,9 @@
   padding: 0;
 }
 
-.dashboard-member-profile-embedded .member-profile-card {
-  border-color: var(--user-border);
-  border-radius: 14px;
-  box-shadow: var(--user-card-shadow);
-}
-
-.dashboard-member-profile-embedded .member-profile-header,
-.dashboard-member-profile-embedded .member-profile-section {
-  border-color: var(--user-border);
+.dashboard-member-profile-embedded .member-profile-hero {
+  border-radius: 16px;
+  box-shadow: 0 16px 36px rgba(20, 45, 69, .12);
 }
 
 .dashboard-member-profile-embedded .member-profile-home-button {
