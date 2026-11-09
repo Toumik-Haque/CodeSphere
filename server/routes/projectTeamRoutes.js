@@ -195,7 +195,7 @@ router.post('/:id/verify-github', protect, async (req, res) => {
   if (!project) return;
   if (!isOwner(project, req.user)) return res.status(403).json({ message: 'Only the owner can verify.' });
   if (!project.github?.url) return res.status(400).json({ message: 'Link a GitHub repository first.' });
-  const login = req.user.github?.login;
+  const login = req.user.githubConnection?.login;
   if (!login) return res.status(400).json({ message: 'Connect your GitHub account first.' });
   try {
     let kind = '';
@@ -219,13 +219,13 @@ router.post('/:id/verify-github', protect, async (req, res) => {
 router.get('/users/search', protect, async (req, res) => {
   const q = clean(req.query.q, 40);
   if (q.length < 2) return res.json({ users: [] });
-  const users = await User.find({ _id: { $ne: req.user._id }, name: new RegExp(escapeRegex(q), 'i') }).select('name avatarUrl yearOfStudy').limit(8).lean();
+  const users = await User.find({ _id: { $ne: req.user._id }, name: new RegExp(escapeRegex(q), 'i') }).select('name profileImage yearOfStudy').limit(8).lean();
   res.json({ users: users.map((u) => ({ ...person(u), year: u.yearOfStudy || '' })) });
 });
 
 // GET /api/projects/team/invites: my pending invitations
 router.get('/team/invites', protect, async (req, res) => {
-  const projects = await Project.find({ members: { $elemMatch: { user: req.user._id, status: 'invited' } } }).populate('owner', 'name avatarUrl').lean();
+  const projects = await Project.find({ members: { $elemMatch: { user: req.user._id, status: 'invited' } } }).populate('owner', 'name profileImage').lean();
   res.json({
     invites: projects.map((p) => ({
       projectId: String(p._id),
@@ -308,7 +308,7 @@ router.delete('/:id/team/:userId', protect, async (req, res) => {
 // ---------- Task board ----------
 
 const taskView = async (project) => {
-  await project.populate('tasks.assignee', 'name avatarUrl');
+  await project.populate('tasks.assignee', 'name profileImage');
   return project.tasks.map((t) => ({ id: String(t._id), title: t.title, status: t.status, assignee: t.assignee?.name ? person(t.assignee) : null }));
 };
 
@@ -398,7 +398,7 @@ router.post('/:id/updates/:updateId/react', protect, async (req, res) => {
 router.get('/:id/updates/:updateId/comments', async (req, res) => {
   const { update } = await loadUpdate(req, res);
   if (!update) return;
-  const comments = await ProjectComment.find({ update: update._id, hidden: false }).populate('author', 'name avatarUrl').sort({ createdAt: 1 }).limit(100).lean();
+  const comments = await ProjectComment.find({ update: update._id, hidden: false }).populate('author', 'name profileImage').sort({ createdAt: 1 }).limit(100).lean();
   res.json({ comments: comments.map((c) => ({ id: String(c._id), body: c.body, createdAt: c.createdAt, author: person(c.author) })) });
 });
 

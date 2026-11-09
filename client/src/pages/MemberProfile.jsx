@@ -195,9 +195,9 @@ export default function MemberProfile({
             <section className="member-profile-card">
               <div className="member-profile-header">
                 <div className="member-profile-avatar">
-                  {(member.profileImage?.url || member.avatarUrl) ? (
+                  {member.profileImage?.url ? (
                     <img
-                      src={member.profileImage?.url || member.avatarUrl}
+                      src={member.profileImage.url}
                       alt={member.name}
                     />
                   ) : (
@@ -286,7 +286,7 @@ export default function MemberProfile({
                 </ProfileSection>
 
                 <ProfileSection title="Skills">
-                  <TagList items={member.skills} />
+                  <TagList items={(member.skillDetails?.length ? member.skillDetails.map((skill) => typeof skill === 'string' ? skill : skill?.name) : member.skills) || []} />
                 </ProfileSection>
 
                 <ProfileSection title="Learning goals">

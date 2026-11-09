@@ -119,7 +119,7 @@ function DashboardOverviewSection({ user }) {
         label: 'Complete your education details',
         complete: Boolean(profile.collegeName && profile.department && profile.yearOfStudy),
       },
-      { label: 'Add at least one skill', complete: Array.isArray(profile.skills) && profile.skills.length > 0 },
+      { label: 'Add at least one skill', complete: (Array.isArray(profile.skillDetails) && profile.skillDetails.length > 0) || (Array.isArray(profile.skills) && profile.skills.length > 0) },
       { label: 'Link a coding profile', complete: Array.isArray(profile.codingProfiles) && profile.codingProfiles.length > 0 },
       { label: 'Showcase a project', complete: Array.isArray(profile.projects) && profile.projects.length > 0 },
       { label: 'Add an achievement', complete: Array.isArray(profile.achievements) && profile.achievements.length > 0 },
@@ -162,7 +162,7 @@ function DashboardOverviewSection({ user }) {
         </section>
       ) : (
         <div className="student-profile-layout dashboard-section-layout dashboard-overview-layout">
-          <DashboardProfileSidebar user={profile} completion={completion} />
+          <DashboardProfileSidebar user={profile} completion={completion} dashboardCard />
 
           <div className="student-profile-main dashboard-overview-content">
             <ProfileBadges compact completion={completion} />
@@ -523,8 +523,8 @@ export default function UserDashboard() {
 
           <div className="user-dashboard-sidebar-bottom">
             <div className="user-dashboard-account">
-              {(user?.profileImage?.url || user?.avatarUrl) ? (
-                <img src={user.profileImage?.url || user.avatarUrl} alt="" />
+              {user?.profileImage?.url ? (
+                <img src={user.profileImage.url} alt="" />
               ) : (
                 <span className="user-dashboard-account-avatar">
                   {user?.name?.trim()?.[0]?.toUpperCase() || 'U'}

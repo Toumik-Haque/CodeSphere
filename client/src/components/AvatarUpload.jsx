@@ -19,21 +19,21 @@ export default function AvatarUpload({ className = '' }) {
     const file = event.target.files?.[0];
     event.target.value = '';
     if (!file) return;
-    if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.type)) {
-      setError('Choose a JPEG, PNG, WebP or GIF image.');
+    if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
+      setError('Choose a JPEG, PNG or WebP image.');
       return;
     }
-    if (file.size > 2 * 1024 * 1024) {
-      setError('The photo must be 2 MB or smaller.');
+    if (file.size > 5 * 1024 * 1024) {
+      setError('The photo must be 5 MB or smaller.');
       return;
     }
     setBusy(true);
     setError('');
     try {
       const form = new FormData();
-      form.append('image', file, file.name);
-      const { avatarUrl } = await apiRequest('/users/me/avatar', { method: 'PUT', body: form });
-      updateUser({ avatarUrl });
+      form.append('profileImage', file, file.name);
+      const { profileImage } = await apiRequest('/users/profile/image', { method: 'POST', body: form });
+      updateUser({ profileImage });
     } catch (e) {
       setError(e.message);
     } finally {
@@ -41,24 +41,25 @@ export default function AvatarUpload({ className = '' }) {
     }
   };
 
-  const label = user.avatarUrl ? 'Change your profile photo' : 'Add a profile photo';
+  const avatarUrl = user.profileImage?.url || '';
+  const label = avatarUrl ? 'Change your profile photo' : 'Add a profile photo';
   return (
     <span className="avatar-upload">
       <button
         type="button"
-        className={`${className} avatar-upload-btn ${user.avatarUrl ? 'has-photo' : ''}`}
-        style={user.avatarUrl ? undefined : { '--hue': hueOf(user.name) }}
+        className={`${className} avatar-upload-btn ${avatarUrl ? 'has-photo' : ''}`}
+        style={avatarUrl ? undefined : { '--hue': hueOf(user.name) }}
         onClick={() => inputRef.current?.click()}
         disabled={busy}
         title={error || label}
         aria-label={label}
       >
-        {user.avatarUrl ? <img src={user.avatarUrl} alt="" /> : initialsOf(user.name)}
-        <span className={`avatar-upload-badge ${user.avatarUrl ? 'on-hover' : ''}`} aria-hidden="true">
+        {avatarUrl ? <img src={avatarUrl} alt="" /> : initialsOf(user.name)}
+        <span className={`avatar-upload-badge ${avatarUrl ? 'on-hover' : ''}`} aria-hidden="true">
           <i className={`bi ${busy ? 'bi-hourglass-split' : 'bi-camera-fill'}`} />
         </span>
       </button>
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" hidden onChange={pick} />
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={pick} />
       {error && <span className="avatar-upload-error" role="alert">{error}</span>}
     </span>
   );

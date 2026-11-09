@@ -621,15 +621,65 @@ router.post('/register', async (req, res) => {
       const username = await generateUniqueUsername(name.trim());
 
       try {
-        user = await User.create({
+        const newUser = new User({
           name: name.trim(),
           username,
-          collegeName: collegeName.trim(),
-          yearOfStudy,
           email: normalizedEmail,
           password: hashedPassword,
           role: 'user',
+          collegeName: collegeName.trim(),
+          yearOfStudy,
+          profileImage: { url: '', fileId: '' },
+          bannerImage: { url: '', fileId: '' },
+          bio: '',
+          phone: '',
+          city: '',
+          gender: '',
+          dateOfBirth: '',
+          degree: '',
+          department: '',
+          graduationYear: '',
+          github: '',
+          linkedin: '',
+          portfolio: '',
+          technicalInterests: [],
+          skillDetails: [],
+          codingProfiles: [],
+          achievements: [],
+          learningGoals: [],
+          profileComplete: false,
+          badgeShowcase: [],
+          staffRoles: [],
+          githubConnection: { id: null, login: '', connectedAt: null },
+          resume: { url: '', fileId: '', name: '', size: 0, type: '', uploadedAt: null },
+          dailyNewsOptIn: false,
+          newsletterOptIn: false,
+          updateEmailsOptOut: false,
+          mutedNotifications: [],
+          forumMutedUntil: null,
         });
+        const now = new Date();
+        newUser.createdAt = now;
+        newUser.updatedAt = now;
+        newUser.__v = 0;
+        await newUser.validate();
+
+        const serializedUser = newUser.toObject({
+          minimize: false,
+          depopulate: true,
+          versionKey: true,
+        });
+        const orderedUser = { _id: serializedUser._id };
+        for (const field of Object.keys(User.schema.obj)) {
+          if (Object.prototype.hasOwnProperty.call(serializedUser, field)) {
+            orderedUser[field] = serializedUser[field];
+          }
+        }
+        orderedUser.createdAt = serializedUser.createdAt;
+        orderedUser.updatedAt = serializedUser.updatedAt;
+        orderedUser.__v = serializedUser.__v;
+        await User.collection.insertOne(orderedUser);
+        user = newUser;
 
         break;
       } catch (error) {
@@ -671,7 +721,8 @@ router.post('/register', async (req, res) => {
         email: user.email,
         role: user.role,
         staffRoles: user.staffRoles || [],
-        avatarUrl: user.avatarUrl || '',
+        profileImage: user.profileImage,
+        bannerImage: user.bannerImage,
       },
     });
 
@@ -958,7 +1009,8 @@ router.post('/login', async (req, res) => {
         email: user.email,
         role: user.role,
         staffRoles: user.staffRoles || [],
-        avatarUrl: user.avatarUrl || '',
+        profileImage: user.profileImage,
+        bannerImage: user.bannerImage,
       },
     });
 
@@ -986,8 +1038,8 @@ router.get('/me', protect, async (req, res) => {
       email: req.user.email,
       role: req.user.role,
       staffRoles: req.user.staffRoles || [],
-      avatarUrl: req.user.avatarUrl || '',
-      bannerUrl: req.user.bannerUrl || '',
+      profileImage: req.user.profileImage,
+      bannerImage: req.user.bannerImage,
       createdAt: req.user.createdAt,
     },
   });

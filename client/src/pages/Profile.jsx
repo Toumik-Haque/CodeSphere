@@ -1,6 +1,6 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
@@ -66,7 +66,6 @@ const emptyProfile = {
   department: '',
   yearOfStudy: '',
   graduationYear: '',
-  skillDetails: [],
   skills: [],
   technicalInterests: [],
   learningGoals: [],
@@ -94,10 +93,24 @@ const normalizeProject = (project) => ({
 
 const normalizeProfile = (source = {}) => {
   const skillDetails = Array.isArray(source.skillDetails) ? source.skillDetails : [];
-  const skillDetailsByName = new Map(
-    skillDetails.map((skill) => [skill.name.toLowerCase(), skill])
-  );
-  const skills = Array.isArray(source.skills) ? source.skills : [];
+  const legacySkills = Array.isArray(source.skills) ? source.skills : [];
+  const skillsByName = new Map();
+  [...skillDetails, ...legacySkills].forEach((skill) => {
+    const rawName = typeof skill === 'string' ? skill : skill?.name;
+    const name = typeof rawName === 'string' ? rawName.trim() : '';
+    if (!name) return;
+    const key = name.toLowerCase();
+    const level = ['Beginner', 'Intermediate', 'Advanced'].includes(skill?.level)
+      ? skill.level
+      : 'Intermediate';
+    const current = skillsByName.get(key);
+    if (!current || (current.level === 'Intermediate' && level !== 'Intermediate')) {
+      skillsByName.set(key, { name, level });
+    }
+  });
+  const profile = { ...emptyProfile, ...source };
+  delete profile.skillDetails;
+  delete profile.skills;
   const codingProfiles = Array.isArray(source.codingProfiles)
     ? source.codingProfiles
     : [];
@@ -106,20 +119,9 @@ const normalizeProfile = (source = {}) => {
   );
 
   return {
-    ...emptyProfile,
-    ...source,
-    github: source.github || legacyGithubProfile?.url || '',
-    skills: skills.map((skill) => {
-      const name = typeof skill === 'string' ? skill : skill.name;
-      const detail = skillDetailsByName.get(name.toLowerCase());
-      return {
-        name,
-        level: (typeof skill === 'object' && skill.level) ||
-          detail?.level ||
-          'Intermediate',
-      };
-    }),
-    skillDetails,
+    ...profile,
+    github: (typeof source.github === 'string' ? source.github : '') || legacyGithubProfile?.url || '',
+    skills: [...skillsByName.values()],
     technicalInterests: Array.isArray(source.technicalInterests)
       ? source.technicalInterests
       : [],
@@ -1343,7 +1345,8 @@ export default function Profile({
   view = 'profile',
 }) {
   const isMilestoneView = view === 'milestone';
-  const { user, updateUser } = useAuth();
+  const navigate = useNavigate();
+  const { user, updateUser, logout } = useAuth();
 
   const [profile, setProfile] = useState(() => {
     if (preview) {
@@ -1362,6 +1365,11 @@ export default function Profile({
   const [toast, setToast] = useState(null);
   const [skillSearch, setSkillSearch] = useState('');
   const [skillLevel, setSkillLevel] = useState('Intermediate');
+
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [deleteConfirmText, setDeleteConfirmText] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [deleteError, setDeleteError] = useState('');
 
   const photoInputRef = useRef(null);
   const bannerInputRef = useRef(null);
@@ -1401,7 +1409,6 @@ export default function Profile({
     for (const field of fields || Object.keys(updatedProfile)) {
       if (field === 'projects') continue;
       if (field === 'skills') {
-        payload.skills = updatedProfile.skills.map((skill) => skill.name || skill);
         payload.skillDetails = updatedProfile.skills.map((skill) => ({
           name: skill.name || skill,
           level: skill.level || 'Intermediate',
@@ -1721,6 +1728,38 @@ export default function Profile({
     !profile.skills.some((item) => (item.name || item) === skill)
   );
 
+  const handleDeleteAccount = async () => {
+    if (preview) {
+      showToast('Account deletion is disabled in preview mode.', 'info');
+      return;
+    }
+
+    const expected = (currentUser?.username || 'DELETE').trim().toLowerCase();
+    const typed = deleteConfirmText.trim().toLowerCase();
+
+    if (typed !== expected && typed !== 'delete') {
+      setDeleteError(`Please type "${currentUser?.username || 'DELETE'}" to confirm.`);
+      return;
+    }
+
+    setDeleteLoading(true);
+    setDeleteError('');
+
+    try {
+      await apiRequest('/users/profile', {
+        method: 'DELETE',
+      });
+
+      showToast('Your account has been deleted successfully.', 'success');
+      await logout();
+      navigate('/login', { replace: true });
+    } catch (err) {
+      console.error('Delete account error:', err);
+      setDeleteError(err.message || 'Unable to delete account. Please try again.');
+      setDeleteLoading(false);
+    }
+  };
+
   const personalSection = {
     id: 'personal',
     title: 'Personal details',
@@ -1960,6 +1999,93 @@ export default function Profile({
                       />
                     ))}
                   </section>
+
+                  {/* Self-service account deletion control - hidden for admins */}
+                  {currentUser?.role !== 'admin' && (
+                    <section className="profile-section-card profile-danger-card">
+                      <div className="profile-section-heading">
+                        <div>
+                          <h2>Delete Account</h2>
+                          <p>Permanently remove your CodeSphere account and owned data.</p>
+                        </div>
+                        <span className="profile-section-icon">
+                          <i className="bi bi-exclamation-triangle" />
+                        </span>
+                      </div>
+
+                      <div className="profile-danger-body">
+                        <p className="profile-danger-warning">
+                          Once you delete your account, there is no going back. This will permanently remove your profile, photo, banner, resume, earned badges, and personal project showcase entries.
+                        </p>
+
+                        {!deleteConfirmOpen ? (
+                          <div className="profile-danger-actions">
+                            <button
+                              type="button"
+                              className="profile-delete-account-btn"
+                              onClick={() => {
+                                setDeleteConfirmOpen(true);
+                                setDeleteConfirmText('');
+                                setDeleteError('');
+                              }}
+                            >
+                              <i className="bi bi-trash3" /> Delete My Account
+                            </button>
+                          </div>
+                        ) : (
+                          <div className="profile-delete-confirm-box">
+                            <p>
+                              Are you absolutely sure? To confirm, please type <strong>{currentUser?.username || 'DELETE'}</strong> below:
+                            </p>
+
+                            <input
+                              type="text"
+                              className="profile-delete-confirm-input"
+                              value={deleteConfirmText}
+                              onChange={(e) => {
+                                setDeleteConfirmText(e.target.value);
+                                if (deleteError) setDeleteError('');
+                              }}
+                              placeholder={`Type ${currentUser?.username || 'DELETE'} to confirm`}
+                              disabled={deleteLoading}
+                              autoFocus
+                            />
+
+                            {deleteError && (
+                              <div className="profile-delete-error">
+                                <i className="bi bi-exclamation-circle" /> {deleteError}
+                              </div>
+                            )}
+
+                            <div className="profile-delete-confirm-btns">
+                              <button
+                                type="button"
+                                className="profile-delete-account-btn"
+                                onClick={handleDeleteAccount}
+                                disabled={deleteLoading || !deleteConfirmText.trim()}
+                              >
+                                <i className={`bi ${deleteLoading ? 'bi-hourglass-split' : 'bi-trash3'}`} />
+                                {deleteLoading ? 'Deleting Account...' : 'Permanently Delete Account'}
+                              </button>
+
+                              <button
+                                type="button"
+                                className="profile-delete-cancel-btn"
+                                onClick={() => {
+                                  setDeleteConfirmOpen(false);
+                                  setDeleteConfirmText('');
+                                  setDeleteError('');
+                                }}
+                                disabled={deleteLoading}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </section>
+                  )}
 
                   <section className="profile-sidebar-card profile-help-card">
                     <div className="profile-help-content">

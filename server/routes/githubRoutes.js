@@ -38,7 +38,7 @@ function readState(state) {
 const back = (res, outcome) => res.redirect(`${clientUrl()}/projects?tab=mine&github=${encodeURIComponent(outcome)}`);
 
 router.get('/status', protect, (req, res) => {
-  res.json({ enabled: enabled(), connected: Boolean(req.user.github?.login), login: req.user.github?.login || '' });
+  res.json({ enabled: enabled(), connected: Boolean(req.user.githubConnection?.login), login: req.user.githubConnection?.login || '' });
 });
 
 // POST /api/github/connect → { url } to send the browser to
@@ -79,9 +79,9 @@ router.get('/callback', async (req, res) => {
     const me = await meRes.json();
     if (!me?.id || !me?.login) return back(res, 'failed');
     // One GitHub account per CodeSphere account.
-    const taken = await User.exists({ 'github.id': me.id, _id: { $ne: userId } });
+    const taken = await User.exists({ 'githubConnection.id': me.id, _id: { $ne: userId } });
     if (taken) return back(res, 'in-use');
-    await User.updateOne({ _id: userId }, { $set: { github: { id: me.id, login: me.login, connectedAt: new Date() } } });
+    await User.updateOne({ _id: userId }, { $set: { githubConnection: { id: me.id, login: me.login, connectedAt: new Date() } } });
     return back(res, 'connected'); // the token is dropped here, never stored
   } catch (error) {
     console.error('GitHub OAuth error:', error.message);
@@ -90,7 +90,10 @@ router.get('/callback', async (req, res) => {
 });
 
 router.delete('/connection', protect, async (req, res) => {
-  await User.updateOne({ _id: req.user._id }, { $unset: { github: 1 } });
+  await User.updateOne(
+    { _id: req.user._id },
+    { $set: { githubConnection: { id: null, login: '', connectedAt: null } } },
+  );
   res.json({ connected: false });
 });
 

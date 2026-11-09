@@ -341,7 +341,7 @@ body:has(.video-background) .codesphere-footer {
 .footer-devs {
   position: relative;
   margin-top: 40px;
-  padding-top: 28px;
+  padding: 28px 0 32px;
   border-top: 1px solid rgba(255, 255, 255, .1);
 }
 
@@ -439,6 +439,7 @@ body:has(.video-background) .codesphere-footer {
 @media (max-width: 575px) {
   .footer-devs {
     margin-top: 32px;
+    padding-bottom: 24px;
   }
 
   .footer-devs-list {

@@ -155,11 +155,6 @@ const userSchema = new mongoose.Schema(
       default: [],
     },
 
-    skills: {
-      type: [String],
-      default: [],
-    },
-
     skillDetails: {
       type: [{
         name: { type: String, trim: true, required: true },
@@ -213,19 +208,12 @@ const userSchema = new mongoose.Schema(
       enum: ['moderator', 'news-editor', 'challenge-editor', 'hackathon-organizer', 'project-reviewer'],
       default: [],
     },
-    // Opted in to the weekly Tech Brief email.
-    // Profile photo (ImageKit) shown in the forum and leaderboards.
-    avatarUrl: { type: String, default: '' },
-    avatarFileId: { type: String, default: '' },
-    // Connected GitHub identity (Project Hub verification). No token is stored.
-    github: {
-      id: Number,
-      login: String,
-      connectedAt: Date,
+    // GitHub OAuth identity for Project Hub verification; separate from the profile URL.
+    githubConnection: {
+      id: { type: Number, default: null },
+      login: { type: String, default: '' },
+      connectedAt: { type: Date, default: null },
     },
-    // Profile banner image (ImageKit).
-    bannerUrl: { type: String, default: '' },
-    bannerFileId: { type: String, default: '' },
     // Saved resume (PDF or image on ImageKit), visible only to its owner.
     resume: {
       url: { type: String, default: '' },
@@ -233,7 +221,7 @@ const userSchema = new mongoose.Schema(
       name: { type: String, default: '' },
       size: { type: Number, default: 0 },
       type: { type: String, default: '' },
-      uploadedAt: Date,
+      uploadedAt: { type: Date, default: null },
     },
     // Daily "Today in Tech" email (separate from the weekly newsletter).
     dailyNewsOptIn: { type: Boolean, default: false },
