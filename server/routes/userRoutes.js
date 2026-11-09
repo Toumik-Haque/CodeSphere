@@ -2,21 +2,19 @@ const express = require('express');
 const User = require('../models/User');
 const { protect, adminOnly, STAFF_ROLES } = require('../middleware/authMiddleware');
 const { notify } = require('../utils/notify');
-const { handleImageUpload, storeImage, deleteImages } = require('../utils/forumMedia');
+const { deleteImages } = require('../utils/forumMedia');
+const { saveProfileImage, removeProfileImage } = require('../utils/profileImages');
+const handleProfileUpload = require('../middleware/profileUpload');
 
 const router = express.Router();
 
 // ---------- Profile photo (stored on ImageKit, visible to others) ----------
 
-// PUT /api/users/me/avatar  (multipart field "image", max 2 MB)
-router.put('/me/avatar', protect, handleImageUpload, async (req, res) => {
+// PUT /api/users/me/avatar (legacy adapter; multipart field "image", max 5 MB)
+router.put('/me/avatar', protect, handleProfileUpload('image'), async (req, res) => {
   try {
-    const stored = await storeImage(req.file.buffer, req.user._id, 'avatars');
-    const old = req.user.avatarFileId;
-    // Also fill profileImage (used by the profile dashboard).
-    await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: stored.url, avatarFileId: stored.fileId, profileImage: { url: stored.url, fileId: stored.fileId } } });
-    if (old) await deleteImages([{ fileId: old }]);
-    res.json({ avatarUrl: stored.url });
+    await saveProfileImage(req.user, 'avatar', req.file.buffer);
+    res.json({ profileImage: req.user.profileImage });
   } catch (error) {
     res.status(error.status || 500).json({ message: error.status ? error.message : 'Could not upload the photo.' });
   }
@@ -106,28 +104,11 @@ router.delete('/me/resume', protect, async (req, res) => {
   res.json({ resume: null });
 });
 
-// ---------- Profile banner (bigger images allowed) ----------
-
-const bannerUploadMw = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 5 * 1024 * 1024, files: 1 },
-  fileFilter: (req, file, cb) => (['image/jpeg', 'image/png', 'image/webp', 'image/gif'].includes(file.mimetype)
-    ? cb(null, true)
-    : cb(new Error('The banner must be a JPEG, PNG, WebP or GIF image.'))),
-});
-
-// PUT /api/users/me/banner  (multipart field "image", max 5 MB)
-router.put('/me/banner', protect, (req, res, next) => bannerUploadMw.single('image')(req, res, (error) => {
-  if (error) return res.status(400).json({ message: error.code === 'LIMIT_FILE_SIZE' ? 'The banner must be 5 MB or smaller.' : error.message });
-  if (!req.file) return res.status(400).json({ message: 'Choose an image.' });
-  return next();
-}), async (req, res) => {
+// PUT /api/users/me/banner (legacy adapter; multipart field "image", max 5 MB)
+router.put('/me/banner', protect, handleProfileUpload('image'), async (req, res) => {
   try {
-    const stored = await storeImage(req.file.buffer, req.user._id, 'banners');
-    const old = req.user.bannerFileId;
-    await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: stored.url, bannerFileId: stored.fileId, bannerImage: { url: stored.url, fileId: stored.fileId } } });
-    if (old) await deleteImages([{ fileId: old }]);
-    res.json({ bannerUrl: stored.url });
+    await saveProfileImage(req.user, 'banner', req.file.buffer);
+    res.json({ bannerImage: req.user.bannerImage });
   } catch (error) {
     res.status(error.status || 500).json({ message: error.status ? error.message : 'Could not upload the banner.' });
   }
@@ -135,23 +116,28 @@ router.put('/me/banner', protect, (req, res, next) => bannerUploadMw.single('ima
 
 // DELETE /api/users/me/banner
 router.delete('/me/banner', protect, async (req, res) => {
-  const old = req.user.bannerFileId;
-  await User.updateOne({ _id: req.user._id }, { $set: { bannerUrl: '', bannerFileId: '' } });
-  if (old) await deleteImages([{ fileId: old }]);
-  res.json({ bannerUrl: '' });
+  try {
+    await removeProfileImage(req.user, 'banner');
+    res.json({ bannerImage: req.user.bannerImage });
+  } catch (error) {
+    console.error('Remove banner error:', error.message);
+    res.status(500).json({ message: 'Could not remove the banner.' });
+  }
 });
 
 // DELETE /api/users/me/avatar
 router.delete('/me/avatar', protect, async (req, res) => {
-  const old = req.user.avatarFileId;
-  await User.updateOne({ _id: req.user._id }, { $set: { avatarUrl: '', avatarFileId: '' } });
-  if (old) await deleteImages([{ fileId: old }]);
-  res.json({ avatarUrl: '' });
+  try {
+    await removeProfileImage(req.user, 'avatar');
+    res.json({ profileImage: req.user.profileImage });
+  } catch (error) {
+    console.error('Remove avatar error:', error.message);
+    res.status(500).json({ message: 'Could not remove the profile photo.' });
+  }
 });
 // ---------- Public profiles, usernames and profile editing ----------
 // (router, protect, adminOnly, imagekit and toFile are declared above)
 const Project = require('../models/PortfolioProject'); // profile portfolio, not the Project Hub
-const handleProfileUpload = require('../middleware/profileUpload');
 
 const isValidHttpUrl = (value) => {
   if (!value) return true;
@@ -217,6 +203,7 @@ const allowedProfileFields = [
   'linkedin',
   'portfolio',
   'technicalInterests',
+  // Accept the old flat skill payload, then normalize it to skillDetails.
   'skills',
   'skillDetails',
   'learningGoals',
@@ -232,7 +219,7 @@ router.get('/admin/export', protect, adminOnly, async (req, res) => {
   try {
     const users = await User.find({ role: 'user' })
       .select(
-        'name email phone city gender dateOfBirth bio collegeName yearOfStudy degree department graduationYear github linkedin portfolio technicalInterests skills skillDetails codingProfiles achievements learningGoals profileComplete createdAt'
+        'name email phone city gender dateOfBirth bio collegeName yearOfStudy degree department graduationYear github linkedin portfolio technicalInterests skillDetails codingProfiles achievements learningGoals profileComplete createdAt'
       )
       .sort({ createdAt: -1 })
       .lean();
@@ -322,7 +309,6 @@ router.put('/admin/:id/staff-roles', protect, adminOnly, async (req, res) => {
   }
 });
 
-module.exports = router;
 // GET /api/users/search?q=term (search profiles visible to signed-in members)
 router.get('/search', protect, async (req, res) => {
   try {
@@ -350,7 +336,7 @@ router.get('/search', protect, async (req, res) => {
         { collegeName: regex },
       ],
     })
-      .select('name username collegeName profileImage avatarUrl')
+      .select('name username collegeName profileImage')
       .sort({ name: 1, username: 1 })
       .limit(12)
       .lean();
@@ -602,6 +588,26 @@ router.patch('/profile', protect, async (req, res) => {
       });
     }
 
+    if (updates.skills !== undefined || updates.skillDetails !== undefined) {
+      const skillsByName = new Map();
+      const addSkill = (skill) => {
+        const name = (typeof skill === 'string' ? skill : skill?.name || '').trim();
+        if (!name) return;
+        const key = name.toLowerCase();
+        const current = skillsByName.get(key);
+        const level = typeof skill === 'object' && ['Beginner', 'Intermediate', 'Advanced'].includes(skill.level)
+          ? skill.level
+          : 'Intermediate';
+        if (!current || (current.level === 'Intermediate' && level !== 'Intermediate')) {
+          skillsByName.set(key, { name, level });
+        }
+      };
+      (updates.skillDetails || []).forEach(addSkill);
+      (updates.skills || []).forEach(addSkill);
+      updates.skillDetails = [...skillsByName.values()];
+      delete updates.skills;
+    }
+
     const stringFields = {
       name: { maxLength: 80, required: true },
       bio: { maxLength: 500 },
@@ -644,6 +650,24 @@ router.patch('/profile', protect, async (req, res) => {
           message: `${field} must be a valid HTTP or HTTPS URL.`,
         });
       }
+    }
+
+    if (updates.codingProfiles !== undefined) {
+      const githubProfile = updates.codingProfiles.find(
+        (profile) => profile.platform.toLowerCase() === 'github'
+      );
+      if (githubProfile && updates.github === undefined) {
+        if (githubProfile.url.length > 500) {
+          return res.status(400).json({
+            success: false,
+            message: 'github must be a valid HTTP or HTTPS URL of at most 500 characters.',
+          });
+        }
+        updates.github = githubProfile.url;
+      }
+      updates.codingProfiles = updates.codingProfiles.filter(
+        (profile) => profile.platform.toLowerCase() !== 'github'
+      );
     }
 
     const user = await User.findByIdAndUpdate(
@@ -690,86 +714,23 @@ router.patch('/profile', protect, async (req, res) => {
 router.post(
   '/profile/image',
   protect,
-  handleProfileUpload,
+  handleProfileUpload('profileImage'),
   async (req, res) => {
-    let uploadedImage = null;
-
     try {
-      if (!req.file) {
-        return res.status(400).json({
-          success: false,
-          message: 'Please select an image.',
-        });
-      }
-
-      const imageField = req.query.type === 'banner' ? 'bannerImage' : 'profileImage';
-      const imageFolder = imageField === 'bannerImage' ? 'banners' : 'profiles';
-      const imageLabel = imageField === 'bannerImage' ? 'Banner' : 'Profile picture';
-      const user = await User.findById(req.user._id);
-
-      if (!user) {
-        return res.status(404).json({
-          success: false,
-          message: 'User not found.',
-        });
-      }
-
-      uploadedImage = await imagekit.files.upload({
-        file: await toFile(
-          req.file.buffer,
-          req.file.originalname
-        ),
-        fileName: `${imageFolder}-${user._id}-${Date.now()}`,
-        folder: `/codesphere/${imageFolder}`,
-      });
-
-      const oldFileId = user[imageField]?.fileId;
-
-      user[imageField] = {
-        url: uploadedImage.url,
-        fileId: uploadedImage.fileId,
-      };
-      // Keep the flat fields used by the forum / Project Hub in sync.
-      if (imageField === 'profileImage') user.avatarUrl = uploadedImage.url;
-      else user.bannerUrl = uploadedImage.url;
-
-      await user.save();
-
-      // Delete the previous image only after saving the new one.
-      if (oldFileId) {
-        try {
-          await imagekit.files.delete(oldFileId);
-        } catch (cleanupError) {
-          console.error(
-            'Old profile image cleanup error:',
-            cleanupError.message
-          );
-        }
-      }
+      const kind = req.query.type === 'banner' ? 'banner' : 'avatar';
+      await saveProfileImage(req.user, kind, req.file.buffer);
+      const imageField = kind === 'banner' ? 'bannerImage' : 'profileImage';
 
       return res.json({
         success: true,
-        message: `${imageLabel} updated successfully.`,
-        [imageField]: user[imageField],
+        message: `${kind === 'banner' ? 'Banner' : 'Profile photo'} updated successfully.`,
+        [imageField]: req.user[imageField],
       });
     } catch (error) {
       console.error('Profile image upload error:', error);
-
-      // Clean up newly uploaded image if saving fails.
-      if (uploadedImage?.fileId) {
-        try {
-          await imagekit.files.delete(uploadedImage.fileId);
-        } catch (cleanupError) {
-          console.error(
-            'New profile image cleanup error:',
-            cleanupError.message
-          );
-        }
-      }
-
-      return res.status(500).json({
+      return res.status(error.status || 500).json({
         success: false,
-        message: 'Unable to upload image.',
+        message: error.status ? error.message : 'Unable to upload image.',
       });
     }
   }
@@ -779,41 +740,12 @@ router.post(
 // DELETE /api/users/profile/image
 router.delete('/profile/image', protect, async (req, res) => {
   try {
-    const imageField = req.query.type === 'banner' ? 'bannerImage' : 'profileImage';
-    const user = await User.findById(req.user._id);
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: 'User not found.',
-      });
-    }
-
-    const oldFileId = user[imageField]?.fileId;
-
-    user[imageField] = {
-      url: '',
-      fileId: '',
-    };
-    if (imageField === 'profileImage') user.avatarUrl = '';
-    else user.bannerUrl = '';
-
-    await user.save();
-
-    if (oldFileId) {
-      try {
-        await imagekit.files.delete(oldFileId);
-      } catch (cleanupError) {
-        console.error(
-          'Profile image deletion error:',
-          cleanupError.message
-        );
-      }
-    }
+    const kind = req.query.type === 'banner' ? 'banner' : 'avatar';
+    await removeProfileImage(req.user, kind);
 
     return res.json({
       success: true,
-      message: `${imageField === 'bannerImage' ? 'Banner' : 'Profile picture'} removed successfully.`,
+      message: `${kind === 'banner' ? 'Banner' : 'Profile picture'} removed successfully.`,
     });
   } catch (error) {
     console.error('Remove profile image error:', error.message);
@@ -853,7 +785,7 @@ router.get('/profile/:username', protect, async (req, res) => {
       role: 'user',
     })
       .select(
-      'name username collegeName degree department yearOfStudy graduationYear profileImage avatarUrl bannerImage bannerUrl bio github linkedin portfolio technicalInterests skills learningGoals codingProfiles achievements createdAt'
+      'name username collegeName degree department yearOfStudy graduationYear profileImage bannerImage bio github linkedin portfolio technicalInterests skills skillDetails learningGoals codingProfiles achievements createdAt'
       )
       .lean();
 
@@ -863,14 +795,6 @@ router.get('/profile/:username', protect, async (req, res) => {
         message: 'Member profile not found.',
       });
     }
-
-    const legacyGithubProfile = member.codingProfiles?.find(
-      (profile) => profile.platform?.toLowerCase() === 'github'
-    );
-    member.github = member.github || legacyGithubProfile?.url || '';
-    member.codingProfiles = (member.codingProfiles || []).filter(
-      (profile) => profile.platform?.toLowerCase() !== 'github'
-    );
 
     member.projects = await Project.find({ user: member._id })
       .sort({ featured: -1, updatedAt: -1 })
@@ -890,5 +814,118 @@ router.get('/profile/:username', protect, async (req, res) => {
     });
   }
 });
+
+// ---------- Self-service account deletion (non-admin only) ----------
+
+const UserBadge = require('../models/UserBadge');
+const Notification = require('../models/Notification');
+const ChallengeProgress = require('../models/ChallengeProgress');
+const DebugProgress = require('../models/DebugProgress');
+const Registration = require('../models/Registration');
+const Attendance = require('../models/Attendance');
+const { ReverseAttempt, ReverseBookmark } = require('../models/Reverse');
+const { Project: ShowcaseProject, ProjectUpdate, GuidedProgress } = require('../models/Project');
+const { ForumBookmark, ForumFollow, ForumReaction, ForumUpload } = require('../models/Forum');
+const EmailOtp = require('../models/EmailOtp');
+const PasswordResetOtp = require('../models/PasswordResetOtp');
+
+const deleteSelfAccount = async (req, res) => {
+  try {
+    if (req.user.role === 'admin') {
+      return res.status(403).json({
+        success: false,
+        message: 'Admin accounts cannot be deleted through self-service.',
+      });
+    }
+
+    const userId = req.user._id;
+    const userEmail = req.user.email;
+
+    // 1. Gather all owned media files on ImageKit
+    const mediaToDelete = [];
+    if (req.user.profileImage?.fileId) {
+      mediaToDelete.push({ fileId: req.user.profileImage.fileId });
+    }
+    if (req.user.bannerImage?.fileId) {
+      mediaToDelete.push({ fileId: req.user.bannerImage.fileId });
+    }
+    if (req.user.resume?.fileId) {
+      mediaToDelete.push({ fileId: req.user.resume.fileId });
+    }
+
+    try {
+      const [forumUploads, userProjects] = await Promise.all([
+        ForumUpload.find({ owner: userId }).select('fileId').lean(),
+        ShowcaseProject.find({ owner: userId }).select('cover screenshots').lean(),
+      ]);
+
+      forumUploads.forEach((upload) => {
+        if (upload?.fileId) mediaToDelete.push({ fileId: upload.fileId });
+      });
+
+      userProjects.forEach((proj) => {
+        if (proj?.cover?.fileId) mediaToDelete.push({ fileId: proj.cover.fileId });
+        (proj?.screenshots || []).forEach((shot) => {
+          if (shot?.fileId) mediaToDelete.push({ fileId: shot.fileId });
+        });
+      });
+
+      if (mediaToDelete.length > 0) {
+        await deleteImages(mediaToDelete);
+      }
+    } catch (mediaError) {
+      console.error('Error removing user media files:', mediaError.message);
+    }
+
+    // 2. Cascade delete dependent user documents
+    try {
+      const showcaseProjects = await ShowcaseProject.find({ owner: userId }).select('_id').lean();
+      const showcaseProjectIds = showcaseProjects.map((p) => p._id);
+
+      await Promise.allSettled([
+        Project.deleteMany({ user: userId }), // PortfolioProject (models/PortfolioProject.js)
+        UserBadge.deleteMany({ user: userId }),
+        Notification.deleteMany({ user: userId }),
+        ChallengeProgress.deleteMany({ user: userId }),
+        DebugProgress.deleteMany({ user: userId }),
+        Registration.deleteMany({ user: userId }),
+        Attendance.deleteMany({ user: userId }),
+        ReverseAttempt.deleteMany({ user: userId }),
+        ReverseBookmark.deleteMany({ user: userId }),
+        GuidedProgress.deleteMany({ user: userId }),
+        ForumBookmark.deleteMany({ user: userId }),
+        ForumFollow.deleteMany({ user: userId }),
+        ForumReaction.deleteMany({ user: userId }),
+        ForumUpload.deleteMany({ owner: userId }),
+        EmailOtp.deleteMany({ email: userEmail }),
+        PasswordResetOtp.deleteMany({ email: userEmail }),
+        showcaseProjectIds.length ? ShowcaseProject.deleteMany({ _id: { $in: showcaseProjectIds } }) : Promise.resolve(),
+        showcaseProjectIds.length ? ProjectUpdate.deleteMany({ project: { $in: showcaseProjectIds } }) : Promise.resolve(),
+      ]);
+    } catch (depsError) {
+      console.error('Error cleaning up user dependencies:', depsError.message);
+    }
+
+    // 3. Remove user account
+    await User.findByIdAndDelete(userId);
+
+    return res.json({
+      success: true,
+      message: 'Your account and owned media have been permanently deleted.',
+    });
+  } catch (error) {
+    console.error('Delete self-service account error:', error.message);
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to delete account. Please try again.',
+    });
+  }
+};
+
+// DELETE /api/users/profile
+router.delete('/profile', protect, deleteSelfAccount);
+
+// DELETE /api/users/me (alias)
+router.delete('/me', protect, deleteSelfAccount);
 
 module.exports = router;

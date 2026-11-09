@@ -14,7 +14,7 @@ export default function BroadcastOptions({ value, onChange }) {
       <label>
         <input type="checkbox" checked={value.sendEmail} onChange={set('sendEmail')} />
         <i className="bi bi-envelope" aria-hidden="true" />
-        Send to users&apos; email
+        Send to users&apos; emails
       </label>
     </fieldset>
   );

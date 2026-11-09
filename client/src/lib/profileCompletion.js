@@ -1,4 +1,7 @@
 export function calculateProfileCompletion(profile) {
+  const skills = Array.isArray(profile.skillDetails)
+    ? profile.skillDetails
+    : profile.skills;
   const checks = [
     Boolean(profile.name),
     Boolean(profile.phone),
@@ -7,7 +10,7 @@ export function calculateProfileCompletion(profile) {
     Boolean(profile.collegeName),
     Boolean(profile.department),
     Boolean(profile.yearOfStudy),
-    Array.isArray(profile.skills) && profile.skills.length > 0,
+    Array.isArray(skills) && skills.length > 0,
     Array.isArray(profile.codingProfiles) && profile.codingProfiles.length > 0,
     Array.isArray(profile.projects) && profile.projects.length > 0,
     Array.isArray(profile.achievements) && profile.achievements.length > 0,

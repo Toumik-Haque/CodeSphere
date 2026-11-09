@@ -152,39 +152,52 @@
 }
 
 .broadcast-options {
-  display: flex;
+  display: grid;
   flex: 1 0 100%;
-  flex-wrap: wrap;
-  gap: 8px 18px;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 7px;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
   margin: 8px 0 0;
-  padding: 12px 14px;
+  padding: 12px 14px 14px;
   border: 1px solid #eee1dc;
   border-radius: 11px;
   background: #fffaf8;
 }
 
 .broadcast-options legend {
+  max-width: 100%;
   padding: 0 5px;
   color: #263f57;
-  font-size: .78rem;
+  font-size: .85rem;
   font-weight: 750;
 }
 
 .broadcast-options label {
-  display: inline-flex;
+  display: flex;
+  box-sizing: border-box;
+  width: 100%;
+  min-height: 42px;
   align-items: center;
-  gap: 7px;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid #f0e5e0;
+  border-radius: 8px;
+  background: #fff;
   color: #43586b;
-  font-size: .78rem;
+  font-size: .88rem;
   font-weight: 650;
   cursor: pointer;
 }
 
 .broadcast-options input {
-  width: 15px;
-  height: 15px;
+  flex: 0 0 18px;
+  width: 18px;
+  height: 18px;
   margin: 0;
   accent-color: #d35437;
+  cursor: pointer;
 }
 
 .broadcast-options i {

@@ -773,6 +773,121 @@
   outline-offset: 3px;
 }
 
+.student-identity-card.dashboard-identity-card {
+  overflow: hidden;
+  border-color: rgba(215, 225, 235, .9);
+  border-radius: 20px;
+  background: linear-gradient(180deg, #fff 0%, #fbfcfe 100%);
+  box-shadow: 0 18px 42px rgba(24, 48, 73, .1);
+}
+
+.dashboard-identity-card .student-cover {
+  height: 142px;
+  isolation: isolate;
+  background-color: #203954;
+}
+
+.dashboard-identity-card .student-cover::after {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(10, 27, 45, .08), rgba(10, 27, 45, .56));
+  content: "";
+}
+
+.student-identity-card.dashboard-identity-card.has-cover .student-avatar {
+  width: 92px;
+  min-width: 92px;
+  max-width: 92px;
+  height: 92px;
+  min-height: 92px;
+  max-height: 92px;
+  margin-top: -43px;
+  margin-left: 18px;
+  border: 4px solid #fff;
+  background: linear-gradient(135deg, #fff0e8, #ffe2d3);
+  color: #be472c;
+  box-shadow: 0 7px 20px rgba(20, 45, 69, .2);
+}
+
+.student-identity-card.dashboard-identity-card.has-cover .student-avatar img {
+  border-radius: 50%;
+}
+
+.dashboard-identity-card.has-cover .student-identity-content {
+  padding: 8px 20px 20px;
+  text-align: left;
+}
+
+.dashboard-identity-card .student-identity-content h2 {
+  margin-bottom: 7px;
+  color: #142d45;
+  font-size: 21px;
+  font-weight: 800;
+  letter-spacing: -.025em;
+  line-height: 1.25;
+}
+
+.dashboard-identity-card .student-identity-content > p {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin-bottom: 6px;
+  color: #647589;
+  font-size: 12px;
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+
+.dashboard-identity-card .student-identity-content > p > i {
+  flex: 0 0 14px;
+  color: #91a0af;
+  font-size: 12px;
+}
+
+.dashboard-identity-card .student-member-badge {
+  margin-top: 7px;
+  padding: 7px 11px;
+  border-color: #f5dfd4;
+  background: linear-gradient(100deg, #fff1e9, #fff8f3);
+  color: #394e61;
+  font-size: 10px;
+}
+
+.dashboard-identity-card .student-identity-footer {
+  margin: 0 16px 16px;
+  padding: 12px 13px;
+  border: 1px solid #edf0f3;
+  border-radius: 11px;
+  background: #f7f9fc;
+  font-size: 11px;
+}
+
+.dashboard-identity-card .student-identity-footer span {
+  color: #748396;
+}
+
+.dashboard-identity-card .student-identity-footer span i {
+  color: #e26043;
+}
+
+.dashboard-identity-card .student-identity-footer strong {
+  color: #263f57;
+}
+
+@media (max-width: 767.98px) {
+  .student-identity-card.dashboard-identity-card.has-cover .student-avatar {
+    width: 84px;
+    min-width: 84px;
+    max-width: 84px;
+    height: 84px;
+    min-height: 84px;
+    max-height: 84px;
+    margin-top: -40px;
+    margin-left: 16px;
+  }
+}
+
 @media (max-width: 1050px) {
   :root {
     --user-sidebar-width: 220px;

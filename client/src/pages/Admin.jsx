@@ -115,12 +115,11 @@ function createUsersCsv(users) {
     ['Degree', (user) => user.degree],
     ['Department', (user) => user.department],
     ['Graduation year', (user) => user.graduationYear],
-    ['Skills', (user) => (user.skills || []).join('; ')],
-    ['Technical interests', (user) => (user.technicalInterests || []).join('; ')],
-    ['Learning goals', (user) => (user.learningGoals || []).join('; ')],
-    ['Skill levels', (user) => (user.skillDetails || [])
+    ['Skills', (user) => (user.skillDetails || [])
       .map((skill) => `${skill.name} (${skill.level})`)
       .join('; ')],
+    ['Technical interests', (user) => (user.technicalInterests || []).join('; ')],
+    ['Learning goals', (user) => (user.learningGoals || []).join('; ')],
     ['GitHub URL', (user) => user.github],
     ['LinkedIn URL', (user) => user.linkedin],
     ['Portfolio URL', (user) => user.portfolio],

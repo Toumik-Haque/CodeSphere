@@ -25,20 +25,26 @@ const profileUpload = multer({
   },
 });
 
-function handleProfileUpload(req, res, next) {
-  profileUpload.single('profileImage')(req, res, (error) => {
-    if (error) {
-      return res.status(400).json({
-        success: false,
-        message:
-          error.code === 'LIMIT_FILE_SIZE'
-            ? 'Image must be 5 MB or smaller.'
-            : error.message || 'Invalid image.',
-      });
-    }
+function handleProfileUpload(field = 'profileImage') {
+  return (req, res, next) => {
+    profileUpload.single(field)(req, res, (error) => {
+      if (error) {
+        return res.status(400).json({
+          success: false,
+          message:
+            error.code === 'LIMIT_FILE_SIZE'
+              ? 'Image must be 5 MB or smaller.'
+              : error.message || 'Invalid image.',
+        });
+      }
 
-    next();
-  });
+      if (!req.file) {
+        return res.status(400).json({ success: false, message: 'Please select an image.' });
+      }
+
+      return next();
+    });
+  };
 }
 
 module.exports = handleProfileUpload;

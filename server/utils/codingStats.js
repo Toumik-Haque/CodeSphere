@@ -198,7 +198,7 @@ async function statsFor({ platform, url }) {
   return value;
 }
 
-// Profiles from a user document: codingProfiles plus the separate github field.
+// Profiles from a user document: codingProfiles plus the canonical GitHub URL.
 async function codingStatsForUser(user) {
   const links = [...(user.codingProfiles || [])];
   if (user.github && !links.some((p) => keyFor(p.platform) === 'github')) {

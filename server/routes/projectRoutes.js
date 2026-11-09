@@ -42,7 +42,7 @@ async function uniqueSlug(title) {
   return slug;
 }
 
-const person = (u) => (u ? { id: String(u._id), name: u.name, initials: initials(u.name), avatarUrl: u.avatarUrl || '' } : null);
+const person = (u) => (u ? { id: String(u._id), name: u.name, initials: initials(u.name), avatarUrl: u.profileImage?.url || '' } : null);
 
 function card(p) {
   return {
@@ -207,7 +207,7 @@ router.post('/github/preview', protect, previewLimiter, async (req, res) => {
 router.get('/admin/queue', protect, async (req, res) => {
   if (!isReviewer(req.user)) return res.status(403).json({ message: 'Not allowed.' });
   const status = ['pending_review', 'published', 'changes_requested', 'rejected', 'archived'].includes(req.query.status) ? req.query.status : 'pending_review';
-  const items = await Project.find({ status }).populate('owner', 'name email avatarUrl').populate('guided', 'slug title')
+  const items = await Project.find({ status }).populate('owner', 'name email profileImage').populate('guided', 'slug title')
     .sort(status === 'pending_review' ? { submittedAt: 1 } : { updatedAt: -1 }).limit(100);
   const counts = { pending_review: await Project.countDocuments({ status: 'pending_review' }) };
   res.json({
@@ -315,7 +315,7 @@ router.get('/guided/:slug', optionalAuth, async (req, res) => {
   const g = await GuidedProject.findOne({ slug: String(req.params.slug), status: 'published' }).lean();
   if (!g) return res.status(404).json({ message: 'Guided project not found.' });
   const progress = req.user ? await GuidedProgress.findOne({ user: req.user._id, guided: g._id }).lean() : null;
-  const showcase = await Project.find({ guided: g._id, status: 'published', visibility: 'public' }).populate('owner', 'name avatarUrl').sort({ publishedAt: -1 }).limit(6);
+  const showcase = await Project.find({ guided: g._id, status: 'published', visibility: 'public' }).populate('owner', 'name profileImage').sort({ publishedAt: -1 }).limit(6);
   res.json({
     guided: { ...guidedCard(g, progress), prerequisites: g.prerequisites, outcomes: g.outcomes, problem: g.problem, milestones: g.milestones, starterRepo: g.starterRepo, submissionCriteria: g.submissionCriteria },
     progress: progress ? { done: progress.done, repoUrl: progress.repoUrl, demoUrl: progress.demoUrl, completedAt: progress.completedAt, project: progress.project ? String(progress.project) : null } : null,
@@ -407,7 +407,7 @@ router.post('/guided/:slug/submit', protect, writeLimiter, async (req, res) => {
 
 router.get('/mine', protect, async (req, res) => {
   const [projects, progress] = await Promise.all([
-    Project.find({ owner: req.user._id }).populate('owner', 'name avatarUrl').sort({ updatedAt: -1 }),
+    Project.find({ owner: req.user._id }).populate('owner', 'name profileImage').sort({ updatedAt: -1 }),
     GuidedProgress.find({ user: req.user._id }).populate('guided').sort({ updatedAt: -1 }),
   ]);
   res.json({
@@ -433,7 +433,7 @@ router.get('/', async (req, res) => {
   const limit = 18;
   const sort = q ? { score: { $meta: 'textScore' } } : req.query.sort === 'popular' ? { views: -1, publishedAt: -1 } : { featured: -1, publishedAt: -1 };
   const [items, total] = await Promise.all([
-    Project.find(filter).populate('owner', 'name avatarUrl').sort(sort).skip((page - 1) * limit).limit(limit),
+    Project.find(filter).populate('owner', 'name profileImage').sort(sort).skip((page - 1) * limit).limit(limit),
     Project.countDocuments(filter),
   ]);
   res.json({ items: items.map(card), total, page, pages: Math.max(1, Math.ceil(total / limit)) });
@@ -479,10 +479,10 @@ router.post('/', protect, writeLimiter, async (req, res) => {
 router.get('/edit/:id', protect, async (req, res) => {
   const project = await loadOwned(req, res);
   if (!project) return;
-  await project.populate('owner', 'name avatarUrl');
+  await project.populate('owner', 'name profileImage');
   await project.populate('guided', 'slug title');
-  await project.populate('members.user', 'name avatarUrl');
-  await project.populate('tasks.assignee', 'name avatarUrl');
+  await project.populate('members.user', 'name profileImage');
+  await project.populate('tasks.assignee', 'name profileImage');
   res.json({ project: detail(project, req.user), problems: submissionProblems(project) });
 });
 
@@ -621,7 +621,7 @@ router.get('/:id/updates', optionalAuth, async (req, res) => {
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Project not found.' });
   const project = await Project.findById(req.params.id).select('owner status members');
   if (!project || (project.status !== 'published' && !canWork(project, req.user) && !isReviewer(req.user))) return res.status(404).json({ message: 'Project not found.' });
-  const updates = await ProjectUpdate.find({ project: project._id }).populate('author', 'name avatarUrl').sort({ createdAt: -1 }).limit(50);
+  const updates = await ProjectUpdate.find({ project: project._id }).populate('author', 'name profileImage').sort({ createdAt: -1 }).limit(50);
   const me = req.user ? String(req.user._id) : '';
   res.json({
     updates: updates.map((u) => ({
@@ -668,8 +668,8 @@ router.delete('/:id/updates/:updateId', protect, async (req, res) => {
 // ---------- Project page (public when published) ----------
 
 router.get('/:slug', optionalAuth, async (req, res) => {
-  const project = await Project.findOne({ slug: String(req.params.slug) }).populate('owner', 'name avatarUrl').populate('guided', 'slug title')
-    .populate('members.user', 'name avatarUrl').populate('tasks.assignee', 'name avatarUrl');
+  const project = await Project.findOne({ slug: String(req.params.slug) }).populate('owner', 'name profileImage').populate('guided', 'slug title')
+    .populate('members.user', 'name profileImage').populate('tasks.assignee', 'name profileImage');
   const allowed = project && (project.status === 'published' || canWork(project, req.user) || memberOf(project, req.user) || isReviewer(req.user));
   if (!allowed) return res.status(404).json({ message: 'Project not found.' });
   if (project.status === 'published' && !isOwner(project, req.user)) {
