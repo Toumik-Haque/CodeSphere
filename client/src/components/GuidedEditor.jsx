@@ -6,14 +6,14 @@ import BroadcastOptions from './BroadcastOptions';
 
 const EMPTY = {
   title: '', slug: '', summary: '', level: 'Beginner', category: 'web', estHours: 8, order: 100, status: 'published',
-  prerequisites: '', stack: '', outcomes: '', problem: '', starterRepo: '', submissionCriteria: '',
+  tags: '', prerequisites: '', stack: '', outcomes: '', problem: '', starterRepo: '', submissionCriteria: '',
   milestones: [{ title: '', description: '', tasks: '', resources: [] }],
 };
 const lines = (a) => (a || []).join('\n');
 const toForm = (g) => ({
   ...EMPTY,
   ...g,
-  prerequisites: lines(g.prerequisites), stack: lines(g.stack), outcomes: lines(g.outcomes), submissionCriteria: lines(g.submissionCriteria),
+  tags: lines(g.tags), prerequisites: lines(g.prerequisites), stack: lines(g.stack), outcomes: lines(g.outcomes), submissionCriteria: lines(g.submissionCriteria),
   milestones: g.milestones.map((m) => ({ ...m, tasks: lines(m.tasks), resources: m.resources || [] })),
 });
 
@@ -85,6 +85,7 @@ export default function GuidedEditor() {
             <label className="pe-field"><span>Prerequisites (one per line)</span><textarea rows={3} value={form.prerequisites} onChange={set('prerequisites')} /></label>
             <label className="pe-field"><span>Tech stack (one per line)</span><textarea rows={3} value={form.stack} onChange={set('stack')} /></label>
             <label className="pe-field"><span>Learning outcomes (one per line)</span><textarea rows={3} value={form.outcomes} onChange={set('outcomes')} /></label>
+            <label className="pe-field"><span>Search tags (one per line)</span><textarea rows={3} value={form.tags} onChange={set('tags')} /></label>
             <label className="pe-field"><span>Submission criteria (one per line)</span><textarea rows={3} value={form.submissionCriteria} onChange={set('submissionCriteria')} /></label>
           </div>
 

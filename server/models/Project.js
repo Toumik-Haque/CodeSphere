@@ -150,6 +150,7 @@ const guidedSchema = new Schema({
   level: { type: String, enum: LEVELS, default: 'Beginner' },
   category: { type: String, enum: CATEGORIES, default: 'web' },
   estHours: { type: Number, default: 10 },
+  tags: [String], // lowercase search keywords
   prerequisites: [String],
   stack: [String],
   outcomes: [String],
