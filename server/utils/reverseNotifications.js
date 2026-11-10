@@ -14,7 +14,8 @@ async function notifyLiveChallenges() {
       body: challenge.statement.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').slice(0, 400),
       link: `/reverse-coding/${challenge.slug}`,
       sendNotification: challenge.sendNotification,
-      sendEmail: challenge.sendEmail,
+      sendEmail: false,
+      notificationType: 'reverse-new',
     });
     challenge.notifiedAt = new Date();
     await challenge.save();

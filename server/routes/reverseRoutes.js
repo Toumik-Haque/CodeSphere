@@ -424,7 +424,7 @@ router.post('/admin/:id/publish', protect, editorOnly, async (req, res) => {
     const wasLive = challenge.status === 'published';
     challenge.status = 'published';
     challenge.publishedAt = publishAt;
-    Object.assign(challenge, getBroadcastOptions(req.body));
+    challenge.sendNotification = getBroadcastOptions(req.body).sendNotification;
     if (!wasLive) challenge.notifiedAt = null;
     challenge.updatedBy = req.user._id;
     await challenge.save();

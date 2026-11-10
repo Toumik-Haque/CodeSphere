@@ -735,7 +735,6 @@ export default function Admin() {
       formData.append('linkedinLink', coreMemberForm.linkedinLink.trim());
       formData.append('instagramLink', coreMemberForm.instagramLink.trim());
       formData.append('sendNotification', String(memberBroadcastOptions.sendNotification));
-      formData.append('sendEmail', String(memberBroadcastOptions.sendEmail));
 
       if (coreMemberImage) {
         formData.append('image', coreMemberImage);
@@ -2447,7 +2446,7 @@ export default function Admin() {
 
                       {!editingCoreMemberId && (
                         <div className="admin-form-field admin-field-full">
-                          <BroadcastOptions value={memberBroadcastOptions} onChange={setMemberBroadcastOptions} />
+                          <BroadcastOptions value={memberBroadcastOptions} onChange={setMemberBroadcastOptions} allowEmail={false} />
                         </div>
                       )}
                       <div className="admin-form-actions admin-field-full">

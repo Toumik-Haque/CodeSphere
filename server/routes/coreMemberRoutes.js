@@ -219,6 +219,7 @@ router.post(
         body: member.role,
         link: '/team',
         ...getBroadcastOptions(req.body),
+        sendEmail: false,
       });
 
       return res.status(201).json({

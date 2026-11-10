@@ -7,11 +7,16 @@
 const crypto = require('crypto');
 const User = require('../models/User');
 const { NewsItem } = require('../models/News');
+const {
+  escapeHtml,
+  safeUrl,
+  siteUrl,
+  apiUrl,
+  renderEmail,
+  preferencesUrl,
+} = require('./emailTemplates');
 
 const BATCH_SIZE = 500; // recipients per Brevo request (messageVersions)
-
-const siteUrl = () => (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
-const apiUrl = () => (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}/api`).replace(/\/+$/, '');
 
 function isEmailConfigured() {
   return Boolean(process.env.BREVO_API_KEY && process.env.BREVO_SENDER_EMAIL);
@@ -28,19 +33,14 @@ function verifyUnsubscribe(userId, token) {
     && crypto.timingSafeEqual(Buffer.from(token), Buffer.from(expected));
 }
 
-const escape = (text) => String(text ?? '')
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
-
-const safeUrl = (url) => (/^https?:\/\//i.test(url || '') ? escape(url) : '#');
-
 function storyHtml(item, top = false) {
   return `
     <tr><td style="padding:${top ? '18px' : '14px'} 0;border-bottom:1px solid #e6edf4">
       ${top ? '<div style="color:#f05a36;font-size:12px;font-weight:700;letter-spacing:1px">TOP STORY</div>' : ''}
-      <a href="${safeUrl(item.canonicalUrl)}" style="color:#10243a;font-size:${top ? '20px' : '16px'};font-weight:700;text-decoration:none">${escape(item.title)}</a>
-      <div style="color:#617287;font-size:12px;margin:4px 0">${escape(item.sourceName)}${item.publishedAt ? ` · ${new Date(item.publishedAt).toDateString()}` : ''}</div>
-      ${item.editorSummary ? `<p style="color:#26384b;font-size:14px;margin:6px 0">${escape(item.editorSummary)}</p>` : ''}
-      ${top && item.whyItMatters ? `<p style="background:#fff8e6;color:#5c4300;font-size:14px;padding:10px;border-radius:8px"><b>Why developers should care:</b> ${escape(item.whyItMatters)}</p>` : ''}
+      <a href="${safeUrl(item.canonicalUrl)}" style="color:#10243a;font-size:${top ? '20px' : '16px'};font-weight:700;text-decoration:none">${escapeHtml(item.title)}</a>
+      <div style="color:#617287;font-size:12px;margin:4px 0">${escapeHtml(item.sourceName)}${item.publishedAt ? ` · ${new Date(item.publishedAt).toDateString()}` : ''}</div>
+      ${item.editorSummary ? `<p style="color:#26384b;font-size:14px;margin:6px 0">${escapeHtml(item.editorSummary)}</p>` : ''}
+      ${top && item.whyItMatters ? `<p style="background:#fff8e6;color:#5c4300;font-size:14px;padding:10px;border-radius:8px"><b>Why developers should care:</b> ${escapeHtml(item.whyItMatters)}</p>` : ''}
     </td></tr>`;
 }
 
@@ -50,27 +50,25 @@ function digestEmail(digest, items, user) {
   const quick = digest.items.map((id) => byId.get(String(id))).filter(Boolean);
   const link = `${siteUrl()}/news/${encodeURIComponent(digest.slug)}`;
   const unsubscribe = `${apiUrl()}/newsletter/unsubscribe?u=${user._id}&t=${unsubscribeToken(user._id)}`;
-
-  const html = `<!doctype html><html><body style="margin:0;background:#f4f8fc;font-family:Arial,sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
-    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:24px">
-      <tr><td>
-        <div style="color:#f05a36;font-size:12px;font-weight:700;letter-spacing:1px">CODESPHERE TECH BRIEF</div>
-        <h1 style="color:#10243a;font-size:24px;margin:8px 0">${escape(digest.title)}</h1>
-        ${digest.intro ? `<p style="color:#34465a;font-size:15px">${escape(digest.intro)}</p>` : ''}
-      </td></tr>
+  const body = `
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">
       ${top ? storyHtml(top, true) : ''}
       ${quick.map((item) => storyHtml(item)).join('')}
-      ${digest.communityQuestion ? `<tr><td style="padding:16px 0"><b style="color:#10243a">Community question:</b> <span style="color:#34465a">${escape(digest.communityQuestion)}</span></td></tr>` : ''}
-      <tr><td style="padding:18px 0" align="center">
-        <a href="${safeUrl(link)}" style="background:#f05a36;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:700">Read it on CodeSphere</a>
-      </td></tr>
-      <tr><td style="color:#8a99a8;font-size:12px;text-align:center">
-        You get this because you subscribed to the Tech Brief.
-        <a href="${safeUrl(unsubscribe)}" style="color:#8a99a8">Unsubscribe</a>
-      </td></tr>
     </table>
-  </td></tr></table></body></html>`;
+    ${digest.communityQuestion ? `<div style="margin-top:18px;padding:14px 16px;border-radius:11px;background:#f3f7fb;color:#34465a;font-size:14px;line-height:1.7"><strong style="color:#10243a">Community question:</strong> ${escapeHtml(digest.communityQuestion)}</div>` : ''}`;
+
+  const html = renderEmail({
+    preheader: digest.intro || digest.title,
+    eyebrow: 'CODESPHERE TECH BRIEF',
+    title: digest.title,
+    intro: digest.intro,
+    body,
+    ctaLabel: 'Read it on CodeSphere',
+    ctaUrl: link,
+    footerNote: 'You get this because you subscribed to the Weekly Tech Brief.',
+    unsubscribeUrl: unsubscribe,
+    preferencesUrl: preferencesUrl(),
+  });
 
   const text = [
     `CodeSphere Tech Brief: ${digest.title}`,
@@ -136,27 +134,22 @@ function dailyEmail(brief, items, user) {
   const date = new Date(`${brief.day}T00:00:00+05:30`).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' });
   const rows = items.map((item, i) => `
     <tr><td style="padding:14px 0;border-bottom:1px solid #e6edf4">
-      <div style="color:#f05a36;font-size:12px;font-weight:700">${i + 1}. ${escape(item.sourceName)}</div>
-      <a href="${safeUrl(item.url)}" style="color:#10243a;font-size:${i === 0 ? '19px' : '16px'};font-weight:700;text-decoration:none">${escape(item.title)}</a>
-      ${item.summary ? `<p style="color:#34465a;font-size:14px;margin:6px 0 0">${escape(item.summary.slice(0, 200))}</p>` : ''}
+      <div style="color:#f05a36;font-size:12px;font-weight:700">${i + 1}. ${escapeHtml(item.sourceName)}</div>
+      <a href="${safeUrl(item.url)}" style="color:#10243a;font-size:${i === 0 ? '19px' : '16px'};font-weight:700;text-decoration:none">${escapeHtml(item.title)}</a>
+      ${item.summary ? `<p style="color:#34465a;font-size:14px;margin:6px 0 0">${escapeHtml(item.summary.slice(0, 200))}</p>` : ''}
     </td></tr>`).join('');
-  const html = `<!doctype html><html><body style="margin:0;background:#f4f8fc;font-family:Arial,sans-serif">
-  <table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center" style="padding:24px 12px">
-    <table width="600" cellpadding="0" cellspacing="0" style="max-width:600px;background:#ffffff;border-radius:16px;padding:24px">
-      <tr><td>
-        <div style="color:#f05a36;font-size:12px;font-weight:700;letter-spacing:1px">TODAY IN TECH · CODESPHERE</div>
-        <h1 style="color:#10243a;font-size:22px;margin:8px 0">${escape(date)}</h1>
-        <p style="color:#34465a;font-size:14px;margin:0">The ${items.length} stories developers are talking about today.</p>
-      </td></tr>
-      ${rows}
-      <tr><td style="padding:18px 0" align="center">
-        <a href="${safeUrl(link)}" style="background:#f05a36;color:#fff;padding:12px 22px;border-radius:10px;text-decoration:none;font-weight:700">See all of today's news</a>
-      </td></tr>
-      <tr><td style="color:#8a99a8;font-size:12px;text-align:center">
-        You get this because you turned on the daily email. <a href="${safeUrl(unsubscribe)}" style="color:#8a99a8">Stop daily emails</a>
-      </td></tr>
-    </table>
-  </td></tr></table></body></html>`;
+  const html = renderEmail({
+    preheader: `The ${items.length} stories developers are talking about today.`,
+    eyebrow: 'TODAY IN TECH · CODESPHERE',
+    title: date,
+    intro: `The ${items.length} stories developers are talking about today.`,
+    body: `<table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0">${rows}</table>`,
+    ctaLabel: 'See all of today\'s news',
+    ctaUrl: link,
+    footerNote: 'You get this because you turned on the daily email.',
+    unsubscribeUrl: unsubscribe,
+    preferencesUrl: preferencesUrl(),
+  });
   const text = [`Today in Tech: ${date}`, ...items.map((i, n) => `${n + 1}. ${i.title} (${i.sourceName}) ${i.url}`), `More: ${link}`, `Stop daily emails: ${unsubscribe}`].join('\n\n');
   return { html, text };
 }

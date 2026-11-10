@@ -4,6 +4,7 @@ const multer = require('multer');
 const { toFile } = require('@imagekit/nodejs');
 const imagekit = require('../config/imagekit');
 const Announcement = require('../models/Announcement');
+const User = require('../models/User');
 const { protect, adminOnly } = require('../middleware/authMiddleware');
 const sanitizeDescription = require('../utils/sanitizeDescription');
 const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
@@ -84,6 +85,23 @@ function escapeHtml(value) {
     .replace(/'/g, '&#39;');
 }
 
+function parseAudience(raw) {
+  const tokens = String(raw || '').split(/[\s,]+/).filter(Boolean);
+  if (!tokens.length || tokens.some((token) => token.toLowerCase() === '@all')) {
+    return { mode: 'all', usernames: [], label: '@all' };
+  }
+  const invalid = tokens.find((token) => !/^@[a-z0-9]+(?:-[a-z0-9]+)*$/i.test(token));
+  if (invalid) {
+    return { error: `"${invalid}" is not a valid @username. Use @all or comma-separated @usernames.` };
+  }
+  const usernames = [...new Set(tokens.map((token) => token.slice(1).toLowerCase()))];
+  return {
+    mode: 'selected',
+    usernames,
+    label: usernames.map((username) => `@${username}`).join(', '),
+  };
+}
+
 async function removeUploadedFiles(files) {
   await Promise.all(files.map((file) => imagekit.files.delete(file.fileId)
     .catch((error) => console.error('Announcement upload cleanup error:', error.message))));
@@ -106,6 +124,24 @@ router.post('/', protect, adminOnly, handleMediaUpload, async (req, res) => {
   const body = sanitizeDescription(String(req.body.body || ''));
   if (!title || title.length > 120 || !plainText(body) || body.length > 30000 || plainText(body).length > 5000) {
     return res.status(400).json({ message: 'Add a title and update text (up to 5,000 characters).' });
+  }
+
+  const audience = parseAudience(req.body.sentTo);
+  if (audience.error) return res.status(400).json({ message: audience.error });
+
+  let recipientUserIds = null;
+  if (audience.mode === 'selected') {
+    const recipients = await User.find({ role: 'user', username: { $in: audience.usernames } })
+      .select('_id username')
+      .lean();
+    const found = new Set(recipients.map((user) => user.username));
+    const missing = audience.usernames.filter((username) => !found.has(username));
+    if (missing.length) {
+      return res.status(400).json({
+        message: `Could not find ${missing.map((username) => `@${username}`).join(', ')}.`,
+      });
+    }
+    recipientUserIds = recipients.map((user) => user._id);
   }
 
   const uploaded = [];
@@ -135,6 +171,8 @@ router.post('/', protect, adminOnly, handleMediaUpload, async (req, res) => {
       title,
       body,
       attachments: uploaded,
+      audience: audience.label,
+      recipientUsernames: audience.usernames,
       publishedBy: req.user._id,
     });
 
@@ -149,25 +187,31 @@ router.post('/', protect, adminOnly, handleMediaUpload, async (req, res) => {
       body: excerpt,
       htmlBody,
       link: `/updates/${announcement._id}`,
+      recipientUserIds,
       ...broadcastOptions,
     });
 
-    return res.status(201).json({
-      message: !broadcastOptions.sendNotification && !broadcastOptions.sendEmail
-        ? 'Update published without sending notifications or email.'
-        : !broadcastOptions.sendEmail
-          ? 'Update published. In-app notifications sent.'
-          : delivery.emails.skipped
+    const baseMessage = !broadcastOptions.sendNotification && !broadcastOptions.sendEmail
+      ? 'Update published without sending notifications or email.'
+      : !broadcastOptions.sendEmail
+        ? 'Update published. In-app notifications sent.'
+        : delivery.emails.skipped
+          ? !broadcastOptions.sendNotification
+            ? 'Update published. Email delivery is not configured.'
+            : 'Update published and in-app alerts sent. Email delivery is not configured.'
+          : delivery.emails.attempted === 0
             ? !broadcastOptions.sendNotification
-              ? 'Update published. Email delivery is not configured.'
-              : 'Update published and in-app alerts sent. Email delivery is not configured.'
-            : delivery.emails.attempted === 0
-              ? !broadcastOptions.sendNotification
-                ? 'Update published. No members currently receive update emails.'
-                : 'Update published and members notified in-app. No members currently receive update emails.'
-              : `Update published. Email sent to ${delivery.emails.sent} of ${delivery.emails.attempted} members.`,
+              ? 'Update published. No members currently receive update emails.'
+              : 'Update published and members notified in-app. No members currently receive update emails.'
+            : `Update published. Email sent to ${delivery.emails.sent} of ${delivery.emails.attempted} members.`;
+    const targetNote = audience.mode === 'selected'
+      ? ` Targeted to ${recipientUserIds.length} member${recipientUserIds.length === 1 ? '' : 's'}.`
+      : '';
+
+    return res.status(201).json({
+      message: `${baseMessage}${targetNote}`,
       announcement: { id: String(announcement._id), title: announcement.title },
-      delivery: delivery.emails,
+      delivery: { ...delivery.emails, targeted: delivery.targeted, audience: audience.label },
     });
   } catch (error) {
     if (uploaded.length) await removeUploadedFiles(uploaded);

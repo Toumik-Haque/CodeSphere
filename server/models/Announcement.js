@@ -10,6 +10,8 @@ const announcementSchema = new mongoose.Schema(
       url: { type: String, required: true },
       fileId: { type: String, default: '' },
     }],
+    audience: { type: String, default: '@all', maxlength: 500 },
+    recipientUsernames: [{ type: String, lowercase: true, trim: true }],
     publishedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
     publishedAt: { type: Date, default: Date.now, index: true },
   },

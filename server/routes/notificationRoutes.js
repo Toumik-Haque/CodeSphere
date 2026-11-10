@@ -20,7 +20,6 @@ router.get('/', protect, async (req, res) => {
       unread,
       muted: req.user.mutedNotifications || [],
       mutable: MUTABLE_TYPES,
-      updateEmailsOptOut: Boolean(req.user.updateEmailsOptOut),
     });
   } catch (error) {
     console.error('Notifications error:', error);
@@ -43,20 +42,16 @@ router.post('/read', protect, async (req, res) => {
   }
 });
 
-// PUT /api/notifications/preferences { muted?: [], updateEmailsOptOut?: boolean }.
+// PUT /api/notifications/preferences { muted?: [] }.
 router.put('/preferences', protect, async (req, res) => {
   try {
     const set = {};
     if (Array.isArray(req.body.muted)) {
       set.mutedNotifications = req.body.muted.filter((t) => MUTABLE_TYPES.includes(t));
     }
-    if (typeof req.body.updateEmailsOptOut === 'boolean') {
-      set.updateEmailsOptOut = req.body.updateEmailsOptOut;
-    }
     await User.updateOne({ _id: req.user._id }, { $set: set });
     res.json({
       muted: set.mutedNotifications || req.user.mutedNotifications || [],
-      updateEmailsOptOut: set.updateEmailsOptOut ?? Boolean(req.user.updateEmailsOptOut),
     });
   } catch (error) {
     console.error('Notifications prefs error:', error);

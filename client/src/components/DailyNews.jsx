@@ -89,7 +89,7 @@ export function DailyEmailToggle() {
         <i className={`bi ${prefs.daily ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" /> Today in Tech <small>daily, 8 AM</small>
       </button>
       <button type="button" className={prefs.subscribed ? 'on' : ''} aria-pressed={prefs.subscribed} disabled={saving} onClick={() => toggle('subscribed')}>
-        <i className={`bi ${prefs.subscribed ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" /> Tech Brief <small>weekly</small>
+        <i className={`bi ${prefs.subscribed ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" /> Weekly Tech Brief
       </button>
     </div>
   );

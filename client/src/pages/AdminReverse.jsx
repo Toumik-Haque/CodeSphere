@@ -277,7 +277,7 @@ export default function AdminReverse() {
                 {editingId && (
                   <>
                     <button type="button" className="rc-run" onClick={() => run('validate')} disabled={!data?.judgeReady}><i className="bi bi-patch-check" aria-hidden="true" /> Validate</button>
-                    <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
+                    <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} allowEmail={false} />
                     <input type="datetime-local" value={publishAt} onChange={(e) => setPublishAt(e.target.value)} aria-label="Publish at (optional)" />
                     <button type="button" className="rc-submit" onClick={() => run('publish', publishAt ? { publishAt: new Date(publishAt).toISOString() } : {}, publishAt ? 'Scheduled.' : 'Published.')} disabled={!current?.validatedAt}>
                       <i className="bi bi-broadcast" aria-hidden="true" /> {publishAt ? 'Schedule' : 'Publish now'}

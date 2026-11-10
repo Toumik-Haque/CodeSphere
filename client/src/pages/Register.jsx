@@ -35,7 +35,7 @@ export default function Register() {
   if (user) {
     return (
       <Navigate
-        to={user.role === 'admin' ? '/admin' : '/profile'}
+        to={user.role === 'admin' ? '/admin' : '/user'}
         replace
       />
     );
@@ -129,7 +129,7 @@ export default function Register() {
         yearOfStudy
       );
 
-      navigate('/profile', { replace: true });
+      navigate('/user', { replace: true });
     } catch (err) {
       setError(err.message || 'Unable to create your account.');
     } finally {
