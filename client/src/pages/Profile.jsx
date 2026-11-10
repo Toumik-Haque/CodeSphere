@@ -6,6 +6,7 @@ import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
 import BadgeLeaderboard from '../components/BadgeLeaderboard';
+import EmailPreferences from '../components/EmailPreferences';
 import '../css/Profile.css';
 import { calculateProfileCompletion } from '../lib/profileCompletion';
 
@@ -198,7 +199,7 @@ const sectionConfig = [
       { name: 'title', label: 'Project title', placeholder: 'e.g. Student Management System', required: true },
       { name: 'type', label: 'Project type', type: 'select', options: ['Web Development', 'App Development', 'AI / ML', 'Data Science', 'Competitive Programming', 'Other'] },
       { name: 'technologies', label: 'Technologies used', placeholder: 'Java, React, MongoDB' },
-      { name: 'github', label: 'GitHub repository', type: 'url', placeholder: 'https://github.com/...' },
+      { name: 'github', label: 'Source code or git repo', type: 'url', placeholder: 'https://github.com/...' },
       { name: 'demo', label: 'Live demo (optional)', type: 'url', placeholder: 'https://...' },
       { name: 'status', label: 'Project status', type: 'select', options: ['Completed', 'In Progress', 'Planning'] },
       { name: 'featured', label: 'Feature this project on my profile', type: 'checkbox', full: true },
@@ -1201,9 +1202,9 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
                           <div className="profile-entry-links">
                             {[
                               ['Profile', item.url],
-                              ['GitHub', item.github],
-                              ['Demo', item.demo],
-                              ['Proof', item.link],
+                              ['Source Code', item.github],
+                              ['Live View', item.demo],
+                              ['Checkout', item.link],
                             ].filter(([, url]) => url).map(([label, url]) => (
                               <a key={label} href={url} target="_blank" rel="noreferrer">
                                 {label} <i className="bi bi-box-arrow-up-right" />
@@ -1993,6 +1994,10 @@ export default function Profile({
                       />
                     ))}
                   </section>
+
+                  {!preview && currentUser?.role !== 'admin' && (
+                    <EmailPreferences email={currentUser?.email || ''} />
+                  )}
 
                   {/* Self-service account deletion control - hidden for admins */}
                   {currentUser?.role !== 'admin' && (

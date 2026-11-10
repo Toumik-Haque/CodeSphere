@@ -1864,6 +1864,190 @@
 .student-identity-card.has-cover .student-identity-content { padding-top: 9px; }
 
 /* =========================================
+   EMAIL PREFERENCES
+========================================= */
+
+.email-preferences-card {
+  margin-top: 24px;
+}
+
+.email-preferences-card .profile-section-icon {
+  border-radius: 12px;
+  background: var(--profile-peach);
+  color: var(--profile-orange);
+}
+
+.email-preferences-address {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+  padding: 11px 14px;
+  border: 1px solid var(--profile-border);
+  border-radius: 11px;
+  background: var(--profile-bg);
+  color: var(--profile-muted);
+  font-size: 12px;
+}
+
+.email-preferences-address strong {
+  color: var(--profile-navy);
+  font-size: 13px;
+}
+
+.email-preferences-list {
+  display: grid;
+  gap: 10px;
+}
+
+.email-preference-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 14px;
+  border: 1px solid var(--profile-border);
+  border-radius: 12px;
+  background: var(--profile-white);
+  cursor: pointer;
+  transition: border-color 0.18s ease, background 0.18s ease;
+}
+
+.email-preference-row:hover {
+  border-color: #f0c4b4;
+  background: var(--profile-peach-soft);
+}
+
+.email-preference-icon {
+  display: grid;
+  width: 38px;
+  height: 38px;
+  flex: 0 0 38px;
+  place-items: center;
+  border-radius: 10px;
+  background: var(--profile-peach);
+  color: var(--profile-orange);
+  font-size: 17px;
+}
+
+.email-preference-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.email-preference-copy strong {
+  color: var(--profile-navy);
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.email-preference-copy small {
+  color: var(--profile-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.email-preference-switch {
+  position: relative;
+  display: inline-flex;
+  width: 44px;
+  height: 24px;
+  flex: 0 0 44px;
+}
+
+.email-preference-switch input {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.email-preference-switch > span {
+  width: 100%;
+  height: 100%;
+  border-radius: 999px;
+  background: #d9e1e8;
+  transition: background 0.2s ease;
+}
+
+.email-preference-switch > span::after {
+  display: block;
+  width: 18px;
+  height: 18px;
+  margin: 3px;
+  border-radius: 50%;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(21, 54, 83, 0.24);
+  content: "";
+  transition: transform 0.2s ease;
+}
+
+.email-preference-switch input:checked + span {
+  background: var(--profile-orange);
+}
+
+.email-preference-switch input:checked + span::after {
+  transform: translateX(20px);
+}
+
+.email-preference-switch input:focus-visible + span {
+  outline: 3px solid rgba(223, 84, 47, 0.28);
+  outline-offset: 2px;
+}
+
+.email-preference-switch input:disabled + span {
+  opacity: 0.65;
+}
+
+.email-preferences-feedback {
+  margin: 12px 0 0;
+  color: #16794c;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.email-preferences-feedback.is-error {
+  color: var(--profile-danger);
+}
+
+.email-preferences-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 13px;
+  border-top: 1px dashed var(--profile-border);
+  color: var(--profile-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.email-preferences-note i {
+  margin-top: 1px;
+  color: var(--profile-navy);
+}
+
+@media (max-width: 640px) {
+  .email-preference-row {
+    align-items: flex-start;
+    padding: 12px;
+  }
+
+  .email-preference-icon {
+    width: 34px;
+    height: 34px;
+    flex-basis: 34px;
+  }
+}
+
+/* =========================================
    DANGER ZONE (ACCOUNT DELETION)
 ========================================= */
 

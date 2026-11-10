@@ -10,6 +10,7 @@ const PasswordResetOtp = require('../models/PasswordResetOtp');
 const { protect } = require('../middleware/authMiddleware');
 const { generateUniqueUsername } = require('../utils/username');
 const { findAccountByEmail } = require('../utils/accounts');
+const { renderOtpEmail } = require('../utils/emailTemplates');
 
 const router = express.Router();
 
@@ -52,253 +53,6 @@ function isValidEmail(email) {
 
 
 // ============================================
-// SHARED MODERN CODESPHERE OTP EMAIL TEMPLATE
-// ============================================
-
-function buildOtpEmailHtml({
-  title,
-  subtitle,
-  otp,
-  description,
-  securityMessage,
-}) {
-  return `
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>${title}</title>
-</head>
-
-<body style="
-  margin: 0;
-  padding: 0;
-  background-color: #F3F7FB;
-  font-family: Arial, Helvetica, sans-serif;
-  color: #153653;
-">
-
-  <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-    border="0" style="background-color: #F3F7FB; padding: 35px 12px;">
-
-    <tr>
-      <td align="center">
-
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
-          border="0" style="
-            max-width: 560px;
-            background-color: #FFFFFF;
-            border-radius: 18px;
-            overflow: hidden;
-            border: 1px solid #E5EDF4;
-          ">
-
-          <!-- Brand Header -->
-          <tr>
-            <td align="center" style="
-              padding: 30px 25px;
-              background-color: #153653;
-            ">
-
-              <div style="
-                color: #FFFFFF;
-                font-size: 27px;
-                font-weight: 800;
-                letter-spacing: -1px;
-              ">
-                Code<span style="color: #FF8568;">Sphere</span>
-              </div>
-
-              <div style="
-                margin-top: 8px;
-                color: #D5E6F2;
-                font-size: 10px;
-                font-weight: 600;
-                letter-spacing: 3px;
-              ">
-                LEARN · BUILD · CONNECT
-              </div>
-
-            </td>
-          </tr>
-
-          <!-- Main Content -->
-          <tr>
-            <td style="padding: 38px 32px 20px;">
-
-              <div style="
-                display: inline-block;
-                padding: 7px 13px;
-                border-radius: 30px;
-                background-color: #FFF0EB;
-                color: #D94324;
-                font-size: 10px;
-                font-weight: 800;
-                letter-spacing: 1.4px;
-              ">
-                ${subtitle}
-              </div>
-
-              <h1 style="
-                margin: 20px 0 12px;
-                color: #153653;
-                font-size: 26px;
-                line-height: 1.3;
-                letter-spacing: -0.7px;
-              ">
-                ${title}
-              </h1>
-
-              <p style="
-                margin: 0;
-                color: #52677A;
-                font-size: 15px;
-                line-height: 1.8;
-              ">
-                ${description}
-              </p>
-
-              <!-- OTP Box -->
-              <table role="presentation" width="100%" cellspacing="0"
-                cellpadding="0" border="0" style="margin: 28px 0;">
-
-                <tr>
-                  <td align="center" style="
-                    padding: 25px 15px;
-                    background-color: #FFF5F1;
-                    border: 1px solid #F9D7CC;
-                    border-radius: 14px;
-                  ">
-
-                    <div style="
-                      margin-bottom: 12px;
-                      color: #A94A35;
-                      font-size: 10px;
-                      font-weight: 800;
-                      letter-spacing: 2px;
-                    ">
-                      YOUR ONE-TIME PASSWORD
-                    </div>
-
-                    <div style="
-                      color: #153653;
-                      font-size: 34px;
-                      font-weight: 800;
-                      letter-spacing: 9px;
-                      line-height: 1.4;
-                    ">
-                      ${otp}
-                    </div>
-
-                    <div style="
-                      margin-top: 12px;
-                      color: #7B8794;
-                      font-size: 11px;
-                    ">
-                      Enter this code in CodeSphere
-                    </div>
-
-                  </td>
-                </tr>
-              </table>
-
-              <!-- Expiry Notice -->
-              <table role="presentation" width="100%" cellspacing="0"
-                cellpadding="0" border="0">
-
-                <tr>
-                  <td width="34" valign="top" style="padding-top: 2px;">
-
-                    <div style="
-                      width: 25px;
-                      height: 25px;
-                      border-radius: 50%;
-                      background-color: #FFF0EB;
-                      color: #D94324;
-                      text-align: center;
-                      line-height: 25px;
-                      font-size: 14px;
-                      font-weight: bold;
-                    ">
-                      !
-                    </div>
-
-                  </td>
-
-                  <td style="
-                    color: #52677A;
-                    font-size: 13px;
-                    line-height: 1.7;
-                  ">
-                    This code expires in
-                    <strong style="color: #D94324;">
-                      ${OTP_EXPIRY_MINUTES} minutes
-                    </strong>.
-                    Please use it before it expires.
-                  </td>
-                </tr>
-
-              </table>
-
-              <!-- Security Message -->
-              <div style="
-                margin-top: 25px;
-                padding-top: 20px;
-                border-top: 1px solid #EAF0F5;
-                color: #7B8794;
-                font-size: 12px;
-                line-height: 1.8;
-              ">
-                ${securityMessage}
-              </div>
-
-            </td>
-          </tr>
-
-          <!-- Footer -->
-          <tr>
-            <td align="center" style="
-              padding: 22px 25px;
-              background-color: #F8FAFC;
-              border-top: 1px solid #EAF0F5;
-            ">
-
-              <div style="
-                color: #153653;
-                font-size: 13px;
-                font-weight: 800;
-              ">
-                Code<span style="color: #F05A36;">Sphere</span>
-              </div>
-
-              <p style="
-                margin: 7px 0 0;
-                color: #8996A5;
-                font-size: 11px;
-                line-height: 1.6;
-              ">
-                Learn. Build. Connect.<br />
-                This is an automated email. Please do not reply.
-              </p>
-
-            </td>
-          </tr>
-
-        </table>
-
-      </td>
-    </tr>
-
-  </table>
-
-</body>
-</html>
-  `;
-}
-
-
-// ============================================
 // SEND REGISTRATION OTP EMAIL
 // ============================================
 
@@ -325,8 +79,9 @@ async function sendOtpEmail(email, otp) {
         `It expires in ${OTP_EXPIRY_MINUTES} minutes. ` +
         'If you did not request this code, you can ignore this email.',
 
-      htmlContent: buildOtpEmailHtml({
+      htmlContent: renderOtpEmail({
         title: 'Verify your email address.',
+        expiryMinutes: OTP_EXPIRY_MINUTES,
         subtitle: 'EMAIL VERIFICATION',
         otp,
 
@@ -376,8 +131,9 @@ async function sendPasswordResetEmail(email, otp) {
         `It expires in ${OTP_EXPIRY_MINUTES} minutes. ` +
         'If you did not request a password reset, you can ignore this email.',
 
-      htmlContent: buildOtpEmailHtml({
+      htmlContent: renderOtpEmail({
         title: 'Reset your password.',
+        expiryMinutes: OTP_EXPIRY_MINUTES,
         subtitle: 'PASSWORD RESET',
         otp,
 

@@ -2,7 +2,6 @@
 // items as *candidates* for editors to review. Nothing is published here.
 
 const sanitizeHtml = require('sanitize-html');
-const User = require('../models/User');
 const { NewsSource, NewsItem, NewsDigest, NewsFetchLog } = require('../models/News');
 const { NEWS_LIMITS } = require('../data/news');
 const { broadcastUpdate } = require('./broadcast');
@@ -193,14 +192,13 @@ async function notifyLiveDigests() {
   const due = await NewsDigest.find({ status: 'published', publishedAt: { $lte: new Date() }, notifiedAt: null });
   if (!due.length) return;
   for (const digest of due) {
-    const subscribers = await User.find({ role: 'user', newsletterOptIn: true }).select('_id').lean();
     await broadcastUpdate({
       title: `This week's CodeSphere Tech Brief is ready: ${digest.title}`,
       body: digest.intro,
       link: `/news/${digest.slug}`,
-      emailExcludeUserIds: subscribers.map((user) => user._id),
       sendNotification: digest.sendNotification,
-      sendEmail: digest.sendEmail,
+      sendEmail: false,
+      notificationType: 'news-digest',
     });
     digest.notifiedAt = new Date();
     await digest.save();

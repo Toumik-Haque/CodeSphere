@@ -26,6 +26,7 @@ const TYPE_ICONS = {
 };
 
 const MUTE_LABELS = {
+  announcement: 'Community updates & announcements',
   'forum-reply': 'Replies to discussions I follow',
   'forum-mention': 'When someone @mentions me',
   'reverse-new': 'New Reverse Coding challenges',
@@ -46,11 +47,11 @@ export default function NotificationBell({ compact = false }) {
   const [updateTitle, setUpdateTitle] = useState('');
   const [updateBody, setUpdateBody] = useState('');
   const [updateFiles, setUpdateFiles] = useState([]);
+  const [sentTo, setSentTo] = useState('@all');
   const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const [publishing, setPublishing] = useState(false);
   const [publisherMessage, setPublisherMessage] = useState('');
   const [publisherError, setPublisherError] = useState('');
-  const [preferenceError, setPreferenceError] = useState('');
   const ref = useRef(null);
   const isAdmin = user?.role === 'admin';
 
@@ -107,19 +108,6 @@ export default function NotificationBell({ compact = false }) {
     if (r) setData((d) => ({ ...d, muted: r.muted }));
   };
 
-  const updateEmailPreference = async (optOut) => {
-    setPreferenceError('');
-    try {
-      const result = await apiRequest('/notifications/preferences', {
-        method: 'PUT',
-        body: JSON.stringify({ updateEmailsOptOut: optOut }),
-      });
-      setData((current) => ({ ...current, updateEmailsOptOut: result.updateEmailsOptOut }));
-    } catch (error) {
-      setPreferenceError(error.message || 'Could not update email preferences.');
-    }
-  };
-
   const selectUpdateFiles = (event) => {
     const files = Array.from(event.target.files || []);
     const allowedTypes = new Set([
@@ -154,9 +142,18 @@ export default function NotificationBell({ compact = false }) {
       return;
     }
 
+    const audience = sentTo.trim() || '@all';
+    const tokens = audience.split(/[\s,]+/).filter(Boolean);
+    const invalidToken = tokens.find((token) => !/^@(?:all|[a-z0-9]+(?:-[a-z0-9]+)*)$/i.test(token));
+    if (invalidToken) {
+      setPublisherError(`"${invalidToken}" is not a valid @username. Use @all or comma-separated @usernames.`);
+      return;
+    }
+
     const formData = new FormData();
     formData.append('title', updateTitle.trim());
     formData.append('body', updateBody);
+    formData.append('sentTo', tokens.join(','));
     formData.append('sendNotification', String(broadcastOptions.sendNotification));
     formData.append('sendEmail', String(broadcastOptions.sendEmail));
     updateFiles.forEach((file) => formData.append('media', file));
@@ -166,6 +163,7 @@ export default function NotificationBell({ compact = false }) {
       setUpdateTitle('');
       setUpdateBody('');
       setUpdateFiles([]);
+      setSentTo('@all');
       setBroadcastOptions({ sendNotification: true, sendEmail: true });
       setPublisherOpen(false);
       setPublisherMessage(result.message || 'Update published.');
@@ -219,7 +217,7 @@ export default function NotificationBell({ compact = false }) {
             >
               <i className="bi bi-megaphone" aria-hidden="true" />
               Publish community update
-              <i className="bi bi-arrow-up-right" aria-hidden="true" />
+              <i className="bi bi-plus-lg" aria-hidden="true" />
             </button>
           )}
 
@@ -234,17 +232,7 @@ export default function NotificationBell({ compact = false }) {
                   {MUTE_LABELS[type] || type}
                 </label>
               ))}
-              {user?.role === 'user' && (
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={!data.updateEmailsOptOut}
-                    onChange={(event) => updateEmailPreference(!event.target.checked)}
-                  />
-                  Community update emails
-                </label>
-              )}
-              {preferenceError && <small className="notif-preference-error" role="alert">{preferenceError}</small>}
+              <small>These settings only control in-app notifications. Manage email preferences from your profile.</small>
               <small>Moderation and account messages are always shown.</small>
             </div>
           )}
@@ -349,6 +337,19 @@ export default function NotificationBell({ compact = false }) {
                   ))}
                 </ul>
               )}
+              <label className="update-publisher-label" htmlFor="update-sent-to">Sent to</label>
+              <input
+                id="update-sent-to"
+                className="update-publisher-sent-to"
+                type="text"
+                value={sentTo}
+                onChange={(event) => setSentTo(event.target.value)}
+                placeholder="@all or @username, @another"
+                spellCheck="false"
+              />
+              <small className="update-publisher-hint">
+                The update stays public. This only controls who receives the notification and email.
+              </small>
               <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
             </div>
 

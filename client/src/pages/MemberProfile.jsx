@@ -435,7 +435,7 @@ export default function MemberProfile({
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                Live demo ↗
+                                Live View ↗
                               </a>
                             )}
                           </div>
@@ -477,7 +477,7 @@ export default function MemberProfile({
                                 target="_blank"
                                 rel="noopener noreferrer"
                               >
-                                View proof ↗
+                                Checkout ↗
                               </a>
                             </div>
                           )}

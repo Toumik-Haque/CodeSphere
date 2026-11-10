@@ -3,7 +3,7 @@ const User = require('../models/User');
 const { pushToUser } = require('./realtime');
 
 // Notification types a student can mute (see User.mutedNotifications).
-const MUTABLE_TYPES = ['forum-reply', 'forum-mention', 'reverse-new', 'news-digest', 'news-daily'];
+const MUTABLE_TYPES = ['announcement', 'forum-reply', 'forum-mention', 'reverse-new', 'news-digest', 'news-daily'];
 
 /**
  * Create notifications for one or more users. Never throws: a failed

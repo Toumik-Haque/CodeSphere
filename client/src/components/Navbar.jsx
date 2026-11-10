@@ -143,7 +143,7 @@ const Navbar = () => {
     { role: 'hackathon-organizer', path: '/admin/review', icon: 'bi-inbox', label: 'Review hosted hackathons' },
   ].filter((link) => user?.staffRoles?.includes(link.role));
 
-  const dashboardPath = isAdmin ? '/admin' : '/profile';
+  const dashboardPath = isAdmin ? '/admin' : '/user';
   const dashboardLabel = isAdmin ? 'Admin Dashboard' : 'Dashboard';
 
   useEffect(() => {

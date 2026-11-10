@@ -1,6 +1,6 @@
 import '../css/Updates.css';
 
-export default function BroadcastOptions({ value, onChange }) {
+export default function BroadcastOptions({ value, onChange, allowEmail = true }) {
   const set = (key) => (event) => onChange({ ...value, [key]: event.target.checked });
 
   return (
@@ -11,11 +11,13 @@ export default function BroadcastOptions({ value, onChange }) {
         <i className="bi bi-bell" aria-hidden="true" />
         Send to users&apos; notifications
       </label>
-      <label>
-        <input type="checkbox" checked={value.sendEmail} onChange={set('sendEmail')} />
-        <i className="bi bi-envelope" aria-hidden="true" />
-        Send to users&apos; emails
-      </label>
+      {allowEmail && (
+        <label>
+          <input type="checkbox" checked={value.sendEmail} onChange={set('sendEmail')} />
+          <i className="bi bi-envelope" aria-hidden="true" />
+          Send to users&apos; emails
+        </label>
+      )}
     </fieldset>
   );
 }
