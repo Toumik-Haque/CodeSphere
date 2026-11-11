@@ -1,7 +1,9 @@
 const express = require('express');
+const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const { protect, adminOnly, STAFF_ROLES } = require('../middleware/authMiddleware');
 const { notify } = require('../utils/notify');
+const { createLimiter } = require('../utils/rateLimit');
 const { deleteImages } = require('../utils/forumMedia');
 const { saveProfileImage, removeProfileImage } = require('../utils/profileImages');
 const handleProfileUpload = require('../middleware/profileUpload');
@@ -787,6 +789,96 @@ router.get('/profile/:username', protect, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Unable to fetch member profile.',
+    });
+  }
+});
+
+// ---------- Account security ----------
+
+// PUT /api/users/me/password { currentPassword, newPassword, confirmNewPassword }
+const limitPasswordChange = createLimiter({
+  windowMs: 60 * 60 * 1000,
+  max: 5,
+  message: 'Too many password changes. Try again later.',
+});
+
+router.put('/me/password', protect, limitPasswordChange, async (req, res) => {
+  try {
+    const { currentPassword, newPassword, confirmNewPassword } = req.body;
+
+    if (
+      typeof currentPassword !== 'string' ||
+      typeof newPassword !== 'string' ||
+      typeof confirmNewPassword !== 'string' ||
+      !currentPassword ||
+      !newPassword ||
+      !confirmNewPassword
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Enter your current password and the new one twice.',
+      });
+    }
+
+    if (newPassword !== confirmNewPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'The new passwords do not match.',
+      });
+    }
+
+    if (newPassword.length < 8 || newPassword.length > 128) {
+      return res.status(400).json({
+        success: false,
+        message: 'The new password must be 8–128 characters.',
+      });
+    }
+
+    if (newPassword === currentPassword) {
+      return res.status(400).json({
+        success: false,
+        message: 'Choose a password different from your current one.',
+      });
+    }
+
+    const user = await User.findById(req.user._id).select('+password');
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: 'Account not found.',
+      });
+    }
+
+    const matches = await bcrypt.compare(currentPassword, user.password);
+
+    if (!matches) {
+      return res.status(400).json({
+        success: false,
+        message: 'Your current password is incorrect.',
+      });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 12);
+    await user.save();
+
+    await notify(user._id, {
+      type: 'system',
+      title: 'Your CodeSphere password was changed',
+      body: 'If this wasn\'t you, use "Forgot password" on the sign-in page right away.',
+      link: '/login',
+    });
+
+    return res.json({
+      success: true,
+      message: 'Password updated successfully.',
+    });
+  } catch (error) {
+    console.error('Change password error:', error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to update your password. Please try again.',
     });
   }
 });

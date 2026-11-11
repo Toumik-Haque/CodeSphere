@@ -865,6 +865,7 @@
 .badge-strip-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
 .badge-strip-head span { color: var(--navy); font-size: .9rem; font-weight: 800; }
 .badge-strip-head button { padding: 1px 9px; border: 0; border-radius: 999px; background: #EEF3F8; color: var(--navy); font-size: .76rem; font-weight: 700; }
+.badge-strip-count { padding: 1px 9px; border-radius: 999px; background: #EEF3F8; color: var(--navy); font-size: .76rem; font-weight: 700; }
 .badge-strip ul { display: flex; flex-wrap: wrap; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .badge-strip-item {
   display: grid;
