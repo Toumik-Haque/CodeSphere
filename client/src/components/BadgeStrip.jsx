@@ -48,7 +48,7 @@ export default function BadgeStrip({ username }) {
   return (
     <div className="badge-strip">
       <div className="badge-strip-head">
-        <span>Achievements</span>
+        <span>Community Badges</span>
         {readOnly ? (
           <span className="badge-strip-count">{earned.length}/{data.totalCount}</span>
         ) : (

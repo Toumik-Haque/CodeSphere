@@ -2020,112 +2020,111 @@ export default function Profile({
                   </section>
 
                   {!preview && currentUser?.role !== 'admin' && (
-                    <EmailPreferences email={currentUser?.email || ''} />
-                  )}
+                    <div className="profile-settings-grid">
+                      <EmailPreferences email={currentUser?.email || ''} />
 
-                  {/* Self-service password change - hidden for admins */}
-                  {!preview && currentUser?.role !== 'admin' && (
-                    <section className="profile-section-card profile-password-card">
-                      <div className="profile-section-heading">
-                        <div>
-                          <h2>Change Password</h2>
-                          <p>Update the password you use to sign in to CodeSphere.</p>
-                        </div>
-                        <span className="profile-section-icon">
-                          <i className="bi bi-shield-lock" />
-                        </span>
-                      </div>
-
-                      <form className="profile-password-form" onSubmit={handleChangePassword} noValidate>
-                        {[
-                          {
-                            key: 'current',
-                            label: 'Current password',
-                            placeholder: 'Enter your current password',
-                            autoComplete: 'current-password',
-                          },
-                          {
-                            key: 'next',
-                            label: 'New password',
-                            placeholder: 'Create a new password',
-                            autoComplete: 'new-password',
-                          },
-                          {
-                            key: 'confirm',
-                            label: 'Confirm new password',
-                            placeholder: 'Re-enter the new password',
-                            autoComplete: 'new-password',
-                          },
-                        ].map((field) => (
-                          <div className="profile-password-field" key={field.key}>
-                            <label htmlFor={`password-${field.key}`}>{field.label}</label>
-                            <div className="profile-password-input">
-                              <input
-                                id={`password-${field.key}`}
-                                type={passwordVisible[field.key] ? 'text' : 'password'}
-                                value={passwordForm[field.key]}
-                                onChange={(e) => {
-                                  const { value } = e.target;
-                                  setPasswordForm((prev) => ({ ...prev, [field.key]: value }));
-                                  if (passwordError) setPasswordError('');
-                                }}
-                                placeholder={field.placeholder}
-                                autoComplete={field.autoComplete}
-                                disabled={passwordLoading}
-                              />
-                              <button
-                                type="button"
-                                className="profile-password-toggle"
-                                onClick={() =>
-                                  setPasswordVisible((prev) => ({
-                                    ...prev,
-                                    [field.key]: !prev[field.key],
-                                  }))
-                                }
-                                aria-label={
-                                  passwordVisible[field.key]
-                                    ? `Hide ${field.label.toLowerCase()}`
-                                    : `Show ${field.label.toLowerCase()}`
-                                }
-                                aria-pressed={passwordVisible[field.key]}
-                                disabled={passwordLoading}
-                              >
-                                <i
-                                  className={`bi ${
-                                    passwordVisible[field.key] ? 'bi-eye-slash' : 'bi-eye'
-                                  }`}
-                                  aria-hidden="true"
-                                />
-                              </button>
-                            </div>
+                      <section className="profile-section-card profile-password-card">
+                        <div className="profile-section-heading">
+                          <div>
+                            <h2>Change Password</h2>
+                            <p>Update the password you use to sign in to CodeSphere.</p>
                           </div>
-                        ))}
-
-                        {passwordError && (
-                          <div className="profile-password-error" role="alert">
-                            <i className="bi bi-exclamation-circle" /> {passwordError}
-                          </div>
-                        )}
-
-                        <div className="profile-password-actions">
-                          <button
-                            type="submit"
-                            className="profile-password-submit"
-                            disabled={passwordLoading}
-                          >
-                            <i
-                              className={`bi ${
-                                passwordLoading ? 'bi-hourglass-split' : 'bi-check2-circle'
-                              }`}
-                            />
-                            {passwordLoading ? 'Updating Password...' : 'Update Password'}
-                          </button>
-                          <span className="profile-password-hint">
-                            <i className="bi bi-info-circle" /> Use at least 8 characters.
+                          <span className="profile-section-icon">
+                            <i className="bi bi-shield-lock" />
                           </span>
                         </div>
-                      </form>
-                    </section>
+
+                        <form className="profile-password-form" onSubmit={handleChangePassword} noValidate>
+                          {[
+                            {
+                              key: 'current',
+                              label: 'Current password',
+                              placeholder: 'Enter your current password',
+                              autoComplete: 'current-password',
+                            },
+                            {
+                              key: 'next',
+                              label: 'New password',
+                              placeholder: 'Create a new password',
+                              autoComplete: 'new-password',
+                            },
+                            {
+                              key: 'confirm',
+                              label: 'Confirm new password',
+                              placeholder: 'Re-enter the new password',
+                              autoComplete: 'new-password',
+                            },
+                          ].map((field) => (
+                            <div className="profile-password-field" key={field.key}>
+                              <label htmlFor={`password-${field.key}`}>{field.label}</label>
+                              <div className="profile-password-input">
+                                <input
+                                  id={`password-${field.key}`}
+                                  type={passwordVisible[field.key] ? 'text' : 'password'}
+                                  value={passwordForm[field.key]}
+                                  onChange={(e) => {
+                                    const { value } = e.target;
+                                    setPasswordForm((prev) => ({ ...prev, [field.key]: value }));
+                                    if (passwordError) setPasswordError('');
+                                  }}
+                                  placeholder={field.placeholder}
+                                  autoComplete={field.autoComplete}
+                                  disabled={passwordLoading}
+                                />
+                                <button
+                                  type="button"
+                                  className="profile-password-toggle"
+                                  onClick={() =>
+                                    setPasswordVisible((prev) => ({
+                                      ...prev,
+                                      [field.key]: !prev[field.key],
+                                    }))
+                                  }
+                                  aria-label={
+                                    passwordVisible[field.key]
+                                      ? `Hide ${field.label.toLowerCase()}`
+                                      : `Show ${field.label.toLowerCase()}`
+                                  }
+                                  aria-pressed={passwordVisible[field.key]}
+                                  disabled={passwordLoading}
+                                >
+                                  <i
+                                    className={`bi ${
+                                      passwordVisible[field.key] ? 'bi-eye-slash' : 'bi-eye'
+                                    }`}
+                                    aria-hidden="true"
+                                  />
+                                </button>
+                              </div>
+                            </div>
+                          ))}
+
+                          {passwordError && (
+                            <div className="profile-password-error" role="alert">
+                              <i className="bi bi-exclamation-circle" /> {passwordError}
+                            </div>
+                          )}
+
+                          <div className="profile-password-actions">
+                            <button
+                              type="submit"
+                              className="profile-password-submit"
+                              disabled={passwordLoading}
+                            >
+                              <i
+                                className={`bi ${
+                                  passwordLoading ? 'bi-hourglass-split' : 'bi-check2-circle'
+                                }`}
+                              />
+                              {passwordLoading ? 'Updating Password...' : 'Update Password'}
+                            </button>
+                            <span className="profile-password-hint">
+                              <i className="bi bi-info-circle" /> Use at least 8 characters.
+                            </span>
+                          </div>
+                        </form>
+                      </section>
+                    </div>
                   )}
 
                   <section className="profile-sidebar-card profile-help-card">

@@ -16,7 +16,7 @@ import '../css/UserDashboard.css';
 
 const baseNavigation = [
   { label: 'Overview', path: '/user/overview', icon: 'bi-grid-1x2' },
-  { label: 'My Badges', path: '/user/milestone', icon: 'bi-award' },
+  { label: 'Milestones', path: '/user/milestone', icon: 'bi-award' },
   { label: 'My Profile', path: '/user/profile', icon: 'bi-person-lines-fill' },
   { label: 'My Events', path: '/user/activities', icon: 'bi-calendar-event' },
 ];
