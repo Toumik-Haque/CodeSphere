@@ -9,7 +9,7 @@ export default function DashboardProfileSidebar({
   defaultBanner = '/default-profile-banner.webp',
   showBadges = false,
 }) {
-  const name = user?.name || 'CodeSphere Member';
+  const name = user?.name || 'Member';
   const username = user?.username;
   const profileImage = user?.profileImage?.url;
   const joinedDate = user?.createdAt
