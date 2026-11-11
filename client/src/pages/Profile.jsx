@@ -158,13 +158,14 @@ const sectionConfig = [
     ],
   },
   {
-    id: 'learning',
-    title: 'Interests & Learning Goals',
-    subtitle: 'Your interests and learning goals',
-    icon: 'bi-lightbulb',
+    id: 'professionalLinks',
+    title: 'Professional links',
+    subtitle: 'Connect your professional accounts',
+    icon: 'bi-link-45deg',
     fields: [
-      { name: 'technicalInterests', label: 'Technical interests', type: 'textarea', placeholder: 'Web development, AI, cybersecurity' },
-      { name: 'learningGoals', label: 'Learning goals', type: 'textarea', placeholder: 'Data structures, backend development' },
+      { name: 'github', label: 'GitHub profile', type: 'url', placeholder: 'https://github.com/username' },
+      { name: 'linkedin', label: 'LinkedIn profile', type: 'url', placeholder: 'https://linkedin.com/in/username' },
+      { name: 'portfolio', label: 'Portfolio website', type: 'url', placeholder: 'https://yourportfolio.com' },
     ],
   },
   {
@@ -176,17 +177,6 @@ const sectionConfig = [
     fields: [
       { name: 'platform', label: 'Platform', type: 'select', options: codingPlatforms },
       { name: 'url', label: 'Profile URL', type: 'url', placeholder: 'https://...', required: true },
-    ],
-  },
-  {
-    id: 'professionalLinks',
-    title: 'Professional links',
-    subtitle: 'Connect your professional accounts',
-    icon: 'bi-link-45deg',
-    fields: [
-      { name: 'github', label: 'GitHub profile', type: 'url', placeholder: 'https://github.com/username' },
-      { name: 'linkedin', label: 'LinkedIn profile', type: 'url', placeholder: 'https://linkedin.com/in/username' },
-      { name: 'portfolio', label: 'Portfolio website', type: 'url', placeholder: 'https://yourportfolio.com' },
     ],
   },
   {
@@ -218,6 +208,16 @@ const sectionConfig = [
       { name: 'issuer', label: 'Issued by', placeholder: 'Organisation / Platform' },
       { name: 'year', label: 'Year', type: 'select', options: Array.from({ length: 12 }, (_, i) => String(new Date().getFullYear() - i)) },
       { name: 'link', label: 'Certificate / proof link (optional)', type: 'url', placeholder: 'https://...' },
+    ],
+  },
+  {
+    id: 'learning',
+    title: 'Interests & Learning Goals',
+    subtitle: 'Your interests and learning goals',
+    icon: 'bi-lightbulb',
+    fields: [
+      { name: 'technicalInterests', label: 'Technical interests', type: 'textarea', placeholder: 'Web development, AI, cybersecurity' },
+      { name: 'learningGoals', label: 'Learning goals', type: 'textarea', placeholder: 'Data structures, backend development' },
     ],
   },
 ];
@@ -1005,11 +1005,12 @@ function Field({ field, value, onChange }) {
   );
 }
 
-function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
-  const [expanded, setExpanded] = useState(false);
+function ProfileSection({ section, profile, onSave, onAdd, onDelete, open = false, onToggle, onExpand }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [editingIndex, setEditingIndex] = useState(null);
+
+  const expanded = open;
 
   const isCollection = Boolean(section.collection);
   const savedItems = isCollection && Array.isArray(profile[section.collection])
@@ -1050,7 +1051,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
     setForm(form);
     setEditingIndex(index);
     setEditing(true);
-    setExpanded(true);
+    onExpand?.();
   };
 
   const cancelEdit = () => {
@@ -1115,7 +1116,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
         type="button"
         className="profile-builder-heading"
         onClick={() => {
-          setExpanded((value) => !value);
+          onToggle?.();
           if (editing) cancelEdit();
         }}
         aria-expanded={expanded}
@@ -1363,6 +1364,7 @@ export default function Profile({
   const [toast, setToast] = useState(null);
   const [skillSearch, setSkillSearch] = useState('');
   const [skillLevel, setSkillLevel] = useState('Intermediate');
+  const [openSection, setOpenSection] = useState('');
 
   const [passwordForm, setPasswordForm] = useState({
     current: '',
@@ -1733,6 +1735,10 @@ export default function Profile({
     !profile.skills.some((item) => (item.name || item) === skill)
   );
 
+  const toggleSection = (id) => {
+    setOpenSection((current) => (current === id ? '' : id));
+  };
+
   const handleChangePassword = async (event) => {
     event.preventDefault();
     if (passwordLoading) return;
@@ -1784,7 +1790,7 @@ export default function Profile({
 
   const personalSection = {
     id: 'personal',
-    title: 'Personal details',
+    title: 'Personal Details',
     subtitle: 'Your basic information',
     icon: 'bi-person-vcard',
     fields: [
@@ -1917,16 +1923,36 @@ export default function Profile({
                       section={personalSection}
                       profile={profile}
                       onSave={updateSimpleSection}
+                      open={openSection === personalSection.id}
+                      onToggle={() => toggleSection(personalSection.id)}
+                      onExpand={() => setOpenSection(personalSection.id)}
                     />
 
                     <ProfileSection
                       section={sectionConfig[0]}
                       profile={profile}
                       onSave={updateSimpleSection}
+                      open={openSection === sectionConfig[0].id}
+                      onToggle={() => toggleSection(sectionConfig[0].id)}
+                      onExpand={() => setOpenSection(sectionConfig[0].id)}
                     />
 
-                    <div className="profile-builder-section">
-                      <div className="profile-builder-static-heading">
+                    <ProfileSection
+                      section={sectionConfig[1]}
+                      profile={profile}
+                      onSave={updateSimpleSection}
+                      open={openSection === sectionConfig[1].id}
+                      onToggle={() => toggleSection(sectionConfig[1].id)}
+                      onExpand={() => setOpenSection(sectionConfig[1].id)}
+                    />
+
+                    <div className={`profile-builder-section ${openSection === 'skills' ? 'is-expanded' : ''}`}>
+                      <button
+                        type="button"
+                        className="profile-builder-heading"
+                        onClick={() => toggleSection('skills')}
+                        aria-expanded={openSection === 'skills'}
+                      >
                         <span className="profile-builder-icon">
                           <i className="bi bi-code-slash" />
                         </span>
@@ -1935,8 +1961,14 @@ export default function Profile({
                           <strong>Technical skills</strong>
                           <small>{profile.skills.length} skills added</small>
                         </span>
-                      </div>
 
+                        <span className="profile-builder-heading-actions">
+                          <span className="profile-entry-count">{profile.skills.length}</span>
+                          <i className={`bi ${openSection === 'skills' ? 'bi-chevron-up' : 'bi-chevron-down'}`} />
+                        </span>
+                      </button>
+
+                      {openSection === 'skills' && (
                       <div className="profile-builder-content">
                         <div className="profile-skills-list">
                           {profile.skills.map((skill, index) => (
@@ -2005,9 +2037,10 @@ export default function Profile({
                           </button>
                         </div>
                       </div>
+                      )}
                     </div>
 
-                    {sectionConfig.slice(1).map((section) => (
+                    {sectionConfig.slice(2).map((section) => (
                       <ProfileSection
                         key={section.id}
                         section={section}
@@ -2015,25 +2048,46 @@ export default function Profile({
                         onSave={section.collection ? updateEntry : updateSimpleSection}
                         onAdd={addEntry}
                         onDelete={deleteEntry}
+                        open={openSection === section.id}
+                        onToggle={() => toggleSection(section.id)}
+                        onExpand={() => setOpenSection(section.id)}
                       />
                     ))}
                   </section>
 
                   {!preview && currentUser?.role !== 'admin' && (
                     <div className="profile-settings-grid">
-                      <EmailPreferences email={currentUser?.email || ''} />
+                      <EmailPreferences
+                        email={currentUser?.email || ''}
+                        open={openSection === 'email'}
+                        onToggle={() => toggleSection('email')}
+                      />
 
-                      <section className="profile-section-card profile-password-card">
-                        <div className="profile-section-heading">
-                          <div>
-                            <h2>Change Password</h2>
-                            <p>Update the password you use to sign in to CodeSphere.</p>
-                          </div>
-                          <span className="profile-section-icon">
-                            <i className="bi bi-shield-lock" />
+                      <section className={`profile-section-card profile-password-card ${openSection === 'password' ? 'is-expanded' : ''}`}>
+                        <button
+                          type="button"
+                          className="profile-section-heading profile-section-toggle"
+                          onClick={() => toggleSection('password')}
+                          aria-expanded={openSection === 'password'}
+                        >
+                          <span className="profile-section-toggle-copy">
+                            <span className="profile-section-toggle-title">Change Password</span>
+                            <span className="profile-section-toggle-sub">
+                              Update the password you use to sign in to CodeSphere.
+                            </span>
                           </span>
-                        </div>
+                          <span className="profile-section-toggle-actions">
+                            <span className="profile-section-icon">
+                              <i className="bi bi-shield-lock" />
+                            </span>
+                            <i
+                              className={`bi ${openSection === 'password' ? 'bi-chevron-up' : 'bi-chevron-down'}`}
+                              aria-hidden="true"
+                            />
+                          </span>
+                        </button>
 
+                        {openSection === 'password' && (
                         <form className="profile-password-form" onSubmit={handleChangePassword} noValidate>
                           {[
                             {
@@ -2123,6 +2177,7 @@ export default function Profile({
                             </span>
                           </div>
                         </form>
+                        )}
                       </section>
                     </div>
                   )}
