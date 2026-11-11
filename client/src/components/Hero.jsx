@@ -26,7 +26,7 @@ const Hero = () => {
       <div className="container hero-container">
         <div className="hero-content">
           <div className="hero-eyebrow">
-            <span>OFFICIAL CODING COMMUNITY OF AGEMC</span>
+            <span>THE ENGINEERS' LOGIC CLUB</span>
             <i
               className="bi bi-patch-check-fill verify"
               style={{ fontSize: '1rem' }}

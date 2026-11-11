@@ -107,6 +107,27 @@ async function removeUploadedFiles(files) {
     .catch((error) => console.error('Announcement upload cleanup error:', error.message))));
 }
 
+// Admin: search members (name, username, email) for the "Sent to" suggestions.
+router.get('/members', protect, adminOnly, async (req, res) => {
+  try {
+    const q = String(req.query.q || '').trim().slice(0, 40);
+    const filter = { role: 'user', username: { $ne: null } };
+    if (q) {
+      const pattern = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
+      filter.$or = [{ name: pattern }, { username: pattern }, { email: pattern }];
+    }
+    const members = await User.find(filter)
+      .select('name username email')
+      .sort({ name: 1 })
+      .limit(50)
+      .lean();
+    return res.json({ members });
+  } catch (error) {
+    console.error('Announcement member search error:', error);
+    return res.status(500).json({ message: 'Could not load members.' });
+  }
+});
+
 router.get('/:id', async (req, res) => {
   try {
     if (!/^[a-f\d]{24}$/i.test(req.params.id)) return res.status(404).json({ message: 'Update not found.' });
