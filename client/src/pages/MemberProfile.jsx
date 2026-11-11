@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
+import BadgeStrip from '../components/BadgeStrip';
 import CodingStats from '../components/CodingStats';
 import '../css/MemberProfile.css';
 
@@ -220,6 +221,10 @@ export default function MemberProfile({
                 </div>
 
                 <div className="member-profile-identity">
+                  <span className="member-profile-eyebrow">
+                    <i className="bi bi-hexagon-fill" aria-hidden="true" />
+                    CodeSphere Member
+                  </span>
                   <h1>{member.name}</h1>
                   <span className="member-profile-badge">
                     <i className="bi bi-patch-check-fill" aria-hidden="true" />
@@ -244,6 +249,9 @@ export default function MemberProfile({
                         Member since {joinedDate}
                       </span>
                     )}
+                  </div>
+                  <div className="member-profile-hero-badges">
+                    <BadgeStrip username={member.username} />
                   </div>
                 </div>
 

@@ -1,6 +1,6 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
@@ -1344,8 +1344,7 @@ export default function Profile({
   view = 'profile',
 }) {
   const isMilestoneView = view === 'milestone';
-  const navigate = useNavigate();
-  const { user, updateUser, logout } = useAuth();
+  const { user, updateUser } = useAuth();
 
   const [profile, setProfile] = useState(() => {
     if (preview) {
@@ -1365,10 +1364,18 @@ export default function Profile({
   const [skillSearch, setSkillSearch] = useState('');
   const [skillLevel, setSkillLevel] = useState('Intermediate');
 
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
+  const [passwordForm, setPasswordForm] = useState({
+    current: '',
+    next: '',
+    confirm: '',
+  });
+  const [passwordVisible, setPasswordVisible] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const photoInputRef = useRef(null);
   const toastTimerRef = useRef(null);
@@ -1726,35 +1733,52 @@ export default function Profile({
     !profile.skills.some((item) => (item.name || item) === skill)
   );
 
-  const handleDeleteAccount = async () => {
-    if (preview) {
-      showToast('Account deletion is disabled in preview mode.', 'info');
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    if (passwordLoading) return;
+
+    const { current, next, confirm } = passwordForm;
+
+    if (!current || !next || !confirm) {
+      setPasswordError('Fill in all three password fields.');
       return;
     }
 
-    const expected = (currentUser?.username || 'DELETE').trim().toLowerCase();
-    const typed = deleteConfirmText.trim().toLowerCase();
-
-    if (typed !== expected && typed !== 'delete') {
-      setDeleteError(`Please type "${currentUser?.username || 'DELETE'}" to confirm.`);
+    if (next.length < 8 || next.length > 128) {
+      setPasswordError('Your new password must be 8–128 characters.');
       return;
     }
 
-    setDeleteLoading(true);
-    setDeleteError('');
+    if (next !== confirm) {
+      setPasswordError('The new passwords do not match.');
+      return;
+    }
+
+    if (next === current) {
+      setPasswordError('Choose a password different from your current one.');
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordError('');
 
     try {
-      await apiRequest('/users/profile', {
-        method: 'DELETE',
+      const response = await apiRequest('/users/me/password', {
+        method: 'PUT',
+        body: JSON.stringify({
+          currentPassword: current,
+          newPassword: next,
+          confirmNewPassword: confirm,
+        }),
       });
 
-      showToast('Your account has been deleted successfully.', 'success');
-      await logout();
-      navigate('/login', { replace: true });
+      setPasswordForm({ current: '', next: '', confirm: '' });
+      setPasswordVisible({ current: false, next: false, confirm: false });
+      showToast(response.message || 'Password updated successfully.', 'success');
     } catch (err) {
-      console.error('Delete account error:', err);
-      setDeleteError(err.message || 'Unable to delete account. Please try again.');
-      setDeleteLoading(false);
+      setPasswordError(err.message || 'Unable to update your password. Please try again.');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
@@ -1999,90 +2023,108 @@ export default function Profile({
                     <EmailPreferences email={currentUser?.email || ''} />
                   )}
 
-                  {/* Self-service account deletion control - hidden for admins */}
-                  {currentUser?.role !== 'admin' && (
-                    <section className="profile-section-card profile-danger-card">
+                  {/* Self-service password change - hidden for admins */}
+                  {!preview && currentUser?.role !== 'admin' && (
+                    <section className="profile-section-card profile-password-card">
                       <div className="profile-section-heading">
                         <div>
-                          <h2>Delete Account</h2>
-                          <p>Permanently remove your CodeSphere account and owned data.</p>
+                          <h2>Change Password</h2>
+                          <p>Update the password you use to sign in to CodeSphere.</p>
                         </div>
                         <span className="profile-section-icon">
-                          <i className="bi bi-exclamation-triangle" />
+                          <i className="bi bi-shield-lock" />
                         </span>
                       </div>
 
-                      <div className="profile-danger-body">
-                        <p className="profile-danger-warning">
-                          Once you delete your account, there is no going back. This will permanently remove your profile, photo, resume, earned badges, and personal project showcase entries.
-                        </p>
-
-                        {!deleteConfirmOpen ? (
-                          <div className="profile-danger-actions">
-                            <button
-                              type="button"
-                              className="profile-delete-account-btn"
-                              onClick={() => {
-                                setDeleteConfirmOpen(true);
-                                setDeleteConfirmText('');
-                                setDeleteError('');
-                              }}
-                            >
-                              <i className="bi bi-trash3" /> Delete My Account
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="profile-delete-confirm-box">
-                            <p>
-                              Are you absolutely sure? To confirm, please type <strong>{currentUser?.username || 'DELETE'}</strong> below:
-                            </p>
-
-                            <input
-                              type="text"
-                              className="profile-delete-confirm-input"
-                              value={deleteConfirmText}
-                              onChange={(e) => {
-                                setDeleteConfirmText(e.target.value);
-                                if (deleteError) setDeleteError('');
-                              }}
-                              placeholder={`Type ${currentUser?.username || 'DELETE'} to confirm`}
-                              disabled={deleteLoading}
-                              autoFocus
-                            />
-
-                            {deleteError && (
-                              <div className="profile-delete-error">
-                                <i className="bi bi-exclamation-circle" /> {deleteError}
-                              </div>
-                            )}
-
-                            <div className="profile-delete-confirm-btns">
-                              <button
-                                type="button"
-                                className="profile-delete-account-btn"
-                                onClick={handleDeleteAccount}
-                                disabled={deleteLoading || !deleteConfirmText.trim()}
-                              >
-                                <i className={`bi ${deleteLoading ? 'bi-hourglass-split' : 'bi-trash3'}`} />
-                                {deleteLoading ? 'Deleting Account...' : 'Permanently Delete Account'}
-                              </button>
-
-                              <button
-                                type="button"
-                                className="profile-delete-cancel-btn"
-                                onClick={() => {
-                                  setDeleteConfirmOpen(false);
-                                  setDeleteConfirmText('');
-                                  setDeleteError('');
+                      <form className="profile-password-form" onSubmit={handleChangePassword} noValidate>
+                        {[
+                          {
+                            key: 'current',
+                            label: 'Current password',
+                            placeholder: 'Enter your current password',
+                            autoComplete: 'current-password',
+                          },
+                          {
+                            key: 'next',
+                            label: 'New password',
+                            placeholder: 'Create a new password',
+                            autoComplete: 'new-password',
+                          },
+                          {
+                            key: 'confirm',
+                            label: 'Confirm new password',
+                            placeholder: 'Re-enter the new password',
+                            autoComplete: 'new-password',
+                          },
+                        ].map((field) => (
+                          <div className="profile-password-field" key={field.key}>
+                            <label htmlFor={`password-${field.key}`}>{field.label}</label>
+                            <div className="profile-password-input">
+                              <input
+                                id={`password-${field.key}`}
+                                type={passwordVisible[field.key] ? 'text' : 'password'}
+                                value={passwordForm[field.key]}
+                                onChange={(e) => {
+                                  const { value } = e.target;
+                                  setPasswordForm((prev) => ({ ...prev, [field.key]: value }));
+                                  if (passwordError) setPasswordError('');
                                 }}
-                                disabled={deleteLoading}
+                                placeholder={field.placeholder}
+                                autoComplete={field.autoComplete}
+                                disabled={passwordLoading}
+                              />
+                              <button
+                                type="button"
+                                className="profile-password-toggle"
+                                onClick={() =>
+                                  setPasswordVisible((prev) => ({
+                                    ...prev,
+                                    [field.key]: !prev[field.key],
+                                  }))
+                                }
+                                aria-label={
+                                  passwordVisible[field.key]
+                                    ? `Hide ${field.label.toLowerCase()}`
+                                    : `Show ${field.label.toLowerCase()}`
+                                }
+                                aria-pressed={passwordVisible[field.key]}
+                                disabled={passwordLoading}
                               >
-                                Cancel
+                                <i
+                                  className={`bi ${
+                                    passwordVisible[field.key] ? 'bi-eye-slash' : 'bi-eye'
+                                  }`}
+                                  aria-hidden="true"
+                                />
                               </button>
                             </div>
                           </div>
+                        ))}
+
+                        {passwordError && (
+                          <div className="profile-password-error" role="alert">
+                            <i className="bi bi-exclamation-circle" /> {passwordError}
+                          </div>
                         )}
-                      </div>
+
+                        <div className="profile-password-actions">
+                          <button
+                            type="submit"
+                            className="profile-password-submit"
+                            disabled={passwordLoading}
+                          >
+                            <i
+                              className={`bi ${
+                                passwordLoading ? 'bi-hourglass-split' : 'bi-check2-circle'
+                              }`}
+                            />
+                            {passwordLoading ? 'Updating Password...' : 'Update Password'}
+                          </button>
+                          <span className="profile-password-hint">
+                            <i className="bi bi-info-circle" /> Use at least 8 characters.
+                          </span>
+                        </div>
+                      </form>
                     </section>
                   )}
 

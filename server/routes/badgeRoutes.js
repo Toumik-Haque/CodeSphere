@@ -29,6 +29,42 @@ router.get('/catalog', (req, res) => {
   });
 });
 
+// GET /api/badges/username/:username: a member's earned badges and pinned
+// showcase, for their public profile card.
+router.get('/username/:username', protect, async (req, res) => {
+  try {
+    const username = String(req.params.username || '').toLowerCase().trim();
+    const member = await User.findOne({ username, role: 'user' })
+      .select('badgeShowcase')
+      .lean();
+
+    if (!member) {
+      return res.status(404).json({ message: 'Member profile not found.' });
+    }
+
+    const saved = await UserBadge.find({ user: member._id }).lean();
+    const badges = saved
+      .filter((b) => badgesById.has(b.badgeId))
+      .map((b) => ({
+        ...publicBadge(badgesById.get(b.badgeId)),
+        earned: true,
+        earnedAt: b.earnedAt,
+      }))
+      .sort((a, b) => new Date(b.earnedAt) - new Date(a.earnedAt));
+
+    const earnedIds = new Set(badges.map((b) => b.id));
+
+    return res.json({
+      badges,
+      totalCount: BADGES.filter((b) => b.type !== 'coming-soon').length,
+      showcase: (member.badgeShowcase || []).filter((id) => earnedIds.has(id)),
+    });
+  } catch (error) {
+    console.error('Member badges error:', error);
+    return res.status(500).json({ message: 'Could not load member badges.' });
+  }
+});
+
 // GET /api/badges/leaderboard: top badge earners by XP, with the member's rank.
 router.get('/leaderboard', protect, async (req, res) => {
   try {
