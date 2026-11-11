@@ -594,6 +594,54 @@
   font-size: 20px;
 }
 
+/* Collapsible card headings */
+
+.profile-section-toggle {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+}
+
+.profile-section-toggle:hover .profile-section-toggle-title {
+  color: var(--profile-orange);
+}
+
+.profile-section-toggle-copy {
+  display: flex;
+  min-width: 0;
+  flex: 1;
+  flex-direction: column;
+}
+
+.profile-section-toggle-title {
+  color: var(--profile-navy);
+  font-size: 19px;
+  font-weight: 800;
+  transition: color 0.15s ease;
+}
+
+.profile-section-toggle-sub {
+  margin-top: 6px;
+  color: var(--profile-muted);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.profile-section-toggle-actions {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 10px;
+  color: var(--profile-muted);
+  font-size: 15px;
+}
+
 /* =========================================
    ACCORDION SECTIONS
 ========================================= */
@@ -1277,6 +1325,10 @@
   }
 
   .profile-section-heading h2 {
+    font-size: 17px;
+  }
+
+  .profile-section-toggle-title {
     font-size: 17px;
   }
 
@@ -2221,6 +2273,29 @@
 .profile-settings-grid .profile-section-heading p {
   margin-top: 4px;
   font-size: 11.5px;
+}
+
+.profile-settings-grid .profile-section-toggle {
+  margin-bottom: 0;
+}
+
+.profile-settings-grid .profile-password-card.is-expanded .profile-section-toggle,
+.profile-settings-grid .email-preferences-card.is-expanded .profile-section-toggle {
+  margin-bottom: 14px;
+}
+
+.profile-settings-grid .profile-section-toggle-title {
+  font-size: 16px;
+}
+
+.profile-settings-grid .profile-section-toggle-sub {
+  margin-top: 4px;
+  font-size: 11.5px;
+}
+
+.profile-settings-grid .profile-section-toggle-actions {
+  gap: 8px;
+  font-size: 13px;
 }
 
 .profile-settings-grid .profile-section-icon {
