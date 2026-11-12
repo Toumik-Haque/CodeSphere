@@ -14,16 +14,9 @@ export default defineConfig([
       reactRefresh.configs.vite,
     ],
     rules: {
-      // React component names are referenced through JSX, which the core
-      // no-unused-vars rule does not recognize without a React JSX plugin.
-      // Keep checking ordinary variables and functions.
-      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z][A-Za-z0-9]*
-      globals: globals.browser,
-      parserOptions: { ecmaFeatures: { jsx: true } },
-    },
-  },
-])
- }],
+      // JSX component references are not counted by ESLint's core rule.
+      // Ignore uppercase component-style bindings while checking other variables.
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z][A-Za-z0-9]*$' }],
       'react-refresh/only-export-components': [
         'error',
         { allowExportNames: ['useAuth'] },
