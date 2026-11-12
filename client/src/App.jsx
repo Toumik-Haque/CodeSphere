@@ -86,8 +86,6 @@ function HomePage() {
 // students holding that role may enter.
 // Guests may only see these pages; everything else asks them to sign in first
 // and brings them back to the page they wanted afterwards.
-const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/reset-password']);
-
 function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = null }) {
   const { user, token } = useAuth();
 
