@@ -995,35 +995,55 @@ export default function Admin() {
   // --------------------------------------------------
 
   useEffect(() => {
-    loadEvents();
+    const timer = window.setTimeout(() => {
+      void loadEvents();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [loadEvents]);
 
   useEffect(() => {
-    if (activeSection === 'users') {
-      loadUsers();
-    }
+    if (activeSection !== 'users') return undefined;
+
+    const timer = window.setTimeout(() => {
+      void loadUsers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadUsers]);
 
   useEffect(() => {
-    if (activeSection === 'home' || activeSection === 'coreMembers') {
-      loadCoreMembers();
+    if (activeSection !== 'home' && activeSection !== 'coreMembers') {
+      return undefined;
     }
+
+    const timer = window.setTimeout(() => {
+      void loadCoreMembers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadCoreMembers]);
 
   useEffect(() => {
-    if (activeSection === 'attendance') {
-      loadMembers();
-    }
+    if (activeSection !== 'attendance') return undefined;
+
+    const timer = window.setTimeout(() => {
+      void loadMembers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadMembers]);
 
   useEffect(() => {
-    if (activeSection === 'attendance' && selectedAttendanceEvent) {
-      loadAttendance();
-    } else if (!selectedAttendanceEvent) {
-      // Clear rows when the event selection is cleared.
-      // eslint-disable-next-line react-hooks/set-state-in-effect
-      setAttendanceRows([]);
+    if (activeSection !== 'attendance' || !selectedAttendanceEvent) {
+      return undefined;
     }
+
+    const timer = window.setTimeout(() => {
+      void loadAttendance();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, selectedAttendanceEvent, loadAttendance]);
 
   useEffect(() => {
