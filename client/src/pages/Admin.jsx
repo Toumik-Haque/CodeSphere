@@ -150,7 +150,7 @@ function createUsersCsv(users) {
 }
 
 export default function Admin() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
   const { username: routeUsername } = useParams();
@@ -240,6 +240,8 @@ export default function Admin() {
   }, []);
 
   const loadEvents = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setLoading(true);
 
     try {
@@ -581,6 +583,8 @@ export default function Admin() {
   }, []);
 
   const loadCoreMembers = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setCoreMembersLoading(true);
 
     try {
@@ -815,6 +819,8 @@ export default function Admin() {
   const [userSearch, setUserSearch] = useState('');
 
   const loadUsers = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setUsersLoading(true);
 
     try {
@@ -891,6 +897,8 @@ export default function Admin() {
   const [attendanceSavingId, setAttendanceSavingId] = useState('');
 
   const loadMembers = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setMembersLoading(true);
 
     try {
@@ -911,11 +919,8 @@ export default function Admin() {
   }, [memberSearch]);
 
   const loadAttendance = useCallback(async () => {
-    if (!selectedAttendanceEvent) {
-      setAttendanceRows([]);
-      return;
-    }
-
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setAttendanceLoading(true);
 
     try {
@@ -990,33 +995,55 @@ export default function Admin() {
   // --------------------------------------------------
 
   useEffect(() => {
-    loadEvents();
+    const timer = window.setTimeout(() => {
+      void loadEvents();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [loadEvents]);
 
   useEffect(() => {
-    if (activeSection === 'users') {
-      loadUsers();
-    }
+    if (activeSection !== 'users') return undefined;
+
+    const timer = window.setTimeout(() => {
+      void loadUsers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadUsers]);
 
   useEffect(() => {
-    if (activeSection === 'home' || activeSection === 'coreMembers') {
-      loadCoreMembers();
+    if (activeSection !== 'home' && activeSection !== 'coreMembers') {
+      return undefined;
     }
+
+    const timer = window.setTimeout(() => {
+      void loadCoreMembers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadCoreMembers]);
 
   useEffect(() => {
-    if (activeSection === 'attendance') {
-      loadMembers();
-    }
+    if (activeSection !== 'attendance') return undefined;
+
+    const timer = window.setTimeout(() => {
+      void loadMembers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadMembers]);
 
   useEffect(() => {
-    if (activeSection === 'attendance' && selectedAttendanceEvent) {
-      loadAttendance();
-    } else if (!selectedAttendanceEvent) {
-      setAttendanceRows([]);
+    if (activeSection !== 'attendance' || !selectedAttendanceEvent) {
+      return undefined;
     }
+
+    const timer = window.setTimeout(() => {
+      void loadAttendance();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, selectedAttendanceEvent, loadAttendance]);
 
   useEffect(() => {
@@ -1029,6 +1056,8 @@ export default function Admin() {
         events.find((event) => event.status === 'published') ||
         events[0];
 
+      // The first event is selected after the event list arrives asynchronously.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedAttendanceEvent(firstEvent._id);
     }
   }, [activeSection, events, selectedAttendanceEvent]);
@@ -1057,11 +1086,6 @@ export default function Admin() {
   // NAVIGATION HELPERS
   // --------------------------------------------------
 
-  function handleLogout() {
-    logout();
-    navigate('/login', { replace: true });
-  }
-
   function goToSection(section) {
     clearFeedback();
 
@@ -1086,40 +1110,9 @@ export default function Admin() {
     setActiveSection(section);
   }
 
-  function goBackToDashboard() {
-    if (activeSection === 'events' && activeEventTab === 'form') {
-      cancelEditing();
-      return;
-    }
-
-    if (activeSection === 'coreMembers' && activeCoreMemberTab === 'form') {
-      cancelCoreMemberEditing();
-      return;
-    }
-
-    goToSection('home');
-  }
-
   // --------------------------------------------------
   // RENDER
   // --------------------------------------------------
-
-  const pageTitle = {
-    home: 'Dashboard',
-    events:
-      activeEventTab === 'form'
-        ? editingId
-          ? 'Edit Event'
-          : 'Create Event'
-        : 'Events',
-    users: 'Users',
-    attendance: 'Attendance',
-    coreMembers: showCoreMemberForm
-      ? editingCoreMemberId
-        ? 'Edit Team Member'
-        : 'Add Team Member'
-      : 'Team Members',
-  }[activeSection];
 
   return (
     <>
