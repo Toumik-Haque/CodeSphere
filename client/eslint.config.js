@@ -13,6 +13,22 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    rules: {
+      // React component names are referenced through JSX, which the core
+      // no-unused-vars rule does not recognize without a React JSX plugin.
+      // Keep checking ordinary variables and functions.
+      'no-unused-vars': ['error', { varsIgnorePattern: '^[A-Z][A-Za-z0-9]*
+      globals: globals.browser,
+      parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+])
+ }],
+      'react-refresh/only-export-components': [
+        'error',
+        { allowExportNames: ['useAuth'] },
+      ],
+    },
     languageOptions: {
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
