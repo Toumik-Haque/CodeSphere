@@ -96,33 +96,6 @@ export default function TeamCarousel() {
     };
   }, [members.length, isAutoScrolling]);
 
-  // Manual carousel navigation.
-  function scrollTrack(direction) {
-    const track = trackRef.current;
-
-    if (!track) return;
-
-    const card = track.querySelector('.team-member-slide');
-    const styles = window.getComputedStyle(track);
-    const gap = parseFloat(styles.columnGap) || 20;
-
-    const distance = card
-      ? card.getBoundingClientRect().width + gap
-      : track.clientWidth;
-
-    const maxScroll = track.scrollWidth - track.clientWidth;
-
-    const nextPosition = Math.max(
-      0,
-      Math.min(maxScroll, track.scrollLeft + direction * distance)
-    );
-
-    track.scrollTo({
-      left: nextPosition,
-      behavior: 'smooth',
-    });
-  }
-
   if (loading) {
     return (
       <section id="team" className="team-section" aria-busy="true">
