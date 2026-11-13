@@ -104,7 +104,8 @@ export function AuthProvider({ children }) {
     email,
     password,
     collegeName,
-    yearOfStudy
+    yearOfStudy,
+    graduationYear
   ) {
     const data = await apiRequest('/auth/register', {
       method: 'POST',
@@ -114,6 +115,7 @@ export function AuthProvider({ children }) {
         password,
         collegeName,
         yearOfStudy,
+        graduationYear,
       }),
     });
 
