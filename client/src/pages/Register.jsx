@@ -12,6 +12,11 @@ const STUDY_YEARS = [
   '4th Year',
 ];
 
+const GRADUATION_YEARS = Array.from(
+  { length: 9 },
+  (_, index) => String(new Date().getFullYear() + index)
+);
+
 export default function Register() {
   const { user, sendOtp, verifyOtp, register } = useAuth();
   const navigate = useNavigate();
@@ -23,6 +28,7 @@ export default function Register() {
   const [name, setName] = useState('');
   const [collegeName, setCollegeName] = useState(DEFAULT_COLLEGE);
   const [yearOfStudy, setYearOfStudy] = useState('');
+  const [graduationYear, setGraduationYear] = useState('');
   const [email, setEmail] = useState('');
   const [otp, setOtp] = useState('');
   const [password, setPassword] = useState('');
@@ -46,7 +52,7 @@ export default function Register() {
     setError('');
     setNotice('');
 
-    if (!name.trim() || !collegeName.trim() || !yearOfStudy) {
+    if (!name.trim() || !collegeName.trim() || !yearOfStudy || !graduationYear) {
       setError('Please complete all your details.');
       return;
     }
@@ -126,7 +132,8 @@ export default function Register() {
         email.trim(),
         password,
         collegeName.trim(),
-        yearOfStudy
+        yearOfStudy,
+        graduationYear
       );
 
       navigate('/user', { replace: true });
@@ -233,6 +240,21 @@ export default function Register() {
             >
               <option value="">Select current study year</option>
               {STUDY_YEARS.map((year) => (
+                <option key={year} value={year}>
+                  {year}
+                </option>
+              ))}
+            </select>
+
+            <label htmlFor="register-graduation-year">Expected graduation year</label>
+            <select
+              id="register-graduation-year"
+              value={graduationYear}
+              onChange={(event) => setGraduationYear(event.target.value)}
+              required
+            >
+              <option value="">Select expected graduation year</option>
+              {GRADUATION_YEARS.map((year) => (
                 <option key={year} value={year}>
                   {year}
                 </option>

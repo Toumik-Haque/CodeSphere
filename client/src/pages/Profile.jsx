@@ -113,6 +113,12 @@ const normalizeProfile = (source = {}) => {
   const codingProfiles = Array.isArray(source.codingProfiles)
     ? source.codingProfiles
     : [];
+  const rawAchievements = Array.isArray(source.achievements)
+    ? source.achievements
+    : [];
+  const achievementsHaveOrder = rawAchievements.every((achievement) =>
+    Number.isInteger(achievement?.order)
+  );
   const legacyGithubProfile = codingProfiles.find(
     (profile) => profile.platform?.toLowerCase() === 'github'
   );
@@ -131,7 +137,12 @@ const normalizeProfile = (source = {}) => {
     projects: Array.isArray(source.projects)
       ? source.projects.map(normalizeProject)
       : [],
-    achievements: Array.isArray(source.achievements) ? source.achievements : [],
+    achievements: rawAchievements
+      .map((achievement, index) => ({
+        ...achievement,
+        order: achievementsHaveOrder ? achievement.order : index,
+      }))
+      .sort((first, second) => first.order - second.order),
   };
 };
 
@@ -1005,10 +1016,12 @@ function Field({ field, value, onChange }) {
   );
 }
 
-function ProfileSection({ section, profile, onSave, onAdd, onDelete, open = false, onToggle, onExpand }) {
+function ProfileSection({ section, profile, onSave, onAdd, onDelete, onReorder, open = false, onToggle, onExpand }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [editingIndex, setEditingIndex] = useState(null);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
 
   const expanded = open;
 
@@ -1016,6 +1029,12 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete, open = fals
   const savedItems = isCollection && Array.isArray(profile[section.collection])
     ? profile[section.collection]
     : [];
+  const canReorder = Boolean(
+    isCollection &&
+    onReorder &&
+    ['projects', 'achievements'].includes(section.id) &&
+    savedItems.length > 1
+  );
 
   const hasEducation = section.id === 'education';
   const hasPersonal = section.id === 'personal';
@@ -1177,8 +1196,62 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete, open = fals
             <>
               {isCollection && savedItems.length > 0 && (
                 <div className="profile-saved-entries">
+                  {canReorder && (
+                    <p className="profile-reorder-hint">
+                      <i className="bi bi-grip-vertical" aria-hidden="true" />
+                      Drag entries to set the order shown on your public profile.
+                    </p>
+                  )}
+
                   {savedItems.map((item, index) => (
-                    <article className="profile-saved-entry" key={`${section.id}-${index}`}>
+                    <article
+                      className={`profile-saved-entry${dragOverIndex === index ? ' is-drag-over' : ''
+                        }${dragIndex === index ? ' is-dragging' : ''}`}
+                      key={`${section.id}-${index}`}
+                      onDragOver={canReorder ? (event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'move';
+                        if (dragIndex !== null && dragIndex !== index) {
+                          setDragOverIndex(index);
+                        }
+                      } : undefined}
+                      onDragLeave={canReorder ? (event) => {
+                        if (!event.currentTarget.contains(event.relatedTarget)) {
+                          setDragOverIndex(null);
+                        }
+                      } : undefined}
+                      onDrop={canReorder ? (event) => {
+                        event.preventDefault();
+                        if (dragIndex !== null && dragIndex !== index) {
+                          onReorder(section.collection, dragIndex, index);
+                        }
+                        setDragIndex(null);
+                        setDragOverIndex(null);
+                      } : undefined}
+                    >
+                      {canReorder && (
+                        <span
+                          className="profile-drag-handle"
+                          draggable
+                          role="button"
+                          tabIndex={0}
+                          title="Drag to reorder"
+                          aria-label={`Drag to reorder ${item.title || 'entry'}`}
+                          onDragStart={(event) => {
+                            setDragIndex(index);
+                            setDragOverIndex(index);
+                            event.dataTransfer.effectAllowed = 'move';
+                            event.dataTransfer.setData('text/plain', String(index));
+                          }}
+                          onDragEnd={() => {
+                            setDragIndex(null);
+                            setDragOverIndex(null);
+                          }}
+                        >
+                          <i className="bi bi-grip-vertical" aria-hidden="true" />
+                        </span>
+                      )}
+
                       <div className="profile-saved-entry-info">
                         <strong>{item.title || item.platform || 'Profile entry'}</strong>
                         <p>
@@ -1638,10 +1711,24 @@ export default function Profile({
 
     if (section === 'projects') return saveProjectEntry(item);
 
+    const entry = section === 'achievements'
+      ? {
+        ...item,
+        order: (profile.achievements || []).reduce(
+          (nextOrder, achievement) => (
+            Number.isInteger(achievement.order)
+              ? Math.max(nextOrder, achievement.order + 1)
+              : nextOrder
+          ),
+          (profile.achievements || []).length
+        ),
+      }
+      : item;
+
     return persistProfile(
       {
         ...profile,
-        [section]: [...(profile[section] || []), item],
+        [section]: [...(profile[section] || []), entry],
       },
       messages[section] || 'Entry added successfully!',
       [section]
@@ -1688,14 +1775,84 @@ export default function Profile({
       }
     }
 
+    let nextEntries = (profile[section] || []).filter((_, i) => i !== index);
+
+    if (section === 'achievements') {
+      nextEntries = nextEntries.map((entry, order) => ({ ...entry, order }));
+    }
+
     return persistProfile(
       {
         ...profile,
-        [section]: (profile[section] || []).filter((_, i) => i !== index),
+        [section]: nextEntries,
       },
       'Entry removed from your profile.',
       [section]
     );
+  };
+
+  const reorderEntry = async (section, from, to) => {
+    if (from === to) return false;
+
+    if (section === 'achievements') {
+      const entries = [...(profile.achievements || [])];
+      if (from < 0 || to < 0 || from >= entries.length || to >= entries.length) {
+        return false;
+      }
+
+      const [moved] = entries.splice(from, 1);
+      entries.splice(to, 0, moved);
+
+      return persistProfile(
+        {
+          ...profile,
+          achievements: entries.map((entry, order) => ({ ...entry, order })),
+        },
+        'Achievement order updated.',
+        ['achievements']
+      );
+    }
+
+    if (section !== 'projects') return false;
+
+    const projects = profile.projects || [];
+    if (from < 0 || to < 0 || from >= projects.length || to >= projects.length) {
+      return false;
+    }
+
+    const previous = projects;
+    const entries = [...projects];
+    const [moved] = entries.splice(from, 1);
+    entries.splice(to, 0, moved);
+    const ordered = entries.map((project, order) => ({ ...project, order }));
+
+    if (preview) {
+      setProfile((current) => ({ ...current, projects: ordered }));
+      showToast('Preview updated. Changes are temporary.', 'info');
+      return true;
+    }
+
+    setProfile((current) => ({ ...current, projects: ordered }));
+
+    try {
+      const response = await apiRequest('/portfolio-projects/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          ids: ordered.map((project) => project._id).filter(Boolean),
+        }),
+      });
+      const savedProjects = (response.projects || ordered).map(normalizeProject);
+
+      setProfile((current) => ({ ...current, projects: savedProjects }));
+      setSaveStatus(response.message || 'Project order updated.');
+      showToast(response.message || 'Project order updated.');
+      return true;
+    } catch (reorderError) {
+      setProfile((current) => ({ ...current, projects: previous }));
+      setError(reorderError.message || 'Unable to update project order.');
+      showToast(reorderError.message || 'Unable to update project order.', 'error');
+      return false;
+    }
   };
 
   const addSkill = async (skill) => {
@@ -2048,6 +2205,7 @@ export default function Profile({
                         onSave={section.collection ? updateEntry : updateSimpleSection}
                         onAdd={addEntry}
                         onDelete={deleteEntry}
+                        onReorder={reorderEntry}
                         open={openSection === section.id}
                         onToggle={() => toggleSection(section.id)}
                         onExpand={() => setOpenSection(section.id)}

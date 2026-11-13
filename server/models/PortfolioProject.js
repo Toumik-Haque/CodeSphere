@@ -59,6 +59,13 @@ const projectSchema = new mongoose.Schema(
       type: Boolean,
       default: false,
     },
+
+    // Position chosen by the student on their profile. Missing values fall
+    // back to the default featured/updated ordering.
+    order: {
+      type: Number,
+      min: 0,
+    },
   },
   {
     timestamps: true,

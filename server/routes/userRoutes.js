@@ -510,7 +510,7 @@ router.patch('/profile', protect, async (req, res) => {
       },
       achievements: {
         required: ['title'],
-        allowed: ['title', 'category', 'issuer', 'year', 'link'],
+        allowed: ['title', 'category', 'issuer', 'year', 'link', 'order'],
       },
     };
 
@@ -526,7 +526,10 @@ router.patch('/profile', protect, async (req, res) => {
           !Array.isArray(item) &&
           rules.required.every((key) => typeof item[key] === 'string') &&
           Object.entries(item).every(([key, value]) =>
-            rules.allowed.includes(key) && typeof value === 'string'
+            rules.allowed.includes(key) &&
+            (key === 'order'
+              ? Number.isInteger(value) && value >= 0
+              : typeof value === 'string')
           )
         )
       ) {
@@ -538,7 +541,10 @@ router.patch('/profile', protect, async (req, res) => {
 
       updates[field] = updates[field].map((item) =>
         Object.fromEntries(
-          Object.entries(item).map(([key, value]) => [key, value.trim()])
+          Object.entries(item).map(([key, value]) => [
+            key,
+            typeof value === 'string' ? value.trim() : value,
+          ])
         )
       );
 
@@ -775,9 +781,15 @@ router.get('/profile/:username', protect, async (req, res) => {
     }
 
     member.projects = await Project.find({ user: member._id })
-      .sort({ featured: -1, updatedAt: -1 })
-      .select('title description technologies type githubUrl liveUrl status featured')
+      .sort({ order: 1, featured: -1, updatedAt: -1 })
+      .select('title description technologies type githubUrl liveUrl status featured order')
       .lean();
+
+    member.achievements = [...(member.achievements || [])].sort(
+      (first, second) =>
+        (Number.isInteger(first.order) ? first.order : 0) -
+        (Number.isInteger(second.order) ? second.order : 0)
+    );
 
     return res.json({
       success: true,

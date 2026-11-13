@@ -940,6 +940,47 @@
   gap: 10px;
 }
 
+.profile-reorder-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 0;
+  color: var(--profile-muted);
+  font-size: 10px;
+  font-weight: 650;
+}
+
+.profile-drag-handle {
+  display: grid;
+  flex: 0 0 auto;
+  width: 26px;
+  height: 32px;
+  place-items: center;
+  border-radius: 6px;
+  color: var(--profile-muted);
+  cursor: grab;
+  transition: all 0.2s ease;
+}
+
+.profile-drag-handle:hover {
+  background: var(--profile-peach);
+  color: var(--profile-orange-dark);
+}
+
+.profile-drag-handle:active {
+  cursor: grabbing;
+}
+
+.profile-saved-entry.is-dragging {
+  opacity: 0.55;
+}
+
+.profile-saved-entry.is-drag-over {
+  border-color: #edc5b5;
+  background: var(--profile-peach);
+  box-shadow: 0 8px 18px rgba(217, 108, 63, 0.12);
+}
+
 .profile-saved-entry {
   display: flex;
   align-items: flex-start;
