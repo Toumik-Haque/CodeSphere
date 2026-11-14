@@ -10,7 +10,7 @@ Here, no question is too basic and no idea is too big. Seniors guide juniors, be
 
 This project is our community in code. Every page was shaped by someone who once wondered if they were "good enough" to contribute. Now it's your turn to leave your mark.
 
-Contributions from anyone are welcome: students, first-time open source contributors and experienced developers alike. Read [Getting Started](#getting-started) to run the project, then [Contributing](#contributing) before opening a pull request.
+Contributions from anyone are welcome: students, first-time open source contributors and experienced developers alike. Read [How to Set Up the Project](#how-to-set-up-the-project) to run the project, then [Contributing](#contributing) before opening a pull request.
 
 ---
 
@@ -18,7 +18,7 @@ Contributions from anyone are welcome: students, first-time open source contribu
 
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
+- [How to Set Up the Project](#how-to-set-up-the-project)
 - [How to Create an Issue](#how-to-create-an-issue)
 - [Community Modules](#community-modules)
 - [XP, Badges & Levels](#xp-badges--levels)
@@ -61,7 +61,7 @@ CodeSphere/
 
 ---
 
-## Getting Started
+## How to Set Up the Project
 
 ### Prerequisites
 
