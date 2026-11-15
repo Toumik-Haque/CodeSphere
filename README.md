@@ -10,23 +10,219 @@ Here, no question is too basic and no idea is too big. Seniors guide juniors, be
 
 This project is our community in code. Every page was shaped by someone who once wondered if they were "good enough" to contribute. Now it's your turn to leave your mark.
 
-Contributions from anyone are welcome: students, first-time open source contributors and experienced developers alike. Read [How to Set Up the Project](#how-to-set-up-the-project) to run the project, then [Contributing](#contributing) before opening a pull request.
+Contributions from anyone are welcome: students, first-time open source contributors and experienced developers alike. Start with [How to Create an Issue](#how-to-create-an-issue), follow [How to Set Up the Project](#how-to-set-up-the-project), and read the [Contribution Guidelines](#contribution-guidelines) before opening a pull request.
 
 ---
 
 ## Table of Contents
 
+- [How to Create an Issue](#how-to-create-an-issue)
+- [How to Set Up the Project](#how-to-set-up-the-project)
+- [Contribution Guidelines](#contribution-guidelines)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
-- [How to Set Up the Project](#how-to-set-up-the-project)
-- [How to Create an Issue](#how-to-create-an-issue)
 - [Community Modules](#community-modules)
 - [XP, Badges & Levels](#xp-badges--levels)
-- [Contributing](#contributing)
 - [Code of Conduct](#code-of-conduct)
 - [Security](#security)
 - [Contact](#contact)
 - [License](#license)
+
+---
+
+---
+
+## How to Set Up the Project
+
+
+
+---
+
+## Contribution Guidelines
+
+These rules draw on common practice from open source communities such as the Contributor Covenant, Conventional Commits, GitHub's open source guides and Hacktoberfest's quality rules.
+
+### Ways to contribute
+
+- Fix bugs and report new ones
+- Build features listed in the issues
+- Improve the UI, accessibility, responsiveness or performance
+- Improve documentation, including this README
+- Review other people's pull requests
+
+### Workflow
+
+```mermaid
+flowchart TD
+    A([Start]) --> B{Is there an issue<br/>for your idea or bug?}
+    B -- No --> C[Open a new issue<br/>and discuss it]
+    B -- Yes --> D[Comment on the issue<br/>and ask to be assigned]
+    C --> D
+    D --> E{Assigned to you?}
+    E -- No --> B
+    E -- Yes --> F[Fork the repo and<br/>clone your fork]
+    F --> G[Sync with upstream main<br/>git pull upstream main]
+    G --> H[Create a branch<br/>feature/... fix/... docs/...]
+    H --> I[Write code following<br/>the coding guidelines]
+    I --> J[Test locally and<br/>run npm run lint]
+    J --> K{Everything works?}
+    K -- No --> I
+    K -- Yes --> L[Commit with Conventional Commits<br/>feat: / fix: / docs:]
+    L --> M[Push to your fork]
+    M --> N[Open a pull request<br/>against main, link the issue]
+    N --> O{Maintainer review}
+    O -- Changes requested --> P[Update your branch<br/>and push again]
+    P --> O
+    O -- Approved --> Q[Maintainer merges the PR]
+    Q --> R([You are a CodeSphere contributor!])
+```
+
+1. **Find or open an issue.** Check [existing issues](https://github.com/Toumik-Haque/CodeSphere/issues) first. For anything bigger than a small fix, open an issue and discuss it before you write code.
+2. **Ask to be assigned.** Comment on the issue and wait for a maintainer to assign it to you. Do not work on an issue assigned to someone else. If an assigned issue has no activity for 7 days, maintainers may reassign it.
+3. **Sync your fork:**
+   ```bash
+   git checkout main
+   git pull upstream main
+   ```
+4. **Create a branch** from `main`, named by type:
+
+   | Type | Example |
+   | --- | --- |
+   | Feature | `feature/event-registration` |
+   | Bug fix | `fix/otp-resend-timer` |
+   | Docs | `docs/setup-guide` |
+   | Styling / UI | `style/navbar-mobile` |
+   | Refactor | `refactor/auth-routes` |
+   | Maintenance | `chore/update-deps` |
+
+5. **Make your changes** following the [coding guidelines](#coding-guidelines).
+6. **Test locally.** Run the app, try your change, and run `npm run lint` in `client/`.
+7. **Commit** using [Conventional Commits](#commit-messages).
+8. **Push and open a pull request** against `main`:
+   ```bash
+   git push origin <your-branch>
+   ```
+
+### Commit messages
+
+Follow [Conventional Commits](https://www.conventionalcommits.org/):
+
+```
+<type>: <short summary in present tense>
+```
+
+| Type | Use for |
+| --- | --- |
+| `feat` | A new feature |
+| `fix` | A bug fix |
+| `docs` | Documentation only |
+| `style` | CSS / visual changes, formatting |
+| `refactor` | Code change that neither fixes a bug nor adds a feature |
+| `perf` | Performance improvement |
+| `chore` | Dependencies, config, tooling |
+
+Examples:
+
+```
+feat: add search to events page
+fix: return focus to menu button when mobile drawer closes
+docs: add ImageKit setup to README
+```
+
+Keep each commit focused on one thing. Don't mix unrelated changes.
+
+### Pull request rules
+
+- **One pull request per issue or feature.** Keep it small enough to review.
+- **Link the issue** in the description, for example `Closes #12`.
+- **Explain what changed and why.** For UI changes, add before/after screenshots, including mobile.
+- **Keep your branch up to date** with `main` and resolve conflicts yourself.
+- **Don't commit** `.env` files, API keys, passwords, `node_modules/`, `dist/` or large files you don't need. Compress media before adding it (aim for under 5 MB per video).
+- **Only change `package-lock.json`** when you actually add, remove or update a dependency, and say so in the PR.
+- **Respond to review comments.** Pull requests with no response for 14 days may be closed.
+- **A maintainer must approve** every PR before it is merged. Don't merge your own PR.
+
+**PR checklist**
+
+- [ ] The app runs locally with no new errors in the browser console or server log
+- [ ] `npm run lint` passes for the files I changed
+- [ ] The UI works on mobile and desktop
+- [ ] No secrets or `.env` files are included
+- [ ] New environment variables are added to `.env.example` and this README
+- [ ] The PR links its issue and includes screenshots for UI changes
+
+### Coding guidelines
+
+- **Match the existing style.** Use functional React components with hooks, and give each page or component its own stylesheet in `client/src/css/`.
+- **Use clear names.** Prefer descriptive variable and function names over comments that explain unclear code.
+- **Accessibility matters.** Use semantic HTML, `alt` text on images, labels on form fields, and make sure everything works with a keyboard.
+- **Security:**
+  - Sanitize any user-provided HTML: DOMPurify on the client, sanitize-html on the server.
+  - Validate input on the server, not only in the browser.
+  - Never log passwords, tokens or OTP codes.
+  - Keep all keys in environment variables.
+- **Dependencies:** don't add a new package without a good reason. Explain why it is needed in your PR.
+- **Remove leftovers.** Delete unused code, `console.log` debugging and commented-out blocks before you open the PR.
+
+### Reporting bugs
+
+Open an issue that includes:
+
+- What you expected and what actually happened
+- Steps to reproduce
+- Screenshots or console errors, if any
+- Browser, device and operating system
+
+### Suggesting features
+
+Open an issue that describes the problem the feature solves, your proposed solution and any alternatives you considered.
+
+### Not accepted
+
+To keep the project quality high, these will be closed without merging, as in Hacktoberfest's spam rules:
+
+- Pull requests that only change whitespace, fix one typo in code, or rename things without a reason
+- Automated or AI-generated changes submitted without being understood, tested and explained by the contributor
+- Pull requests copied from another contributor's work
+- Changes that add unrelated features, tracking, ads or promotional links
+- Repeated low-effort PRs made only to increase contribution counts
+
+Repeated spam may lead to being blocked from the repository.
+
+---
+
+---
+
+---
+
+## Tech Stack
+
+| Part | Technologies |
+| --- | --- |
+| Frontend (`client/`) | React, Vite, React Router, Bootstrap, Bootstrap Icons, TinyMCE, DOMPurify |
+| Backend (`server/`) | Node.js, Express, MongoDB (Mongoose), JWT, bcrypt, Multer, sanitize-html |
+| Services | Brevo (OTP and contact emails), ImageKit (image uploads), TinyMCE Cloud (rich-text editor) |
+
+## Project Structure
+
+```
+CodeSphere/
+├── client/                 # React frontend (Vite)
+│   ├── public/             # Static files (videos, icons)
+│   └── src/
+│       ├── components/     # Reusable UI (Navbar, Footer, Hero, ...)
+│       ├── context/        # React context (AuthContext)
+│       ├── css/            # One stylesheet per page/component
+│       ├── lib/api.js      # API helper (uses VITE_API_URL)
+│       └── pages/          # Route pages (Register, Login, Admin, Events, ...)
+└── server/                 # Express backend
+    ├── config/             # Service clients (ImageKit, ...)
+    ├── middleware/         # Auth and other middleware
+    ├── models/             # Mongoose models
+    ├── routes/             # API routes (auth, events, users, contact, core members)
+    ├── scripts/            # One-off scripts (createAdmin.js)
+    └── server.js           # Entry point
+```
 
 ---
 
@@ -221,57 +417,6 @@ It asks for a name, email and password (8–12 characters).
 
 ---
 
-## How to Create an Issue
-
-Issues help the CodeSphere community report bugs, suggest features, and discuss improvements. **Before opening one, search existing issues** to avoid duplicates.
-
-### Step 1 – Open the Issues page
-Visit the [CodeSphere Issues page](https://github.com/Toumik-Haque/CodeSphere/issues) and sign in to GitHub.
-
-### Step 2 – Click "New issue"
-Choose the template that best matches your purpose if templates are available. Otherwise, select a blank issue.
-
-### Step 3 – Write a clear title
-Use a short, specific title that describes the problem or idea.
-
-Examples:
-- `[Bug]: Login button does not respond on mobile`
-- `[Feature]: Add filters to the events page`
-- `[Docs]: Clarify local development setup`
-
-### Step 4 – Describe the issue
-For a **bug**, include expected behaviour, actual behaviour, exact reproduction steps, browser/device/OS, and relevant screenshots or error messages.
-
-For a **feature request**, explain the problem it solves, your proposed solution, who benefits, and any alternatives considered.
-
-### Step 5 – Submit
-Review the title and description, remove any personal information or secrets from attachments, then click **Submit new issue**.
-
-### Step 6 – Discuss before coding
-Wait for a maintainer to review the issue. If you want to work on it, comment asking to be assigned. Start implementation only after a maintainer confirms or assigns it. Never work on an issue assigned to someone else.
-
-### Issue creation flow
-
-```mermaid
-flowchart TD
-    A([Open CodeSphere Issues]) --> B[Search existing issues]
-    B --> C{Already reported?}
-    C -- Yes --> D[Add useful details<br/>to the existing discussion]
-    C -- No --> E[Click New issue]
-    E --> F[Choose a template<br/>or blank issue]
-    F --> G[Write a specific title<br/>and clear description]
-    G --> H[Add reproduction steps<br/>or feature rationale]
-    H --> I[Attach relevant screenshots<br/>with private data removed]
-    I --> J[Submit new issue]
-    J --> K[Wait for maintainer feedback]
-    K --> L[Ask to be assigned]
-    L --> M([Start after confirmation])
-```
-
-> **Tip:** Keep one issue focused on one bug or feature. Do not report security vulnerabilities publicly; follow the [Security](#security) instructions instead.
-
----
-
 ## Community Modules
 
 | Module | Students | Staff page |
@@ -306,159 +451,6 @@ Students earn **XP** from the daily Debugging Arena bug, the coding challenges a
 Students see their level, badges, progress and a showcase of up to 3 pinned badges on their **Profile**, and a toast pops up whenever they unlock one.
 
 **Adding a badge:** add an entry to `server/data/badges.js`. For automatic badges, use a `metric` from `buildStats()` in `server/utils/badges.js` (or add one there) and a `target`. Never change an existing badge `id`, because earned badges are stored by id. Then run `node scripts/syncBadges.js` to award it to students who already qualify.
-
----
-
-## Contributing
-
-These rules draw on common practice from open source communities such as the Contributor Covenant, Conventional Commits, GitHub's open source guides and Hacktoberfest's quality rules.
-
-### Ways to contribute
-
-- Fix bugs and report new ones
-- Build features listed in the issues
-- Improve the UI, accessibility, responsiveness or performance
-- Improve documentation, including this README
-- Review other people's pull requests
-
-### Workflow
-
-```mermaid
-flowchart TD
-    A([Start]) --> B{Is there an issue<br/>for your idea or bug?}
-    B -- No --> C[Open a new issue<br/>and discuss it]
-    B -- Yes --> D[Comment on the issue<br/>and ask to be assigned]
-    C --> D
-    D --> E{Assigned to you?}
-    E -- No --> B
-    E -- Yes --> F[Fork the repo and<br/>clone your fork]
-    F --> G[Sync with upstream main<br/>git pull upstream main]
-    G --> H[Create a branch<br/>feature/... fix/... docs/...]
-    H --> I[Write code following<br/>the coding guidelines]
-    I --> J[Test locally and<br/>run npm run lint]
-    J --> K{Everything works?}
-    K -- No --> I
-    K -- Yes --> L[Commit with Conventional Commits<br/>feat: / fix: / docs:]
-    L --> M[Push to your fork]
-    M --> N[Open a pull request<br/>against main, link the issue]
-    N --> O{Maintainer review}
-    O -- Changes requested --> P[Update your branch<br/>and push again]
-    P --> O
-    O -- Approved --> Q[Maintainer merges the PR]
-    Q --> R([You are a CodeSphere contributor!])
-```
-
-1. **Find or open an issue.** Check [existing issues](https://github.com/Toumik-Haque/CodeSphere/issues) first. For anything bigger than a small fix, open an issue and discuss it before you write code.
-2. **Ask to be assigned.** Comment on the issue and wait for a maintainer to assign it to you. Do not work on an issue assigned to someone else. If an assigned issue has no activity for 7 days, maintainers may reassign it.
-3. **Sync your fork:**
-   ```bash
-   git checkout main
-   git pull upstream main
-   ```
-4. **Create a branch** from `main`, named by type:
-
-   | Type | Example |
-   | --- | --- |
-   | Feature | `feature/event-registration` |
-   | Bug fix | `fix/otp-resend-timer` |
-   | Docs | `docs/setup-guide` |
-   | Styling / UI | `style/navbar-mobile` |
-   | Refactor | `refactor/auth-routes` |
-   | Maintenance | `chore/update-deps` |
-
-5. **Make your changes** following the [coding guidelines](#coding-guidelines).
-6. **Test locally.** Run the app, try your change, and run `npm run lint` in `client/`.
-7. **Commit** using [Conventional Commits](#commit-messages).
-8. **Push and open a pull request** against `main`:
-   ```bash
-   git push origin <your-branch>
-   ```
-
-### Commit messages
-
-Follow [Conventional Commits](https://www.conventionalcommits.org/):
-
-```
-<type>: <short summary in present tense>
-```
-
-| Type | Use for |
-| --- | --- |
-| `feat` | A new feature |
-| `fix` | A bug fix |
-| `docs` | Documentation only |
-| `style` | CSS / visual changes, formatting |
-| `refactor` | Code change that neither fixes a bug nor adds a feature |
-| `perf` | Performance improvement |
-| `chore` | Dependencies, config, tooling |
-
-Examples:
-
-```
-feat: add search to events page
-fix: return focus to menu button when mobile drawer closes
-docs: add ImageKit setup to README
-```
-
-Keep each commit focused on one thing. Don't mix unrelated changes.
-
-### Pull request rules
-
-- **One pull request per issue or feature.** Keep it small enough to review.
-- **Link the issue** in the description, for example `Closes #12`.
-- **Explain what changed and why.** For UI changes, add before/after screenshots, including mobile.
-- **Keep your branch up to date** with `main` and resolve conflicts yourself.
-- **Don't commit** `.env` files, API keys, passwords, `node_modules/`, `dist/` or large files you don't need. Compress media before adding it (aim for under 5 MB per video).
-- **Only change `package-lock.json`** when you actually add, remove or update a dependency, and say so in the PR.
-- **Respond to review comments.** Pull requests with no response for 14 days may be closed.
-- **A maintainer must approve** every PR before it is merged. Don't merge your own PR.
-
-**PR checklist**
-
-- [ ] The app runs locally with no new errors in the browser console or server log
-- [ ] `npm run lint` passes for the files I changed
-- [ ] The UI works on mobile and desktop
-- [ ] No secrets or `.env` files are included
-- [ ] New environment variables are added to `.env.example` and this README
-- [ ] The PR links its issue and includes screenshots for UI changes
-
-### Coding guidelines
-
-- **Match the existing style.** Use functional React components with hooks, and give each page or component its own stylesheet in `client/src/css/`.
-- **Use clear names.** Prefer descriptive variable and function names over comments that explain unclear code.
-- **Accessibility matters.** Use semantic HTML, `alt` text on images, labels on form fields, and make sure everything works with a keyboard.
-- **Security:**
-  - Sanitize any user-provided HTML: DOMPurify on the client, sanitize-html on the server.
-  - Validate input on the server, not only in the browser.
-  - Never log passwords, tokens or OTP codes.
-  - Keep all keys in environment variables.
-- **Dependencies:** don't add a new package without a good reason. Explain why it is needed in your PR.
-- **Remove leftovers.** Delete unused code, `console.log` debugging and commented-out blocks before you open the PR.
-
-### Reporting bugs
-
-Open an issue that includes:
-
-- What you expected and what actually happened
-- Steps to reproduce
-- Screenshots or console errors, if any
-- Browser, device and operating system
-
-### Suggesting features
-
-Open an issue that describes the problem the feature solves, your proposed solution and any alternatives you considered.
-
-### Not accepted
-
-To keep the project quality high, these will be closed without merging, as in Hacktoberfest's spam rules:
-
-- Pull requests that only change whitespace, fix one typo in code, or rename things without a reason
-- Automated or AI-generated changes submitted without being understood, tested and explained by the contributor
-- Pull requests copied from another contributor's work
-- Changes that add unrelated features, tracking, ads or promotional links
-- Repeated low-effort PRs made only to increase contribution counts
-
-Repeated spam may lead to being blocked from the repository.
 
 ---
 
