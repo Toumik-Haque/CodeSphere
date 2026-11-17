@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
+import { useNotice } from '../context/NoticeContext';
 
 const LABELS = { hackernews: 'Hacker News', devto: 'DEV', rss: 'RSS feeds', gnews: 'GNews', newsdata: 'NewsData.io' };
 
 // Status of the automatic daily feed (Admin → Tech News → Daily news).
 export default function DailyNewsAdmin() {
+  const { showNotice } = useNotice();
   const [data, setData] = useState(null);
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState('');
@@ -21,13 +23,22 @@ export default function DailyNewsAdmin() {
 
   const sync = async () => {
     setBusy(true);
-    setMessage('');
     try {
       const { results } = await apiRequest('/news/admin/daily/sync', { method: 'POST' });
-      setMessage(results.map((r) => `${LABELS[r.source] || r.source}: ${r.ok ? `+${r.added}` : `failed (${r.error})`}`).join(' · '));
+      showNotice({
+        tone: 'success',
+        kicker: 'Daily news',
+        title: 'Sync complete',
+        message: results.map((r) => `${LABELS[r.source] || r.source}: ${r.ok ? `+${r.added}` : `failed (${r.error})`}`).join(' · '),
+      });
       setVersion((v) => v + 1);
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Daily news',
+        title: 'Sync failed',
+        message: e.message,
+      });
     } finally {
       setBusy(false);
     }

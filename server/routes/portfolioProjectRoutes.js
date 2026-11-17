@@ -96,7 +96,7 @@ router.get('/', protect, async (req, res) => {
   try {
     const projects = await Project.find({
       user: req.user._id,
-    }).sort({ featured: -1, updatedAt: -1 });
+    }).sort({ order: 1, featured: -1, updatedAt: -1 });
 
     return res.json({
       success: true,
@@ -137,6 +137,14 @@ router.post('/', protect, async (req, res) => {
       });
     }
 
+    const lastProject = await Project.findOne({ user: req.user._id })
+      .sort({ order: -1 })
+      .select('order')
+      .lean();
+    const order = Number.isInteger(lastProject?.order)
+      ? lastProject.order + 1
+      : projectCount;
+
     const project = await Project.create({
       user: req.user._id,
       title: req.body.title.trim(),
@@ -149,6 +157,7 @@ router.post('/', protect, async (req, res) => {
       liveUrl: (req.body.liveUrl || '').trim(),
       status: req.body.status || 'Completed',
       featured: Boolean(req.body.featured),
+      order,
     });
 
     return res.status(201).json({
@@ -162,6 +171,68 @@ router.post('/', protect, async (req, res) => {
     return res.status(500).json({
       success: false,
       message: 'Unable to add project.',
+    });
+  }
+});
+
+// REORDER PROJECTS
+// PATCH /api/projects/reorder
+router.patch('/reorder', protect, async (req, res) => {
+  try {
+    const { ids } = req.body;
+
+    if (
+      !Array.isArray(ids) ||
+      ids.length === 0 ||
+      !ids.every((id) => mongoose.Types.ObjectId.isValid(id))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Provide an ordered array of project IDs.',
+      });
+    }
+
+    const ownedProjects = await Project.find({ user: req.user._id })
+      .select('_id')
+      .lean();
+    const ownedIds = new Set(ownedProjects.map((project) => String(project._id)));
+
+    if (
+      ids.length !== ownedIds.size ||
+      !ids.every((id) => ownedIds.has(String(id)))
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: 'Project order must include all of your projects.',
+      });
+    }
+
+    await Project.bulkWrite(
+      ids.map((id, index) => ({
+        updateOne: {
+          filter: { _id: id, user: req.user._id },
+          update: { $set: { order: index } },
+        },
+      }))
+    );
+
+    const projects = await Project.find({ user: req.user._id }).sort({
+      order: 1,
+      featured: -1,
+      updatedAt: -1,
+    });
+
+    return res.json({
+      success: true,
+      message: 'Project order updated successfully.',
+      projects,
+    });
+  } catch (error) {
+    console.error('Reorder projects error:', error.message);
+
+    return res.status(500).json({
+      success: false,
+      message: 'Unable to update project order.',
     });
   }
 });

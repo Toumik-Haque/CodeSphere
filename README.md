@@ -1,4 +1,4 @@
-# CodeSphere
+# CodeSphere – The Engineers' Logic Club
 
 ### Every great developer started with one line of code. Your next one could ship here.
 
@@ -10,57 +10,120 @@ Here, no question is too basic and no idea is too big. Seniors guide juniors, be
 
 This project is our community in code. Every page was shaped by someone who once wondered if they were "good enough" to contribute. Now it's your turn to leave your mark.
 
-Contributions from anyone are welcome: students, first-time open source contributors and experienced developers alike. Read [Getting Started](#getting-started) to run the project, then [Contributing](#contributing) before opening a pull request.
+Contributions from anyone are welcome: students, first-time open source contributors and experienced developers alike. Start with [How to Create an Issue](#how-to-create-an-issue), follow [How to Set Up the Project](#how-to-set-up-the-project), and read the [Contribution Guidelines](#contribution-guidelines) before opening a pull request.
 
 ---
 
 ## Table of Contents
 
+- [How to Create an Issue](#how-to-create-an-issue)
+- [How to Set Up the Project](#how-to-set-up-the-project)
+- [Contribution Guidelines](#contribution-guidelines)
 - [Tech Stack](#tech-stack)
 - [Project Structure](#project-structure)
-- [Getting Started](#getting-started)
 - [Community Modules](#community-modules)
 - [XP, Badges & Levels](#xp-badges--levels)
-- [Contributing](#contributing)
 - [Code of Conduct](#code-of-conduct)
 - [Security](#security)
 - [Contact](#contact)
+- [Contributors](#contributors)
 - [License](#license)
 
 ---
 
-## Tech Stack
+---
 
-| Part | Technologies |
-| --- | --- |
-| Frontend (`client/`) | React, Vite, React Router, Bootstrap, Bootstrap Icons, TinyMCE, DOMPurify |
-| Backend (`server/`) | Node.js, Express, MongoDB (Mongoose), JWT, bcrypt, Multer, sanitize-html |
-| Services | Brevo (OTP and contact emails), ImageKit (image uploads), TinyMCE Cloud (rich-text editor) |
+## How to Create an Issue
 
-## Project Structure
+Issues are the place to report bugs, suggest features, and ask for improvements. You do not need to know how to code to open a useful issue.
 
+### Step 1 – Open the Issues page
+
+Go to [CodeSphere Issues](https://github.com/Toumik-Haque/CodeSphere/issues). Sign in to GitHub so you can create and comment on issues.
+
+### Step 2 – Check for an existing issue
+
+Use the search box and filters to look for the same bug or idea. If an issue already exists, open it and add any new information there instead of creating a duplicate.
+
+### Step 3 – Click **New issue**
+
+On the Issues page, click **New issue**. If GitHub offers templates, choose the one that matches your report. If no suitable template appears, choose a blank issue.
+
+### Step 4 – Write a clear title
+
+Keep the title short and specific. Describe the problem or requested change.
+
+Examples:
+- `[Bug]: Login button does not respond on mobile`
+- `[Feature]: Add filters to the events page`
+- `[Docs]: Clarify the local setup instructions`
+
+### Step 5 – Complete the description
+
+For a **bug report**, include:
+- What you expected to happen.
+- What actually happened.
+- The exact steps to reproduce it.
+- Browser, device, and operating system.
+- Relevant screenshots, recordings, or error messages.
+
+For a **feature request**, include:
+- The problem or user need.
+- Your proposed solution.
+- Who would benefit and why.
+- Any alternative solution you considered.
+
+Do not include passwords, API keys, OTPs, private user data, or other secrets in an issue or screenshot.
+
+### Step 6 – Submit and follow the discussion
+
+Review the information and click **Submit new issue**. A maintainer may ask questions, apply labels, or discuss the proposed change. Reply with useful details.
+
+### Step 7 – Ask before working on it
+
+If you want to implement an issue, comment that you would like to work on it and wait for a maintainer to assign or confirm it. Do not start work on an issue assigned to someone else.
+
+### Visual guide: issue creation flow
+
+```mermaid
+flowchart TD
+    A([Open CodeSphere Issues]) --> B[Search existing issues]
+    B --> C{Matching issue found?}
+    C -- Yes --> D[Add details to the existing issue]
+    C -- No --> E[Click New issue]
+    E --> F[Choose a template or blank issue]
+    F --> G[Enter a clear title]
+    G --> H[Describe the bug or feature]
+    H --> I[Add safe screenshots and reproduction steps]
+    I --> J[Submit new issue]
+    J --> K[Respond to maintainer questions]
+    K --> L[Ask to be assigned before coding]
+    L --> M([Begin after maintainer confirmation])
 ```
-CodeSphere/
-├── client/                 # React frontend (Vite)
-│   ├── public/             # Static files (videos, icons)
-│   └── src/
-│       ├── components/     # Reusable UI (Navbar, Footer, Hero, ...)
-│       ├── context/        # React context (AuthContext)
-│       ├── css/            # One stylesheet per page/component
-│       ├── lib/api.js      # API helper (uses VITE_API_URL)
-│       └── pages/          # Route pages (Register, Login, Admin, Events, ...)
-└── server/                 # Express backend
-    ├── config/             # Service clients (ImageKit, ...)
-    ├── middleware/         # Auth and other middleware
-    ├── models/             # Mongoose models
-    ├── routes/             # API routes (auth, events, users, contact, core members)
-    ├── scripts/            # One-off scripts (createAdmin.js)
-    └── server.js           # Entry point
+
+### What should go into the issue?
+
+```mermaid
+flowchart TB
+    A[New GitHub issue] --> B[Title: short and specific]
+    A --> C[Description]
+    C --> D{Issue type}
+    D -->|Bug| E[Expected result + actual result]
+    E --> F[Steps to reproduce]
+    F --> G[Environment + screenshots or logs]
+    D -->|Feature| H[Problem + proposed solution]
+    H --> I[Who benefits + alternatives]
+    G --> J[Review for private data]
+    I --> J
+    B --> J
+    J --> K[Submit issue]
 ```
+
+> **Security note:** Never publish a security vulnerability in a public issue. Follow the [Security](#security) reporting instructions instead.
 
 ---
 
-## Getting Started
+## How to Set Up the Project
 
 ### Prerequisites
 
@@ -119,27 +182,40 @@ cp client/.env.example client/.env
 
 | Variable | Description |
 | --- | --- |
-| `PORT` | Port for the API (default `5000`; the client expects `5000`) |
-| `MONGODB_URI` | MongoDB connection string |
-| `JWT_SECRET` | Long random string used to sign login tokens |
-| `CLIENT_URL` | Frontend URL, `http://localhost:5173` in development |
-| `IMAGEKIT_PRIVATE_KEY` | ImageKit private API key |
-| `BREVO_API_KEY` | Brevo API key (v3) |
-| `BREVO_SENDER_EMAIL` | A sender email verified in your Brevo account |
-| `BREVO_SENDER_NAME` | Display name for outgoing emails |
-| `OTP_HASH_SECRET` | Long random string used to hash OTP codes |
-| `CONTACT_RECEIVER_EMAIL` | Inbox that receives contact-form messages |
-| `JUDGE0_URL` | Judge0 API used to check Playground challenge answers (default: RapidAPI's Judge0 CE; or your self-hosted Judge0) |
-| `JUDGE0_API_KEY` | RapidAPI key for Judge0 (leave empty for a self-hosted Judge0 without auth) |
-| `NEWS_FETCH_HOURS` | How often (hours) active Tech News feeds are fetched (default `24`) |
-| `NEWS_SCHEDULER` | Set to `off` to disable automatic feed fetching and scheduled digest announcements |
+| `PORT` | API port (default `5000`) |
+| `MONGODB_URI` | MongoDB connection string (required) |
+| `JWT_SECRET` | Authentication token secret (auto-generated by `node setup.js` if empty) |
+| `CLIENT_URL` | Frontend origin allowed by CORS and used in email links; use `http://localhost:5173` locally |
+| `IMAGEKIT_PRIVATE_KEY` | ImageKit private key |
+| `BREVO_API_KEY` | Brevo API key for OTP and email delivery |
+| `BREVO_SENDER_EMAIL` | Verified Brevo sender email |
+| `BREVO_SENDER_NAME` | Outgoing email sender name |
+| `OTP_HASH_SECRET` | OTP hashing secret (auto-generated by `node setup.js` if empty) |
+| `CONTACT_RECEIVER_EMAIL` | Inbox for contact-form messages |
+| `CODE_RUNNER` | Optional: `judge0`, `wandbox`, or `off`; default uses the public Wandbox API |
+| `WANDBOX_CONCURRENCY` | Maximum parallel Wandbox requests (default `2`) |
+| `JUDGE0_URL`, `JUDGE0_API_KEY` | Optional Judge0 endpoint and API key |
+| `NEWS_FETCH_HOURS` | Active news-feed refresh interval in hours (default `24`) |
+| `NEWS_SCHEDULER` | Set to `off` to disable scheduled feed fetching and digest announcements |
+| `HACKATHON_SYNC` | Set to `off` to disable live hackathon synchronisation |
+| `GITHUB_TOKEN` | Optional server-side token for a higher GitHub API rate limit |
+| `GITHUB_OAUTH_CLIENT_ID`, `GITHUB_OAUTH_CLIENT_SECRET` | Optional GitHub OAuth app credentials |
+| `PROJECT_SYNC` | Set to `off` to disable daily Project Hub GitHub refresh |
+| `DAILY_NEWS` | Set to `off` to disable daily tech-news ingestion |
+| `DAILY_NEWS_SYNC_HOURS` | Daily-news refresh interval in hours |
+| `DAILY_BRIEF_HOUR` | Hour (IST) for the daily tech briefing |
+| `DAILY_NEWS_KEEP_DAYS` | Daily-news retention period |
+| `DAILY_EMAIL_LIMIT` | Daily email sending cap |
+| `GNEWS_API_KEY`, `NEWSDATA_API_KEY` | Optional keys for additional news sources |
+| `NEWS_AUTO_DIGEST` | Set to `on` to enable automatic weekly digest publishing |
+| `API_PUBLIC_URL` | Public API URL used for newsletter unsubscribe links |
 
 **`client/.env`**
 
 | Variable | Description |
 | --- | --- |
+| `VITE_API_URL` | Backend API base URL (default `http://localhost:5000/api`) |
 | `VITE_TINYMCE_API_KEY` | TinyMCE Cloud API key |
-| `VITE_API_URL` | Backend API URL (default `http://localhost:5000/api`); set it to your deployed API URL in production |
 
 To generate a random secret:
 
@@ -203,44 +279,13 @@ It asks for a name, email and password (8–12 characters).
 
 ---
 
-## Community Modules
 
-| Module | Students | Staff page |
-| --- | --- | --- |
-| **Discussion Forum** (`/forum`) | Ask, share and discuss in 8 categories; replies, reactions, accepted answers, follow, save, report | `/admin/forum`: report queue, hide/remove/lock/pin/move, pause posting, audit trail |
-| **Reverse Coding** (`/reverse-coding`) | Read a program's behaviour, write code that reproduces it, Run on samples, Submit against hidden tests | `/admin/reverse-coding`: author challenges, validate the reference solution, publish or schedule |
-| **Weekly Tech News** (`/news`) | A curated weekly digest with original summaries and links to sources; search, archive, save | `/admin/news`: sources, review queue, approve stories, build and publish digests |
-
-All three use your normal CodeSphere account, send in-app notifications (bell icon; students can mute types) and feed XP and badges.
-
-**Good to know**
-- **Reverse Coding needs Judge0.** Student code only ever runs in the Judge0 sandbox, never on the web server. Until `JUDGE0_API_KEY` (or a self-hosted `JUDGE0_URL`) is set, students can read challenges and draft code, but Run, Submit and Validate are disabled.
-- **Tech News is human-reviewed.** Feeds only create candidates; a story is published only after an editor writes a summary and approves it inside a digest. Test each suggested source and check the publisher's terms before enabling it.
-- **Forum content is plain text.** Posts are stored as text and shown with a small safe formatting set (code blocks, inline code, bold, links), so user content can never inject HTML.
-- **Staff roles:** for now, admins act as moderators, news editors and challenge editors.
 
 ---
 
-## XP, Badges & Levels
-
-Students earn **XP** from the daily Debugging Arena bug, the coding challenges and Reverse Coding, which decides their **level** (🥚 Newbie to 👑 CodeSphere Legend) and their place on the Leaderboard.
-
-**Badges** (46 in 10 groups) reward progress. They are saved the moment they're earned and are never taken away, so missing a day never costs a student anything.
-
-| Type | How it's earned |
-| --- | --- |
-| Automatic | Tracked activity: bugs fixed, best streak, XP, events attended (marked by admins) |
-| Self-reported | Coding challenges (while answer checking is off) and a 100% profile, labelled as such |
-| Community | Awarded by admins from the Admin dashboard (Mentor, Builder, Collaborator, Speaker, Designer) |
-| Coming soon | Open-source badges, shown locked until pull requests are tracked |
-
-Students see their level, badges, progress and a showcase of up to 3 pinned badges on their **Profile**, and a toast pops up whenever they unlock one.
-
-**Adding a badge:** add an entry to `server/data/badges.js`. For automatic badges, use a `metric` from `buildStats()` in `server/utils/badges.js` (or add one there) and a `target`. Never change an existing badge `id`, because earned badges are stored by id. Then run `node scripts/syncBadges.js` to award it to students who already qualify.
-
 ---
 
-## Contributing
+## Contribution Guidelines
 
 These rules draw on common practice from open source communities such as the Contributor Covenant, Conventional Commits, GitHub's open source guides and Hacktoberfest's quality rules.
 
@@ -390,6 +435,82 @@ To keep the project quality high, these will be closed without merging, as in Ha
 - Repeated low-effort PRs made only to increase contribution counts
 
 Repeated spam may lead to being blocked from the repository.
+
+---
+
+---
+
+---
+
+---
+
+## Tech Stack
+
+| Part | Technologies |
+| --- | --- |
+| Frontend (`client/`) | React, Vite, React Router, Bootstrap, Bootstrap Icons, TinyMCE, DOMPurify |
+| Backend (`server/`) | Node.js, Express, MongoDB (Mongoose), JWT, bcrypt, Multer, sanitize-html |
+| Services | Brevo (OTP and contact emails), ImageKit (image uploads), TinyMCE Cloud (rich-text editor) |
+
+## Project Structure
+
+```
+CodeSphere/
+├── client/                 # React frontend (Vite)
+│   ├── public/             # Static files (videos, icons)
+│   └── src/
+│       ├── components/     # Reusable UI (Navbar, Footer, Hero, ...)
+│       ├── context/        # React context (AuthContext)
+│       ├── css/            # One stylesheet per page/component
+│       ├── lib/api.js      # API helper (uses VITE_API_URL)
+│       └── pages/          # Route pages (Register, Login, Admin, Events, ...)
+└── server/                 # Express backend
+    ├── config/             # Service clients (ImageKit, ...)
+    ├── middleware/         # Auth and other middleware
+    ├── models/             # Mongoose models
+    ├── routes/             # API routes (auth, events, users, contact, core members)
+    ├── scripts/            # One-off scripts (createAdmin.js)
+    └── server.js           # Entry point
+```
+
+---
+
+---
+
+## Community Modules
+
+| Module | Students | Staff page |
+| --- | --- | --- |
+| **Discussion Forum** (`/forum`) | Ask, share and discuss in 8 categories; replies, reactions, accepted answers, follow, save, report | `/admin/forum`: report queue, hide/remove/lock/pin/move, pause posting, audit trail |
+| **Reverse Coding** (`/reverse-coding`) | Read a program's behaviour, write code that reproduces it, Run on samples, Submit against hidden tests | `/admin/reverse-coding`: author challenges, validate the reference solution, publish or schedule |
+| **Weekly Tech News** (`/news`) | A curated weekly digest with original summaries and links to sources; search, archive, save | `/admin/news`: sources, review queue, approve stories, build and publish digests |
+
+All three use your normal CodeSphere account, send in-app notifications (bell icon; students can mute types) and feed XP and badges.
+
+**Good to know**
+- **Reverse Coding needs Judge0.** Student code only ever runs in the Judge0 sandbox, never on the web server. Until `JUDGE0_API_KEY` (or a self-hosted `JUDGE0_URL`) is set, students can read challenges and draft code, but Run, Submit and Validate are disabled.
+- **Tech News is human-reviewed.** Feeds only create candidates; a story is published only after an editor writes a summary and approves it inside a digest. Test each suggested source and check the publisher's terms before enabling it.
+- **Forum content is plain text.** Posts are stored as text and shown with a small safe formatting set (code blocks, inline code, bold, links), so user content can never inject HTML.
+- **Staff roles:** for now, admins act as moderators, news editors and challenge editors.
+
+---
+
+## XP, Badges & Levels
+
+Students earn **XP** from the daily Debugging Arena bug, the coding challenges and Reverse Coding, which decides their **level** (🥚 Newbie to 👑 CodeSphere Legend) and their place on the Leaderboard.
+
+**Badges** (46 in 10 groups) reward progress. They are saved the moment they're earned and are never taken away, so missing a day never costs a student anything.
+
+| Type | How it's earned |
+| --- | --- |
+| Automatic | Tracked activity: bugs fixed, best streak, XP, events attended (marked by admins) |
+| Self-reported | Coding challenges (while answer checking is off) and a 100% profile, labelled as such |
+| Community | Awarded by admins from the Admin dashboard (Mentor, Builder, Collaborator, Speaker, Designer) |
+| Coming soon | Open-source badges, shown locked until pull requests are tracked |
+
+Students see their level, badges, progress and a showcase of up to 3 pinned badges on their **Profile**, and a toast pops up whenever they unlock one.
+
+**Adding a badge:** add an entry to `server/data/badges.js`. For automatic badges, use a `metric` from `buildStats()` in `server/utils/badges.js` (or add one there) and a `target`. Never change an existing badge `id`, because earned badges are stored by id. Then run `node scripts/syncBadges.js` to award it to students who already qualify.
 
 ---
 

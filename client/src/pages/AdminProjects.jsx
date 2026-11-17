@@ -7,6 +7,7 @@ import { timeAgo } from '../lib/time';
 import ProjectAnalytics from '../components/ProjectAnalytics';
 import GuidedEditor from '../components/GuidedEditor';
 import BroadcastOptions from '../components/BroadcastOptions';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Projects.css';
 
 const TABS = [
@@ -20,6 +21,15 @@ const TABS = [
 ];
 const QUEUE_TABS = ['pending_review', 'published', 'changes_requested', 'rejected', 'archived'];
 
+const DECISION_TITLES = {
+  approve: 'Project approved',
+  unfeature: 'Project unfeatured',
+  feature: 'Project featured',
+  changes: 'Changes requested',
+  reject: 'Project rejected',
+  archive: 'Project unpublished',
+};
+
 const CHECKLIST = [
   'Explains the problem and what was built',
   'GitHub repository opens and matches the description',
@@ -31,20 +41,30 @@ const CHECKLIST = [
 ];
 
 function ReviewCard({ p, onDone }) {
+  const { showNotice } = useNotice();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const cat = categoryOf(p.category);
 
   const decide = async (decision) => {
     setBusy(true);
-    setError('');
     try {
       await apiRequest(`/projects/admin/${p.id}/review`, { method: 'POST', body: JSON.stringify({ decision, note, ...broadcastOptions }) });
-      onDone(`${p.title}: ${decision}`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Project submissions',
+        title: DECISION_TITLES[decision] || 'Project updated',
+        message: `"${p.title}" was updated.`,
+      });
+      onDone();
     } catch (e) {
-      setError(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Project submissions',
+        title: 'Review action failed',
+        message: e.message,
+      });
     } finally {
       setBusy(false);
     }
@@ -94,7 +114,6 @@ function ReviewCard({ p, onDone }) {
         {p.status !== 'rejected' && <button type="button" className="ph-btn danger" disabled={busy} onClick={() => decide('reject')}>Reject</button>}
         {p.status === 'published' && <button type="button" className="ph-btn danger" disabled={busy} onClick={() => decide('archive')}>Unpublish</button>}
       </div>
-      {error && <p className="ph-error">{error}</p>}
     </article>
   );
 }
@@ -132,7 +151,7 @@ export default function AdminProjects() {
           {tab === 'analytics' && <ProjectAnalytics />}
           {tab === 'guided' && <GuidedEditor />}
           {!QUEUE_TABS.includes(tab) ? null : !data ? <div className="ph-card ph-skeleton" /> : data.items.length === 0 ? <div className="ph-empty"><p>Nothing here.</p></div> : (
-            <div className="ap-list">{data.items.map((p) => <ReviewCard key={p.id} p={p} onDone={(m) => { setMessage(m); reload(); }} />)}</div>
+            <div className="ap-list">{data.items.map((p) => <ReviewCard key={p.id} p={p} onDone={reload} />)}</div>
           )}
         </div>
       </main>

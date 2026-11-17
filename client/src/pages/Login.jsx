@@ -2,9 +2,11 @@ import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { returnPath } from '../lib/returnTo';
+import { useNotice } from '../context/NoticeContext';
 
 export default function Login() {
   const { user, login } = useAuth();
+  const { showNotice } = useNotice();
   const navigate = useNavigate();
   const location = useLocation();
   // The page a guest tried to open before being asked to sign in.
@@ -16,7 +18,6 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (user) {
@@ -30,7 +31,6 @@ export default function Login() {
 
   async function handleSubmit(event) {
     event.preventDefault();
-    setError('');
     setLoading(true);
 
     try {
@@ -38,7 +38,12 @@ export default function Login() {
 
       navigate(returnTo(loggedInUser), { replace: true });
     } catch (err) {
-      setError(err.message || 'Unable to sign in. Please try again.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Sign in',
+        title: "Couldn't sign you in",
+        message: err.message || 'Unable to sign in. Please try again.',
+      });
     } finally {
       setLoading(false);
     }
@@ -57,12 +62,6 @@ export default function Login() {
         <p className="auth-subtitle">
           {from ? 'Sign in or create an account to explore the rest of CodeSphere.' : 'Continue your journey with the community.'}
         </p>
-
-        {error && (
-          <div className="auth-error" role="alert">
-            {error}
-          </div>
-        )}
 
         <label htmlFor="login-email">Email address</label>
         <input

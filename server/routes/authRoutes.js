@@ -24,6 +24,15 @@ const STUDY_YEARS = [
   '4th Year',
 ];
 
+function isValidGraduationYear(value) {
+  if (typeof value !== 'string' || !/^\d{4}$/.test(value)) return false;
+
+  const year = Number(value);
+  const currentYear = new Date().getFullYear();
+
+  return year >= currentYear && year <= currentYear + 8;
+}
+
 const OTP_EXPIRY_MINUTES = 5;
 const OTP_RESEND_SECONDS = 60;
 const MAX_OTP_ATTEMPTS = 5;
@@ -317,7 +326,7 @@ router.post('/verify-otp', async (req, res) => {
 
 router.post('/register', async (req, res) => {
   try {
-    const { name, email, password, collegeName, yearOfStudy } = req.body;
+    const { name, email, password, collegeName, yearOfStudy, graduationYear } = req.body;
 
     if (
       typeof name !== 'string' ||
@@ -329,7 +338,8 @@ router.post('/register', async (req, res) => {
       !collegeName.trim() ||
       password.length < 8 ||
       password.length > 128 ||
-      !STUDY_YEARS.includes(yearOfStudy)
+      !STUDY_YEARS.includes(yearOfStudy) ||
+      !isValidGraduationYear(graduationYear)
     ) {
       return res.status(400).json({
         message:
@@ -392,7 +402,7 @@ router.post('/register', async (req, res) => {
           dateOfBirth: '',
           degree: '',
           department: '',
-          graduationYear: '',
+          graduationYear: graduationYear.trim(),
           github: '',
           linkedin: '',
           portfolio: '',

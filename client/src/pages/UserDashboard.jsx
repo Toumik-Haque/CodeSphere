@@ -16,7 +16,7 @@ import '../css/UserDashboard.css';
 
 const baseNavigation = [
   { label: 'Overview', path: '/user/overview', icon: 'bi-grid-1x2' },
-  { label: 'My Badges', path: '/user/milestone', icon: 'bi-award' },
+  { label: 'Milestones', path: '/user/milestone', icon: 'bi-award' },
   { label: 'My Profile', path: '/user/profile', icon: 'bi-person-lines-fill' },
   { label: 'My Events', path: '/user/activities', icon: 'bi-calendar-event' },
 ];
@@ -162,7 +162,7 @@ function DashboardOverviewSection({ user }) {
         </section>
       ) : (
         <div className="student-profile-layout dashboard-section-layout dashboard-overview-layout">
-          <DashboardProfileSidebar user={profile} completion={completion} />
+          <DashboardProfileSidebar user={profile} completion={completion} showBadges />
 
           <div className="student-profile-main dashboard-overview-content">
             <ProfileBadges compact completion={completion} />
@@ -391,7 +391,7 @@ function EventRegistrationsSection() {
                 <div className="dashboard-section-heading">
                   <div>
                     <span className="dashboard-page-kicker">YOUR CODESPHERE JOURNEY</span>
-                    <h2>{eventFilters.find((filter) => filter.id === eventFilter)?.label} events</h2>
+                    <h2>{eventFilters.find((filter) => filter.id === eventFilter)?.label} registered events</h2>
                     <p>Your registrations, all in one place.</p>
                   </div>
                 </div>
@@ -410,7 +410,7 @@ function EventRegistrationsSection() {
                   <div className="dashboard-filter-empty">
                     <i className="bi bi-calendar2-week" aria-hidden="true" />
                     <div>
-                      <strong>No {eventFilter === 'upcoming' ? 'upcoming' : eventFilter} events</strong>
+                      <strong>No {eventFilter === 'upcoming' ? 'upcoming' : eventFilter} events you registered</strong>
                       <p>
                         {eventFilter === 'upcoming'
                           ? 'Your next event will show here after you register.'

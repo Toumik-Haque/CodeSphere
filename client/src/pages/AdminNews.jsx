@@ -5,12 +5,14 @@ import { apiRequest } from '../lib/api';
 import { formatDate, timeAgo } from '../lib/time';
 import DailyNewsAdmin from '../components/DailyNewsAdmin';
 import BroadcastOptions from '../components/BroadcastOptions';
+import { useNotice } from '../context/NoticeContext';
 import '../css/News.css';
 
 const STATUSES = ['candidate', 'reviewing', 'approved', 'published', 'rejected', 'archived'];
 const toDateInput = (d) => (d ? new Date(d).toISOString().slice(0, 10) : '');
 
-function ItemEditor({ item, categories, onDone, onMessage }) {
+function ItemEditor({ item, categories, onDone }) {
+  const { showNotice } = useNotice();
   const [f, setF] = useState({
     title: item.title,
     editorSummary: item.editorSummary || '',
@@ -28,10 +30,20 @@ function ItemEditor({ item, categories, onDone, onMessage }) {
         method: 'PUT',
         body: JSON.stringify({ ...f, tags: f.tags.split(',').map((t) => t.trim()).filter(Boolean), publishedAt: f.publishedAt || undefined, ...(status ? { status } : {}) }),
       });
-      onMessage(status ? `Moved to ${status}.` : 'Saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Tech news',
+        title: status ? `Story moved to ${status}` : 'Story saved',
+        message: status ? `Moved to ${status}.` : 'Changes saved.',
+      });
       onDone();
     } catch (e) {
-      onMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Tech news',
+        title: 'Story not saved',
+        message: e.message,
+      });
     }
   };
 
@@ -72,7 +84,8 @@ function ItemEditor({ item, categories, onDone, onMessage }) {
   );
 }
 
-function DigestBuilder({ digest, approved, onDone, onMessage }) {
+function DigestBuilder({ digest, approved, onDone }) {
+  const { showNotice } = useNotice();
   const today = new Date();
   const monday = new Date(today);
   monday.setDate(today.getDate() - ((today.getDay() + 6) % 7));
@@ -113,10 +126,20 @@ function DigestBuilder({ digest, approved, onDone, onMessage }) {
     try {
       if (digest) await apiRequest(`/news/admin/digests/${digest.id}`, { method: 'PUT', body: JSON.stringify(payload()) });
       else await apiRequest('/news/admin/digests', { method: 'POST', body: JSON.stringify(payload()) });
-      onMessage('Digest saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Tech news',
+        title: digest ? 'Digest updated' : 'Digest created',
+        message: 'Digest saved.',
+      });
       onDone();
     } catch (e) {
-      onMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Tech news',
+        title: 'Digest not saved',
+        message: e.message,
+      });
     }
   };
 
@@ -131,10 +154,29 @@ function DigestBuilder({ digest, approved, onDone, onMessage }) {
           ...broadcastOptions,
         }),
       });
-      onMessage(r.scheduled ? `Scheduled for ${formatDate(r.publishedAt)}.` : 'Published! Students have been notified.');
+      showNotice(
+        r.scheduled
+          ? {
+            tone: 'info',
+            kicker: 'Tech news',
+            title: 'Digest scheduled',
+            message: `Scheduled for ${formatDate(r.publishedAt)}.`,
+          }
+          : {
+            tone: 'success',
+            kicker: 'Tech news',
+            title: 'Digest published',
+            message: 'Students have been notified.',
+          }
+      );
       onDone();
     } catch (e) {
-      onMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Tech news',
+        title: 'Publishing failed',
+        message: e.message,
+      });
     }
   };
 
@@ -205,6 +247,7 @@ function DigestBuilder({ digest, approved, onDone, onMessage }) {
 }
 
 export default function AdminNews() {
+  const { showNotice } = useNotice();
   const [tab, setTab] = useState('queue');
   const [status, setStatus] = useState('candidate');
   const [categories, setCategories] = useState([]);
@@ -219,10 +262,6 @@ export default function AdminNews() {
   const [version, setVersion] = useState(0);
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
-  const flash = (m) => {
-    setMessage(m);
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
 
   useEffect(() => {
     let cancelled = false;
@@ -248,13 +287,23 @@ export default function AdminNews() {
     };
   }, [tab, status, version]);
 
-  const call = async (fn, success) => {
+  const call = async (fn, success, successTitle = 'Action completed') => {
     try {
       const r = await fn();
-      flash(typeof success === 'function' ? success(r) : success);
+      showNotice({
+        tone: 'success',
+        kicker: 'Tech news',
+        title: successTitle,
+        message: typeof success === 'function' ? success(r) : success,
+      });
       reload();
     } catch (e) {
-      flash(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Tech news',
+        title: 'Action failed',
+        message: e.message,
+      });
     }
   };
 
@@ -284,14 +333,14 @@ export default function AdminNews() {
                     {s} <small>{queue?.counts?.[s] ?? ''}</small>
                   </button>
                 ))}
-                <button type="button" className="news-btn" onClick={() => call(() => apiRequest('/news/admin/ingest', { method: 'POST' }), (r) => (r.results.length ? r.results.map((x) => `${x.source}: ${x.ok ? `+${x.added} new` : x.error}`).join(' · ') : 'No active sources with a feed.'))}>
+                <button type="button" className="news-btn" onClick={() => call(() => apiRequest('/news/admin/ingest', { method: 'POST' }), (r) => (r.results.length ? r.results.map((x) => `${x.source}: ${x.ok ? `+${x.added} new` : x.error}`).join(' · ') : 'No active sources with a feed.'), 'Sources fetched')}>
                   <i className="bi bi-arrow-repeat" aria-hidden="true" /> Fetch active sources now
                 </button>
               </div>
               {!queue && <p className="news-muted">Loading…</p>}
               {queue?.items.length === 0 && <div className="news-empty"><span aria-hidden="true">📭</span><p>Nothing {status} right now.</p></div>}
               {queue?.items.map((item) => (
-                <ItemEditor key={`${item.id}-${version}`} item={item} categories={categories} onDone={reload} onMessage={flash} />
+                <ItemEditor key={`${item.id}-${version}`} item={item} categories={categories} onDone={reload} />
               ))}
             </>
           )}
@@ -301,7 +350,7 @@ export default function AdminNews() {
               className="news-builder"
               onSubmit={(e) => {
                 e.preventDefault();
-                call(() => apiRequest('/news/admin/items', { method: 'POST', body: JSON.stringify(manual) }), 'Added to the review queue (Reviewing).');
+                call(() => apiRequest('/news/admin/items', { method: 'POST', body: JSON.stringify(manual) }), 'Added to the review queue (Reviewing).', 'Story added');
                 setManual({ url: '', title: '', sourceName: '', publishedAt: '', category: '' });
               }}
             >
@@ -331,7 +380,6 @@ export default function AdminNews() {
                   key={editingDigest?.id || 'new'}
                   digest={editingDigest || null}
                   approved={approved}
-                  onMessage={flash}
                   onDone={() => { setEditingDigest(null); reload(); }}
                 />
               ) : (
@@ -359,7 +407,7 @@ export default function AdminNews() {
                 className="news-builder"
                 onSubmit={(e) => {
                   e.preventDefault();
-                  call(() => apiRequest('/news/admin/sources', { method: 'POST', body: JSON.stringify(newSource) }), 'Source added (inactive). Test it, then enable.');
+                  call(() => apiRequest('/news/admin/sources', { method: 'POST', body: JSON.stringify(newSource) }), 'Source added (inactive). Test it, then enable.', 'Source added');
                   setNewSource({ name: '', baseUrl: '', feedUrl: '', category: 'ai' });
                 }}
               >
@@ -389,8 +437,8 @@ export default function AdminNews() {
                       {s.lastSuccessAt && ` · last success ${timeAgo(s.lastSuccessAt)}`}
                       {s.lastError && <span className="news-err"> · last error: {s.lastError}</span>}
                     </span>
-                    {s.feedUrl && <button type="button" className="news-btn" onClick={() => call(() => apiRequest(`/news/admin/sources/${s._id}/fetch`, { method: 'POST' }), (r) => `${s.name}: ${r.found} found, ${r.added} new candidates.`)}>Test fetch</button>}
-                    <button type="button" className="news-btn" onClick={() => call(() => apiRequest(`/news/admin/sources/${s._id}`, { method: 'PUT', body: JSON.stringify({ ...s, isActive: !s.isActive }) }), s.isActive ? 'Paused.' : 'Enabled.')}>
+                    {s.feedUrl && <button type="button" className="news-btn" onClick={() => call(() => apiRequest(`/news/admin/sources/${s._id}/fetch`, { method: 'POST' }), (r) => `${s.name}: ${r.found} found, ${r.added} new candidates.`, 'Feed test complete')}>Test fetch</button>}
+                    <button type="button" className="news-btn" onClick={() => call(() => apiRequest(`/news/admin/sources/${s._id}`, { method: 'PUT', body: JSON.stringify({ ...s, isActive: !s.isActive }) }), s.isActive ? 'Paused.' : 'Enabled.', s.isActive ? 'Source paused' : 'Source enabled')}>
                       {s.isActive ? 'Pause' : 'Enable'}
                     </button>
                   </article>

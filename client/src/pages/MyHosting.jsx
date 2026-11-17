@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import HackathonJudging from '../components/HackathonJudging';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { formatDate, timeAgo } from '../lib/time';
 import '../css/Host.css';
@@ -14,16 +15,16 @@ const STATUS = {
 };
 
 export default function MyHosting() {
-  const location = useLocation();
+  const { showNotice } = useNotice();
   const [items, setItems] = useState(null);
-  const [message, setMessage] = useState(location.state?.message || '');
+  const [loadError, setLoadError] = useState('');
   const [judging, setJudging] = useState(null);
   const [version, setVersion] = useState(0);
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     let cancelled = false;
-    apiRequest('/host/mine').then((r) => !cancelled && setItems(r.items)).catch((e) => !cancelled && setMessage(e.message));
+    apiRequest('/host/mine').then((r) => !cancelled && setItems(r.items)).catch((e) => !cancelled && setLoadError(e.message));
     return () => {
       cancelled = true;
     };
@@ -33,10 +34,20 @@ export default function MyHosting() {
     if (!window.confirm(`Withdraw "${item.title}"? This deletes the submission.`)) return;
     try {
       await apiRequest(`/host/${item.kind}/${item.id}`, { method: 'DELETE' });
-      setMessage('Withdrawn.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Listing withdrawn',
+        title: 'Submission withdrawn',
+        message: `"${item.title}" has been removed from your hosted listings.`,
+      });
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Withdraw failed',
+        title: "Couldn't withdraw this listing",
+        message: e.message,
+      });
     }
   };
 
@@ -57,7 +68,7 @@ export default function MyHosting() {
             </div>
           </header>
 
-          {message && <p className="host-ok" role="status">{message}</p>}
+          {loadError && <p className="host-error" role="alert">{loadError}</p>}
           {!items && <div className="host-skeleton" />}
           {items?.length === 0 && (
             <div className="host-empty">

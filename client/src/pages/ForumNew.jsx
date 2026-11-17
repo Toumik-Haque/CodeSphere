@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
@@ -13,6 +14,7 @@ import '../css/ForumSocial.css';
 
 export default function ForumNew() {
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const navigate = useNavigate();
   const [params] = useSearchParams();
   const [config, setConfig] = useState(null);
@@ -32,17 +34,37 @@ export default function ForumNew() {
 
   const addImage = async (file) => {
     if (!file) return;
-    if (images.length >= 3) return setError('Up to 3 images per post.');
-    if (file.size > 2 * 1024 * 1024) return setError('Images must be 2 MB or smaller.');
+    if (images.length >= 3) {
+      showNotice({
+        tone: 'error',
+        kicker: 'Image not added',
+        title: 'Attachment limit reached',
+        message: 'Up to 3 images per post.',
+      });
+      return;
+    }
+    if (file.size > 2 * 1024 * 1024) {
+      showNotice({
+        tone: 'error',
+        kicker: 'Image not added',
+        title: 'Image is too large',
+        message: 'Images must be 2 MB or smaller.',
+      });
+      return;
+    }
     setUploading(true);
-    setError('');
     try {
       const data = new FormData();
       data.append('image', file);
       const r = await apiRequest('/forum/uploads', { method: 'POST', body: data });
       setImages((list) => [...list, r]);
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Upload failed',
+        title: 'Could not upload image',
+        message: err.message,
+      });
     } finally {
       setUploading(false);
     }
@@ -64,11 +86,15 @@ export default function ForumNew() {
   const submit = async (e) => {
     e.preventDefault();
     if (!agreed) {
-      setError('Please confirm you\'ve read the community guidelines.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Before you post',
+        title: 'Community guidelines not confirmed',
+        message: 'Please confirm that you have read the community guidelines.',
+      });
       return;
     }
     setSaving(true);
-    setError('');
     try {
       const result = await apiRequest('/forum/threads', {
         method: 'POST',
@@ -82,7 +108,12 @@ export default function ForumNew() {
       celebrateBadges(result.newBadges);
       navigate(`/forum/${result.id}`);
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Post failed',
+        title: 'Could not publish discussion',
+        message: err.message,
+      });
       setSaving(false);
     }
   };

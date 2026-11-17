@@ -1,35 +1,37 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { CATEGORIES, LEVELS } from '../lib/projects';
 import BroadcastOptions from './BroadcastOptions';
 
 const EMPTY = {
   title: '', slug: '', summary: '', level: 'Beginner', category: 'web', estHours: 8, order: 100, status: 'published',
-  prerequisites: '', stack: '', outcomes: '', problem: '', starterRepo: '', submissionCriteria: '',
+  tags: '', prerequisites: '', stack: '', outcomes: '', problem: '', starterRepo: '', submissionCriteria: '',
   milestones: [{ title: '', description: '', tasks: '', resources: [] }],
 };
 const lines = (a) => (a || []).join('\n');
 const toForm = (g) => ({
   ...EMPTY,
   ...g,
-  prerequisites: lines(g.prerequisites), stack: lines(g.stack), outcomes: lines(g.outcomes), submissionCriteria: lines(g.submissionCriteria),
+  tags: lines(g.tags), prerequisites: lines(g.prerequisites), stack: lines(g.stack), outcomes: lines(g.outcomes), submissionCriteria: lines(g.submissionCriteria),
   milestones: g.milestones.map((m) => ({ ...m, tasks: lines(m.tasks), resources: m.resources || [] })),
 });
 
 // Create and edit guided projects (admins + project reviewers).
 export default function GuidedEditor() {
+  const { showNotice } = useNotice();
   const [items, setItems] = useState(null);
   const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
-  const [msg, setMsg] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [version, setVersion] = useState(0);
   const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const reload = useCallback(() => setVersion((v) => v + 1), []);
 
   useEffect(() => {
     let cancelled = false;
-    apiRequest('/projects/admin/guided').then((r) => !cancelled && setItems(r.items)).catch((e) => !cancelled && setMsg(e.message));
+    apiRequest('/projects/admin/guided').then((r) => !cancelled && setItems(r.items)).catch((e) => !cancelled && setLoadError(e.message));
     return () => {
       cancelled = true;
     };
@@ -41,15 +43,24 @@ export default function GuidedEditor() {
 
   const save = async (e) => {
     e.preventDefault();
-    setMsg('');
     try {
       const body = JSON.stringify({ ...form, ...broadcastOptions, milestones: form.milestones.map((m) => ({ ...m, tasks: m.tasks.split('\n') })) });
       if (editingId) await apiRequest(`/projects/admin/guided/${editingId}`, { method: 'PUT', body });
       else setEditingId((await apiRequest('/projects/admin/guided', { method: 'POST', body })).id);
-      setMsg('Saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Guided project saved',
+        title: editingId ? 'Guided project updated' : 'Guided project created',
+        message: 'Your changes are live for students to work through.',
+      });
       reload();
     } catch (err) {
-      setMsg(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Save failed',
+        title: "Couldn't save this guided project",
+        message: err.message,
+      });
     }
   };
 
@@ -65,9 +76,9 @@ export default function GuidedEditor() {
     <div>
       <div className="pa-head">
         <h2>Guided projects</h2>
-        <button type="button" className="btn btn-gold" onClick={() => { setForm({ ...EMPTY }); setEditingId(null); setBroadcastOptions({ sendNotification: true, sendEmail: true }); setMsg(''); }}><i className="bi bi-plus-lg" aria-hidden="true" /> New guided project</button>
+        <button type="button" className="btn btn-gold" onClick={() => { setForm({ ...EMPTY }); setEditingId(null); setBroadcastOptions({ sendNotification: true, sendEmail: true }); }}><i className="bi bi-plus-lg" aria-hidden="true" /> New guided project</button>
       </div>
-      {msg && <p className="ph-ok" role="status">{msg}</p>}
+      {loadError && <p className="ph-error" role="alert">{loadError}</p>}
 
       {form && (
         <form className="pe-card" onSubmit={save}>
@@ -85,6 +96,7 @@ export default function GuidedEditor() {
             <label className="pe-field"><span>Prerequisites (one per line)</span><textarea rows={3} value={form.prerequisites} onChange={set('prerequisites')} /></label>
             <label className="pe-field"><span>Tech stack (one per line)</span><textarea rows={3} value={form.stack} onChange={set('stack')} /></label>
             <label className="pe-field"><span>Learning outcomes (one per line)</span><textarea rows={3} value={form.outcomes} onChange={set('outcomes')} /></label>
+            <label className="pe-field"><span>Search tags (one per line)</span><textarea rows={3} value={form.tags} onChange={set('tags')} /></label>
             <label className="pe-field"><span>Submission criteria (one per line)</span><textarea rows={3} value={form.submissionCriteria} onChange={set('submissionCriteria')} /></label>
           </div>
 
@@ -131,7 +143,7 @@ export default function GuidedEditor() {
             </div>
             <div className="ap-actions">
               <Link to={`/projects/guided/${g.slug}`} className="ph-btn">Open</Link>
-              <button type="button" className="ph-btn" onClick={() => { setForm(toForm(g)); setEditingId(g.id); setBroadcastOptions({ sendNotification: true, sendEmail: true }); setMsg(''); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
+              <button type="button" className="ph-btn" onClick={() => { setForm(toForm(g)); setEditingId(g.id); setBroadcastOptions({ sendNotification: true, sendEmail: true }); window.scrollTo({ top: 0, behavior: 'smooth' }); }}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
             </div>
           </div>
         ))}

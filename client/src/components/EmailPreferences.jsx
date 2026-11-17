@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../lib/api';
+import { useNotice } from '../context/NoticeContext';
 
 const PREFERENCES = [
   {
@@ -22,10 +23,10 @@ const PREFERENCES = [
   },
 ];
 
-export default function EmailPreferences({ email = '' }) {
+export default function EmailPreferences({ email = '', open = false, onToggle }) {
+  const { showNotice } = useNotice();
   const [prefs, setPrefs] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -44,72 +45,96 @@ export default function EmailPreferences({ email = '' }) {
     const next = { ...prefs, [key]: !prefs[key] };
     setPrefs(next);
     setSaving(true);
-    setMessage('');
-    setError('');
     try {
       const result = await apiRequest('/newsletter/me', {
         method: 'PUT',
         body: JSON.stringify({ [key]: next[key] }),
       });
       setPrefs(result);
-      setMessage('Email preferences saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Email preferences',
+        title: 'Preferences saved',
+        message: 'Your email preferences have been updated.',
+      });
     } catch (saveError) {
       setPrefs(previous);
-      setError(saveError.message || 'Could not save email preferences.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Email preferences',
+        title: "Couldn't save your preferences",
+        message: saveError.message || 'Could not save email preferences.',
+      });
     } finally {
       setSaving(false);
     }
   };
 
   return (
-    <section className="profile-section-card email-preferences-card">
-      <div className="profile-section-heading">
-        <div>
-          <h2>Email preferences</h2>
-          <p>Choose which optional emails you want to receive.</p>
-        </div>
-        <span className="profile-section-icon">
-          <i className="bi bi-envelope-at" />
+    <section className={`profile-section-card email-preferences-card ${open ? 'is-expanded' : ''}`}>
+      <button
+        type="button"
+        className="profile-section-heading profile-section-toggle"
+        onClick={onToggle}
+        aria-expanded={open}
+      >
+        <span className="profile-section-toggle-copy">
+          <span className="profile-section-toggle-title">Email preferences</span>
+          <span className="profile-section-toggle-sub">
+            Choose which optional emails you want to receive.
+          </span>
         </span>
-      </div>
+        <span className="profile-section-toggle-actions">
+          <span className="profile-section-icon">
+            <i className="bi bi-envelope-at" />
+          </span>
+          <i
+            className={`bi ${open ? 'bi-chevron-up' : 'bi-chevron-down'}`}
+            aria-hidden="true"
+          />
+        </span>
+      </button>
 
-      {email && (
-        <div className="email-preferences-address">
-          <span>Emails are sent to</span>
-          <strong>{email}</strong>
-        </div>
+      {open && (
+        <>
+          {email && (
+            <div className="email-preferences-address">
+              <span>Emails are sent to</span>
+              <strong>{email}</strong>
+            </div>
+          )}
+
+          <div className="email-preferences-list">
+            {PREFERENCES.map((preference) => (
+              <label className="email-preference-row" key={preference.key}>
+                <span className="email-preference-icon" aria-hidden="true">
+                  <i className={`bi ${preference.icon}`} />
+                </span>
+                <span className="email-preference-copy">
+                  <strong>{preference.label}</strong>
+                  <small>{preference.description}</small>
+                </span>
+                <span className="email-preference-switch">
+                  <input
+                    type="checkbox"
+                    checked={Boolean(prefs?.[preference.key])}
+                    onChange={() => toggle(preference.key)}
+                    disabled={!prefs || saving}
+                  />
+                  <span aria-hidden="true" />
+                </span>
+              </label>
+            ))}
+          </div>
+
+          {error && <p className="email-preferences-feedback is-error" role="alert">{error}</p>}
+
+          <div className="email-preferences-note">
+            <i className="bi bi-shield-lock" aria-hidden="true" />
+            <span>Registration verification and password reset emails are always sent.</span>
+          </div>
+        </>
       )}
-
-      <div className="email-preferences-list">
-        {PREFERENCES.map((preference) => (
-          <label className="email-preference-row" key={preference.key}>
-            <span className="email-preference-icon" aria-hidden="true">
-              <i className={`bi ${preference.icon}`} />
-            </span>
-            <span className="email-preference-copy">
-              <strong>{preference.label}</strong>
-              <small>{preference.description}</small>
-            </span>
-            <span className="email-preference-switch">
-              <input
-                type="checkbox"
-                checked={Boolean(prefs?.[preference.key])}
-                onChange={() => toggle(preference.key)}
-                disabled={!prefs || saving}
-              />
-              <span aria-hidden="true" />
-            </span>
-          </label>
-        ))}
-      </div>
-
-      {error && <p className="email-preferences-feedback is-error" role="alert">{error}</p>}
-      {message && !error && <p className="email-preferences-feedback" role="status">{message}</p>}
-
-      <div className="email-preferences-note">
-        <i className="bi bi-shield-lock" aria-hidden="true" />
-        <span>Registration verification and password reset emails are always sent.</span>
-      </div>
     </section>
   );
 }

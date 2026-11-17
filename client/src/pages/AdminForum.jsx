@@ -4,9 +4,11 @@ import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { loadForumConfig } from '../lib/forum';
 import { timeAgo, formatDate } from '../lib/time';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Forum.css';
 
 export default function AdminForum() {
+  const { showNotice } = useNotice();
   const [view, setView] = useState('open');
   const [config, setConfig] = useState(null);
   const [reports, setReports] = useState(null);
@@ -43,10 +45,20 @@ export default function AdminForum() {
         method: 'POST',
         body: JSON.stringify({ ...body, reason: reasons[report.id] || '', reportId: report.id }),
       });
-      setMessage('Action applied and report closed.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Forum moderation',
+        title: 'Report handled',
+        message: 'Action applied and report closed.',
+      });
       reload();
     } catch (err) {
-      setMessage(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Forum moderation',
+        title: 'Moderation action failed',
+        message: err.message,
+      });
     }
   };
 
