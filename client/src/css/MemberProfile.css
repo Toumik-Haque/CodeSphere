@@ -661,19 +661,32 @@
   overflow-wrap: anywhere;
 }
 
+.member-profile-achievement-actions {
+  display: flex;
+  flex: 0 0 auto;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 .member-profile-achievement-link {
   display: inline-flex;
-  flex: 0 0 auto;
   align-items: center;
-  gap: 4px;
-  color: #b7791f;
+  gap: 5px;
+  padding: 6px 10px;
+  border: 1px solid #efdfb8;
+  border-radius: 8px;
+  background: #fffdf6;
+  color: #9a641a;
   font-size: 11px;
-  font-weight: 800;
+  font-weight: 700;
   text-decoration: none;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
 }
 
 .member-profile-achievement-link:hover {
-  text-decoration: underline;
+  transform: translateY(-1px);
+  border-color: #d9a728;
+  background: #fff7df;
 }
 
 /* ---------- Chips / links / misc ---------- */
@@ -866,6 +879,7 @@ button.member-profile-home-button {
 .member-profile-back:focus-visible,
 .member-profile-social-link:focus-visible,
 .member-profile-project-links a:focus-visible,
+.member-profile-achievement-link:focus-visible,
 .member-profile-link-list a:focus-visible,
 .member-profile-home-button:focus-visible {
   outline: 2px solid #ff9f7e;
@@ -959,9 +973,12 @@ button.member-profile-home-button {
 
   .member-profile-achievement {
     flex-wrap: wrap;
+    align-items: flex-start;
   }
 
-  .member-profile-achievement-link {
+  .member-profile-achievement-actions {
+    flex: 1 0 100%;
+    margin-top: 8px;
     margin-left: 48px;
   }
 }

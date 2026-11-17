@@ -9,6 +9,7 @@ import { loadForumConfig, REACTIONS } from '../lib/forum';
 import { celebrateBadges } from '../lib/badges';
 import { openThreadStream } from '../lib/realtime';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import MentionTextarea from '../components/MentionTextarea';
 import RichText from '../components/RichText';
 import RichTextEditor from '../components/RichTextEditor';
@@ -52,9 +53,9 @@ function Reactions({ targetType, targetId, counts, mine = [], disabled, onError 
 }
 
 function ReportDialog({ target, reasons, onClose, onDone }) {
+  const { showNotice } = useNotice();
   const [reason, setReason] = useState('');
   const [detail, setDetail] = useState('');
-  const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
 
   useEffect(() => {
@@ -73,7 +74,12 @@ function ReportDialog({ target, reasons, onClose, onDone }) {
       });
       onDone(result.message);
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Report failed',
+        title: 'Could not send report',
+        message: err.message,
+      });
       setSending(false);
     }
   };
@@ -96,7 +102,6 @@ function ReportDialog({ target, reasons, onClose, onDone }) {
           <span>More details <em>(optional)</em></span>
           <textarea value={detail} onChange={(e) => setDetail(e.target.value)} rows={3} maxLength={500} />
         </label>
-        {error && <p className="forum-error" role="alert">{error}</p>}
         <div className="forum-form-actions">
           <button type="button" className="forum-btn-ghost" onClick={onClose}>Cancel</button>
           <button type="submit" className="btn btn-gold" disabled={!reason || sending}>{sending ? 'Sending…' : 'Send report'}</button>
@@ -107,14 +112,13 @@ function ReportDialog({ target, reasons, onClose, onDone }) {
 }
 
 function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, limit }) {
+  const { showNotice } = useNotice();
   const [body, setBody] = useState('');
-  const [error, setError] = useState('');
   const [sending, setSending] = useState(false);
 
   const send = async (e) => {
     e.preventDefault();
     setSending(true);
-    setError('');
     try {
       const result = await apiRequest(`/forum/threads/${threadId}/replies`, {
         method: 'POST',
@@ -124,7 +128,12 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
       celebrateBadges(result.newBadges);
       onPosted(result.id);
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Reply failed',
+        title: 'Could not post reply',
+        message: err.message,
+      });
     } finally {
       setSending(false);
     }
@@ -148,7 +157,6 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
         autoFocus={autoFocus}
         aria-label="Your reply"
       />
-      {error && <p className="forum-error" role="alert">{error}</p>}
       <div className="forum-composer-actions">
         <small className="forum-muted">Be kind. Disagree with ideas, not people.</small>
         <button type="submit" className="btn btn-gold" disabled={sending || body.trim().length < 2}>
@@ -160,8 +168,8 @@ function ReplyComposer({ threadId, parentReply, onPosted, onCancel, autoFocus, l
 }
 
 function EditBox({ initial, onSave, onCancel, limit, rich = false }) {
+  const { showNotice } = useNotice();
   const [value, setValue] = useState(initial);
-  const [error, setError] = useState('');
   return (
     <form
       className="forum-composer"
@@ -170,14 +178,18 @@ function EditBox({ initial, onSave, onCancel, limit, rich = false }) {
         try {
           await onSave(value);
         } catch (err) {
-          setError(err.message);
+          showNotice({
+            tone: 'error',
+            kicker: 'Edit failed',
+            title: 'Could not save changes',
+            message: err.message,
+          });
         }
       }}
     >
       {rich
         ? <RichTextEditor value={value} onChange={setValue} height={300} />
         : <textarea value={value} onChange={(e) => setValue(e.target.value)} rows={6} maxLength={limit} aria-label="Edit text" />}
-      {error && <p className="forum-error" role="alert">{error}</p>}
       <div className="forum-composer-actions">
         <button type="button" className="forum-btn-ghost" onClick={onCancel}>Cancel</button>
         <button type="submit" className="btn btn-gold">Save</button>
@@ -193,7 +205,6 @@ export default function ForumThread() {
   const [config, setConfig] = useState(null);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [report, setReport] = useState(null);
   const [replyTo, setReplyTo] = useState(null);
   const [editing, setEditing] = useState(null);
@@ -201,6 +212,7 @@ export default function ForumThread() {
 
   const reload = useCallback(() => setVersion((v) => v + 1), []);
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const myId = user?.id ? String(user.id) : null;
   // Replies posted by others since this page loaded (live).
   const [newReplies, setNewReplies] = useState(0);
@@ -237,10 +249,14 @@ export default function ForumThread() {
     document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, [data, hash]);
 
-  const flash = (message) => {
-    setNotice(message);
-    window.setTimeout(() => setNotice(''), 3500);
-  };
+  const flash = useCallback((notice) => {
+    if (!notice) return;
+    showNotice(
+      typeof notice === 'string'
+        ? { tone: 'info', kicker: 'Forum', title: 'Forum update', message: notice }
+        : notice
+    );
+  }, [showNotice]);
 
   const act = async (fn, success) => {
     try {
@@ -248,7 +264,12 @@ export default function ForumThread() {
       if (success) flash(success);
       reload();
     } catch (err) {
-      flash(err.message);
+      flash({
+        tone: 'error',
+        kicker: 'Forum action failed',
+        title: 'Could not complete that action',
+        message: err.message,
+      });
     }
   };
 
@@ -292,7 +313,12 @@ export default function ForumThread() {
       method: 'POST',
       body: JSON.stringify({ targetType, targetId, action, reason: extra.reason || '', ...extra }),
     }),
-    'Done.',
+    {
+      tone: 'success',
+      kicker: 'Moderation',
+      title: 'Moderation applied',
+      message: 'Your moderation change is now live.',
+    },
   );
 
   const renderReply = (reply, nested = false) => {
@@ -324,7 +350,20 @@ export default function ForumThread() {
         )}
 
         <footer className="forum-actions">
-          <Reactions key={`r-${reply.id}-${version}`} targetType="reply" targetId={reply.id} counts={reply.reactions} mine={viewer.myReactions?.[reply.id]} disabled={!canReact} onError={flash} />
+          <Reactions
+            key={`r-${reply.id}-${version}`}
+            targetType="reply"
+            targetId={reply.id}
+            counts={reply.reactions}
+            mine={viewer.myReactions?.[reply.id]}
+            disabled={!canReact}
+            onError={(message) => flash({
+              tone: 'error',
+              kicker: 'Reaction failed',
+              title: 'Could not update reaction',
+              message,
+            })}
+          />
           {viewer.signedIn && !thread.locked && !viewer.muted && (
             <button type="button" onClick={() => setReplyTo(reply)}><i className="bi bi-reply" aria-hidden="true" /> Reply</button>
           )}
@@ -334,7 +373,14 @@ export default function ForumThread() {
               className={accepted ? 'is-on' : ''}
               onClick={() => act(
                 () => apiRequest(`/forum/threads/${thread.id}/accept`, { method: 'POST', body: JSON.stringify({ replyId: accepted ? null : reply.id }) }),
-                accepted ? 'Answer unmarked.' : 'Marked as the accepted answer.',
+                {
+                  tone: 'success',
+                  kicker: 'Accepted answer',
+                  title: accepted ? 'Accepted answer cleared' : 'Accepted answer marked',
+                  message: accepted
+                    ? 'This reply is no longer marked as the accepted answer.'
+                    : 'This reply now appears as the accepted answer.',
+                },
               )}
             >
               <i className="bi bi-check2-circle" aria-hidden="true" /> {accepted ? 'Unaccept' : 'Accept answer'}
@@ -344,7 +390,15 @@ export default function ForumThread() {
           {reply.canDelete && !viewer.isStaff && (
             <button
               type="button"
-              onClick={() => window.confirm('Delete this reply?') && act(() => apiRequest(`/forum/replies/${reply.id}`, { method: 'DELETE' }), 'Reply deleted.')}
+              onClick={() => window.confirm('Delete this reply?') && act(
+                () => apiRequest(`/forum/replies/${reply.id}`, { method: 'DELETE' }),
+                {
+                  tone: 'success',
+                  kicker: 'Reply deleted',
+                  title: 'Reply removed',
+                  message: 'The reply has been deleted from this discussion.',
+                },
+              )}
             >
               <i className="bi bi-trash" aria-hidden="true" /> Delete
             </button>
@@ -368,7 +422,12 @@ export default function ForumThread() {
             onCancel={() => setReplyTo(null)}
             onPosted={() => {
               setReplyTo(null);
-              flash('Reply posted.');
+              flash({
+                tone: 'success',
+                kicker: 'Reply',
+                title: 'Reply posted',
+                message: 'Your reply is now part of the discussion.',
+              });
               reload();
             }}
           />
@@ -441,25 +500,79 @@ export default function ForumThread() {
             )}
 
             <footer className="forum-actions">
-              <Reactions key={`t-${thread.id}-${version}`} targetType="thread" targetId={thread.id} counts={thread.reactions} mine={viewer.myReactions?.[thread.id]} disabled={!canReact} onError={flash} />
+              <Reactions
+                key={`t-${thread.id}-${version}`}
+                targetType="thread"
+                targetId={thread.id}
+                counts={thread.reactions}
+                mine={viewer.myReactions?.[thread.id]}
+                disabled={!canReact}
+                onError={(message) => flash({
+                  tone: 'error',
+                  kicker: 'Reaction failed',
+                  title: 'Could not update reaction',
+                  message,
+                })}
+              />
               {viewer.signedIn && (
                 <>
-                  <button type="button" className={viewer.bookmarked ? 'is-on' : ''} onClick={() => act(() => apiRequest(`/forum/threads/${thread.id}/bookmark`, { method: 'POST' }), viewer.bookmarked ? 'Removed from saved.' : 'Saved.')}>
+                  <button
+                    type="button"
+                    className={viewer.bookmarked ? 'is-on' : ''}
+                    onClick={() => act(
+                      () => apiRequest(`/forum/threads/${thread.id}/bookmark`, { method: 'POST' }),
+                      {
+                        tone: 'success',
+                        kicker: 'Saved discussion',
+                        title: viewer.bookmarked ? 'Removed from saved' : 'Discussion saved',
+                        message: viewer.bookmarked
+                          ? 'This discussion is no longer in your saved list.'
+                          : 'You can find this discussion in your saved list.',
+                      },
+                    )}
+                  >
                     <i className={`bi ${viewer.bookmarked ? 'bi-bookmark-fill' : 'bi-bookmark'}`} aria-hidden="true" /> {viewer.bookmarked ? 'Saved' : 'Save'}
                   </button>
-                  <button type="button" className={viewer.following ? 'is-on' : ''} onClick={() => act(() => apiRequest(`/forum/threads/${thread.id}/follow`, { method: 'POST' }), viewer.following ? 'Unfollowed.' : 'Following: you\'ll be notified of replies.')}>
+                  <button
+                    type="button"
+                    className={viewer.following ? 'is-on' : ''}
+                    onClick={() => act(
+                      () => apiRequest(`/forum/threads/${thread.id}/follow`, { method: 'POST' }),
+                      {
+                        tone: 'success',
+                        kicker: 'Following',
+                        title: viewer.following ? 'Unfollowed discussion' : 'Following discussion',
+                        message: viewer.following
+                          ? 'You will no longer be notified of new replies.'
+                          : "You'll be notified when someone replies.",
+                      },
+                    )}
+                  >
                     <i className={`bi ${viewer.following ? 'bi-bell-fill' : 'bi-bell'}`} aria-hidden="true" /> {viewer.following ? 'Following' : 'Follow'}
                   </button>
                 </>
               )}
-              <button type="button" onClick={() => navigator.clipboard?.writeText(window.location.href.split('#')[0]).then(() => flash('Link copied.'))}>
+              <button
+                type="button"
+                onClick={() => navigator.clipboard?.writeText(window.location.href.split('#')[0]).then(() => flash({
+                  tone: 'info',
+                  kicker: 'Share',
+                  title: 'Link copied',
+                  message: 'The discussion link is on your clipboard.',
+                }))}
+              >
                 <i className="bi bi-link-45deg" aria-hidden="true" /> Share
               </button>
               {thread.canEdit && <button type="button" onClick={() => setEditing('thread')}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>}
               {viewer.isAuthor && (
                 <button
                   type="button"
-                  onClick={() => window.confirm('Delete this discussion? This can\'t be undone.') && apiRequest(`/forum/threads/${thread.id}`, { method: 'DELETE' }).then(() => navigate('/forum')).catch((e) => flash(e.message))}
+                  onClick={() => window.confirm('Delete this discussion? This can\'t be undone.') && apiRequest(`/forum/threads/${thread.id}`, { method: 'DELETE' }).then(() => navigate('/forum')).catch((e) => flash({
+                    tone: 'error',
+                    kicker: 'Delete failed',
+                    title: 'Could not delete discussion',
+                    message: e.message,
+                  }))}
                 >
                   <i className="bi bi-trash" aria-hidden="true" /> Delete
                 </button>
@@ -524,7 +637,12 @@ export default function ForumThread() {
                   threadId={thread.id}
                   limit={limits?.replyBodyMax}
                   onPosted={(replyId) => {
-                    flash('Reply posted.');
+                    flash({
+                      tone: 'success',
+                      kicker: 'Reply',
+                      title: 'Reply posted',
+                      message: 'Your reply is now part of the discussion.',
+                    });
                     reload();
                     window.setTimeout(() => document.getElementById(`reply-${replyId}`)?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 400);
                   }}
@@ -542,12 +660,16 @@ export default function ForumThread() {
           onClose={() => setReport(null)}
           onDone={(message) => {
             setReport(null);
-            flash(message);
+            flash({
+              tone: 'success',
+              kicker: 'Report',
+              title: 'Report submitted',
+              message,
+            });
           }}
         />
       )}
 
-      {notice && <div className="forum-toast" role="status">{notice}</div>}
       <Footer />
     </>
   );

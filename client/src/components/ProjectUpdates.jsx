@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
 
@@ -13,9 +14,9 @@ const REACTIONS = [['like', '👍'], ['celebrate', '🎉'], ['helpful', '💡']]
 
 function Comments({ project, update, signedIn, onCount }) {
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const [items, setItems] = useState(null);
   const [body, setBody] = useState('');
-  const [msg, setMsg] = useState('');
   const [version, setVersion] = useState(0);
   const myId = String(user?._id || user?.id || '');
 
@@ -29,14 +30,18 @@ function Comments({ project, update, signedIn, onCount }) {
 
   const post = async (e) => {
     e.preventDefault();
-    setMsg('');
     try {
       await apiRequest(`/projects/${project.id}/updates/${update.id}/comments`, { method: 'POST', body: JSON.stringify({ body }) });
       setBody('');
       onCount(1);
       setVersion((v) => v + 1);
     } catch (err) {
-      setMsg(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Comment failed',
+        title: "Couldn't post your comment",
+        message: err.message,
+      });
     }
   };
 
@@ -45,10 +50,20 @@ function Comments({ project, update, signedIn, onCount }) {
     try {
       const r = await apiRequest(`/projects/${project.id}/updates/${update.id}/comments/${c.id}${action === 'report' ? '/report' : ''}`, { method: action === 'report' ? 'POST' : 'DELETE' });
       if (action === 'delete') onCount(-1);
-      setMsg(r.message);
+      showNotice({
+        tone: 'success',
+        kicker: 'Comment update',
+        title: action === 'delete' ? 'Comment deleted' : 'Comment reported',
+        message: r.message,
+      });
       setVersion((v) => v + 1);
     } catch (err) {
-      setMsg(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Comment action failed',
+        title: action === 'delete' ? "Couldn't delete this comment" : "Couldn't report this comment",
+        message: err.message,
+      });
     }
   };
 
@@ -77,7 +92,6 @@ function Comments({ project, update, signedIn, onCount }) {
           <button type="submit" className="ph-btn">Reply</button>
         </form>
       ) : <p className="ph-muted">Sign in to comment.</p>}
-      {msg && <p className="ph-muted">{msg}</p>}
     </div>
   );
 }
@@ -120,10 +134,10 @@ function UpdateItem({ project, u, signedIn, onDelete }) {
 // Build in Public: updates with reactions and comments.
 export default function ProjectUpdates({ project }) {
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const signedIn = Boolean(user);
   const [items, setItems] = useState(null);
   const [form, setForm] = useState({ kind: 'built', body: '', link: '' });
-  const [error, setError] = useState('');
   const [version, setVersion] = useState(0);
 
   useEffect(() => {
@@ -136,13 +150,17 @@ export default function ProjectUpdates({ project }) {
 
   const post = async (e) => {
     e.preventDefault();
-    setError('');
     try {
       await apiRequest(`/projects/${project.id}/updates`, { method: 'POST', body: JSON.stringify(form) });
       setForm({ kind: 'built', body: '', link: '' });
       setVersion((v) => v + 1);
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Update failed',
+        title: "Couldn't post your update",
+        message: err.message,
+      });
     }
   };
 
@@ -172,7 +190,6 @@ export default function ProjectUpdates({ project }) {
             <input type="url" value={form.link} onChange={(e) => setForm((f) => ({ ...f, link: e.target.value }))} placeholder="Optional link (commit, PR, demo…)" aria-label="Link" />
             <button type="submit" className="btn btn-gold">Post update</button>
           </div>
-          {error && <p className="ph-error">{error}</p>}
         </form>
       )}
       {items.length === 0 ? <p className="ph-muted">No updates yet. Share your progress as you build.</p> : (

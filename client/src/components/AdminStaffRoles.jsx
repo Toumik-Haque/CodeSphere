@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { apiRequest } from '../lib/api';
+import { useNotice } from '../context/NoticeContext';
 
 const ROLES = [
   { id: 'moderator', label: 'Moderator', icon: 'bi-shield-lock', help: 'Forum reports and moderation' },
@@ -11,20 +12,31 @@ const ROLES = [
 
 // Admin: grant or revoke a student's staff roles.
 export default function AdminStaffRoles({ userId, initial = [] }) {
+  const { showNotice } = useNotice();
   const [roles, setRoles] = useState(initial);
   const [saving, setSaving] = useState('');
-  const [message, setMessage] = useState('');
   const [open, setOpen] = useState(false);
 
   const toggle = async (role) => {
+    const roleLabel = ROLES.find((item) => item.id === role)?.label || 'Staff role';
     const next = roles.includes(role) ? roles.filter((r) => r !== role) : [...roles, role];
     setSaving(role);
-    setMessage('');
     try {
       const r = await apiRequest(`/users/admin/${userId}/staff-roles`, { method: 'PUT', body: JSON.stringify({ staffRoles: next }) });
       setRoles(r.staffRoles);
+      showNotice({
+        tone: 'success',
+        kicker: 'Staff roles',
+        title: roles.includes(role) ? `${roleLabel} removed` : `${roleLabel} granted`,
+        message: 'The staff roles for this student have been updated.',
+      });
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Staff roles',
+        title: "Couldn't update staff roles",
+        message: e.message || 'Please try again.',
+      });
     } finally {
       setSaving('');
     }
@@ -56,7 +68,6 @@ export default function AdminStaffRoles({ userId, initial = [] }) {
               <i className={`bi ${roles.includes(role.id) ? 'bi-check-circle-fill' : role.icon}`} aria-hidden="true" /> {role.label}
             </button>
           ))}
-          {message && <small className="adm-staff-error" role="status">{message}</small>}
         </div>
       )}
     </div>

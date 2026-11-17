@@ -6,6 +6,7 @@ import SafeText from '../components/SafeText';
 import HackathonJudging from '../components/HackathonJudging';
 import HackathonSubmission, { SubmissionDetails, SubmissionLinks } from '../components/HackathonSubmission';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { isPast, PHASES } from '../lib/hackathons';
 import '../css/Hackathons.css';
@@ -52,21 +53,25 @@ function ProjectCard({ s, showAward }) {
 
 function TeamPanel({ h, team, reload, slug }) {
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const [name, setName] = useState('');
   const [code, setCode] = useState('');
-  const [msg, setMsg] = useState('');
   const [busy, setBusy] = useState(false);
   const [copied, setCopied] = useState(false);
 
   const call = async (path, options, done) => {
     setBusy(true);
-    setMsg('');
     try {
       const r = await apiRequest(`/hackathons/${slug}${path}`, options);
       if (done) done(r);
       reload();
     } catch (e) {
-      setMsg(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Team update failed',
+        title: "Couldn't update your team",
+        message: e.message,
+      });
     } finally {
       setBusy(false);
     }
@@ -108,7 +113,6 @@ function TeamPanel({ h, team, reload, slug }) {
             </form>
           </>
         )}
-        {msg && <p className="hk-error" role="alert">{msg}</p>}
       </section>
     );
   }
@@ -151,10 +155,9 @@ function TeamPanel({ h, team, reload, slug }) {
       {h.canChangeTeam && (
         <button type="button" className="hk-link-danger" disabled={busy}
           onClick={() => window.confirm(team.members.length === 1 ? 'Leave and delete this team (and its submission)?' : 'Leave this team?') && call('/teams/leave', { method: 'POST' })}>
-          Leave team
+            Leave team
         </button>
       )}
-      {msg && <p className="hk-error" role="alert">{msg}</p>}
     </section>
   );
 }

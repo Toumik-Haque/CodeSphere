@@ -5,6 +5,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DebugArena from '../components/DebugArena';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { celebrateBadges } from '../lib/badges';
 import { LANGUAGES, EXAMPLES, STARTERS, CHALLENGES, TIPS } from '../data/playground';
@@ -74,7 +75,6 @@ const Playground = () => {
   const [activeExample, setActiveExample] = useState(0);
   const [theme, setTheme] = useState('dark');
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [toast, setToast] = useState('');
   const [tipIndex, setTipIndex] = useState(0);
   const challenges = CHALLENGES;
   const [solved, setSolved] = useState(loadSolved);
@@ -82,6 +82,7 @@ const Playground = () => {
   // Signed-in students' solved challenges live on their account (they count
   // on the leaderboard); guests keep them in this browser.
   const { user, token } = useAuth();
+  const { showNotice } = useNotice();
   const isLoggedIn = Boolean(user && token);
   const [openHint, setOpenHint] = useState(null);
   const [highlighted, setHighlighted] = useState(null);
@@ -128,7 +129,6 @@ const Playground = () => {
   const workspaceRef = useRef(null);
   // Latest code in the editor, kept in a ref so typing doesn't re-render the page.
   const codeRef = useRef('');
-  const toastTimer = useRef(null);
 
   const examples = EXAMPLES[language.id] || [];
   const totalXp = useMemo(() => challenges.reduce((sum, c) => sum + c.xp, 0), [challenges]);
@@ -136,12 +136,6 @@ const Playground = () => {
     () => challenges.filter((c) => solved.includes(c.id)).reduce((s, c) => s + c.xp, 0),
     [challenges, solved],
   );
-
-  const showToast = useCallback((message) => {
-    setToast(message);
-    window.clearTimeout(toastTimer.current);
-    toastTimer.current = window.setTimeout(() => setToast(''), 2200);
-  }, []);
 
   const sendToEditor = useCallback(
     (code) => {
@@ -263,7 +257,12 @@ const Playground = () => {
   const loadExample = (index) => {
     setActiveExample(index);
     sendToEditor(examples[index].code);
-    showToast(`Loaded "${examples[index].title}"`);
+    showNotice({
+      tone: 'info',
+      kicker: 'Example loaded',
+      title: examples[index].title,
+      message: 'The example is ready in the editor.',
+    });
   };
 
   const runCode = () => {
@@ -276,15 +275,30 @@ const Playground = () => {
   const resetCode = () => {
     localStorage.removeItem(SAVE_KEY(language.id));
     sendToEditor(examples[activeExample]?.code || '');
-    showToast('Editor reset to the example');
+    showNotice({
+      tone: 'info',
+      kicker: 'Editor reset',
+      title: 'Editor reset to the example',
+      message: 'Your saved draft was cleared for this language.',
+    });
   };
 
   const copyCode = async () => {
     try {
       await navigator.clipboard.writeText(codeRef.current);
-      showToast('Code copied to clipboard');
+      showNotice({
+        tone: 'success',
+        kicker: 'Clipboard',
+        title: 'Code copied',
+        message: 'Your code is now on the clipboard.',
+      });
     } catch {
-      showToast('Could not copy. Select the code and press Ctrl+C.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Clipboard',
+        title: 'Could not copy code',
+        message: 'Select the code and press Ctrl+C to copy it manually.',
+      });
     }
   };
 
@@ -308,7 +322,12 @@ const Playground = () => {
     // setCheckResult(null); // Judge0 checker
     sendToEditor(challengeTemplate(challenge, language.id));
     workspaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    showToast(`Challenge loaded in ${language.label}. Go!`);
+    showNotice({
+      tone: 'info',
+      kicker: 'Challenge loaded',
+      title: challenge.title,
+      message: `The challenge template is ready in ${language.label}. Give it a go!`,
+    });
   };
 
   // Judge0 answer checking: disabled until a RapidAPI key is set up.
@@ -345,7 +364,12 @@ const Playground = () => {
       setSolved((prev) =>
         prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
       );
-      showToast('Sign in to save your XP to the leaderboard');
+      showNotice({
+        tone: 'info',
+        kicker: 'Guest progress',
+        title: 'Sign in to save your XP',
+        message: 'This challenge is saved in this browser. Sign in to add XP to the leaderboard.',
+      });
       return;
     }
 
@@ -359,10 +383,20 @@ const Playground = () => {
       celebrateBadges(data.newBadges);
       if (!isSolved) {
         const xp = challenges.find((c) => c.id === id)?.xp;
-        showToast(`Nice! +${xp} XP added to your account`);
+        showNotice({
+          tone: 'success',
+          kicker: 'Challenge solved',
+          title: 'Challenge marked as done',
+          message: `+${xp} XP added to your account.`,
+        });
       }
     } catch (err) {
-      showToast(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Progress not saved',
+        title: 'Could not update challenge progress',
+        message: err.message,
+      });
     }
   };
 
@@ -730,12 +764,6 @@ const Playground = () => {
           ))}
         </section>
       </main>
-
-      {toast && (
-        <div className="playground-toast" role="status">
-          <i className="bi bi-check2-circle" aria-hidden="true" /> {toast}
-        </div>
-      )}
 
       <Footer />
     </>

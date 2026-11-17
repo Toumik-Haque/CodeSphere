@@ -5,6 +5,7 @@ import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
 import { openUserStream } from '../lib/realtime';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import RichTextEditor from './RichTextEditor';
 import BroadcastOptions from './BroadcastOptions';
 import '../css/Updates.css';
@@ -40,6 +41,7 @@ const POLL_MS = 5 * 60000;
 // Bell with unread count and a dropdown of recent notifications.
 export default function NotificationBell({ compact = false }) {
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);
   const [showPrefs, setShowPrefs] = useState(false);
@@ -53,8 +55,6 @@ export default function NotificationBell({ compact = false }) {
   const [activeMember, setActiveMember] = useState(0);
   const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const [publishing, setPublishing] = useState(false);
-  const [publisherMessage, setPublisherMessage] = useState('');
-  const [publisherError, setPublisherError] = useState('');
   const ref = useRef(null);
   const sentToRef = useRef(null);
   const isAdmin = user?.role === 'admin';
@@ -148,16 +148,25 @@ export default function NotificationBell({ compact = false }) {
     ]);
     const invalidFile = files.find((file) => !allowedTypes.has(file.type) || file.size > 10 * 1024 * 1024);
     if (invalidFile) {
-      setPublisherError(`${invalidFile.name} is unsupported or larger than 10 MB.`);
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Unsupported attachment',
+        message: `${invalidFile.name} is unsupported or larger than 10 MB.`,
+      });
       event.target.value = '';
       return;
     }
     if (updateFiles.length + files.length > 5) {
-      setPublisherError('Attach no more than 5 files.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Too many attachments',
+        message: 'Attach no more than 5 files.',
+      });
       event.target.value = '';
       return;
     }
-    setPublisherError('');
     setUpdateFiles((current) => [...current, ...files]);
     event.target.value = '';
   };
@@ -202,22 +211,35 @@ export default function NotificationBell({ compact = false }) {
 
   const publishUpdate = async (event) => {
     event.preventDefault();
-    setPublisherMessage('');
-    setPublisherError('');
     if (!updateTitle.trim() || !updateBody.replace(/<[^>]*>/g, ' ').trim()) {
-      setPublisherError('Add a title and update text before publishing.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Missing details',
+        message: 'Add a title and update text before publishing.',
+      });
       return;
     }
 
     const tokens = sentTo.split(/[\s,]+/).filter(Boolean);
     if (!tokens.length) {
-      setPublisherError('Choose who receives this update: type @ to pick members, or enter @all.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Choose recipients',
+        message: 'Choose who receives this update: type @ to pick members, or enter @all.',
+      });
       sentToRef.current?.focus();
       return;
     }
     const invalidToken = tokens.find((token) => !/^@(?:all|[a-z0-9]+(?:-[a-z0-9]+)*)$/i.test(token));
     if (invalidToken) {
-      setPublisherError(`"${invalidToken}" is not a valid @username. Use @all or comma-separated @usernames.`);
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Invalid recipient',
+        message: `"${invalidToken}" is not a valid @username. Use @all or comma-separated @usernames.`,
+      });
       return;
     }
 
@@ -237,10 +259,20 @@ export default function NotificationBell({ compact = false }) {
       setSentTo('');
       setBroadcastOptions({ sendNotification: true, sendEmail: true });
       closePublisher();
-      setPublisherMessage(result.message || 'Update published.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Community update',
+        title: 'Update published',
+        message: result.message || 'Your update is now live for the selected members.',
+      });
       await load();
     } catch (error) {
-      setPublisherError(error.message || 'Could not publish the update.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: "Couldn't publish the update",
+        message: error.message || 'Please try again.',
+      });
     } finally {
       setPublishing(false);
     }
@@ -280,19 +312,13 @@ export default function NotificationBell({ compact = false }) {
             <button
               type="button"
               className="notif-publish-update"
-              onClick={() => {
-                setPublisherError('');
-                setPublisherMessage('');
-                setPublisherOpen(true);
-              }}
+              onClick={() => setPublisherOpen(true)}
             >
               <i className="bi bi-megaphone" aria-hidden="true" />
               Publish community update
               <i className="bi bi-plus-lg" aria-hidden="true" />
             </button>
           )}
-
-          {publisherMessage && <p className="notif-publish-success" role="status">{publisherMessage}</p>}
 
           {showPrefs && data && (
             <div className="notif-prefs">
@@ -470,7 +496,6 @@ export default function NotificationBell({ compact = false }) {
               <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
             </div>
 
-            {publisherError && <p className="update-publisher-error" role="alert">{publisherError}</p>}
             <footer className="update-publisher-footer">
               <span>Choose how to notify members when you publish</span>
               <div>

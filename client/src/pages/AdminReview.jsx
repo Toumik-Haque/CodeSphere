@@ -5,6 +5,7 @@ import SafeText from '../components/SafeText';
 import BroadcastOptions from '../components/BroadcastOptions';
 import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Host.css';
 
 const fmt = (d) => (d ? new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', year: 'numeric', hour: 'numeric', minute: '2-digit' }) : '—');
@@ -15,6 +16,7 @@ const TABS = [
 ];
 
 function ReviewCard({ item, onDone }) {
+  const { showNotice } = useNotice();
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -29,9 +31,22 @@ function ReviewCard({ item, onDone }) {
     setError('');
     try {
       await apiRequest(`/host/admin/${item.kind}/${item.id}/review`, { method: 'POST', body: JSON.stringify({ decision, note, ...broadcastOptions }) });
-      onDone(decision === 'approve' ? `Approved "${item.title}". It is live now.` : `Sent "${item.title}" back with your note.`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Hosted listings',
+        title: decision === 'approve' ? 'Listing approved' : 'Listing sent back',
+        message: decision === 'approve'
+          ? `"${item.title}" is live now.`
+          : `"${item.title}" was sent back with your note.`,
+      });
+      onDone();
     } catch (e) {
-      setError(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Hosted listings',
+        title: 'Review action failed',
+        message: e.message,
+      });
     } finally {
       setBusy(false);
     }
@@ -163,7 +178,7 @@ export default function AdminReview() {
           )}
           <div className="host-list">
             {data?.items.map((item) => (
-              <ReviewCard key={`${item.kind}-${item.id}`} item={item} onDone={(m) => { setMessage(m); reload(); }} />
+              <ReviewCard key={`${item.kind}-${item.id}`} item={item} onDone={reload} />
             ))}
           </div>
         </div>

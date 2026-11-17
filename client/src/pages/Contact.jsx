@@ -2,6 +2,7 @@
 import { useState } from 'react';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import '../css/Contact.css'
 
@@ -18,11 +19,8 @@ const initialForm = {
 };
 
 export default function Contact() {
+  const { showNotice } = useNotice();
   const [form, setForm] = useState(initialForm);
-  const [status, setStatus] = useState({
-    type: '',
-    message: '',
-  });
   const [submitting, setSubmitting] = useState(false);
 
   const handleChange = (event) => {
@@ -36,7 +34,6 @@ export default function Contact() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    setStatus({ type: '', message: '' });
 
     if (submitting) return;
 
@@ -48,15 +45,19 @@ export default function Contact() {
         body: JSON.stringify(form),
       });
 
-      setStatus({
-        type: 'success',
+      showNotice({
+        tone: 'success',
+        kicker: 'Message sent',
+        title: 'We received your message',
         message: data.message || 'Your message has been sent successfully!',
       });
 
       setForm({ ...initialForm });
     } catch (error) {
-      setStatus({
-        type: 'error',
+      showNotice({
+        tone: 'error',
+        kicker: 'Message not sent',
+        title: 'Could not send your message',
         message: error.message || 'Something went wrong. Please try again.',
       });
     } finally {
@@ -243,16 +244,6 @@ export default function Contact() {
                     onChange={handleChange}
                   />
                 </div>
-
-                {status.message && (
-                  <div
-                    className={`contact-status ${status.type}`}
-                    role="status"
-                    aria-live="polite"
-                  >
-                    {status.message}
-                  </div>
-                )}
 
                 <button
                   className="contact-submit text-white"

@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NoticeProvider } from './context/NoticeContext';
 
 import VideoBackground from './components/VideoBackground';
 import BadgeCelebration from './components/BadgeCelebration';
@@ -288,8 +289,10 @@ export default function App() {
       <ScrollToTop />
 
       <AuthProvider>
-        <AppRoutes />
-        <BadgeCelebration />
+        <NoticeProvider>
+          <AppRoutes />
+          <BadgeCelebration />
+        </NoticeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

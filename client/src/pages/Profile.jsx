@@ -2,6 +2,7 @@
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
@@ -366,70 +367,11 @@ const extractResumeText = async (file, onProgress) => {
 };
 
 /* =========================================
-   TOAST
-========================================= */
-
-function Toast({ toast, onClose }) {
-  if (!toast) return null;
-
-  const styles = {
-    success: { icon: 'bi-check-circle-fill', color: '#16834a', background: '#edf9f1', border: '#b9e6c9' },
-    error: { icon: 'bi-x-circle-fill', color: '#c0392b', background: '#fff0ef', border: '#f2c4c0' },
-    warning: { icon: 'bi-exclamation-triangle-fill', color: '#a66a00', background: '#fff8e8', border: '#f0dba8' },
-    info: { icon: 'bi-info-circle-fill', color: '#245b83', background: '#edf6fc', border: '#c7dfef' },
-  };
-
-  const style = styles[toast.type] || styles.info;
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        position: 'fixed',
-        right: '24px',
-        bottom: '24px',
-        zIndex: 99999,
-        width: 'min(390px, calc(100vw - 32px))',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '15px 16px',
-        border: `1px solid ${style.border}`,
-        borderRadius: '12px',
-        background: style.background,
-        color: '#243447',
-        boxShadow: '0 8px 30px rgba(15, 35, 55, 0.16)',
-        animation: 'codesphereToastIn 220ms ease-out',
-      }}
-    >
-      <i className={`bi ${style.icon}`} style={{ color: style.color, fontSize: '21px', flexShrink: 0 }} />
-      <span style={{ flex: 1, fontSize: '14px', lineHeight: 1.5 }}>{toast.message}</span>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Dismiss notification"
-        style={{
-          border: 0,
-          background: 'transparent',
-          color: '#64748b',
-          cursor: 'pointer',
-          padding: '3px',
-          fontSize: '18px',
-          lineHeight: 1,
-        }}
-      >
-        <i className="bi bi-x-lg" />
-      </button>
-    </div>
-  );
-}
-
-/* =========================================
    RESUME UPLOAD COMPONENT
 ========================================= */
 
-function ResumeUpload({ profile, onApply, showToast, preview = false }) {
+function ResumeUpload({ profile, onApply, preview = false }) {
+  const { showNotice } = useNotice();
   const inputRef = useRef(null);
   // The resume file saved on the server (survives refreshes).
   const [savedResume, setSavedResume] = useState(null);
@@ -453,7 +395,12 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       const { resume } = await apiRequest('/users/me/resume', { method: 'PUT', body: form });
       setSavedResume(resume);
     } catch (error) {
-      showToast(`Your resume was read, but saving the file failed: ${error.message}`, 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: "Couldn't save your resume",
+        message: `Your resume was read, but saving the file failed: ${error.message}`,
+      });
     } finally {
       setSavingResume(false);
     }
@@ -464,9 +411,19 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
     try {
       await apiRequest('/users/me/resume', { method: 'DELETE' });
       setSavedResume(null);
-      showToast('Saved resume deleted.', 'success');
+      showNotice({
+        tone: 'success',
+        kicker: 'Resume removed',
+        title: 'Saved resume deleted',
+        message: 'You can upload it again at any time.',
+      });
     } catch (error) {
-      showToast(error.message, 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: "Couldn't delete your resume",
+        message: error.message || 'Please try again.',
+      });
     }
   };
   const [resumeOpen, setResumeOpen] = useState(() => {
@@ -515,12 +472,22 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       .includes(file.type);
 
     if (!isPdf && !isImage) {
-      showToast('Please select a PDF, JPG, JPEG or PNG resume.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: 'Unsupported file type',
+        message: 'Please select a PDF, JPG, JPEG or PNG resume.',
+      });
       return;
     }
 
     if (file.size > RESUME_SIZE_LIMIT) {
-      showToast('Please select a resume smaller than 5 MB.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: 'File is too large',
+        message: 'Please select a resume smaller than 5 MB.',
+      });
       return;
     }
 
@@ -566,13 +533,20 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
         ...Object.fromEntries((extracted.codingProfiles || []).map((_, i) => [`profile:${i}`, true])),
       });
 
-      showToast('Resume processed. Review the extracted information.', 'success');
+      showNotice({
+        tone: 'success',
+        kicker: 'Resume processed',
+        title: 'Review what we found',
+        message: 'Check the extracted information before adding it to your profile.',
+      });
     } catch (error) {
       console.error('Resume processing failed:', error);
-      showToast(
-        error.message || 'Unable to process this resume.',
-        'error'
-      );
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume processing',
+        title: "Couldn't read this resume",
+        message: error.message || 'Unable to process this resume.',
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -600,7 +574,12 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       .map(([field]) => field);
 
     if (selected.length === 0) {
-      showToast('Select at least one detail to apply.', 'warning');
+      showNotice({
+        tone: 'info',
+        kicker: 'Resume details',
+        title: 'Choose what to apply',
+        message: 'Select at least one detail before applying it to your profile.',
+      });
       return;
     }
 
@@ -1419,6 +1398,7 @@ export default function Profile({
 }) {
   const isMilestoneView = view === 'milestone';
   const { user, updateUser } = useAuth();
+  const { showNotice } = useNotice();
 
   const [profile, setProfile] = useState(() => {
     if (preview) {
@@ -1433,8 +1413,6 @@ export default function Profile({
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(!preview);
-  const [saveStatus, setSaveStatus] = useState('');
-  const [toast, setToast] = useState(null);
   const [skillSearch, setSkillSearch] = useState('');
   const [skillLevel, setSkillLevel] = useState('Intermediate');
   const [openSection, setOpenSection] = useState('');
@@ -1453,35 +1431,16 @@ export default function Profile({
   const [passwordError, setPasswordError] = useState('');
 
   const photoInputRef = useRef(null);
-  const toastTimerRef = useRef(null);
-  const toastIdRef = useRef(0);
-
-  const showToast = (message, type = 'success') => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-
-    toastIdRef.current += 1;
-    setToast({ id: toastIdRef.current, message, type });
-
-    toastTimerRef.current = setTimeout(() => {
-      setToast(null);
-    }, 3500);
-  };
-
-  const closeToast = () => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast(null);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
 
   const persistProfile = async (updatedProfile, successMessage, fields) => {
     if (preview) {
       setProfile(updatedProfile);
-      showToast('Preview updated. Changes are temporary.', 'info');
+      showNotice({
+        tone: 'info',
+        kicker: 'Preview mode',
+        title: 'Preview updated',
+        message: 'Changes are temporary and will not be saved.',
+      });
       return true;
     }
 
@@ -1503,9 +1462,6 @@ export default function Profile({
 
     if (Object.keys(payload).length === 0) return true;
 
-    setError('');
-    setSaveStatus('');
-
     try {
       const response = await apiRequest('/users/profile', {
         method: 'PATCH',
@@ -1517,12 +1473,20 @@ export default function Profile({
         projects: updatedProfile.projects,
       }));
       updateUser(response.user);
-      setSaveStatus(successMessage);
-      showToast(successMessage);
+      showNotice({
+        tone: 'success',
+        kicker: 'Profile saved',
+        title: 'Your changes are live',
+        message: successMessage,
+      });
       return true;
     } catch (saveError) {
-      setError(saveError.message || 'Unable to save your profile.');
-      showToast(saveError.message || 'Unable to save your profile.', 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile save failed',
+        title: "Couldn't save your changes",
+        message: saveError.message || 'Unable to save your profile.',
+      });
       return false;
     }
   };
@@ -1532,13 +1496,23 @@ export default function Profile({
     if (!file) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      showToast('Please select a JPG, PNG, or WebP image.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: 'Unsupported image format',
+        message: 'Please select a JPG, PNG, or WebP image.',
+      });
       event.target.value = '';
       return;
     }
 
     if (file.size > IMAGE_SIZE_LIMIT) {
-      showToast('Please select an image smaller than 5 MB.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: 'Image is too large',
+        message: 'Please select an image smaller than 5 MB.',
+      });
       event.target.value = '';
       return;
     }
@@ -1553,15 +1527,28 @@ export default function Profile({
         await apiRequest('/users/profile/image', { method: 'POST', body });
         const refreshed = await loadProfile();
         if (!refreshed) {
-          showToast('Image uploaded, but your profile could not be refreshed.', 'error');
+          showNotice({
+            tone: 'error',
+            kicker: 'Profile photo',
+            title: 'Photo uploaded, but profile not refreshed',
+            message: 'Refresh the page to see your updated profile photo.',
+          });
           return;
         }
       }
-      setError('');
-      showToast(`${imageLabel} updated successfully.`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Profile photo',
+        title: `${imageLabel} updated`,
+        message: 'Your new photo is now visible on your profile.',
+      });
     } catch (uploadError) {
-      setError(uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`);
-      showToast(uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`, 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: "Couldn't upload your photo",
+        message: uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`,
+      });
     } finally {
       event.target.value = '';
     }
@@ -1692,12 +1679,20 @@ export default function Profile({
           : [...current.projects, savedProject];
         return { ...current, projects };
       });
-      setSaveStatus(response.message);
-      showToast(response.message);
+      showNotice({
+        tone: 'success',
+        kicker: 'Projects',
+        title: projectId ? 'Project updated' : 'Project added',
+        message: response.message || 'Your project has been saved.',
+      });
       return true;
     } catch (saveError) {
-      setError(saveError.message || 'Unable to save this project.');
-      showToast(saveError.message || 'Unable to save this project.', 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Projects',
+        title: "Couldn't save this project",
+        message: saveError.message || 'Unable to save this project.',
+      });
       return false;
     }
   };
@@ -1765,12 +1760,20 @@ export default function Profile({
           ...current,
           projects: current.projects.filter((project) => project._id !== projectId),
         }));
-        setSaveStatus(response.message);
-        showToast(response.message);
+        showNotice({
+          tone: 'success',
+          kicker: 'Projects',
+          title: 'Project removed',
+          message: response.message || 'The project has been removed from your profile.',
+        });
         return true;
       } catch (deleteError) {
-        setError(deleteError.message || 'Unable to remove this project.');
-        showToast(deleteError.message || 'Unable to remove this project.', 'error');
+        showNotice({
+          tone: 'error',
+          kicker: 'Projects',
+          title: "Couldn't remove this project",
+          message: deleteError.message || 'Unable to remove this project.',
+        });
         return false;
       }
     }
@@ -1828,7 +1831,12 @@ export default function Profile({
 
     if (preview) {
       setProfile((current) => ({ ...current, projects: ordered }));
-      showToast('Preview updated. Changes are temporary.', 'info');
+      showNotice({
+        tone: 'info',
+        kicker: 'Preview mode',
+        title: 'Preview updated',
+        message: 'Changes are temporary and will not be saved.',
+      });
       return true;
     }
 
@@ -1844,20 +1852,35 @@ export default function Profile({
       const savedProjects = (response.projects || ordered).map(normalizeProject);
 
       setProfile((current) => ({ ...current, projects: savedProjects }));
-      setSaveStatus(response.message || 'Project order updated.');
-      showToast(response.message || 'Project order updated.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Projects',
+        title: 'Project order updated',
+        message: response.message || 'Your preferred order has been saved.',
+      });
       return true;
     } catch (reorderError) {
       setProfile((current) => ({ ...current, projects: previous }));
-      setError(reorderError.message || 'Unable to update project order.');
-      showToast(reorderError.message || 'Unable to update project order.', 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Projects',
+        title: "Couldn't update project order",
+        message: reorderError.message || 'Unable to update project order.',
+      });
       return false;
     }
   };
 
   const addSkill = async (skill) => {
     if (!skill || profile.skills.some((item) => (item.name || item) === skill)) {
-      if (skill) showToast('This skill is already in your profile.', 'warning');
+      if (skill) {
+        showNotice({
+          tone: 'info',
+          kicker: 'Technical skills',
+          title: 'Skill already added',
+          message: 'This skill is already in your profile.',
+        });
+      }
       return;
     }
 
@@ -1937,7 +1960,12 @@ export default function Profile({
 
       setPasswordForm({ current: '', next: '', confirm: '' });
       setPasswordVisible({ current: false, next: false, confirm: false });
-      showToast(response.message || 'Password updated successfully.', 'success');
+      showNotice({
+        tone: 'success',
+        kicker: 'Security',
+        title: 'Password updated',
+        message: response.message || 'Your password has been changed successfully.',
+      });
     } catch (err) {
       setPasswordError(err.message || 'Unable to update your password. Please try again.');
     } finally {
@@ -1964,17 +1992,6 @@ export default function Profile({
   return (
     <>
       {!embedded && <Navbar />}
-
-      <style>
-        {`
-          @keyframes codesphereToastIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
-      </style>
-
-      <Toast toast={toast} onClose={closeToast} />
 
       <main className={`student-profile-page${embedded ? ' dashboard-profile-embed' : ''}`}>
         <div className="student-profile-container">
@@ -2032,12 +2049,6 @@ export default function Profile({
             </div>
           )}
 
-          {saveStatus && !error && (
-            <div className="profile-message" role="status">
-              <i className="bi bi-check-circle" /> {saveStatus}
-            </div>
-          )}
-
           <div className={`student-profile-layout dashboard-section-layout${isMilestoneView ? ' dashboard-badges-view' : ''}`}>
             {isMilestoneView ? (
               <>
@@ -2060,7 +2071,6 @@ export default function Profile({
                   <ResumeUpload
                     profile={profile}
                     onApply={applyResumeDetails}
-                    showToast={showToast}
                     preview={preview}
                   />
 
