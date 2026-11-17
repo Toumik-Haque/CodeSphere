@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { returnPath } from '../lib/returnTo';
 
 export default function Login() {
   const { user, login } = useAuth();
@@ -8,11 +9,9 @@ export default function Login() {
   const location = useLocation();
   // The page a guest tried to open before being asked to sign in.
   const from = location.state?.from;
-  const returnTo = (signedIn) => (
-    typeof from === 'string' && from.startsWith('/') && !from.startsWith('//') && from !== '/login'
-      ? from
-      : signedIn.role === 'admin' ? '/admin' : '/user'
-  );
+  // Back to the page they were on (e.g. the event they wanted to register
+  // for); otherwise their dashboard.
+  const returnTo = (signedIn) => returnPath(from) || (signedIn.role === 'admin' ? '/admin' : '/user');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');

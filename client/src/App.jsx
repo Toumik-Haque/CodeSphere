@@ -59,6 +59,7 @@ import AdminProjects from './pages/AdminProjects';
 
 import UserDashboard from './pages/UserDashboard';
 import { AdminToolLayout } from './components/AdminNav';
+import { rememberPage } from './lib/returnTo';
 
 function HomePage() {
   return (
@@ -136,7 +137,12 @@ function RoleBasedMemberProfile() {
 
 // Scroll to the top whenever the route changes.
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, search, hash } = useLocation();
+
+  // Remember the page, so signing in can bring the visitor back here.
+  useEffect(() => {
+    rememberPage(pathname + search + hash);
+  }, [pathname, search, hash]);
 
   useEffect(() => {
     window.scrollTo({

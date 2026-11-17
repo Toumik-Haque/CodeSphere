@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useLocation, useNavigate } from 'react-router-dom';
+import { returnPath } from '../lib/returnTo';
 import { useAuth } from '../context/AuthContext';
 import '../css/Register.css';
 
@@ -15,6 +16,7 @@ const STUDY_YEARS = [
 export default function Register() {
   const { user, sendOtp, verifyOtp, register } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const [step, setStep] = useState(1);
   const [showPassword, setShowPassword] = useState(false);
@@ -35,7 +37,7 @@ export default function Register() {
   if (user) {
     return (
       <Navigate
-        to={user.role === 'admin' ? '/admin' : '/user'}
+        to={returnPath(location.state?.from) || (user.role === 'admin' ? '/admin' : '/user')}
         replace
       />
     );
@@ -129,7 +131,8 @@ export default function Register() {
         yearOfStudy
       );
 
-      navigate('/user', { replace: true });
+      // Back to the page they were on (e.g. an event), else the dashboard.
+      navigate(returnPath(location.state?.from) || '/user', { replace: true });
     } catch (err) {
       setError(err.message || 'Unable to create your account.');
     } finally {
