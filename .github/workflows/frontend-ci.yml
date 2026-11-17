@@ -6,11 +6,10 @@ on:
     paths:
       - "client/**"
       - ".github/workflows/frontend-ci.yml"
+  # Run on every PR so required branch-protection checks are always reported,
+  # including documentation-only changes.
   pull_request:
     branches: [main]
-    paths:
-      - "client/**"
-      - ".github/workflows/frontend-ci.yml"
 
 permissions:
   contents: read
