@@ -1,6 +1,7 @@
-// Daily "Today's bug" reminder email for every registered member, showing their
-// own streak. Sent once a day (default 9:00 AM IST); members who already solved
-// today's bug or opted out of update emails are skipped.
+// Daily "keep your streak" email for members with an active Debugging Arena
+// streak who haven't solved today's bug yet. Sent once a day (default 9:00 AM
+// IST). Members without a streak, who already solved today, or who opted out of
+// update emails get nothing (the weekly spotlight covers everyone else).
 //
 // Settings: BUG_REMINDER=off disables it; BUG_REMINDER_HOUR (0-23, IST) sets the time.
 const JobRun = require('../models/JobRun');
@@ -76,9 +77,13 @@ async function sendBugReminders(today = dateInIndia()) {
     .lean();
   const byUser = new Map(progress.map((p) => [String(p.user), p]));
 
-  // Already solved today: no reminder needed.
+  // Only members whose streak is alive but at risk: they solved yesterday and
+  // not yet today. Fewer, wanted emails keep the rest out of Promotions/spam.
   const versions = users
-    .filter((u) => u.email && byUser.get(String(u._id))?.lastCompletedDate !== today)
+    .filter((u) => {
+      const progress = byUser.get(String(u._id));
+      return u.email && progress?.lastCompletedDate !== today && liveStreak(progress, today) > 0;
+    })
     .map((u) => reminderFor(u, byUser.get(String(u._id)), today));
 
   let sent = 0;
