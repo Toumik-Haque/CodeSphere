@@ -7,6 +7,24 @@ const escapeHtml = (value = '') => String(value ?? '')
 
 const safeUrl = (url = '') => (/^https?:\/\//i.test(url) ? escapeHtml(url) : '#');
 
+// A banner image for emails: https only. ImageKit images are resized to
+// 1200px wide so emails stay light.
+const emailImageUrl = (url = '') => {
+  if (!/^https:\/\//i.test(url)) return '';
+  if (!/ik\.imagekit\.io/i.test(url) || /[?&]tr=/.test(url)) return url;
+  return `${url}${url.includes('?') ? '&' : '?'}tr=w-1200`;
+};
+
+const banner = (imageUrl, alt, href) => {
+  const src = emailImageUrl(imageUrl);
+  if (!src) return '';
+  const img = `<img src="${escapeHtml(src)}" alt="${escapeHtml(alt)}" width="600" style="display:block;width:100%;max-width:600px;height:auto;border:0;outline:none;text-decoration:none">`;
+  return `
+          <tr>
+            <td style="padding:0;line-height:0;font-size:0">${href ? `<a href="${safeUrl(href)}" style="display:block">${img}</a>` : img}</td>
+          </tr>`;
+};
+
 const siteUrl = () => (process.env.CLIENT_URL || 'http://localhost:5173').replace(/\/+$/, '');
 const apiUrl = () => (process.env.API_PUBLIC_URL || `http://localhost:${process.env.PORT || 5000}/api`).replace(/\/+$/, '');
 
@@ -45,6 +63,8 @@ function renderEmail({
   unsubscribeUrl = '',
   preferencesUrl = '',
   internal = false,
+  imageUrl = '',
+  imageAlt = '',
 }) {
   const footerLinks = [];
   if (preferencesUrl) footerLinks.push(`<a href="${safeUrl(preferencesUrl)}" style="color:#7b8794;text-decoration:underline">Manage email preferences</a>`);
@@ -69,7 +89,7 @@ function renderEmail({
               <div style="color:#ffffff;font-size:27px;font-weight:800;letter-spacing:-1px">Code<span style="color:#ff8568">Sphere</span></div>
               <div style="margin-top:8px;color:#d5e6f2;font-size:10px;font-weight:600;letter-spacing:3px">LEARN · BUILD · CONNECT</div>
             </td>
-          </tr>
+          </tr>${banner(imageUrl, imageAlt || title, ctaUrl)}
           <tr>
             <td style="padding:34px 30px 24px">
               ${eyebrow ? `<div style="display:inline-block;padding:7px 13px;border-radius:30px;background:#fff0eb;color:#d94324;font-size:10px;font-weight:800;letter-spacing:1.4px">${escapeHtml(eyebrow)}</div>` : ''}

@@ -11,7 +11,7 @@ const {
 
 const BATCH_SIZE = 500;
 
-async function sendUpdateEmails(users, { title, body, link, htmlBody = '', emailExcludeUserIds = [] }) {
+async function sendUpdateEmails(users, { title, body, link, htmlBody = '', imageUrl = '', emailExcludeUserIds = [] }) {
   if (!isEmailConfigured()) {
     console.warn('Update email delivery skipped: Brevo is not configured.');
     return { sent: 0, attempted: 0, skipped: true };
@@ -31,6 +31,7 @@ async function sendUpdateEmails(users, { title, body, link, htmlBody = '', email
         preheader: body ? body.slice(0, 160) : title,
         eyebrow: 'CODESPHERE COMMUNITY UPDATE',
         title,
+        imageUrl,
         body: content,
         ctaLabel: link ? 'View update' : '',
         ctaUrl: link ? `${siteUrl()}${link}` : '',
@@ -85,6 +86,7 @@ async function broadcastUpdate({
   body = '',
   link,
   htmlBody = '',
+  imageUrl = '', // banner shown at the top of the email
   emailExcludeUserIds = [],
   notificationExcludeUserIds = [],
   recipientUserIds = null,
@@ -111,7 +113,7 @@ async function broadcastUpdate({
         link,
       }) : Promise.resolve(),
       sendEmail
-        ? sendUpdateEmails(users, { title, body, link, htmlBody, emailExcludeUserIds })
+        ? sendUpdateEmails(users, { title, body, link, htmlBody, imageUrl, emailExcludeUserIds })
         : Promise.resolve({ sent: 0, attempted: 0, skipped: true, disabled: true }),
     ]);
     return { targeted: users.length, emails: emailResult };

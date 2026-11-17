@@ -186,6 +186,8 @@ router.post('/', protect, adminOnly, handleMediaUpload, async (req, res) => {
       title,
       body: excerpt,
       htmlBody,
+      // The first attached picture becomes the email banner.
+      imageUrl: uploaded.find((file) => file.type === 'image')?.url,
       link: `/updates/${announcement._id}`,
       recipientUserIds,
       ...broadcastOptions,

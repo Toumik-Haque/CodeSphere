@@ -260,6 +260,7 @@ router.post('/admin/:kind/:id/review', protect, async (req, res) => {
   if (decision === 'approve' && req.user.role === 'admin') {
     await broadcastUpdate({
       title: `New community ${kind}: ${doc.title}`,
+      imageUrl: doc.bannerImage?.url || doc.bannerUrl,
       body: kind === 'event'
         ? htmlToText(doc.description).slice(0, 400)
         : doc.tagline || doc.description.slice(0, 400),

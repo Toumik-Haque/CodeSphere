@@ -493,6 +493,7 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
         title: `New event: ${event.title}`,
         body: getPlainText(event.description).slice(0, 400),
         link: `/events/${event.slug}`,
+        imageUrl: event.bannerImage?.url,
         ...getBroadcastOptions(req.body),
       });
     }
@@ -629,6 +630,7 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
         title: `New event: ${existing.title}`,
         body: getPlainText(existing.description).slice(0, 400),
         link: `/events/${existing.slug}`,
+        imageUrl: existing.bannerImage?.url,
         ...getBroadcastOptions(req.body),
       });
     }
