@@ -1019,36 +1019,11 @@ export default function Admin() {
   // ATTENDANCE
   // --------------------------------------------------
 
-  const [members, setMembers] = useState([]);
-  const [memberSearch, setMemberSearch] = useState('');
-  const [membersLoading, setMembersLoading] = useState(false);
-
   const [selectedAttendanceEvent, setSelectedAttendanceEvent] = useState('');
   const [attendanceRows, setAttendanceRows] = useState([]);
   const [attendanceLoading, setAttendanceLoading] = useState(false);
   const [attendanceSavingId, setAttendanceSavingId] = useState('');
-
-  const loadMembers = useCallback(async () => {
-    // Yield before updating loading state when invoked by an effect.
-    await Promise.resolve();
-    setMembersLoading(true);
-
-    try {
-      const query = memberSearch.trim()
-        ? `?search=${encodeURIComponent(memberSearch.trim())}`
-        : '';
-
-      const data = await apiRequest(
-        `/events/admin/members${query}`
-      );
-
-      setMembers(Array.isArray(data.members) ? data.members : []);
-    } catch (err) {
-      setError(err.message || 'Unable to load members.');
-    } finally {
-      setMembersLoading(false);
-    }
-  }, [memberSearch]);
+  const [attendanceSearch, setAttendanceSearch] = useState('');
 
   const loadAttendance = useCallback(async () => {
     // Yield before updating loading state when invoked by an effect.
@@ -1113,27 +1088,27 @@ export default function Admin() {
     }
   }
 
-  const getAttendanceStatus = useCallback((member) => {
-    const record = attendanceRows.find(
-      (row) =>
-        String(row._id ?? row.userId ?? row.memberId) ===
-        String(member._id)
-    );
-
-    return record?.status || 'absent';
-  }, [attendanceRows]);
-
-  const presentCount = useMemo(() => {
-    return members.filter(
-      (member) => getAttendanceStatus(member) === 'present'
-    ).length;
-  }, [members, getAttendanceStatus]);
-
-  const absentCount = Math.max(0, members.length - presentCount);
-
-  const attendancePercentage = members.length
-    ? Math.round((presentCount / members.length) * 100)
+  // Only people registered for the selected event (the server sends just them).
+  const presentCount = attendanceRows.filter((row) => row.status === 'present').length;
+  const absentCount = Math.max(0, attendanceRows.length - presentCount);
+  const attendancePercentage = attendanceRows.length
+    ? Math.round((presentCount / attendanceRows.length) * 100)
     : 0;
+  const shownAttendance = useMemo(() => {
+    const q = attendanceSearch.trim().toLowerCase();
+    if (!q) return attendanceRows;
+    return attendanceRows.filter((row) =>
+      `${row.name} ${row.email} ${row.username || ''} ${row.college || ''}`.toLowerCase().includes(q)
+    );
+  }, [attendanceRows, attendanceSearch]);
+
+  // From the Events list: open Attendance for that event.
+  function openEventAttendance(event) {
+    setAttendanceSearch('');
+    setAttendanceRows([]);
+    setSelectedAttendanceEvent(event._id);
+    goToSection('attendance');
+  }
 
   // --------------------------------------------------
   // EFFECTS
@@ -1168,16 +1143,6 @@ export default function Admin() {
 
     return () => window.clearTimeout(timer);
   }, [activeSection, loadCoreMembers]);
-
-  useEffect(() => {
-    if (activeSection !== 'attendance') return undefined;
-
-    const timer = window.setTimeout(() => {
-      void loadMembers();
-    }, 0);
-
-    return () => window.clearTimeout(timer);
-  }, [activeSection, loadMembers]);
 
   useEffect(() => {
     if (activeSection !== 'attendance' || !selectedAttendanceEvent) {
@@ -1589,18 +1554,25 @@ export default function Admin() {
                             className="admin-event-item"
                             key={event._id}
                           >
-                            {event.bannerImage?.url ? (
-                              <img
-                                className="admin-event-image"
-                                src={event.bannerImage.url}
-                                alt={`${event.title} banner`}
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="admin-event-image admin-event-image-placeholder">
-                                <i className="bi bi-calendar-event" />
-                              </div>
-                            )}
+                            <button
+                              type="button"
+                              className="admin-event-open"
+                              onClick={() => openEventAttendance(event)}
+                              aria-label={`See registrations and attendance for ${event.title}`}
+                            >
+                              {event.bannerImage?.url ? (
+                                <img
+                                  className="admin-event-image"
+                                  src={event.bannerImage.url}
+                                  alt=""
+                                  loading="lazy"
+                                />
+                              ) : (
+                                <div className="admin-event-image admin-event-image-placeholder">
+                                  <i className="bi bi-calendar-event" />
+                                </div>
+                              )}
+                            </button>
 
                             <div className="admin-event-info">
                               <div className="admin-event-meta">
@@ -1611,7 +1583,16 @@ export default function Admin() {
                                 </span>
                               </div>
 
-                              <h3>{event.title}</h3>
+                              <h3>
+                                <button
+                                  type="button"
+                                  className="admin-event-title-button"
+                                  onClick={() => openEventAttendance(event)}
+                                  title="See registrations and attendance"
+                                >
+                                  {event.title}
+                                </button>
+                              </h3>
 
                               <p>
                                 <i className="bi bi-calendar3 me-2" />
@@ -1625,6 +1606,15 @@ export default function Admin() {
                             </div>
 
                             <div className="admin-event-actions">
+                              <button
+                                type="button"
+                                className="admin-registrations-button"
+                                onClick={() => openEventAttendance(event)}
+                              >
+                                <i className="bi bi-people" aria-hidden="true" />
+                                Registrations
+                              </button>
+
                               <Link
                                 to={`/events/${event.slug}`}
                                 className="admin-view-button"
@@ -2191,18 +2181,15 @@ export default function Admin() {
                     <h2>Manage Attendance</h2>
 
                     <p className="admin-panel-subtitle">
-                      Select an event and update member attendance.
+                      Only people registered for the event are listed. Mark who attended.
                     </p>
                   </div>
 
                   <button
                     type="button"
                     className="admin-secondary-button"
-                    onClick={() => {
-                      loadMembers();
-                      loadAttendance();
-                    }}
-                    disabled={membersLoading || attendanceLoading}
+                    onClick={() => loadAttendance()}
+                    disabled={!selectedAttendanceEvent || attendanceLoading}
                   >
                     <i className="bi bi-arrow-clockwise" />
                     Refresh
@@ -2220,9 +2207,11 @@ export default function Admin() {
                       className="admin-form-select"
                       id="attendance-event"
                       value={selectedAttendanceEvent}
-                      onChange={(event) =>
-                        setSelectedAttendanceEvent(event.target.value)
-                      }
+                      onChange={(event) => {
+                        setAttendanceSearch('');
+                        setAttendanceRows([]);
+                        setSelectedAttendanceEvent(event.target.value);
+                      }}
                     >
                       <option value="">Select an event</option>
 
@@ -2239,8 +2228,8 @@ export default function Admin() {
                       <h3>Attendance summary</h3>
 
                       <div className="attendance-stat-row">
-                        <span>Matching members</span>
-                        <strong>{members.length}</strong>
+                        <span>Registered</span>
+                        <strong>{attendanceRows.length}</strong>
                       </div>
 
                       <div className="attendance-stat-row">
@@ -2272,20 +2261,20 @@ export default function Admin() {
                 <div className="members-list">
 
                   <div className="admin-form-field">
-                    <label htmlFor="member-search">
-                      Find a member
+                    <label htmlFor="attendance-search">
+                      Find a participant
                     </label>
 
                     <label className="admin-event-search">
                       <i className="bi bi-search" aria-hidden="true" />
 
                       <input
-                        id="member-search"
+                        id="attendance-search"
                         type="search"
-                        placeholder="Search by name or email..."
-                        value={memberSearch}
-                        onChange={(event) => setMemberSearch(event.target.value)}
-                        aria-label="Search members by name or email"
+                        placeholder="Search by name, email or college..."
+                        value={attendanceSearch}
+                        onChange={(event) => setAttendanceSearch(event.target.value)}
+                        aria-label="Search registered participants"
                       />
                     </label>
                   </div>
@@ -2294,36 +2283,51 @@ export default function Admin() {
                     <p className="admin-empty">
                       Select an event to manage its attendance.
                     </p>
-                  ) : membersLoading || attendanceLoading ? (
+                  ) : attendanceLoading && attendanceRows.length === 0 ? (
                     <p className="admin-empty">
-                      Loading attendance...
+                      Loading registrations...
                     </p>
-                  ) : members.length === 0 ? (
+                  ) : attendanceRows.length === 0 ? (
                     <p className="admin-empty">
-                      No members found.
+                      Nobody has registered for this event yet.
+                    </p>
+                  ) : shownAttendance.length === 0 ? (
+                    <p className="admin-empty">
+                      No registered participant matches your search.
                     </p>
                   ) : (
                     <div className="admin-member-list">
 
-                      {members.map((member) => {
-                        const status = getAttendanceStatus(member);
+                      {shownAttendance.map((member) => {
+                        const status = member.status || 'absent';
                         const savingRow =
                           attendanceSavingId === member._id;
 
                         return (
                           <article
-                            className="admin-member-item"
+                            className={`admin-member-item attendance-${status}`}
                             key={member._id}
                           >
 
                             <div className="admin-member-info">
                               <div className="admin-member-avatar">
-                                {getInitial(member.name)}
+                                {member.avatar
+                                  ? <img src={member.avatar} alt="" loading="lazy" />
+                                  : getInitial(member.name)}
                               </div>
 
                               <div className="admin-member-details">
                                 <h3>{member.name}</h3>
                                 <p>{member.email}</p>
+                                <p className="admin-member-sub">
+                                  {[member.college, member.year].filter(Boolean).join(' · ')}
+                                  {member.registeredAt && (
+                                    <span>
+                                      {member.college || member.year ? ' · ' : ''}
+                                      Registered {formatDate(member.registeredAt)}
+                                    </span>
+                                  )}
+                                </p>
                               </div>
                             </div>
 

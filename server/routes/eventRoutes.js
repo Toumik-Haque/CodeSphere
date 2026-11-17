@@ -860,7 +860,7 @@ router.get(
         event: id,
         status: 'registered',
       })
-        .populate('user', 'name email username')
+        .populate('user', 'name email username collegeName yearOfStudy profileImage avatarUrl')
         .sort({ registeredAt: -1 })
         .lean();
 
@@ -884,6 +884,9 @@ router.get(
             name: member.name,
             email: member.email,
             username: member.username,
+            college: member.collegeName || '',
+            year: member.yearOfStudy || '',
+            avatar: member.profileImage?.url || member.avatarUrl || '',
             registrationId: registration._id,
             registeredAt: registration.registeredAt,
             status: record?.status || 'absent',
