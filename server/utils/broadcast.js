@@ -11,6 +11,12 @@ const {
 
 const BATCH_SIZE = 500;
 
+// A real address people can reply to (BREVO_REPLY_TO, else the sender).
+const replyTo = () => ({
+  email: process.env.BREVO_REPLY_TO || process.env.BREVO_SENDER_EMAIL,
+  name: process.env.BREVO_SENDER_NAME || 'CodeSphere',
+});
+
 async function sendUpdateEmails(users, { title, body, link, htmlBody = '', imageUrl = '', emailExcludeUserIds = [] }) {
   if (!isEmailConfigured()) {
     console.warn('Update email delivery skipped: Brevo is not configured.');
@@ -26,20 +32,23 @@ async function sendUpdateEmails(users, { title, body, link, htmlBody = '', image
     const batch = recipients.slice(i, i + BATCH_SIZE);
     const versions = batch.map((user) => {
       const unsubscribe = `${apiUrl()}/newsletter/unsubscribe?u=${user._id}&t=${unsubscribeToken(user._id)}&list=updates`;
-      const content = htmlBody || `<p style="color:#34465a">${escapeHtml(body)}</p>`;
+      // A personal greeting reads like a message, not a newsletter (helps Gmail
+      // keep it in the main inbox rather than Promotions).
+      const firstName = (user.name || '').split(' ')[0] || 'there';
+      const greeting = `<p style="margin:0 0 14px;color:#34465a">Hi ${escapeHtml(firstName)},</p>`;
+      const content = greeting + (htmlBody || `<p style="color:#34465a">${escapeHtml(body)}</p>`);
       const htmlContent = renderEmail({
         preheader: body ? body.slice(0, 160) : title,
-        eyebrow: 'CODESPHERE COMMUNITY UPDATE',
         title,
         imageUrl,
         body: content,
-        ctaLabel: link ? 'View update' : '',
+        ctaLabel: link ? 'Open on CodeSphere' : '',
         ctaUrl: link ? `${siteUrl()}${link}` : '',
         footerNote: 'You are receiving this because you opted in to community update emails.',
         unsubscribeUrl: unsubscribe,
         preferencesUrl: preferencesUrl(),
       });
-      const textContent = `${title}\n\n${body}\n\n${link ? `View update: ${siteUrl()}${link}\n` : ''}Unsubscribe: ${unsubscribe}`;
+      const textContent = `Hi ${firstName},\n\n${title}\n\n${body}\n\n${link ? `View update: ${siteUrl()}${link}\n` : ''}Unsubscribe: ${unsubscribe}`;
       return {
         to: [{ email: user.email, name: user.name }],
         htmlContent,
@@ -60,7 +69,8 @@ async function sendUpdateEmails(users, { title, body, link, htmlBody = '', image
             name: process.env.BREVO_SENDER_NAME || 'CodeSphere',
             email: process.env.BREVO_SENDER_EMAIL,
           },
-          subject: `CodeSphere update: ${title}`.slice(0, 150),
+          subject: title.slice(0, 150),
+          replyTo: replyTo(),
           htmlContent: versions[0].htmlContent,
           messageVersions: versions,
         }),

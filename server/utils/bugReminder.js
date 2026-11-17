@@ -26,8 +26,8 @@ function reminderFor(user, progress, today) {
   const streak = liveStreak(progress, today);
   const best = progress?.bestStreak || 0;
   const subject = streak > 0
-    ? `🔥 Keep your ${streak}-day streak alive: today's bug is waiting`
-    : "🐞 Today's bug is ready. Start a streak!";
+    ? `Keep your ${streak}-day streak going, ${user.name.split(' ')[0]}`
+    : `Today's bug is ready, ${user.name.split(' ')[0]}`;
   const title = streak > 0 ? `Day ${streak + 1} is waiting, ${user.name.split(' ')[0]}!` : `Today's bug is ready, ${user.name.split(' ')[0]}`;
   const lead = streak > 0
     ? `You've fixed a bug ${streak} day${streak === 1 ? '' : 's'} in a row. Solve today's to keep the streak going. Miss today and it resets to zero.`
@@ -55,7 +55,6 @@ function reminderFor(user, progress, today) {
     subject,
     htmlContent: renderEmail({
       preheader: lead.slice(0, 150),
-      eyebrow: 'DAILY DEBUGGING ARENA',
       title,
       body,
       ctaLabel: streak > 0 ? 'Fix today’s bug' : 'Solve today’s bug',
@@ -92,6 +91,7 @@ async function sendBugReminders(today = dateInIndia()) {
         body: JSON.stringify({
           sender: { name: process.env.BREVO_SENDER_NAME || 'CodeSphere', email: process.env.BREVO_SENDER_EMAIL },
           subject: batch[0].subject,
+          replyTo: { email: process.env.BREVO_REPLY_TO || process.env.BREVO_SENDER_EMAIL, name: process.env.BREVO_SENDER_NAME || 'CodeSphere' },
           htmlContent: batch[0].htmlContent,
           messageVersions: batch,
         }),
