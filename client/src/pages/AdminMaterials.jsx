@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import SafeText from '../components/SafeText';
 import BroadcastOptions from '../components/BroadcastOptions';
 import { apiRequest } from '../lib/api';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Materials.css';
 
 const EMPTY = { title: '', slug: '', topic: '', level: 'Beginner', summary: '', body: '', tags: '', estMinutes: 10, order: 100, status: 'draft', resources: [] };
@@ -12,6 +13,7 @@ const toForm = (g) => ({ ...EMPTY, ...g, tags: (g.tags || []).join(', '), resour
 const toPayload = (f) => ({ ...f, tags: f.tags.split(',').map((t) => t.trim()).filter(Boolean), resources: f.resources.filter((r) => r.title || r.url) });
 
 export default function AdminMaterials() {
+  const { showNotice } = useNotice();
   const [data, setData] = useState(null);
   const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -47,10 +49,20 @@ export default function AdminMaterials() {
       if (editingId) await apiRequest(`/guides/admin/${editingId}`, { method: 'PUT', body });
       else setEditingId((await apiRequest('/guides/admin', { method: 'POST', body })).id);
       setForm((f) => ({ ...f, status: status || f.status }));
-      setMessage(status === 'published' ? 'Published.' : 'Saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Study guides',
+        title: status === 'published' ? 'Guide published' : 'Guide saved',
+        message: status === 'published' ? 'The guide is now live.' : 'Your changes have been saved.',
+      });
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Study guides',
+        title: 'Guide not saved',
+        message: e.message,
+      });
     }
   };
 
@@ -60,10 +72,20 @@ export default function AdminMaterials() {
       await apiRequest(`/guides/admin/${editingId}`, { method: 'DELETE' });
       setForm(null);
       setEditingId(null);
-      setMessage('Deleted.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Study guides',
+        title: 'Guide deleted',
+        message: 'The guide was deleted.',
+      });
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Study guides',
+        title: 'Delete failed',
+        message: e.message,
+      });
     }
   };
 

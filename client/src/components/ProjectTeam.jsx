@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 
 const COLUMNS = [
@@ -16,10 +17,10 @@ function Avatar({ p, size = 28 }) {
 
 // Invite search (owner only).
 function InviteBox({ projectId, onDone }) {
+  const { showNotice } = useNotice();
   const [q, setQ] = useState('');
   const [results, setResults] = useState([]);
   const [role, setRole] = useState('');
-  const [msg, setMsg] = useState('');
 
   useEffect(() => {
     if (q.trim().length < 2) return undefined;
@@ -30,15 +31,24 @@ function InviteBox({ projectId, onDone }) {
   }, [q]);
 
   const invite = async (user) => {
-    setMsg('');
     try {
       await apiRequest(`/projects/${projectId}/team/invite`, { method: 'POST', body: JSON.stringify({ userId: user.id, role }) });
-      setMsg(`Invited ${user.name}.`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Invitation sent',
+        title: `${user.name} is invited`,
+        message: 'They will appear as invited until they accept or decline.',
+      });
       setQ('');
       setResults([]);
       onDone();
     } catch (e) {
-      setMsg(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Invite failed',
+        title: `Couldn't invite ${user.name}`,
+        message: e.message,
+      });
     }
   };
 
@@ -59,28 +69,18 @@ function InviteBox({ projectId, onDone }) {
           ))}
         </ul>
       )}
-      {msg && <p className="ph-muted">{msg}</p>}
     </div>
   );
 }
 
 export default function ProjectTeam({ project, onChange }) {
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const [tasks, setTasks] = useState(project.tasks || []);
   const [title, setTitle] = useState('');
   const [assignee, setAssignee] = useState('');
-  const [error, setError] = useState('');
   const myId = String(user?._id || user?.id || '');
   const people = [project.owner, ...(project.team || [])].filter(Boolean);
-
-  const respond = async (accept) => {
-    try {
-      await apiRequest(`/projects/${project.id}/team/respond`, { method: 'POST', body: JSON.stringify({ accept }) });
-      onChange();
-    } catch (e) {
-      setError(e.message);
-    }
-  };
 
   const remove = async (member) => {
     const leaving = member.id === myId;
@@ -89,34 +89,31 @@ export default function ProjectTeam({ project, onChange }) {
       await apiRequest(`/projects/${project.id}/team/${member.id}`, { method: 'DELETE' });
       onChange();
     } catch (e) {
-      setError(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Team update failed',
+        title: leaving ? "Couldn't leave this team" : `Couldn't remove ${member.name}`,
+        message: e.message,
+      });
     }
   };
 
   const taskCall = async (method, path, body) => {
-    setError('');
     try {
       const r = await apiRequest(`/projects/${project.id}/tasks${path}`, { method, body: body ? JSON.stringify(body) : undefined });
       setTasks(r.tasks);
     } catch (e) {
-      setError(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Task update failed',
+        title: "Couldn't update the task board",
+        message: e.message,
+      });
     }
   };
 
   return (
     <>
-      {project.myInvite && (
-        <section className="pt-invite-banner" role="status">
-          <i className="bi bi-envelope-open" aria-hidden="true" />
-          <div>
-            <strong>{project.owner?.name} invited you to join this project as {project.myInvite.role}.</strong>
-            <span>Joining credits you as a contributor and opens the team task board.</span>
-          </div>
-          <button type="button" className="btn btn-gold" onClick={() => respond(true)}>Accept</button>
-          <button type="button" className="ph-btn" onClick={() => respond(false)}>Decline</button>
-        </section>
-      )}
-
       {(project.team?.length > 0 || project.isMember) && (
         <section className="pd-block">
           <h2><i className="bi bi-people" aria-hidden="true" /> Team</h2>
@@ -150,7 +147,6 @@ export default function ProjectTeam({ project, onChange }) {
             </select>
             <button type="submit" className="ph-btn">Add</button>
           </form>
-          {error && <p className="ph-error">{error}</p>}
           <div className="pt-board">
             {COLUMNS.map(([status, label, icon]) => (
               <div key={status} className={`pt-col col-${status}`}>

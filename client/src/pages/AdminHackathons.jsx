@@ -6,6 +6,7 @@ import { PHASES, SOURCES } from '../lib/hackathons';
 import { timeAgo } from '../lib/time';
 import HackathonJudging from '../components/HackathonJudging';
 import BroadcastOptions from '../components/BroadcastOptions';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Hackathons.css';
 
 // <input type="datetime-local"> wants local time without a zone.
@@ -44,6 +45,7 @@ const toPayload = (f) => ({
 });
 
 export default function AdminHackathons() {
+  const { showNotice } = useNotice();
   const [data, setData] = useState(null);
   const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -80,10 +82,20 @@ export default function AdminHackathons() {
       if (editingId) await apiRequest(`/hackathons/admin/${editingId}`, { method: 'PUT', body });
       else setEditingId((await apiRequest('/hackathons/admin', { method: 'POST', body })).id);
       setForm((f) => ({ ...f, status: status || f.status }));
-      setMessage(status === 'published' ? 'Published.' : 'Saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Hackathons',
+        title: status === 'published' ? 'Hackathon published' : 'Hackathon saved',
+        message: status === 'published' ? 'The hackathon is now live.' : 'Your changes have been saved.',
+      });
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Hackathons',
+        title: 'Hackathon not saved',
+        message: e.message,
+      });
     }
   };
 
@@ -93,10 +105,20 @@ export default function AdminHackathons() {
       await apiRequest(`/hackathons/admin/${editingId}`, { method: 'DELETE' });
       setForm(null);
       setEditingId(null);
-      setMessage('Deleted.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Hackathons',
+        title: 'Hackathon deleted',
+        message: 'The hackathon was deleted.',
+      });
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Hackathons',
+        title: 'Delete failed',
+        message: e.message,
+      });
     }
   };
 
@@ -109,7 +131,12 @@ export default function AdminHackathons() {
       const typed = window.prompt(`Delete "${h.title}" with ${what} (and their uploaded files)? This cannot be undone.\n\nType the hackathon name to confirm:`);
       if (typed === null) return;
       if (typed.trim() !== h.title.trim()) {
-        setMessage('The name did not match, so nothing was deleted.');
+        showNotice({
+          tone: 'error',
+          kicker: 'Hackathons',
+          title: 'Deletion cancelled',
+          message: 'The name did not match, so nothing was deleted.',
+        });
         return;
       }
     } else if (!window.confirm(`Delete "${h.title}" (${what})? This cannot be undone.`)) {
@@ -122,10 +149,20 @@ export default function AdminHackathons() {
         setEditingId(null);
       }
       if (judgingId === h.id) setJudgingId(null);
-      setMessage(`Deleted "${h.title}".`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Hackathons',
+        title: 'Hackathon deleted',
+        message: `Deleted "${h.title}".`,
+      });
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Hackathons',
+        title: 'Delete failed',
+        message: e.message,
+      });
     }
   };
 
@@ -133,10 +170,20 @@ export default function AdminHackathons() {
     setSyncing(true);
     try {
       const { results } = await apiRequest('/hackathons/admin/sync', { method: 'POST' });
-      setMessage(`Synced: ${results.map((r) => `${SOURCES[r.source]?.name || r.source} ${r.ok ? r.count : 'failed'}`).join(' · ')}`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Hackathon sync',
+        title: 'Sync complete',
+        message: `Synced: ${results.map((r) => `${SOURCES[r.source]?.name || r.source} ${r.ok ? r.count : 'failed'}`).join(' · ')}`,
+      });
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Hackathon sync',
+        title: 'Sync failed',
+        message: e.message,
+      });
     } finally {
       setSyncing(false);
     }

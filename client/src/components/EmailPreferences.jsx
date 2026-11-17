@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../lib/api';
+import { useNotice } from '../context/NoticeContext';
 
 const PREFERENCES = [
   {
@@ -23,9 +24,9 @@ const PREFERENCES = [
 ];
 
 export default function EmailPreferences({ email = '', open = false, onToggle }) {
+  const { showNotice } = useNotice();
   const [prefs, setPrefs] = useState(null);
   const [saving, setSaving] = useState(false);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
 
   useEffect(() => {
@@ -44,18 +45,26 @@ export default function EmailPreferences({ email = '', open = false, onToggle })
     const next = { ...prefs, [key]: !prefs[key] };
     setPrefs(next);
     setSaving(true);
-    setMessage('');
-    setError('');
     try {
       const result = await apiRequest('/newsletter/me', {
         method: 'PUT',
         body: JSON.stringify({ [key]: next[key] }),
       });
       setPrefs(result);
-      setMessage('Email preferences saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Email preferences',
+        title: 'Preferences saved',
+        message: 'Your email preferences have been updated.',
+      });
     } catch (saveError) {
       setPrefs(previous);
-      setError(saveError.message || 'Could not save email preferences.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Email preferences',
+        title: "Couldn't save your preferences",
+        message: saveError.message || 'Could not save email preferences.',
+      });
     } finally {
       setSaving(false);
     }
@@ -119,7 +128,6 @@ export default function EmailPreferences({ email = '', open = false, onToggle })
           </div>
 
           {error && <p className="email-preferences-feedback is-error" role="alert">{error}</p>}
-          {message && !error && <p className="email-preferences-feedback" role="status">{message}</p>}
 
           <div className="email-preferences-note">
             <i className="bi bi-shield-lock" aria-hidden="true" />

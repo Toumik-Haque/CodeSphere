@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Link, useLocation, useParams } from 'react-router-dom';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import BadgeStrip from '../components/BadgeStrip';
@@ -76,10 +77,10 @@ export default function MemberProfile({
   const location = useLocation();
   const username = profileUsername || routeUsername;
 
+  const { showNotice } = useNotice();
   const [member, setMember] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
-  const [shareMessage, setShareMessage] = useState('');
   const profileMatchesRoute =
     member?.username?.toLowerCase() === username?.toLowerCase();
 
@@ -137,17 +138,37 @@ export default function MemberProfile({
           text: `View ${member.name}'s CodeSphere profile`,
           url: profileUrl,
         });
-        setShareMessage('Profile shared.');
+        showNotice({
+          tone: 'success',
+          kicker: 'Profile share',
+          title: 'Profile shared',
+          message: `${member.name}'s profile is ready to share.`,
+        });
       } else if (navigator.clipboard?.writeText) {
         await navigator.clipboard.writeText(profileUrl);
-        setShareMessage('Profile link copied.');
+        showNotice({
+          tone: 'success',
+          kicker: 'Profile share',
+          title: 'Profile link copied',
+          message: 'The link to this profile is on your clipboard.',
+        });
       } else {
         window.prompt('Copy this profile link:', profileUrl);
-        setShareMessage('Copy the profile link to share it.');
+        showNotice({
+          tone: 'info',
+          kicker: 'Profile share',
+          title: 'Copy the profile link',
+          message: 'Your browser could not copy automatically. Copy the link to share this profile.',
+        });
       }
     } catch (shareError) {
       if (shareError.name !== 'AbortError') {
-        setShareMessage('Unable to share this profile. Please try again.');
+        showNotice({
+          tone: 'error',
+          kicker: 'Profile share failed',
+          title: 'Could not share this profile',
+          message: 'Please try again or copy the profile link from your browser.',
+        });
       }
     }
   };
@@ -285,12 +306,6 @@ export default function MemberProfile({
                     <i className="bi bi-share" aria-hidden="true" />
                     <span>Share profile</span>
                   </button>
-
-                  {shareMessage && (
-                    <span className="member-profile-share-message" role="status">
-                      {shareMessage}
-                    </span>
-                  )}
                 </div>
               </div>
 
@@ -457,14 +472,16 @@ export default function MemberProfile({
                             </p>
                           </div>
                           {achievement.link && (
-                            <a
-                              className="member-profile-achievement-link"
-                              href={openExternalLink(achievement.link)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                            >
-                              View <i className="bi bi-arrow-up-right" aria-hidden="true" />
-                            </a>
+                            <div className="member-profile-achievement-actions">
+                              <a
+                                className="member-profile-achievement-link"
+                                href={openExternalLink(achievement.link)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                              >
+                                View <i className="bi bi-arrow-up-right" aria-hidden="true" />
+                              </a>
+                            </div>
                           )}
                         </article>
                       ))}

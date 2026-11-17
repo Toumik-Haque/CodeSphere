@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Register.css';
 
 const DEFAULT_COLLEGE = 'ALIPURDUAR GOVERNMENT ENGINEERING AND MANAGEMENT COLLEGE';
@@ -19,6 +20,7 @@ const GRADUATION_YEARS = Array.from(
 
 export default function Register() {
   const { user, sendOtp, verifyOtp, register } = useAuth();
+  const { showNotice } = useNotice();
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
@@ -34,8 +36,6 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
 
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (user) {
@@ -49,11 +49,14 @@ export default function Register() {
 
   async function handleSendOtp(event) {
     event.preventDefault();
-    setError('');
-    setNotice('');
 
     if (!name.trim() || !collegeName.trim() || !yearOfStudy || !graduationYear) {
-      setError('Please complete all your details.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Missing details',
+        title: 'Complete your details',
+        message: 'Please fill in your name, college, year of study and graduation year.',
+      });
       return;
     }
 
@@ -62,9 +65,19 @@ export default function Register() {
     try {
       const result = await sendOtp(email.trim());
       setStep(2);
-      setNotice(result.message || 'Verification code sent to your email.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Verification code sent',
+        title: 'Check your email',
+        message: result.message || 'Verification code sent to your email.',
+      });
     } catch (err) {
-      setError(err.message || 'Unable to send verification code.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Verification code',
+        title: "Couldn't send the code",
+        message: err.message || 'Unable to send verification code.',
+      });
     } finally {
       setLoading(false);
     }
@@ -72,11 +85,14 @@ export default function Register() {
 
   async function handleVerifyOtp(event) {
     event.preventDefault();
-    setError('');
-    setNotice('');
 
     if (!/^\d{6}$/.test(otp)) {
-      setError('Enter the six-digit verification code.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Verification code',
+        title: 'Enter a six-digit code',
+        message: 'The verification code must be exactly six digits.',
+      });
       return;
     }
 
@@ -85,25 +101,43 @@ export default function Register() {
     try {
       const result = await verifyOtp(email.trim(), otp.trim());
       setStep(3);
-      setNotice(result.message || 'Email verified successfully.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Email verified',
+        title: 'You can set your password',
+        message: result.message || 'Email verified successfully.',
+      });
     } catch (err) {
-      setError(err.message || 'Unable to verify your email.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Email verification',
+        title: "Couldn't verify your email",
+        message: err.message || 'Unable to verify your email.',
+      });
     } finally {
       setLoading(false);
     }
   }
 
   async function handleResendOtp() {
-    setError('');
-    setNotice('');
     setLoading(true);
 
     try {
       const result = await sendOtp(email.trim());
       setOtp('');
-      setNotice(result.message || 'A new verification code has been sent.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Verification code resent',
+        title: 'Check your email again',
+        message: result.message || 'A new verification code has been sent.',
+      });
     } catch (err) {
-      setError(err.message || 'Unable to resend verification code.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Verification code',
+        title: "Couldn't resend the code",
+        message: err.message || 'Unable to resend verification code.',
+      });
     } finally {
       setLoading(false);
     }
@@ -111,16 +145,24 @@ export default function Register() {
 
   async function handleRegister(event) {
     event.preventDefault();
-    setError('');
-    setNotice('');
 
     if (password.length < 8 || password.length > 128) {
-      setError('Password must contain 8–128 characters.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Password',
+        title: 'Choose a longer password',
+        message: 'Password must contain 8–128 characters.',
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Password',
+        title: 'Passwords do not match',
+        message: 'Re-enter your password in both fields to confirm it.',
+      });
       return;
     }
 
@@ -138,7 +180,12 @@ export default function Register() {
 
       navigate('/user', { replace: true });
     } catch (err) {
-      setError(err.message || 'Unable to create your account.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Create account',
+        title: "Couldn't create your account",
+        message: err.message || 'Unable to create your account.',
+      });
     } finally {
       setLoading(false);
     }
@@ -192,18 +239,6 @@ export default function Register() {
             </div>
           ))}
         </div>
-
-        {error && (
-          <div className="auth-error" role="alert">
-            {error}
-          </div>
-        )}
-
-        {notice && (
-          <div className="auth-success" role="status">
-            {notice}
-          </div>
-        )}
 
         {/* STEP 1: Personal details */}
         {step === 1 && (
@@ -330,8 +365,6 @@ export default function Register() {
               onClick={() => {
                 setStep(1);
                 setOtp('');
-                setError('');
-                setNotice('');
               }}
               disabled={loading}
             >

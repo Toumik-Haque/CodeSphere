@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Register.css';
 
 export default function ResetPassword() {
@@ -11,6 +12,7 @@ export default function ResetPassword() {
   } = useAuth();
 
   const navigate = useNavigate();
+  const { showNotice } = useNotice();
 
   const [step, setStep] = useState(1);
   const [email, setEmail] = useState('');
@@ -21,21 +23,21 @@ export default function ResetPassword() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
-  const [error, setError] = useState('');
-  const [notice, setNotice] = useState('');
   const [loading, setLoading] = useState(false);
 
   // STEP 1 — SEND RESET OTP
   async function handleSendOtp(event) {
     event.preventDefault();
 
-    setError('');
-    setNotice('');
-
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!normalizedEmail) {
-      setError('Please enter your email address.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Reset password',
+        title: 'Enter your email address',
+        message: 'We need your registered email to send a reset code.',
+      });
       return;
     }
 
@@ -46,14 +48,22 @@ export default function ResetPassword() {
 
       // Move to Step 2 only if the request succeeds.
       setEmail(normalizedEmail);
-      setNotice(
-        result.message || 'OTP sent successfully. Please check your email.'
-      );
       setOtp('');
       setStep(2);
+      showNotice({
+        tone: 'success',
+        kicker: 'Reset code sent',
+        title: 'Check your email',
+        message: result.message || 'OTP sent successfully. Please check your email.',
+      });
     } catch (err) {
       // A 404 (no account found) stays on Step 1.
-      setError(err.message || 'Unable to send the reset code.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Reset password',
+        title: "Couldn't send the reset code",
+        message: err.message || 'Unable to send the reset code.',
+      });
     } finally {
       setLoading(false);
     }
@@ -63,11 +73,13 @@ export default function ResetPassword() {
   async function handleVerifyOtp(event) {
     event.preventDefault();
 
-    setError('');
-    setNotice('');
-
     if (!/^\d{6}$/.test(otp.trim())) {
-      setError('Please enter a valid six-digit verification code.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Verification code',
+        title: 'Enter a six-digit code',
+        message: 'The verification code must be exactly six digits.',
+      });
       return;
     }
 
@@ -79,10 +91,20 @@ export default function ResetPassword() {
         otp.trim()
       );
 
-      setNotice(result.message || 'Code verified successfully.');
       setStep(3);
+      showNotice({
+        tone: 'success',
+        kicker: 'Code verified',
+        title: 'Create your new password',
+        message: result.message || 'Code verified successfully.',
+      });
     } catch (err) {
-      setError(err.message || 'Unable to verify the code.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Verification code',
+        title: "Couldn't verify the code",
+        message: err.message || 'Unable to verify the code.',
+      });
     } finally {
       setLoading(false);
     }
@@ -92,16 +114,23 @@ export default function ResetPassword() {
   async function handleResetPassword(event) {
     event.preventDefault();
 
-    setError('');
-    setNotice('');
-
     if (password.length < 8 || password.length > 128) {
-      setError('Password must be between 8 and 128 characters.');
+      showNotice({
+        tone: 'error',
+        kicker: 'New password',
+        title: 'Choose a longer password',
+        message: 'Password must be between 8 and 128 characters.',
+      });
       return;
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match.');
+      showNotice({
+        tone: 'error',
+        kicker: 'New password',
+        title: 'Passwords do not match',
+        message: 'Re-enter your new password in both fields to confirm it.',
+      });
       return;
     }
 
@@ -113,17 +142,23 @@ export default function ResetPassword() {
         password
       );
 
-      navigate('/login', {
-        replace: true,
-        state: {
-          passwordReset: true,
-          message:
-            result.message ||
-            'Password reset successful. Please sign in with your new password.',
-        },
+      showNotice({
+        tone: 'success',
+        kicker: 'Password reset',
+        title: 'Your password has been updated',
+        message:
+          result.message ||
+          'Password reset successful. Please sign in with your new password.',
       });
+
+      navigate('/login', { replace: true });
     } catch (err) {
-      setError(err.message || 'Unable to reset your password.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Password reset',
+        title: "Couldn't reset your password",
+        message: err.message || 'Unable to reset your password.',
+      });
     } finally {
       setLoading(false);
     }
@@ -132,8 +167,6 @@ export default function ResetPassword() {
   function handleChangeEmail() {
     setStep(1);
     setOtp('');
-    setError('');
-    setNotice('');
   }
 
   return (
@@ -200,20 +233,6 @@ export default function ResetPassword() {
             );
           })}
         </div>
-
-        {/* ERROR MESSAGE */}
-        {error && (
-          <div className="auth-error" role="alert">
-            {error}
-          </div>
-        )}
-
-        {/* SUCCESS MESSAGE */}
-        {notice && (
-          <div className="auth-success" role="status">
-            {notice}
-          </div>
-        )}
 
         {/* STEP 1 — EMAIL */}
         {step === 1 && (

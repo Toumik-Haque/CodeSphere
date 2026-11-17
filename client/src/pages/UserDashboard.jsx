@@ -391,7 +391,7 @@ function EventRegistrationsSection() {
                 <div className="dashboard-section-heading">
                   <div>
                     <span className="dashboard-page-kicker">YOUR CODESPHERE JOURNEY</span>
-                    <h2>{eventFilters.find((filter) => filter.id === eventFilter)?.label} events</h2>
+                    <h2>{eventFilters.find((filter) => filter.id === eventFilter)?.label} registered events</h2>
                     <p>Your registrations, all in one place.</p>
                   </div>
                 </div>
@@ -410,7 +410,7 @@ function EventRegistrationsSection() {
                   <div className="dashboard-filter-empty">
                     <i className="bi bi-calendar2-week" aria-hidden="true" />
                     <div>
-                      <strong>No {eventFilter === 'upcoming' ? 'upcoming' : eventFilter} events</strong>
+                      <strong>No {eventFilter === 'upcoming' ? 'upcoming' : eventFilter} events you registered</strong>
                       <p>
                         {eventFilter === 'upcoming'
                           ? 'Your next event will show here after you register.'

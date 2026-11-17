@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import '../css/Host.css';
 
@@ -72,6 +73,7 @@ export default function HostSubmit() {
   const { kind: kindParam, id } = useParams();
   const kind = kindParam === 'hackathon' ? 'hackathon' : 'event';
   const navigate = useNavigate();
+  const { showNotice } = useNotice();
   const [form, setForm] = useState(EMPTY[kind]);
   const [existing, setExisting] = useState(null);
   const [banner, setBanner] = useState(null);
@@ -147,9 +149,20 @@ export default function HostSubmit() {
     if (banner) fd.append('banner', banner);
     try {
       const r = await apiRequest(id ? `/host/${kind}/${id}` : `/host/${kind}`, { method: id ? 'PUT' : 'POST', body: fd });
-      navigate('/host', { state: { message: r.message } });
+      showNotice({
+        tone: 'success',
+        kicker: id ? 'Listing updated' : 'Listing submitted',
+        title: id ? 'Changes sent for review' : 'Listing submitted for review',
+        message: r.message || 'Our team will review your listing and let you know once it goes live.',
+      });
+      navigate('/host');
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Submission failed',
+        title: "Couldn't submit this listing",
+        message: err.message,
+      });
     } finally {
       setBusy(false);
     }

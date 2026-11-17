@@ -1,11 +1,14 @@
 import {
   createContext,
+  useCallback,
   useContext,
   useEffect,
   useState,
 } from 'react';
+import { useNavigate } from 'react-router-dom';
 
-import { apiRequest } from '../lib/api';
+import { AUTH_EXPIRED_EVENT, apiRequest } from '../lib/api';
+import SessionExpiredModal from '../components/SessionExpiredModal';
 
 const AuthContext = createContext(null);
 
@@ -23,6 +26,44 @@ export function AuthProvider({ children }) {
   const [token, setToken] = useState(
     () => localStorage.getItem('codesphere_token')
   );
+
+  const navigate = useNavigate();
+  const [sessionNotice, setSessionNotice] = useState(null);
+
+  const logout = useCallback(() => {
+    localStorage.removeItem('codesphere_token');
+    localStorage.removeItem('codesphere_user');
+
+    setToken(null);
+    setUser(null);
+    setSessionNotice(null);
+  }, []);
+
+  const closeSessionNotice = useCallback(() => {
+    setSessionNotice(null);
+  }, []);
+
+  const goToSignIn = useCallback(() => {
+    setSessionNotice(null);
+    navigate('/login', { replace: true });
+  }, [navigate]);
+
+  useEffect(() => {
+    const handleExpired = (event) => {
+      const currentToken = localStorage.getItem('codesphere_token');
+      const failedToken = event.detail?.token;
+
+      if (!currentToken || (failedToken && failedToken !== currentToken)) return;
+
+      logout();
+      setSessionNotice({
+        message: 'Your sign-in is no longer valid. Please sign in again to continue.',
+      });
+    };
+
+    window.addEventListener(AUTH_EXPIRED_EVENT, handleExpired);
+    return () => window.removeEventListener(AUTH_EXPIRED_EVENT, handleExpired);
+  }, [logout]);
 
   // Refresh the saved user from the server on load and after sign-in, so
   // changes (staff roles, photo, username, profile details) show up without
@@ -95,6 +136,7 @@ export function AuthProvider({ children }) {
 
     setToken(data.token);
     setUser(data.user);
+    setSessionNotice(null);
 
     return data.user;
   }
@@ -124,6 +166,7 @@ export function AuthProvider({ children }) {
 
     setToken(data.token);
     setUser(data.user);
+    setSessionNotice(null);
 
     return data.user;
   }
@@ -136,14 +179,6 @@ export function AuthProvider({ children }) {
       localStorage.setItem('codesphere_user', JSON.stringify(next));
       return next;
     });
-  }
-
-  function logout() {
-    localStorage.removeItem('codesphere_token');
-    localStorage.removeItem('codesphere_user');
-
-    setToken(null);
-    setUser(null);
   }
 
   return (
@@ -163,6 +198,12 @@ export function AuthProvider({ children }) {
       }}
     >
       {children}
+      <SessionExpiredModal
+        open={Boolean(sessionNotice)}
+        message={sessionNotice?.message}
+        onClose={closeSessionNotice}
+        onSignIn={goToSignIn}
+      />
     </AuthContext.Provider>
   );
 }

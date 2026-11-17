@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { formatDate } from '../lib/time';
 import BroadcastOptions from '../components/BroadcastOptions';
+import { useNotice } from '../context/NoticeContext';
 import '../css/Reverse.css';
 
 const EMPTY = {
@@ -104,6 +105,7 @@ function RowsEditor({ rows, onChange, fields, addLabel, min = 1 }) {
 }
 
 export default function AdminReverse() {
+  const { showNotice } = useNotice();
   const [data, setData] = useState(null);
   const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -139,15 +141,30 @@ export default function AdminReverse() {
     try {
       if (editingId) {
         const r = await apiRequest(`/reverse/admin/${editingId}`, { method: 'PUT', body: JSON.stringify(toPayload(form)) });
-        setMessage(r.needsValidation ? 'Saved. Tests or limits changed, so validate again before publishing.' : 'Saved.');
+        showNotice({
+          tone: 'success',
+          kicker: 'Reverse coding',
+          title: r.needsValidation ? 'Saved, validation needed' : 'Challenge saved',
+          message: r.needsValidation ? 'Tests or limits changed, so validate again before publishing.' : 'Your changes have been saved.',
+        });
       } else {
         const r = await apiRequest('/reverse/admin', { method: 'POST', body: JSON.stringify(toPayload(form)) });
         setEditingId(r.id);
-        setMessage('Draft created. Validate the reference solution next.');
+        showNotice({
+          tone: 'success',
+          kicker: 'Reverse coding',
+          title: 'Draft created',
+          message: 'Validate the reference solution next.',
+        });
       }
       reload();
     } catch (e) {
-      setMessage(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Reverse coding',
+        title: 'Challenge not saved',
+        message: e.message,
+      });
     }
   };
 
@@ -157,10 +174,41 @@ export default function AdminReverse() {
       const requestBody = path === 'publish' ? { ...body, ...broadcastOptions } : body || {};
       const r = await apiRequest(`/reverse/admin/${editingId}/${path}`, { method: 'POST', body: JSON.stringify(requestBody) });
       if (path === 'validate') setValidation(r);
-      setMessage(success || r.note || 'Done.');
+      if (path === 'validate') {
+        showNotice({
+          tone: 'info',
+          kicker: 'Reverse coding',
+          title: 'Validation finished',
+          message: success || r.note || 'Done.',
+        });
+      } else if (path === 'publish') {
+        showNotice({
+          tone: 'success',
+          kicker: 'Reverse coding',
+          title: success === 'Scheduled.' ? 'Challenge scheduled' : 'Challenge published',
+          message: success || r.note || 'Done.',
+        });
+      } else {
+        showNotice({
+          tone: 'success',
+          kicker: 'Reverse coding',
+          title: path === 'retire' ? 'Challenge retired' : 'Action completed',
+          message: success || r.note || 'Done.',
+        });
+      }
       reload();
     } catch (e) {
-      setMessage(e.message);
+      const titles = {
+        validate: 'Validation failed',
+        publish: 'Publish failed',
+        retire: 'Retire failed',
+      };
+      showNotice({
+        tone: 'error',
+        kicker: 'Reverse coding',
+        title: titles[path] || 'Action failed',
+        message: e.message,
+      });
     }
   };
 
