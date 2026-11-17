@@ -3,7 +3,7 @@
 // today's bug or opted out of update emails are skipped.
 //
 // Settings: BUG_REMINDER=off disables it; BUG_REMINDER_HOUR (0-23, IST) sets the time.
-const mongoose = require('mongoose');
+const JobRun = require('../models/JobRun');
 const User = require('../models/User');
 const DebugProgress = require('../models/DebugProgress');
 const { isEmailConfigured, unsubscribeToken } = require('./newsletter');
@@ -13,13 +13,7 @@ const { dateInIndia, liveStreak } = require('./progress');
 const BATCH_SIZE = 500;
 const ARENA_PATH = '/playground#debugging-arena';
 
-// Remembers the last day the reminder went out, so restarts never send twice.
-const JobRun = mongoose.models.JobRun || mongoose.model('JobRun', new mongoose.Schema({
-  _id: String,
-  lastDate: String,
-  lastRunAt: Date,
-  sent: Number,
-}));
+
 
 const reminderHour = () => {
   const hour = Number(process.env.BUG_REMINDER_HOUR);
