@@ -10,6 +10,8 @@ import ProjectCard from '../components/ProjectCard';
 import GithubConnect from '../components/GithubConnect';
 import '../css/Projects.css';
 
+const GUIDED_PAGE = 24;
+
 function GuidedCard({ g }) {
   const cat = categoryOf(g.category);
   const pct = g.progress ? Math.round((g.progress.done / Math.max(1, g.progress.total)) * 100) : 0;
@@ -44,6 +46,7 @@ export default function ProjectHub() {
   const [showcase, setShowcase] = useState(null);
   const [featured, setFeatured] = useState([]);
   const [guided, setGuided] = useState(null);
+  const [guidedShown, setGuidedShown] = useState(GUIDED_PAGE);
   const [mine, setMine] = useState(null);
   const [error, setError] = useState('');
 
@@ -77,7 +80,12 @@ export default function ProjectHub() {
       if (q) query.set('q', q);
       apiRequest(`/projects?${query}`).then((r) => !cancelled && setShowcase(r)).catch((e) => !cancelled && setError(e.message));
     } else if (tab === 'guided') {
-      apiRequest(`/projects/guided?${query}`).then((r) => !cancelled && setGuided(r.items)).catch((e) => !cancelled && setError(e.message));
+      if (q) query.set('q', q);
+      apiRequest(`/projects/guided?${query}`).then((r) => {
+        if (cancelled) return;
+        setGuided(r.items);
+        setGuidedShown(GUIDED_PAGE);
+      }).catch((e) => !cancelled && setError(e.message));
     } else if (tab === 'mine' && user) {
       apiRequest('/projects/mine').then((r) => !cancelled && setMine(r)).catch((e) => !cancelled && setError(e.message));
     }
@@ -136,10 +144,10 @@ export default function ProjectHub() {
             </div>
             {tab !== 'mine' && (
               <div className="ph-filters">
-                {tab === 'showcase' && (
+                {(tab === 'showcase' || tab === 'guided') && (
                   <form role="search" onSubmit={(e) => { e.preventDefault(); update({ q: search.trim() }); }} className="ph-search">
                     <i className="bi bi-search" aria-hidden="true" />
-                    <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="Search projects, stacks…" aria-label="Search projects" maxLength={80} />
+                    <input type="search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder={tab === 'guided' ? 'Search guided projects, topics…' : 'Search projects, stacks…'} aria-label="Search projects" maxLength={80} />
                   </form>
                 )}
                 <select value={category} onChange={(e) => update({ category: e.target.value })} aria-label="Domain">
@@ -170,7 +178,19 @@ export default function ProjectHub() {
           {tab === 'guided' && (
             !guided ? <div className="ph-grid">{[1, 2, 3].map((i) => <div key={i} className="ph-card ph-skeleton" />)}</div>
               : guided.length === 0 ? <div className="ph-empty"><p>No guided projects match.</p></div>
-                : <div className="ph-grid">{guided.map((g) => <GuidedCard key={g.id} g={g} />)}</div>
+                : (
+                  <>
+                    <p className="ph-muted">{guided.length} guided project{guided.length === 1 ? '' : 's'}</p>
+                    <div className="ph-grid">{guided.slice(0, guidedShown).map((g) => <GuidedCard key={g.id} g={g} />)}</div>
+                    {guided.length > guidedShown && (
+                      <div className="ph-more">
+                        <button type="button" className="ph-btn" onClick={() => setGuidedShown((n) => n + GUIDED_PAGE)}>
+                          Show more ({guided.length - guidedShown} left)
+                        </button>
+                      </div>
+                    )}
+                  </>
+                )
           )}
 
           {tab === 'mine' && user && (

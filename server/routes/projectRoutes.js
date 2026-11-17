@@ -312,6 +312,13 @@ router.get('/guided', optionalAuth, async (req, res) => {
   const filter = { status: 'published' };
   if (PROJECT_LEVELS.includes(req.query.level)) filter.level = req.query.level;
   if (PROJECT_CATEGORIES.includes(req.query.category)) filter.category = req.query.category;
+  const q = clean(req.query.q, 80);
+  if (q) {
+    // Match from the start of a word, so "rag" finds RAG projects but not "storage".
+    const escaped = q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const rx = new RegExp(/^\w/.test(q) ? `\\b${escaped}` : escaped, 'i');
+    filter.$or = [{ title: rx }, { summary: rx }, { tags: rx }, { stack: rx }];
+  }
   const items = await GuidedProject.find(filter).sort({ order: 1, createdAt: 1 }).lean();
   const progress = req.user ? await GuidedProgress.find({ user: req.user._id, guided: { $in: items.map((g) => g._id) } }).lean() : [];
   const byId = new Map(progress.map((p) => [String(p.guided), p]));

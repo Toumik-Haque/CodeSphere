@@ -1,0 +1,2606 @@
+[
+  {
+    "slug": "python-programming-foundations-lab",
+    "title": "Python Programming Foundations Lab",
+    "summary": "Build practical Python utilities covering variables, functions, data structures, file handling, and exceptions, then package them into a menu-driven command-line application.",
+    "level": "Beginner",
+    "category": "dsa",
+    "estHours": 12,
+    "order": 1,
+    "tags": [
+      "python",
+      "programming",
+      "fundamentals",
+      "cli",
+      "problem-solving"
+    ],
+    "prerequisites": [
+      "Basic computer operation",
+      "Python installation and terminal basics"
+    ],
+    "stack": [
+      "Python",
+      "VS Code",
+      "Git",
+      "GitHub"
+    ],
+    "outcomes": [
+      "Write modular Python programs",
+      "Use core data structures",
+      "Handle files and exceptions",
+      "Apply version control"
+    ],
+    "problem": "Many students begin AI and software development without strong programming fundamentals. Build a command-line toolkit for students and beginners with utilities such as unit conversion, expense calculation, text processing, grade calculation, and file management. Organize the code into reusable modules, validate inputs, handle errors, and test important functions. The project is complete when another developer can clone the repository, install its dependencies, run the menu-driven application, and understand each utility through documented examples. Include at least fifteen useful operations and demonstrate that invalid inputs do not crash the program.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working command-line application",
+      "At least 15 utility functions",
+      "Automated tests for core functionality",
+      "README with installation and usage examples"
+    ],
+    "milestones": [
+      {
+        "title": "Environment Setup",
+        "description": "Prepare a modular Python development environment.",
+        "tasks": [
+          "Install Python 3 and verify it from the terminal.",
+          "Configure VS Code with the Python extension.",
+          "Create a GitHub repository and initialize Git.",
+          "Create and activate a virtual environment.",
+          "Write a program that accepts input and prints formatted output."
+        ],
+        "resources": [
+          {
+            "title": "Python Official Tutorial",
+            "url": "https://docs.python.org/3/tutorial/"
+          }
+        ]
+      },
+      {
+        "title": "Core Programming Utilities",
+        "description": "Implement reusable functions for common computational tasks.",
+        "tasks": [
+          "Implement temperature, distance, and currency unit conversion utilities.",
+          "Create a calculator with input validation.",
+          "Write functions to calculate student grades and percentages.",
+          "Implement word counting, string reversal, and palindrome detection.",
+          "Separate utilities into modules and import them into the main program."
+        ],
+        "resources": [
+          {
+            "title": "Python Standard Library",
+            "url": "https://docs.python.org/3/library/"
+          }
+        ]
+      },
+      {
+        "title": "File Handling and Data Management",
+        "description": "Add persistence and structured data processing.",
+        "tasks": [
+          "Implement file reading and writing operations.",
+          "Store utility history in a JSON file.",
+          "Add CSV import and export functionality.",
+          "Handle invalid inputs, missing files, and malformed data."
+        ],
+        "resources": [
+          {
+            "title": "GitHub Documentation",
+            "url": "https://docs.github.com/"
+          }
+        ]
+      },
+      {
+        "title": "Testing and Code Quality",
+        "description": "Verify correctness and improve maintainability.",
+        "tasks": [
+          "Write unit tests for at least ten utility functions.",
+          "Test empty files and invalid input values.",
+          "Add docstrings to public functions.",
+          "Run the application in a clean virtual environment."
+        ],
+        "resources": [
+          {
+            "title": "pytest Documentation",
+            "url": "https://docs.pytest.org/"
+          }
+        ]
+      },
+      {
+        "title": "Publish the Python Utilities",
+        "description": "Publish the CLI project with reproducible setup instructions.",
+        "tasks": [
+          "Create a README with features and example commands.",
+          "Add requirements.txt and .gitignore files.",
+          "Push the completed project to a public GitHub repository.",
+          "Record a short demonstration showing at least five utilities."
+        ],
+        "resources": []
+      }
+    ]
+  },
+  {
+    "slug": "data-structures-algorithms-practice-suite",
+    "title": "Data Structures and Algorithms Practice Suite",
+    "summary": "Implement arrays, linked lists, stacks, queues, trees, searching, and sorting algorithms with examples, tests, and complexity analysis.",
+    "level": "Beginner",
+    "category": "dsa",
+    "estHours": 18,
+    "order": 2,
+    "tags": [
+      "dsa",
+      "algorithms",
+      "python",
+      "data-structures",
+      "complexity"
+    ],
+    "prerequisites": [
+      "Basic Python syntax",
+      "Functions and loops",
+      "Basic mathematical operations"
+    ],
+    "stack": [
+      "Python",
+      "pytest",
+      "Git",
+      "GitHub"
+    ],
+    "outcomes": [
+      "Implement fundamental data structures",
+      "Analyze time and space complexity",
+      "Compare algorithm performance",
+      "Write testable algorithms"
+    ],
+    "problem": "Technical interviews commonly assess problem-solving and data structures. Build a practice suite that teaches students how core structures work internally rather than relying only on built-in implementations. Implement linear structures, a binary search tree, and fundamental searching and sorting algorithms. Each implementation must include examples, edge cases, and time and space complexity notes. The finished repository should be useful for interview preparation and easy for other students to extend. Demonstrate correctness with automated tests and compare algorithm performance on multiple input sizes.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "At least six data structure implementations",
+      "At least eight searching and sorting algorithms",
+      "Automated tests covering edge cases",
+      "README with complexity analysis"
+    ],
+    "milestones": [
+      {
+        "title": "Repository and Problem Setup",
+        "description": "Define a consistent structure and interface for implementations.",
+        "tasks": [
+          "Create folders for data structures, algorithms, and tests.",
+          "Create a virtual environment and install pytest.",
+          "Define a consistent input and output convention.",
+          "Document Big-O notation with five practical examples."
+        ],
+        "resources": [
+          {
+            "title": "Python Official Tutorial",
+            "url": "https://docs.python.org/3/tutorial/"
+          }
+        ]
+      },
+      {
+        "title": "Linear Data Structures",
+        "description": "Implement and test common linear structures.",
+        "tasks": [
+          "Implement a dynamic array with insertion and deletion.",
+          "Implement a singly linked list with insertion and deletion.",
+          "Implement a stack using a Python list.",
+          "Implement a queue using collections.deque.",
+          "Test empty structures, duplicates, and boundary conditions."
+        ],
+        "resources": [
+          {
+            "title": "Python Standard Library",
+            "url": "https://docs.python.org/3/library/"
+          }
+        ]
+      },
+      {
+        "title": "Searching, Sorting, and Trees",
+        "description": "Build fundamental algorithms and a hierarchical structure.",
+        "tasks": [
+          "Implement linear search and binary search.",
+          "Implement bubble sort, insertion sort, and selection sort.",
+          "Implement merge sort and quicksort.",
+          "Build a binary search tree with insertion and traversal.",
+          "Document time and space complexity for every implementation."
+        ],
+        "resources": [
+          {
+            "title": "GitHub Documentation",
+            "url": "https://docs.github.com/"
+          }
+        ]
+      },
+      {
+        "title": "Testing and Performance Analysis",
+        "description": "Validate correctness and compare runtime behavior.",
+        "tasks": [
+          "Write pytest tests for every data structure.",
+          "Test sorting with empty, sorted, reversed, and duplicate-value arrays.",
+          "Benchmark three sorting algorithms on different input sizes.",
+          "Document observed performance and complexity trade-offs."
+        ],
+        "resources": [
+          {
+            "title": "pytest Documentation",
+            "url": "https://docs.pytest.org/"
+          }
+        ]
+      },
+      {
+        "title": "Publish the DSA Suite",
+        "description": "Package implementations with examples and documentation.",
+        "tasks": [
+          "Organize implementations into clearly named modules.",
+          "Create a README with descriptions and complexity tables.",
+          "Push the tested codebase to a public GitHub repository.",
+          "Record a demonstration explaining three structures and three algorithms."
+        ],
+        "resources": []
+      }
+    ]
+  },
+  {
+    "slug": "responsive-developer-portfolio",
+    "title": "Responsive Developer Portfolio Website",
+    "summary": "Create a responsive portfolio featuring projects, skills, education, and contact details, with an optional AI-powered project-description assistant.",
+    "level": "Beginner",
+    "category": "web",
+    "estHours": 14,
+    "order": 3,
+    "tags": [
+      "html",
+      "css",
+      "javascript",
+      "react",
+      "portfolio",
+      "responsive-design"
+    ],
+    "prerequisites": [
+      "Basic HTML knowledge",
+      "Basic CSS knowledge",
+      "JavaScript fundamentals"
+    ],
+    "stack": [
+      "HTML",
+      "CSS",
+      "JavaScript",
+      "React",
+      "Vercel",
+      "GitHub"
+    ],
+    "outcomes": [
+      "Build responsive interfaces",
+      "Create reusable React components",
+      "Implement interactive project filtering",
+      "Deploy a production website"
+    ],
+    "problem": "Students need a professional online presence to showcase skills and projects when applying for internships and placements. Build a responsive portfolio presenting a profile, education, technical expertise, project demonstrations, achievements, and contact information. Include project filtering and working GitHub and LinkedIn links. As an optional AI enhancement, connect a free-tier model through a backend endpoint to draft concise project descriptions from facts supplied by the student. The site must work on mobile, tablet, and desktop screens, load efficiently, and have a shareable public URL. Keep any model credentials on the server and never expose API keys in frontend code.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Live deployed portfolio URL",
+      "Responsive mobile and desktop layouts",
+      "Working project links and contact section",
+      "README with screenshots and setup instructions"
+    ],
+    "milestones": [
+      {
+        "title": "Design and Project Setup",
+        "description": "Plan the site structure and establish the frontend environment.",
+        "tasks": [
+          "Initialize a React application using Vite.",
+          "Create desktop and mobile wireframes.",
+          "Build a homepage with navigation and a hero section.",
+          "Define reusable CSS variables for colors, typography, and spacing."
+        ],
+        "resources": [
+          {
+            "title": "React Documentation",
+            "url": "https://react.dev/learn"
+          }
+        ]
+      },
+      {
+        "title": "Build Portfolio Sections",
+        "description": "Implement the sections that communicate professional background.",
+        "tasks": [
+          "Create an About section with education and career interests.",
+          "Build a Skills section grouped by technology.",
+          "Create reusable project cards with screenshots and repository links.",
+          "Add an education and achievements timeline.",
+          "Create a contact section with email and social links."
+        ],
+        "resources": [
+          {
+            "title": "Vite Documentation",
+            "url": "https://vite.dev/guide/"
+          }
+        ]
+      },
+      {
+        "title": "Interactive Features and AI Enhancement",
+        "description": "Add useful interactions and an optional AI description generator.",
+        "tasks": [
+          "Implement project filtering using React state.",
+          "Add a responsive mobile navigation menu.",
+          "Create a backend endpoint accepting structured project facts.",
+          "Connect a free-tier LLM to draft project descriptions.",
+          "Evaluate drafts for factual accuracy and reject invented achievements.",
+          "Store provider credentials in environment variables and add request limits."
+        ],
+        "resources": [
+          {
+            "title": "MDN Web Development",
+            "url": "https://developer.mozilla.org/en-US/docs/Learn_web_development"
+          }
+        ]
+      },
+      {
+        "title": "Responsive Testing and Optimization",
+        "description": "Verify usability, accessibility, performance, and security.",
+        "tasks": [
+          "Test mobile, tablet, and desktop viewport sizes.",
+          "Check navigation and external project URLs.",
+          "Add accessible labels and image alternative text.",
+          "Optimize images and remove unused dependencies.",
+          "Test AI failures and verify keys are absent from browser requests."
+        ],
+        "resources": [
+          {
+            "title": "Hugging Face Documentation",
+            "url": "https://huggingface.co/docs"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish Portfolio",
+        "description": "Publish the website with reproducible documentation.",
+        "tasks": [
+          "Create a production build using Vite.",
+          "Deploy the frontend using Vercel.",
+          "Configure server-side production environment variables if AI is enabled.",
+          "Write a README with features, screenshots, and deployment steps.",
+          "Record a walkthrough of the live portfolio."
+        ],
+        "resources": [
+          {
+            "title": "Vercel Documentation",
+            "url": "https://vercel.com/docs"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "student-management-rest-api",
+    "title": "Student Management REST API",
+    "summary": "Develop a REST API for student records, courses, attendance, and academic information with database persistence, validation, authentication, and tests.",
+    "level": "Beginner",
+    "category": "web",
+    "estHours": 16,
+    "order": 4,
+    "tags": [
+      "backend",
+      "rest-api",
+      "python",
+      "fastapi",
+      "sqlite",
+      "authentication"
+    ],
+    "prerequisites": [
+      "Python programming basics",
+      "Basic HTTP concepts",
+      "JSON fundamentals"
+    ],
+    "stack": [
+      "Python",
+      "FastAPI",
+      "SQLite",
+      "SQLAlchemy",
+      "pytest",
+      "Git"
+    ],
+    "outcomes": [
+      "Design RESTful APIs",
+      "Implement database CRUD operations",
+      "Validate requests",
+      "Test authenticated backend services"
+    ],
+    "problem": "Colleges often manage student information across disconnected spreadsheets and manual records. Build a Student Management REST API that centralizes student profiles, course enrollments, attendance, and academic results. Provide clearly defined endpoints for authorized users, validate incoming data, and persist records in a relational database. Include authentication, consistent error responses, pagination, API documentation, and automated tests. The project is complete when a frontend developer can integrate with the documented endpoints and a fresh deployment can initialize its database without manual data manipulation. Use sample records and avoid exposing real student information.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working REST API with documented endpoints",
+      "Database schema and sample records",
+      "Automated API tests",
+      "README with setup and API examples"
+    ],
+    "milestones": [
+      {
+        "title": "Backend Environment Setup",
+        "description": "Initialize the API and configure the database.",
+        "tasks": [
+          "Create a virtual environment and install FastAPI and Uvicorn.",
+          "Create a FastAPI application with a health endpoint.",
+          "Configure SQLite as the development database.",
+          "Create folders for routes, models, schemas, and services.",
+          "Run the API and inspect its Swagger documentation."
+        ],
+        "resources": [
+          {
+            "title": "FastAPI Documentation",
+            "url": "https://fastapi.tiangolo.com/"
+          }
+        ]
+      },
+      {
+        "title": "Student and Course CRUD",
+        "description": "Implement core academic record operations.",
+        "tasks": [
+          "Create a student model with unique student identifiers.",
+          "Add endpoints for creating and listing students.",
+          "Implement student update and delete endpoints.",
+          "Create course models and course management endpoints.",
+          "Validate required fields and reject invalid data."
+        ],
+        "resources": [
+          {
+            "title": "SQLAlchemy Documentation",
+            "url": "https://docs.sqlalchemy.org/"
+          }
+        ]
+      },
+      {
+        "title": "Academic Records and Authentication",
+        "description": "Add academic relationships and secure administrative operations.",
+        "tasks": [
+          "Create course enrollment relationships.",
+          "Implement attendance and result endpoints.",
+          "Add user registration and password hashing.",
+          "Protect administrative endpoints using token authentication.",
+          "Store secrets and database configuration in environment variables."
+        ],
+        "resources": [
+          {
+            "title": "FastAPI Security",
+            "url": "https://fastapi.tiangolo.com/tutorial/security/"
+          }
+        ]
+      },
+      {
+        "title": "API Testing and Security",
+        "description": "Validate behavior and protect academic information.",
+        "tasks": [
+          "Write tests for student creation, retrieval, update, and deletion.",
+          "Test duplicate IDs, invalid requests, and missing records.",
+          "Verify unauthorized users cannot access protected endpoints.",
+          "Add pagination and filtering to student listing.",
+          "Implement structured exception handling and safe error responses."
+        ],
+        "resources": [
+          {
+            "title": "FastAPI Testing",
+            "url": "https://fastapi.tiangolo.com/tutorial/testing/"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Document the API",
+        "description": "Publish the API with reproducible instructions.",
+        "tasks": [
+          "Create a production dependency file and deployment configuration.",
+          "Deploy using a free-tier compatible hosting service.",
+          "Configure production secrets through environment variables.",
+          "Write a README with endpoint examples and database instructions.",
+          "Publish the Swagger URL and record an API demonstration."
+        ],
+        "resources": [
+          {
+            "title": "Render Documentation",
+            "url": "https://render.com/docs"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "student-performance-analysis-dashboard",
+    "title": "Student Performance Analysis Dashboard",
+    "summary": "Analyze academic records and build an interactive dashboard showing performance trends, subject weaknesses, attendance patterns, and evidence-based insights.",
+    "level": "Beginner",
+    "category": "data",
+    "estHours": 12,
+    "order": 5,
+    "tags": [
+      "data-analysis",
+      "python",
+      "pandas",
+      "visualization",
+      "analytics"
+    ],
+    "prerequisites": [
+      "Python fundamentals",
+      "Basic statistics",
+      "CSV file handling"
+    ],
+    "stack": [
+      "Python",
+      "Pandas",
+      "NumPy",
+      "Matplotlib",
+      "Streamlit",
+      "Git"
+    ],
+    "outcomes": [
+      "Clean and transform datasets",
+      "Perform exploratory data analysis",
+      "Create meaningful visualizations",
+      "Build interactive dashboards"
+    ],
+    "problem": "Educational institutions collect academic information but often lack accessible tools for identifying performance patterns and students who may need support. Build a dashboard that processes anonymized marks, attendance, assignment scores, and examination results. Show subject-wise trends, compare attendance with academic outcomes, and provide filters for semester, subject, and student groups. Use statistical summaries and interactive visualizations to communicate findings to faculty and academic coordinators. The finished dashboard must distinguish correlation from causation and let users explore the underlying dataset rather than relying only on static reports. Use public or synthetic data and remove personally identifiable information.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working interactive dashboard",
+      "Cleaned dataset or reproducible sample data",
+      "At least six meaningful visualizations",
+      "README with analytical findings and screenshots"
+    ],
+    "milestones": [
+      {
+        "title": "Dataset Collection and Setup",
+        "description": "Prepare a structured dataset and analysis environment.",
+        "tasks": [
+          "Create a Python environment and install analysis libraries.",
+          "Download a public student performance dataset.",
+          "Load the dataset into a Pandas DataFrame.",
+          "Inspect data types, missing values, and dataset dimensions.",
+          "Document the source and remove personally identifiable information."
+        ],
+        "resources": [
+          {
+            "title": "Pandas Getting Started",
+            "url": "https://pandas.pydata.org/docs/getting_started/index.html"
+          }
+        ]
+      },
+      {
+        "title": "Data Cleaning and Exploration",
+        "description": "Prepare the data and identify statistical characteristics.",
+        "tasks": [
+          "Identify missing values and choose a handling strategy.",
+          "Remove duplicate records and standardize categories.",
+          "Calculate average, median, minimum, and maximum scores.",
+          "Group academic results by subject and semester.",
+          "Analyze attendance and examination performance relationships."
+        ],
+        "resources": [
+          {
+            "title": "Pandas User Guide",
+            "url": "https://pandas.pydata.org/docs/user_guide/"
+          }
+        ]
+      },
+      {
+        "title": "Build the Interactive Dashboard",
+        "description": "Present findings through charts and filters.",
+        "tasks": [
+          "Create a Streamlit dashboard landing page.",
+          "Display key metrics for records and average performance.",
+          "Build subject-wise performance charts.",
+          "Add filters for semester, subject, and student groups.",
+          "Visualize attendance and marks distributions."
+        ],
+        "resources": [
+          {
+            "title": "Streamlit Documentation",
+            "url": "https://docs.streamlit.io/"
+          }
+        ]
+      },
+      {
+        "title": "Insights and Validation",
+        "description": "Validate results and communicate evidence-based findings.",
+        "tasks": [
+          "Compare average scores across at least three subjects.",
+          "Identify groups with low attendance and low performance.",
+          "Verify dashboard metrics against independent calculations.",
+          "Explain statistical observations and correlation limitations.",
+          "Test missing values and empty filter results."
+        ],
+        "resources": [
+          {
+            "title": "Matplotlib Documentation",
+            "url": "https://matplotlib.org/stable/users/index.html"
+          }
+        ]
+      },
+      {
+        "title": "Publish the Analytics Dashboard",
+        "description": "Deploy the dashboard and document the analysis.",
+        "tasks": [
+          "Create requirements.txt and include reproducible sample data.",
+          "Deploy using Streamlit Community Cloud.",
+          "Write a README with dataset details and findings.",
+          "Add screenshots and example insights.",
+          "Record a video explaining three findings."
+        ],
+        "resources": [
+          {
+            "title": "Streamlit Community Cloud",
+            "url": "https://docs.streamlit.io/deploy/streamlit-community-cloud"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "exploratory-data-analysis-automation-tool",
+    "title": "Exploratory Data Analysis Automation Tool",
+    "summary": "Create a reusable Python tool that inspects CSV datasets, detects data quality issues, calculates statistics, and generates visual reports.",
+    "level": "Beginner",
+    "category": "data",
+    "estHours": 14,
+    "order": 6,
+    "tags": [
+      "eda",
+      "data-analysis",
+      "pandas",
+      "automation",
+      "python"
+    ],
+    "prerequisites": [
+      "Python fundamentals",
+      "Basic statistics",
+      "CSV and JSON familiarity"
+    ],
+    "stack": [
+      "Python",
+      "Pandas",
+      "NumPy",
+      "Matplotlib",
+      "Streamlit",
+      "Git"
+    ],
+    "outcomes": [
+      "Automate exploratory data analysis",
+      "Detect data quality problems",
+      "Generate statistical summaries",
+      "Design reusable data pipelines"
+    ],
+    "problem": "Analysts spend substantial time inspecting unfamiliar datasets before beginning machine learning or business analysis. Build an EDA tool that accepts a CSV file and generates a structured report covering its dimensions, data types, missing values, duplicates, descriptive statistics, distributions, correlations, and potential outliers. Provide an interactive dashboard and downloadable analysis results. The tool should detect numerical and categorical columns automatically and work with multiple datasets rather than one hardcoded example. It is complete when a user can upload a new CSV, inspect its quality, and export a report without writing analysis code. Clearly label heuristic checks and avoid silently modifying source data.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working CSV upload and analysis interface",
+      "Automatically generated analysis report",
+      "At least five data quality checks",
+      "README with example datasets and screenshots"
+    ],
+    "milestones": [
+      {
+        "title": "Environment and Dataset Setup",
+        "description": "Prepare the environment and reusable ingestion workflow.",
+        "tasks": [
+          "Create a Python project and install Pandas, NumPy, and Matplotlib.",
+          "Download two CSV datasets with different structures.",
+          "Implement a function that loads a CSV into a DataFrame.",
+          "Display dimensions, columns, and data types.",
+          "Validate unsupported and empty files."
+        ],
+        "resources": [
+          {
+            "title": "Pandas Documentation",
+            "url": "https://pandas.pydata.org/docs/"
+          }
+        ]
+      },
+      {
+        "title": "Automated Data Quality Checks",
+        "description": "Identify common problems in real datasets.",
+        "tasks": [
+          "Implement missing-value detection for every column.",
+          "Identify duplicate rows and calculate their percentage.",
+          "Detect numerical columns containing non-numeric values.",
+          "Implement IQR-based outlier detection.",
+          "Generate a data quality summary in JSON format."
+        ],
+        "resources": [
+          {
+            "title": "Pandas Missing Data Guide",
+            "url": "https://pandas.pydata.org/docs/user_guide/missing_data.html"
+          }
+        ]
+      },
+      {
+        "title": "Statistics and Visualization",
+        "description": "Generate summaries and visual reports for different column types.",
+        "tasks": [
+          "Calculate descriptive statistics for numerical columns.",
+          "Generate histograms for numerical distributions.",
+          "Create bar charts for categorical frequencies.",
+          "Generate a correlation matrix for numerical features.",
+          "Export charts and summaries into a report directory."
+        ],
+        "resources": [
+          {
+            "title": "Matplotlib Documentation",
+            "url": "https://matplotlib.org/stable/users/index.html"
+          }
+        ]
+      },
+      {
+        "title": "Interactive Interface and Validation",
+        "description": "Build an upload interface and test varied data structures.",
+        "tasks": [
+          "Build a Streamlit interface with CSV upload.",
+          "Display dataset summaries and quality warnings separately.",
+          "Add column selection controls for customized analysis.",
+          "Test numeric-only, categorical, mixed-type, and empty datasets.",
+          "Verify generated statistics against manually calculated examples."
+        ],
+        "resources": [
+          {
+            "title": "Streamlit Documentation",
+            "url": "https://docs.streamlit.io/"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the Tool",
+        "description": "Publish the tool and document its supported workflows.",
+        "tasks": [
+          "Add dependencies and example dataset files.",
+          "Deploy using Streamlit Community Cloud.",
+          "Write a README with installation and usage instructions.",
+          "Add screenshots of quality checks and visualizations.",
+          "Record a demonstration using two different datasets."
+        ],
+        "resources": [
+          {
+            "title": "Streamlit Deployment Guide",
+            "url": "https://docs.streamlit.io/deploy"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "machine-learning-house-price-predictor",
+    "title": "Machine Learning House Price Predictor",
+    "summary": "Build an end-to-end regression project that predicts house prices, compares algorithms, and exposes estimates through a usable web interface.",
+    "level": "Beginner",
+    "category": "ai-ml",
+    "estHours": 16,
+    "order": 7,
+    "tags": [
+      "machine-learning",
+      "regression",
+      "scikit-learn",
+      "python",
+      "model-deployment"
+    ],
+    "prerequisites": [
+      "Python fundamentals",
+      "Pandas and NumPy basics",
+      "Mean, median, and standard deviation"
+    ],
+    "stack": [
+      "Python",
+      "Pandas",
+      "NumPy",
+      "Scikit-learn",
+      "Streamlit",
+      "Joblib"
+    ],
+    "outcomes": [
+      "Prepare ML datasets",
+      "Train regression models",
+      "Compare model performance",
+      "Deploy a trained model"
+    ],
+    "problem": "Property buyers, agents, and homeowners need ways to estimate property values from available housing information. Build a predictor using a public housing dataset and features such as location, size, room count, and property age when available. Train and compare multiple regression algorithms, investigate feature engineering, and evaluate predictions on data not used during training. Provide a web interface where users enter property details and receive an estimated price. Communicate prediction error and limitations clearly: the output is an educational estimate, not an official valuation or financial guarantee. The final project should include a reproducible training pipeline and saved inference artifact.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Trained regression model with saved artifacts",
+      "Held-out test evaluation metrics",
+      "Working prediction interface",
+      "README with model comparison and screenshots"
+    ],
+    "milestones": [
+      {
+        "title": "Dataset and ML Environment Setup",
+        "description": "Collect housing data and prepare the ML environment.",
+        "tasks": [
+          "Create a Python environment and install ML dependencies.",
+          "Download a public housing price dataset.",
+          "Load the dataset and inspect its features.",
+          "Identify the target and relevant input features.",
+          "Split data into training and test sets with a fixed seed."
+        ],
+        "resources": [
+          {
+            "title": "Scikit-learn Getting Started",
+            "url": "https://scikit-learn.org/stable/getting_started.html"
+          }
+        ]
+      },
+      {
+        "title": "Data Preparation and Feature Engineering",
+        "description": "Prepare features using a reproducible preprocessing pipeline.",
+        "tasks": [
+          "Handle missing numerical and categorical values.",
+          "Encode categorical variables appropriately.",
+          "Scale numerical features where required.",
+          "Create a Scikit-learn preprocessing pipeline.",
+          "Check for target leakage between training and test data."
+        ],
+        "resources": [
+          {
+            "title": "Scikit-learn Preprocessing",
+            "url": "https://scikit-learn.org/stable/modules/preprocessing.html"
+          }
+        ]
+      },
+      {
+        "title": "Train and Compare Regression Models",
+        "description": "Train algorithms and measure unseen-property prediction quality.",
+        "tasks": [
+          "Train a Linear Regression baseline.",
+          "Train a Decision Tree Regressor.",
+          "Train a Random Forest Regressor.",
+          "Calculate MAE, RMSE, and R-squared for each model.",
+          "Compare predictions with actual test-set prices."
+        ],
+        "resources": [
+          {
+            "title": "Scikit-learn User Guide",
+            "url": "https://scikit-learn.org/stable/user_guide.html"
+          }
+        ]
+      },
+      {
+        "title": "Prediction Interface and Reliability",
+        "description": "Create a prediction interface and investigate errors.",
+        "tasks": [
+          "Save the selected pipeline using Joblib.",
+          "Build a Streamlit form for property characteristics.",
+          "Display estimates with a clear limitations note.",
+          "Evaluate errors across price ranges and feature groups.",
+          "Handle invalid inputs and model loading failures."
+        ],
+        "resources": [
+          {
+            "title": "Joblib Documentation",
+            "url": "https://joblib.readthedocs.io/"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the Predictor",
+        "description": "Deploy the application and document reproducible training.",
+        "tasks": [
+          "Create requirements.txt and save the model artifact.",
+          "Deploy the Streamlit application using a free hosting option.",
+          "Document dataset source and evaluation metrics.",
+          "Write a README with training and inference instructions.",
+          "Record a demonstration of property inputs and predictions."
+        ],
+        "resources": [
+          {
+            "title": "Streamlit Documentation",
+            "url": "https://docs.streamlit.io/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "email-spam-detection-classifier",
+    "title": "Email Spam Detection Classifier",
+    "summary": "Train a text classifier that identifies spam using NLP preprocessing, TF-IDF features, and machine learning, then expose it through an application.",
+    "level": "Beginner",
+    "category": "ai-ml",
+    "estHours": 14,
+    "order": 8,
+    "tags": [
+      "nlp",
+      "text-classification",
+      "machine-learning",
+      "tfidf",
+      "scikit-learn"
+    ],
+    "prerequisites": [
+      "Python fundamentals",
+      "Basic Pandas knowledge",
+      "Basic classification concepts"
+    ],
+    "stack": [
+      "Python",
+      "Pandas",
+      "NLTK",
+      "Scikit-learn",
+      "Streamlit",
+      "Joblib"
+    ],
+    "outcomes": [
+      "Preprocess text",
+      "Convert text into numerical features",
+      "Train classification models",
+      "Evaluate precision and recall"
+    ],
+    "problem": "Email and messaging users receive unwanted promotions, phishing attempts, and spam that make important communication harder to identify. Build a classifier using a public labeled SMS or email dataset. Normalize and tokenize message text, extract TF-IDF features, and train supervised classification models. Compare at least two approaches and examine false positives and false negatives because incorrectly blocking a legitimate message can be costly. Provide an interface where users paste a message and receive a classification with an appropriate confidence indicator. Include error analysis and explain that a spam classifier is not a complete phishing detector.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Trained text classification model",
+      "Precision, recall, and F1 evaluation results",
+      "Working message classification interface",
+      "README with preprocessing and error analysis"
+    ],
+    "milestones": [
+      {
+        "title": "Dataset Collection and Setup",
+        "description": "Prepare labeled data and configure the NLP environment.",
+        "tasks": [
+          "Create a Python environment and install NLP dependencies.",
+          "Download a public labeled spam dataset.",
+          "Load the dataset and inspect message and label distributions.",
+          "Identify duplicate messages and missing text records.",
+          "Create stratified training and test datasets."
+        ],
+        "resources": [
+          {
+            "title": "Scikit-learn Documentation",
+            "url": "https://scikit-learn.org/stable/"
+          }
+        ]
+      },
+      {
+        "title": "Text Preprocessing and Feature Extraction",
+        "description": "Transform raw messages into numerical representations.",
+        "tasks": [
+          "Normalize message text using consistent lowercase conversion.",
+          "Remove unnecessary whitespace and inspect special characters.",
+          "Implement tokenization and optional stop-word removal.",
+          "Convert messages into TF-IDF feature vectors.",
+          "Fit the vectorizer only on training data to prevent leakage."
+        ],
+        "resources": [
+          {
+            "title": "NLTK Documentation",
+            "url": "https://www.nltk.org/"
+          }
+        ]
+      },
+      {
+        "title": "Model Training and Comparison",
+        "description": "Train classifiers and measure their ability to identify unseen spam.",
+        "tasks": [
+          "Train a Multinomial Naive Bayes classifier.",
+          "Train a Logistic Regression classifier.",
+          "Calculate precision, recall, F1-score, and confusion matrix.",
+          "Compare false-positive and false-negative examples.",
+          "Inspect incorrect predictions and document limitations."
+        ],
+        "resources": [
+          {
+            "title": "Scikit-learn Feature Extraction",
+            "url": "https://scikit-learn.org/stable/modules/feature_extraction.html"
+          }
+        ]
+      },
+      {
+        "title": "Interactive Classifier and Reliability",
+        "description": "Build an interface and test varied message inputs.",
+        "tasks": [
+          "Save the vectorizer and classifier as model artifacts.",
+          "Create a Streamlit interface for entering custom messages.",
+          "Display predictions with calibrated confidence where available.",
+          "Test short messages and unseen vocabulary.",
+          "Add input validation and document phishing-related limitations."
+        ],
+        "resources": [
+          {
+            "title": "Scikit-learn Model Evaluation",
+            "url": "https://scikit-learn.org/stable/modules/model_evaluation.html"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the Classifier",
+        "description": "Publish the NLP application with reproducible experiment instructions.",
+        "tasks": [
+          "Create requirements.txt with pinned dependencies.",
+          "Deploy using Streamlit Community Cloud.",
+          "Write a README explaining dataset and model pipeline.",
+          "Include confusion matrix and evaluation screenshots.",
+          "Record a demonstration using at least five messages."
+        ],
+        "resources": [
+          {
+            "title": "Streamlit Deployment",
+            "url": "https://docs.streamlit.io/deploy"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "image-classification-with-transfer-learning",
+    "title": "Image Classification with Transfer Learning",
+    "summary": "Build an image classifier using a pretrained CNN, transfer learning, data augmentation, and an interactive interface for uploaded images.",
+    "level": "Intermediate",
+    "category": "ai-ml",
+    "estHours": 22,
+    "order": 9,
+    "tags": [
+      "computer-vision",
+      "cnn",
+      "transfer-learning",
+      "pytorch",
+      "image-classification"
+    ],
+    "prerequisites": [
+      "Python programming",
+      "NumPy and Matplotlib basics",
+      "Fundamental ML concepts"
+    ],
+    "stack": [
+      "Python",
+      "PyTorch",
+      "Torchvision",
+      "Pillow",
+      "Google Colab",
+      "Gradio"
+    ],
+    "outcomes": [
+      "Understand CNN classification",
+      "Apply transfer learning",
+      "Implement data augmentation",
+      "Evaluate and deploy vision models"
+    ],
+    "problem": "Organizations in agriculture, retail, manufacturing, and education need image classifiers without collecting enough data to train large networks from scratch. Build an image classification application using a public dataset with at least three classes. Adapt a pretrained MobileNet or ResNet model, replace its classification head, and fine-tune it on the task. Compare the result with a simple baseline, inspect incorrect predictions, and measure the effect of augmentation. Provide an interface that accepts uploaded images and displays predicted classes and confidence scores. The project should be reproducible in Colab or on modest hardware and explain dataset limitations and uncertainty.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Notebook containing training experiments",
+      "Saved trained model checkpoint",
+      "Evaluation metrics and sample predictions",
+      "Live image classification demo and README"
+    ],
+    "milestones": [
+      {
+        "title": "Dataset and Deep Learning Setup",
+        "description": "Select an image task and configure a GPU-compatible environment.",
+        "tasks": [
+          "Create a Colab notebook with PyTorch and Torchvision.",
+          "Select a public image dataset with at least three classes.",
+          "Organize images into training, validation, and test sets.",
+          "Display sample images and inspect class distribution.",
+          "Document image dimensions and dataset size."
+        ],
+        "resources": [
+          {
+            "title": "PyTorch Tutorials",
+            "url": "https://pytorch.org/tutorials/"
+          }
+        ]
+      },
+      {
+        "title": "Image Preprocessing and Baseline",
+        "description": "Prepare inputs and establish a comparison model.",
+        "tasks": [
+          "Resize images to the selected architecture input dimensions.",
+          "Normalize images using the pretrained model statistics.",
+          "Create PyTorch DataLoaders for each split.",
+          "Train a small CNN baseline on the dataset.",
+          "Record baseline accuracy and training time."
+        ],
+        "resources": [
+          {
+            "title": "Torchvision Documentation",
+            "url": "https://docs.pytorch.org/vision/stable/index.html"
+          }
+        ]
+      },
+      {
+        "title": "Transfer Learning and Fine-Tuning",
+        "description": "Adapt a pretrained image model to the classification task.",
+        "tasks": [
+          "Load a pretrained MobileNet or ResNet architecture.",
+          "Replace the final classification layer for the required classes.",
+          "Freeze the backbone and train the new classification head.",
+          "Unfreeze selected layers and fine-tune with a lower learning rate.",
+          "Apply image augmentation and compare validation performance."
+        ],
+        "resources": [
+          {
+            "title": "PyTorch Transfer Learning Tutorial",
+            "url": "https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html"
+          }
+        ]
+      },
+      {
+        "title": "Evaluation and Prediction Reliability",
+        "description": "Measure quality and investigate incorrect predictions.",
+        "tasks": [
+          "Calculate test accuracy, precision, recall, and F1-score.",
+          "Generate a confusion matrix for all classes.",
+          "Inspect misclassified images and identify error patterns.",
+          "Compare transfer learning results with the baseline.",
+          "Test unfamiliar images and document confidence limitations."
+        ],
+        "resources": [
+          {
+            "title": "Scikit-learn Classification Metrics",
+            "url": "https://scikit-learn.org/stable/modules/model_evaluation.html"
+          }
+        ]
+      },
+      {
+        "title": "Publish the Computer Vision Project",
+        "description": "Publish the model, notebook, and interactive demo.",
+        "tasks": [
+          "Save model weights and class label mapping.",
+          "Implement reusable image preprocessing and inference.",
+          "Create a Gradio interface for image uploads.",
+          "Publish the demo using Hugging Face Spaces.",
+          "Write a README with metrics and record correct and incorrect predictions."
+        ],
+        "resources": [
+          {
+            "title": "Hugging Face Spaces",
+            "url": "https://huggingface.co/docs/hub/spaces"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ai-powered-semantic-search-engine",
+    "title": "AI-Powered Semantic Search Engine",
+    "summary": "Develop semantic search that embeds documents, stores vectors in a vector index, and retrieves relevant passages by query meaning.",
+    "level": "Intermediate",
+    "category": "ai-ml",
+    "estHours": 24,
+    "order": 10,
+    "tags": [
+      "embeddings",
+      "semantic-search",
+      "vector-database",
+      "nlp",
+      "sentence-transformers"
+    ],
+    "prerequisites": [
+      "Python fundamentals",
+      "Basic NLP concepts",
+      "Understanding of JSON and REST APIs"
+    ],
+    "stack": [
+      "Python",
+      "Sentence Transformers",
+      "FAISS",
+      "FastAPI",
+      "Streamlit",
+      "Hugging Face"
+    ],
+    "outcomes": [
+      "Generate text embeddings",
+      "Implement vector similarity search",
+      "Build document indexing pipelines",
+      "Evaluate retrieval quality"
+    ],
+    "problem": "Keyword search can fail when a user's wording differs from the wording in source documents. Build a semantic search engine that retrieves relevant passages based on meaning. Ingest PDF, TXT, or Markdown files, split them into passages, generate embeddings using an open-source sentence transformer, and index vectors with FAISS. Users should submit natural-language queries and inspect matching passages with source names and similarity scores. Evaluate retrieval using a manually prepared query benchmark and compare it with a keyword baseline. Support index updates, malformed-document handling, and local inference without a paid embedding service.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working document ingestion pipeline",
+      "FAISS vector index and metadata storage",
+      "Retrieval evaluation results",
+      "Interactive search demo and README"
+    ],
+    "milestones": [
+      {
+        "title": "Project Setup and Document Ingestion",
+        "description": "Create the environment and ingest multiple document formats.",
+        "tasks": [
+          "Create a Python environment and install NLP dependencies.",
+          "Add sample PDF, TXT, and Markdown documents.",
+          "Implement extraction for TXT and Markdown files.",
+          "Add PDF text extraction with page metadata.",
+          "Store extracted text with source filenames and metadata."
+        ],
+        "resources": [
+          {
+            "title": "Hugging Face Documentation",
+            "url": "https://huggingface.co/docs"
+          }
+        ]
+      },
+      {
+        "title": "Text Chunking and Embedding Generation",
+        "description": "Convert documents into passages and vector representations.",
+        "tasks": [
+          "Implement configurable chunk size.",
+          "Add configurable overlap between adjacent chunks.",
+          "Load an open-source sentence transformer model.",
+          "Generate normalized embeddings for document chunks.",
+          "Save chunk identifiers and source metadata."
+        ],
+        "resources": [
+          {
+            "title": "Sentence Transformers",
+            "url": "https://sbert.net/"
+          }
+        ]
+      },
+      {
+        "title": "Vector Index and Semantic Retrieval",
+        "description": "Build a searchable vector index for natural-language queries.",
+        "tasks": [
+          "Create a FAISS index with the selected embedding dimension.",
+          "Persist vectors and metadata locally.",
+          "Implement query embedding and top-k retrieval.",
+          "Return passages with filenames and similarity scores.",
+          "Add index update and deletion operations."
+        ],
+        "resources": [
+          {
+            "title": "FAISS Documentation",
+            "url": "https://faiss.ai/"
+          }
+        ]
+      },
+      {
+        "title": "Retrieval Evaluation and Reliability",
+        "description": "Measure search quality and handle poor inputs safely.",
+        "tasks": [
+          "Prepare at least 20 queries with expected relevant documents.",
+          "Calculate Precision@K and Recall@K.",
+          "Compare semantic retrieval with a keyword baseline.",
+          "Test empty queries, unsupported files, and unextractable documents.",
+          "Add similarity thresholds, validation, and resource limits."
+        ],
+        "resources": [
+          {
+            "title": "Hugging Face Evaluate",
+            "url": "https://huggingface.co/docs/evaluate"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the Search Engine",
+        "description": "Publish a demo and document the retrieval pipeline.",
+        "tasks": [
+          "Create dependency and environment configuration files.",
+          "Deploy the interface using a compatible free hosting option.",
+          "Document how to rebuild the vector index.",
+          "Publish evaluation results and example queries in README.",
+          "Record a demonstration comparing keyword and semantic search."
+        ],
+        "resources": [
+          {
+            "title": "Hugging Face Spaces",
+            "url": "https://huggingface.co/docs/hub/spaces"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ai-document-question-answering-assistant",
+    "title": "AI Document Question Answering Assistant",
+    "summary": "Build a RAG application that answers questions about uploaded documents using an LLM, retrieved passages, and source citations.",
+    "level": "Intermediate",
+    "category": "ai-ml",
+    "estHours": 28,
+    "order": 11,
+    "tags": [
+      "rag",
+      "llm",
+      "document-ai",
+      "embeddings",
+      "question-answering"
+    ],
+    "prerequisites": [
+      "Python fundamentals",
+      "Basic REST API knowledge",
+      "Understanding of embeddings and semantic search"
+    ],
+    "stack": [
+      "Python",
+      "LangChain",
+      "Ollama",
+      "FAISS",
+      "FastAPI",
+      "Streamlit"
+    ],
+    "outcomes": [
+      "Implement a RAG pipeline",
+      "Connect LLMs to retrieved context",
+      "Generate source-grounded answers",
+      "Evaluate answer quality and hallucinations"
+    ],
+    "problem": "Students, researchers, and professionals need to extract information from lengthy documents and manuals. Build a document question-answering assistant that accepts uploads, extracts text, creates overlapping chunks, generates embeddings, retrieves relevant passages, and supplies them to an LLM. Every answer must include source references so users can verify the evidence. Use a local model through Ollama or a free-tier inference provider. Evaluate answer correctness and retrieval quality with a manually prepared question set, and ensure the assistant admits when uploaded documents do not contain an answer. Protect credentials and avoid sending private documents to external services without user awareness.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working upload and question-answering application",
+      "Answers with source references",
+      "Evaluation dataset with measured results",
+      "README with architecture and screenshots"
+    ],
+    "milestones": [
+      {
+        "title": "Environment and RAG Architecture Setup",
+        "description": "Establish the environment and understand the pipeline components.",
+        "tasks": [
+          "Create a Python environment and install required packages.",
+          "Install Ollama and download a compatible instruction model.",
+          "Create a FastAPI application with a health endpoint.",
+          "Draw an architecture diagram for ingestion, chunking, retrieval, and generation.",
+          "Configure model settings through environment variables."
+        ],
+        "resources": [
+          {
+            "title": "Ollama Documentation",
+            "url": "https://docs.ollama.com/"
+          }
+        ]
+      },
+      {
+        "title": "Document Processing and Vector Retrieval",
+        "description": "Implement document ingestion and vector search.",
+        "tasks": [
+          "Add PDF and TXT upload support.",
+          "Extract text and preserve page-level metadata.",
+          "Implement configurable chunk size and overlap.",
+          "Generate embeddings using an open-source model.",
+          "Store vectors and metadata in FAISS."
+        ],
+        "resources": [
+          {
+            "title": "LangChain Documentation",
+            "url": "https://docs.langchain.com/"
+          }
+        ]
+      },
+      {
+        "title": "LLM Integration and Answer Generation",
+        "description": "Generate evidence-based responses from retrieved context.",
+        "tasks": [
+          "Implement a query endpoint that retrieves relevant chunks.",
+          "Create a prompt that restricts answers to supplied context.",
+          "Connect retrieved context to the Ollama chat model.",
+          "Generate answers with filenames and page references.",
+          "Return an insufficient-information response when evidence is weak."
+        ],
+        "resources": [
+          {
+            "title": "FAISS Documentation",
+            "url": "https://faiss.ai/"
+          }
+        ]
+      },
+      {
+        "title": "Evaluation, Hallucination Control, and Cost",
+        "description": "Measure answer quality and control unreliable or expensive inference.",
+        "tasks": [
+          "Create at least 30 document questions with reference answers.",
+          "Measure retrieval Recall@K and assess answer correctness.",
+          "Test questions whose answers are absent from the documents.",
+          "Add context limits, request timeouts, and response validation.",
+          "Implement throttling and document local resource or API usage."
+        ],
+        "resources": [
+          {
+            "title": "Ragas Documentation",
+            "url": "https://docs.ragas.io/"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the RAG Assistant",
+        "description": "Publish the app with architecture and reproducible setup instructions.",
+        "tasks": [
+          "Create a dependency file and environment example.",
+          "Deploy the frontend and a compatible backend configuration.",
+          "Document local Ollama setup and hardware requirements.",
+          "Write a README with evaluation results and limitations.",
+          "Record upload, question-answering, and source-verification workflow."
+        ],
+        "resources": [
+          {
+            "title": "FastAPI Deployment",
+            "url": "https://fastapi.tiangolo.com/deployment/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ai-powered-campus-helpdesk-chatbot",
+    "title": "AI-Powered Campus Helpdesk Chatbot",
+    "summary": "Create a college helpdesk chatbot that answers questions about admissions, exams, fees, departments, and campus services using verified college information.",
+    "level": "Intermediate",
+    "category": "web",
+    "estHours": 24,
+    "order": 12,
+    "tags": [
+      "llm",
+      "chatbot",
+      "rag",
+      "fastapi",
+      "react",
+      "college-tech"
+    ],
+    "prerequisites": [
+      "Python fundamentals",
+      "Basic React and JavaScript",
+      "Basic REST API concepts"
+    ],
+    "stack": [
+      "React",
+      "Python",
+      "FastAPI",
+      "Ollama",
+      "FAISS",
+      "Tailwind CSS"
+    ],
+    "outcomes": [
+      "Integrate LLMs into full-stack apps",
+      "Build conversational interfaces",
+      "Connect knowledge to AI",
+      "Implement safe chatbot responses"
+    ],
+    "problem": "Students contact administrative offices for admissions, examination, fee, scholarship, hostel, and departmental information. Build a campus helpdesk that answers natural-language questions using a curated collection of official documents and FAQs. Create a React chat interface and FastAPI backend that retrieves relevant information before generating an answer. Include source references and fallback responses when information is unavailable. The assistant must not invent exam dates, fee amounts, or policies. Demonstrate it using a sample college knowledge base and support updates when notices change. Use only information that the college has authorized for publication.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working React chat interface",
+      "FastAPI backend with knowledge retrieval",
+      "Evaluation results for campus questions",
+      "README with architecture and sample data"
+    ],
+    "milestones": [
+      {
+        "title": "Frontend and Backend Setup",
+        "description": "Create the full-stack structure and connect both services.",
+        "tasks": [
+          "Initialize a React application using Vite.",
+          "Create a FastAPI backend with a health endpoint.",
+          "Configure frontend-to-backend communication.",
+          "Build a responsive chat layout with message bubbles.",
+          "Create a sample JSON knowledge base containing campus FAQs."
+        ],
+        "resources": [
+          {
+            "title": "React Documentation",
+            "url": "https://react.dev/learn"
+          }
+        ]
+      },
+      {
+        "title": "Campus Knowledge Base and Retrieval",
+        "description": "Prepare college information and retrieve relevant facts.",
+        "tasks": [
+          "Create FAQ records for admissions, examinations, and services.",
+          "Add PDF and text ingestion for college notices.",
+          "Generate embeddings using an open-source model.",
+          "Store embeddings and source metadata in FAISS.",
+          "Implement retrieval for relevant campus information."
+        ],
+        "resources": [
+          {
+            "title": "FastAPI Documentation",
+            "url": "https://fastapi.tiangolo.com/"
+          }
+        ]
+      },
+      {
+        "title": "LLM Chat Integration",
+        "description": "Connect retrieved information to an instruction-following model.",
+        "tasks": [
+          "Configure a compatible Ollama instruction model.",
+          "Create a chat endpoint that retrieves context before generation.",
+          "Restrict the model prompt to verified campus information.",
+          "Display source document references in responses.",
+          "Store external provider credentials in environment variables when used."
+        ],
+        "resources": [
+          {
+            "title": "Sentence Transformers",
+            "url": "https://sbert.net/"
+          }
+        ]
+      },
+      {
+        "title": "Evaluation and AI Safety",
+        "description": "Evaluate accuracy and protect students from misleading answers.",
+        "tasks": [
+          "Create at least 30 realistic college questions with verified answers.",
+          "Evaluate answer correctness and source relevance.",
+          "Test unavailable notices, unknown fees, and conflicting facts.",
+          "Implement an uncertainty-based fallback for weak retrieval.",
+          "Add request limits and prompt-injection safeguards for uploaded documents."
+        ],
+        "resources": [
+          {
+            "title": "OWASP Top 10 for LLM Applications",
+            "url": "https://genai.owasp.org/"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the Campus Assistant",
+        "description": "Deploy both services and document safeguards.",
+        "tasks": [
+          "Build the production React application.",
+          "Deploy the frontend using Vercel.",
+          "Deploy the backend using a compatible free-tier service.",
+          "Configure environment variables and inference limits.",
+          "Publish README, sample questions, screenshots, and a demo video."
+        ],
+        "resources": [
+          {
+            "title": "Vercel Documentation",
+            "url": "https://vercel.com/docs"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "voice-controlled-desktop-assistant",
+    "title": "Voice-Controlled Desktop Assistant",
+    "summary": "Build a speech-enabled desktop assistant that transcribes voice, interprets commands, performs safe local actions, and responds using text-to-speech.",
+    "level": "Intermediate",
+    "category": "ai-ml",
+    "estHours": 22,
+    "order": 13,
+    "tags": [
+      "speech-recognition",
+      "text-to-speech",
+      "voice-ai",
+      "python",
+      "automation"
+    ],
+    "prerequisites": [
+      "Python programming",
+      "Basic audio concepts",
+      "Understanding of functions and APIs"
+    ],
+    "stack": [
+      "Python",
+      "Whisper",
+      "SpeechRecognition",
+      "pyttsx3",
+      "Ollama",
+      "PyAudio"
+    ],
+    "outcomes": [
+      "Implement speech-to-text",
+      "Integrate text-to-speech",
+      "Build voice command recognition",
+      "Implement permission-based automation"
+    ],
+    "problem": "Users need hands-free access to simple desktop operations while working or studying. Build a voice assistant that captures microphone input, transcribes speech, interprets intent, and responds through synthesized speech. Support commands such as telling the time, opening approved applications, creating notes, and searching a designated local folder. Use an open-source speech recognition model such as Whisper and a local or free-tier LLM for flexible intent interpretation. Destructive actions must require explicit confirmation. Never execute arbitrary shell commands generated by a model. Evaluate transcription accuracy in different noise conditions and test command reliability before publishing a working desktop demonstration.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working speech recognition and speech output",
+      "At least eight supported voice commands",
+      "Transcription and command evaluation results",
+      "README with installation and safety documentation"
+    ],
+    "milestones": [
+      {
+        "title": "Audio Environment Setup",
+        "description": "Configure microphone access and audio capture.",
+        "tasks": [
+          "Create a Python environment and install audio dependencies.",
+          "Verify microphone availability and record a test clip.",
+          "Implement audio capture with configurable duration.",
+          "Save recordings in a consistent audio format.",
+          "Document microphone permission and device requirements."
+        ],
+        "resources": [
+          {
+            "title": "Whisper Repository",
+            "url": "https://github.com/openai/whisper"
+          }
+        ]
+      },
+      {
+        "title": "Speech Recognition and Synthesis",
+        "description": "Implement speech-to-text and text-to-speech components.",
+        "tasks": [
+          "Integrate Whisper for speech transcription.",
+          "Convert captured audio into normalized transcripts.",
+          "Integrate a local text-to-speech engine.",
+          "Create a reusable function for speaking responses.",
+          "Test transcription with at least ten spoken commands."
+        ],
+        "resources": [
+          {
+            "title": "Python Documentation",
+            "url": "https://docs.python.org/3/"
+          }
+        ]
+      },
+      {
+        "title": "Intent Recognition and Desktop Actions",
+        "description": "Map speech to predefined intents and approved operations.",
+        "tasks": [
+          "Define a command schema for supported operations.",
+          "Implement intent recognition for time, notes, apps, and file search.",
+          "Create a local notes feature that saves dictated text.",
+          "Connect an LLM to interpret natural language into structured commands.",
+          "Require confirmation before sensitive file modifications."
+        ],
+        "resources": [
+          {
+            "title": "pyttsx3 Documentation",
+            "url": "https://pyttsx3.readthedocs.io/"
+          }
+        ]
+      },
+      {
+        "title": "Speech and Command Evaluation",
+        "description": "Measure transcription quality and reject ambiguous or unsafe commands.",
+        "tasks": [
+          "Prepare 20 recorded commands with reference transcripts.",
+          "Measure word error rate on the evaluation set.",
+          "Calculate intent accuracy using labeled examples.",
+          "Test recognition under different background noise conditions.",
+          "Add microphone failure handling, request limits, and safe fallbacks."
+        ],
+        "resources": [
+          {
+            "title": "Hugging Face Evaluate",
+            "url": "https://huggingface.co/docs/evaluate"
+          }
+        ]
+      },
+      {
+        "title": "Publish the Desktop Assistant",
+        "description": "Package the assistant and document commands and safety restrictions.",
+        "tasks": [
+          "Create requirements.txt and an installation script.",
+          "Add configuration for audio devices and model selection.",
+          "Write a README with supported commands and safety rules.",
+          "Push the project to a public GitHub repository.",
+          "Record a demonstration showing at least five voice operations."
+        ],
+        "resources": [
+          {
+            "title": "GitHub Documentation",
+            "url": "https://docs.github.com/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "real-time-object-detection-webcam",
+    "title": "Real-Time Object Detection with Webcam",
+    "summary": "Create a real-time vision application that detects objects from webcam frames, draws bounding boxes, displays counts, and measures inference speed.",
+    "level": "Intermediate",
+    "category": "ai-ml",
+    "estHours": 20,
+    "order": 14,
+    "tags": [
+      "computer-vision",
+      "object-detection",
+      "opencv",
+      "yolo",
+      "real-time-ai"
+    ],
+    "prerequisites": [
+      "Python programming",
+      "Basic image processing",
+      "Fundamental ML concepts"
+    ],
+    "stack": [
+      "Python",
+      "OpenCV",
+      "Ultralytics",
+      "PyTorch",
+      "NumPy",
+      "Gradio"
+    ],
+    "outcomes": [
+      "Understand object detection",
+      "Process real-time webcam frames",
+      "Interpret bounding boxes and confidence",
+      "Optimize inference performance"
+    ],
+    "problem": "Retail stores, educational institutions, and small organizations need affordable tools for understanding objects in their environments. Build a webcam application that detects common objects such as people, chairs, bottles, laptops, and vehicles. Integrate a pretrained detector and draw bounding boxes with class labels and confidence scores on live frames. Let users pause detection, capture screenshots, and inspect object counts. Measure latency and frames per second at different resolutions, and evaluate quality on a small annotated image set. Support CPU inference when GPU resources are unavailable and avoid collecting or storing video unnecessarily.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working webcam detection application",
+      "Annotated detection screenshots",
+      "FPS and latency measurements",
+      "README with model details and hardware requirements"
+    ],
+    "milestones": [
+      {
+        "title": "Computer Vision Environment Setup",
+        "description": "Configure Python and verify webcam capture.",
+        "tasks": [
+          "Create a Python environment and install OpenCV and model dependencies.",
+          "Check webcam availability using VideoCapture.",
+          "Capture and display a sequence of webcam frames.",
+          "Implement image resizing and color conversion.",
+          "Document CPU and GPU execution requirements."
+        ],
+        "resources": [
+          {
+            "title": "OpenCV Documentation",
+            "url": "https://docs.opencv.org/4.x/"
+          }
+        ]
+      },
+      {
+        "title": "Pretrained Object Detection",
+        "description": "Load a pretrained detector and apply it to images.",
+        "tasks": [
+          "Download a small pretrained object detection model.",
+          "Run inference on at least ten sample images.",
+          "Extract classes, bounding boxes, and confidence scores.",
+          "Draw bounding boxes and labels using OpenCV.",
+          "Add a configurable confidence threshold."
+        ],
+        "resources": [
+          {
+            "title": "Ultralytics Documentation",
+            "url": "https://docs.ultralytics.com/"
+          }
+        ]
+      },
+      {
+        "title": "Real-Time Detection Interface",
+        "description": "Integrate inference into a live webcam application.",
+        "tasks": [
+          "Connect webcam capture to the detection model.",
+          "Display annotated frames in a real-time interface.",
+          "Add controls to start and stop webcam processing.",
+          "Display detected object counts by class.",
+          "Add screenshot capture for selected frames."
+        ],
+        "resources": [
+          {
+            "title": "Ultralytics Predict Mode",
+            "url": "https://docs.ultralytics.com/modes/predict/"
+          }
+        ]
+      },
+      {
+        "title": "Detection Evaluation and Optimization",
+        "description": "Measure quality and optimize for limited hardware.",
+        "tasks": [
+          "Collect and annotate at least 30 evaluation images.",
+          "Measure precision and recall on the annotated set.",
+          "Benchmark FPS and latency at two image resolutions.",
+          "Compare CPU and GPU inference when hardware is available.",
+          "Test camera disconnection, low light, and inference failures."
+        ],
+        "resources": [
+          {
+            "title": "Ultralytics Validation",
+            "url": "https://docs.ultralytics.com/modes/val/"
+          }
+        ]
+      },
+      {
+        "title": "Publish the Detection Application",
+        "description": "Package the application and publish benchmarks and instructions.",
+        "tasks": [
+          "Create an installation guide and dependency file.",
+          "Document model download instructions without committing large weights.",
+          "Write a README with benchmarks and sample detections.",
+          "Push the application to a public GitHub repository.",
+          "Record a live demonstration showing at least five object classes."
+        ],
+        "resources": [
+          {
+            "title": "GitHub Documentation",
+            "url": "https://docs.github.com/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ai-powered-expense-tracker",
+    "title": "AI-Powered Personal Expense Tracker",
+    "summary": "Build a full-stack expense manager that categorizes transactions, analyzes spending, and generates natural-language summaries using an LLM.",
+    "level": "Intermediate",
+    "category": "web",
+    "estHours": 26,
+    "order": 15,
+    "tags": [
+      "full-stack",
+      "llm",
+      "expense-tracker",
+      "react",
+      "nodejs",
+      "analytics"
+    ],
+    "prerequisites": [
+      "JavaScript fundamentals",
+      "React basics",
+      "REST API and database fundamentals"
+    ],
+    "stack": [
+      "React",
+      "Node.js",
+      "Express",
+      "MongoDB",
+      "Ollama",
+      "Chart.js"
+    ],
+    "outcomes": [
+      "Develop a full-stack application",
+      "Design transaction models",
+      "Implement AI-assisted categorization",
+      "Generate financial analytics"
+    ],
+    "problem": "Students and young professionals often struggle to understand spending because expenses are recorded across notes, spreadsheets, and payment apps. Build a tracker that records income and expenses, organizes transactions, defines monthly budgets, and visualizes spending. Add an AI feature that suggests categories and summarizes spending based on aggregated data. Users must review and correct AI-generated categories rather than accepting them automatically. Protect private financial records, minimize personal data sent to external models, and label summaries as informational rather than professional financial advice. Deliver a secure responsive dashboard with persistent user data and a working demo.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working frontend and backend",
+      "Persistent transaction database",
+      "AI categorization with user correction",
+      "Live demo or reproducible deployment and README"
+    ],
+    "milestones": [
+      {
+        "title": "Full-Stack Application Setup",
+        "description": "Create frontend, backend, and database architecture.",
+        "tasks": [
+          "Initialize a React frontend using Vite.",
+          "Create a Node.js and Express backend.",
+          "Configure MongoDB connectivity.",
+          "Create transaction, user, and budget models.",
+          "Configure environment variables for database credentials and API keys."
+        ],
+        "resources": [
+          {
+            "title": "React Documentation",
+            "url": "https://react.dev/"
+          }
+        ]
+      },
+      {
+        "title": "Expense Management Features",
+        "description": "Implement transaction and budget functionality.",
+        "tasks": [
+          "Create an API endpoint for income and expense records.",
+          "Implement transaction listing, editing, and deletion.",
+          "Add category, date, amount, and payment-method filters.",
+          "Create monthly budget records by category.",
+          "Validate negative amounts and invalid dates."
+        ],
+        "resources": [
+          {
+            "title": "Express Documentation",
+            "url": "https://expressjs.com/"
+          }
+        ]
+      },
+      {
+        "title": "Analytics and AI Categorization",
+        "description": "Add spending analytics and LLM-assisted summaries.",
+        "tasks": [
+          "Calculate monthly income, expenses, and remaining budget.",
+          "Create category-wise and month-wise charts.",
+          "Integrate an LLM that suggests transaction categories.",
+          "Generate monthly summaries from aggregated information.",
+          "Evaluate category suggestions against 30 labeled transactions.",
+          "Add request limits, local fallback, and token usage controls."
+        ],
+        "resources": [
+          {
+            "title": "MongoDB Documentation",
+            "url": "https://www.mongodb.com/docs/"
+          }
+        ]
+      },
+      {
+        "title": "Security and Application Testing",
+        "description": "Protect records and test traditional and AI workflows.",
+        "tasks": [
+          "Implement authentication and protected API routes.",
+          "Ensure users can access only their own transactions.",
+          "Test transaction calculations against verified examples.",
+          "Validate AI output and require confirmation before category changes.",
+          "Test unauthorized access, invalid requests, and model timeouts."
+        ],
+        "resources": [
+          {
+            "title": "Ollama Documentation",
+            "url": "https://docs.ollama.com/"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the Expense Tracker",
+        "description": "Deploy the application and document security and AI behavior.",
+        "tasks": [
+          "Create production builds for frontend and backend.",
+          "Deploy the frontend using Vercel.",
+          "Deploy the backend using a compatible free-tier service.",
+          "Configure production database credentials and AI keys securely.",
+          "Write a README with screenshots, setup steps, and evaluation summary."
+        ],
+        "resources": [
+          {
+            "title": "Vercel Documentation",
+            "url": "https://vercel.com/docs"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "containerized-web-application-deployment",
+    "title": "Containerized Web Application Deployment",
+    "summary": "Containerize a full-stack application using Docker, configure development and production environments, and deploy reproducible builds with health checks.",
+    "level": "Intermediate",
+    "category": "cloud-devops",
+    "estHours": 18,
+    "order": 16,
+    "tags": [
+      "docker",
+      "devops",
+      "containers",
+      "deployment",
+      "linux",
+      "ci-cd"
+    ],
+    "prerequisites": [
+      "Basic Linux terminal commands",
+      "Basic Python or Node.js",
+      "Fundamental HTTP concepts"
+    ],
+    "stack": [
+      "Docker",
+      "Docker Compose",
+      "Python",
+      "FastAPI",
+      "PostgreSQL",
+      "GitHub"
+    ],
+    "outcomes": [
+      "Understand containerization",
+      "Write Dockerfiles",
+      "Manage multi-container applications",
+      "Configure health checks and persistent storage"
+    ],
+    "problem": "Applications often behave differently across developer laptops, testing environments, and production because dependencies and configurations vary. Build a containerized application with a FastAPI backend and PostgreSQL database. Package each service separately and use Docker Compose to manage networking, environment variables, dependencies, and persistent storage. Add health checks so the backend reports readiness only when dependencies are available. Demonstrate that another developer can clone the repository and run the system with documented commands. Explain image layers, container isolation, volumes, and basic production security practices.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working Dockerfile and Compose configuration",
+      "Backend and database in separate containers",
+      "Health-check and persistence demonstration",
+      "README with architecture and commands"
+    ],
+    "milestones": [
+      {
+        "title": "Docker Environment Setup",
+        "description": "Install Docker and create a backend application.",
+        "tasks": [
+          "Install Docker Engine or Docker Desktop.",
+          "Verify the installation using Docker version and info commands.",
+          "Create a FastAPI application with a health endpoint.",
+          "Create requirements.txt with pinned dependencies.",
+          "Run the backend locally before containerization."
+        ],
+        "resources": [
+          {
+            "title": "Docker Get Started",
+            "url": "https://docs.docker.com/get-started/"
+          }
+        ]
+      },
+      {
+        "title": "Build and Run the Backend Container",
+        "description": "Create a reproducible image and understand its runtime.",
+        "tasks": [
+          "Write a Dockerfile using an official Python base image.",
+          "Copy application source and install dependencies in the image.",
+          "Expose the backend port.",
+          "Build an image with a meaningful tag.",
+          "Run the container and verify the health endpoint."
+        ],
+        "resources": [
+          {
+            "title": "Dockerfile Reference",
+            "url": "https://docs.docker.com/reference/dockerfile/"
+          }
+        ]
+      },
+      {
+        "title": "Multi-Container Database Integration",
+        "description": "Connect backend and database using networking and storage.",
+        "tasks": [
+          "Create a PostgreSQL service using an official image.",
+          "Write Docker Compose configuration for both services.",
+          "Configure database credentials through environment variables.",
+          "Create a persistent volume for database data.",
+          "Implement a database readiness check."
+        ],
+        "resources": [
+          {
+            "title": "Docker Compose",
+            "url": "https://docs.docker.com/compose/"
+          }
+        ]
+      },
+      {
+        "title": "Container Reliability and Security",
+        "description": "Improve operational reliability and reduce configuration risks.",
+        "tasks": [
+          "Add health checks for backend and database.",
+          "Run the backend as a non-root user.",
+          "Configure restart policies and service dependencies.",
+          "Test application behavior after container restarts.",
+          "Verify records survive container recreation."
+        ],
+        "resources": [
+          {
+            "title": "Docker Security",
+            "url": "https://docs.docker.com/engine/security/"
+          }
+        ]
+      },
+      {
+        "title": "Publish the Containerized Application",
+        "description": "Publish configuration and reproducible execution instructions.",
+        "tasks": [
+          "Create .dockerignore and an environment example file.",
+          "Reduce image size by removing unnecessary files and layers.",
+          "Push configuration and source code to GitHub.",
+          "Write README with build, startup, shutdown, and troubleshooting commands.",
+          "Record a demonstration using Docker Compose."
+        ],
+        "resources": [
+          {
+            "title": "Docker Documentation",
+            "url": "https://docs.docker.com/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "android-student-attendance-app",
+    "title": "Android Student Attendance Management App",
+    "summary": "Develop an Android app for students to view attendance, track subject-wise percentages, and receive alerts when attendance approaches a minimum threshold.",
+    "level": "Beginner",
+    "category": "mobile",
+    "estHours": 18,
+    "order": 17,
+    "tags": [
+      "android",
+      "flutter",
+      "mobile-development",
+      "attendance",
+      "firebase"
+    ],
+    "prerequisites": [
+      "Basic programming knowledge",
+      "Mobile application concepts",
+      "Basic JSON knowledge"
+    ],
+    "stack": [
+      "Flutter",
+      "Dart",
+      "Firebase",
+      "Cloud Firestore",
+      "Android Studio"
+    ],
+    "outcomes": [
+      "Develop cross-platform mobile interfaces",
+      "Manage application state",
+      "Integrate cloud databases",
+      "Implement attendance analytics"
+    ],
+    "problem": "College students need to monitor attendance across subjects and understand how many additional classes they must attend to meet university requirements. Build an Android attendance app showing subject-wise percentages, classes conducted, classes attended, and target calculations. Include a demonstration mode for recording attendance, persistent storage, and visual indicators for subjects approaching a configurable threshold. The app should support different Android screen sizes and handle offline or unavailable network conditions gracefully. Use sample academic data rather than connecting to private institutional systems without authorization.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Installable Android APK or reproducible build",
+      "Working attendance and percentage calculations",
+      "Subject-wise dashboard screenshots",
+      "README with setup and demo instructions"
+    ],
+    "milestones": [
+      {
+        "title": "Mobile Development Setup",
+        "description": "Configure Flutter and create the Android application.",
+        "tasks": [
+          "Install Flutter SDK and configure Android development tools.",
+          "Create a Flutter application using the CLI.",
+          "Run the app on an emulator or physical device.",
+          "Create folders for screens, models, widgets, and services.",
+          "Build a dashboard with sample subject data."
+        ],
+        "resources": [
+          {
+            "title": "Flutter Documentation",
+            "url": "https://docs.flutter.dev/"
+          }
+        ]
+      },
+      {
+        "title": "Attendance Management Interface",
+        "description": "Implement screens and calculations for subject attendance.",
+        "tasks": [
+          "Create a subject model with total and attended classes.",
+          "Display subjects using reusable Flutter widgets.",
+          "Implement attendance percentage calculations.",
+          "Create a form for recording attended and missed classes.",
+          "Show warnings when attendance falls below the configured threshold."
+        ],
+        "resources": [
+          {
+            "title": "Dart Documentation",
+            "url": "https://dart.dev/guides"
+          }
+        ]
+      },
+      {
+        "title": "Cloud Data Persistence",
+        "description": "Connect the app to a cloud database.",
+        "tasks": [
+          "Create a Firebase project and register the Android app.",
+          "Configure Firebase initialization in Flutter.",
+          "Create Firestore collections for subjects and attendance.",
+          "Implement attendance creation and retrieval.",
+          "Handle offline access and synchronization failures."
+        ],
+        "resources": [
+          {
+            "title": "Flutter UI Documentation",
+            "url": "https://docs.flutter.dev/ui"
+          }
+        ]
+      },
+      {
+        "title": "Validation and Mobile Testing",
+        "description": "Verify calculations and test common Android conditions.",
+        "tasks": [
+          "Write tests for attendance percentage and target calculations.",
+          "Test zero classes and invalid attendance counts.",
+          "Add loading, empty, and network error states.",
+          "Test the interface on two screen sizes.",
+          "Verify users cannot access another student's records when authentication is enabled."
+        ],
+        "resources": [
+          {
+            "title": "Firebase Flutter Setup",
+            "url": "https://firebase.google.com/docs/flutter/setup"
+          }
+        ]
+      },
+      {
+        "title": "Build and Publish the Android App",
+        "description": "Create a distributable build and publish setup documentation.",
+        "tasks": [
+          "Generate a release APK.",
+          "Test the release build on a physical Android device.",
+          "Write a README with screenshots and Firebase setup steps.",
+          "Publish source code to a public GitHub repository.",
+          "Record attendance updates and percentage calculations in a demo."
+        ],
+        "resources": [
+          {
+            "title": "Flutter Android Deployment",
+            "url": "https://docs.flutter.dev/deployment/android"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "automated-github-pull-request-checker",
+    "title": "Automated GitHub Pull Request Checker",
+    "summary": "Create a GitHub Actions workflow that runs tests, checks code quality, and validates pull requests before changes can be merged.",
+    "level": "Intermediate",
+    "category": "open-source",
+    "estHours": 14,
+    "order": 18,
+    "tags": [
+      "github-actions",
+      "open-source",
+      "ci-cd",
+      "automation",
+      "testing"
+    ],
+    "prerequisites": [
+      "Basic Git and GitHub knowledge",
+      "Python programming basics",
+      "Understanding of pull requests"
+    ],
+    "stack": [
+      "Python",
+      "Git",
+      "GitHub Actions",
+      "pytest",
+      "Ruff",
+      "YAML"
+    ],
+    "outcomes": [
+      "Understand continuous integration",
+      "Automate test execution",
+      "Configure repository workflows",
+      "Improve contribution quality"
+    ],
+    "problem": "Open-source maintainers spend time manually checking whether pull requests introduce syntax errors, failing tests, or inconsistent formatting. Build a validation workflow using GitHub Actions that runs whenever a contributor opens or updates a pull request. Install dependencies, execute automated tests, check code quality, and report failures in GitHub. Include a sample Python project and demonstrate how the workflow prevents changes from merging when required checks fail. Document how external contributors can submit changes and interpret feedback. Use public repository functionality and avoid unnecessary secrets or paid CI services.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working GitHub Actions workflow",
+      "Automated test and lint results",
+      "Example successful and failed pull request checks",
+      "README with contributor instructions"
+    ],
+    "milestones": [
+      {
+        "title": "Repository and Testing Setup",
+        "description": "Create a sample project and configure local checks.",
+        "tasks": [
+          "Create a public GitHub repository for a Python project.",
+          "Create a virtual environment and install pytest and Ruff.",
+          "Write at least three Python functions with unit tests.",
+          "Run the test suite locally and verify expected results.",
+          "Create a contribution guide explaining branches and pull requests."
+        ],
+        "resources": [
+          {
+            "title": "GitHub Documentation",
+            "url": "https://docs.github.com/"
+          }
+        ]
+      },
+      {
+        "title": "Create the CI Workflow",
+        "description": "Configure Actions to run automatically for pull requests.",
+        "tasks": [
+          "Create a .github/workflows directory.",
+          "Write a YAML workflow triggered by pull request events.",
+          "Configure a supported Python version.",
+          "Add dependency installation and test execution steps.",
+          "Run the workflow and inspect execution logs."
+        ],
+        "resources": [
+          {
+            "title": "pytest Documentation",
+            "url": "https://docs.pytest.org/"
+          }
+        ]
+      },
+      {
+        "title": "Code Quality and Pull Request Checks",
+        "description": "Extend validation with formatting, linting, and failure reporting.",
+        "tasks": [
+          "Add Ruff linting to the workflow.",
+          "Configure a Python formatting check.",
+          "Run tests across multiple supported Python versions.",
+          "Open a pull request containing a deliberately failing test.",
+          "Verify the workflow reports failure correctly."
+        ],
+        "resources": [
+          {
+            "title": "GitHub Actions Documentation",
+            "url": "https://docs.github.com/en/actions"
+          }
+        ]
+      },
+      {
+        "title": "Branch Protection and Reliability",
+        "description": "Configure repository protections and test contribution scenarios.",
+        "tasks": [
+          "Require successful CI checks before merging to the protected branch.",
+          "Test the workflow with an invalid dependency configuration.",
+          "Verify documentation-only changes trigger intended checks.",
+          "Add dependency caching to reduce installation time.",
+          "Document workflow permissions and avoid unnecessary secret access."
+        ],
+        "resources": [
+          {
+            "title": "Ruff Documentation",
+            "url": "https://docs.astral.sh/ruff/"
+          }
+        ]
+      },
+      {
+        "title": "Publish the Open-Source CI Project",
+        "description": "Publish the workflow and document reuse for maintainers.",
+        "tasks": [
+          "Organize workflow files and the example application.",
+          "Write a README with workflow architecture and setup.",
+          "Add screenshots of successful and failed CI runs.",
+          "Publish contributor guidelines and a sample pull request.",
+          "Record a demonstration of automated validation."
+        ],
+        "resources": [
+          {
+            "title": "GitHub Actions Quickstart",
+            "url": "https://docs.github.com/en/actions/writing-workflows/quickstart"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "iot-smart-room-environment-monitor",
+    "title": "IoT Smart Room Environment Monitor",
+    "summary": "Build an IoT prototype that collects temperature and humidity, sends readings to a backend, and displays live conditions on a dashboard.",
+    "level": "Beginner",
+    "category": "iot",
+    "estHours": 16,
+    "order": 19,
+    "tags": [
+      "iot",
+      "esp32",
+      "sensors",
+      "mqtt",
+      "monitoring"
+    ],
+    "prerequisites": [
+      "Basic programming knowledge",
+      "Basic electronics and circuit concepts",
+      "Understanding of HTTP or MQTT"
+    ],
+    "stack": [
+      "ESP32",
+      "Arduino IDE",
+      "DHT22",
+      "MQTT",
+      "Python",
+      "Streamlit"
+    ],
+    "outcomes": [
+      "Read physical sensor measurements",
+      "Connect microcontrollers to networks",
+      "Transmit IoT telemetry",
+      "Build real-time monitoring dashboards"
+    ],
+    "problem": "Students, hostel administrators, and laboratory managers need affordable ways to monitor indoor temperature and humidity. Build a smart room monitor using an ESP32 and a compatible environmental sensor. Periodically collect readings, transmit them to a backend through MQTT, and store historical measurements. Create a dashboard showing current conditions, historical trends, and configurable threshold alerts. The device must handle temporary Wi-Fi or broker disconnections without crashing and distinguish simulated readings from actual hardware measurements. Submit circuit documentation, working sensor data, backend code, and a demonstration of the complete sensor-to-dashboard flow.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working ESP32 prototype or clearly labeled simulator",
+      "MQTT telemetry backend",
+      "Dashboard with historical readings",
+      "Circuit diagram and setup documentation"
+    ],
+    "milestones": [
+      {
+        "title": "Hardware and Development Setup",
+        "description": "Prepare the microcontroller environment and connect the sensor.",
+        "tasks": [
+          "Install Arduino IDE and configure ESP32 board support.",
+          "Connect the DHT22 sensor using correct power and signal pins.",
+          "Install the required sensor library.",
+          "Upload a program that reads temperature and humidity.",
+          "Verify measurements through the serial monitor."
+        ],
+        "resources": [
+          {
+            "title": "Arduino Documentation",
+            "url": "https://docs.arduino.cc/"
+          }
+        ]
+      },
+      {
+        "title": "Network Connectivity and MQTT",
+        "description": "Connect the ESP32 and publish structured telemetry.",
+        "tasks": [
+          "Connect the ESP32 to a configured Wi-Fi network.",
+          "Connect to a free or locally hosted MQTT broker.",
+          "Publish temperature readings to a dedicated topic.",
+          "Publish humidity readings as structured JSON.",
+          "Implement reconnection handling for network failures."
+        ],
+        "resources": [
+          {
+            "title": "ESP32 Documentation",
+            "url": "https://docs.espressif.com/projects/esp-idf/en/stable/esp32/"
+          }
+        ]
+      },
+      {
+        "title": "Backend and Sensor Data Storage",
+        "description": "Receive telemetry and store timestamped measurements.",
+        "tasks": [
+          "Create a Python MQTT subscriber.",
+          "Validate incoming telemetry payloads and sensor values.",
+          "Store timestamped readings in a local database.",
+          "Implement an API endpoint for recent measurements.",
+          "Test malformed and delayed messages."
+        ],
+        "resources": [
+          {
+            "title": "MQTT Documentation",
+            "url": "https://mqtt.org/"
+          }
+        ]
+      },
+      {
+        "title": "Monitoring Dashboard and Alerts",
+        "description": "Visualize measurements and implement threshold notifications.",
+        "tasks": [
+          "Create a Streamlit dashboard showing current readings.",
+          "Plot historical data over configurable time ranges.",
+          "Add configurable upper and lower thresholds.",
+          "Display alerts when readings exceed configured limits.",
+          "Test behavior when sensor data becomes unavailable."
+        ],
+        "resources": [
+          {
+            "title": "Python Documentation",
+            "url": "https://docs.python.org/3/"
+          }
+        ]
+      },
+      {
+        "title": "Test and Publish the IoT Prototype",
+        "description": "Validate hardware and publish the complete monitoring workflow.",
+        "tasks": [
+          "Compare sensor readings with an independent reference where available.",
+          "Test Wi-Fi disconnection and reconnection.",
+          "Document ESP32 pin connections and circuit requirements.",
+          "Publish firmware, backend, and dashboard code to GitHub.",
+          "Record live sensor readings and dashboard updates."
+        ],
+        "resources": [
+          {
+            "title": "Streamlit Documentation",
+            "url": "https://docs.streamlit.io/"
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "slug": "ai-powered-study-notes-generator",
+    "title": "AI-Powered Study Notes Generator",
+    "summary": "Build an AI application that converts lecture notes and study materials into structured summaries, revision questions, and flashcards using an LLM.",
+    "level": "Intermediate",
+    "category": "ai-ml",
+    "estHours": 24,
+    "order": 20,
+    "tags": [
+      "generative-ai",
+      "llm",
+      "summarization",
+      "education",
+      "flashcards"
+    ],
+    "prerequisites": [
+      "Python programming",
+      "Basic NLP knowledge",
+      "Basic REST API concepts"
+    ],
+    "stack": [
+      "Python",
+      "FastAPI",
+      "Ollama",
+      "Streamlit",
+      "PyMuPDF",
+      "SQLite"
+    ],
+    "outcomes": [
+      "Build generative AI applications",
+      "Implement document summarization",
+      "Generate structured educational content",
+      "Evaluate factual consistency"
+    ],
+    "problem": "College students spend significant time converting lengthy lecture notes, textbooks, and PDFs into concise revision resources. Build a Study Notes Generator that accepts academic documents and produces structured summaries, key definitions, topic explanations, multiple-choice questions, and flashcards. Let users select summary length and difficulty, preserve references to the original pages, and regenerate individual sections without repeatedly processing the entire document. Use a local open-source LLM or free-tier provider. Evaluate generated material against manually verified references, detect unsupported claims, and distinguish model-generated explanations from source text. Respect document privacy and do not present incorrect answers as verified facts.",
+    "starterRepo": "",
+    "submissionCriteria": [
+      "Public GitHub repository",
+      "Working document upload and notes generation interface",
+      "Generated summaries, questions, and flashcards",
+      "Evaluation benchmark with factual accuracy checks",
+      "README with architecture, limitations, and screenshots"
+    ],
+    "milestones": [
+      {
+        "title": "Project Setup and Document Processing",
+        "description": "Create the backend and ingest academic study materials.",
+        "tasks": [
+          "Create a Python environment and install FastAPI and PyMuPDF.",
+          "Create a document upload endpoint.",
+          "Extract text and page information from uploaded PDFs.",
+          "Validate unsupported and empty documents.",
+          "Configure external LLM credentials through environment variables when used."
+        ],
+        "resources": [
+          {
+            "title": "FastAPI Documentation",
+            "url": "https://fastapi.tiangolo.com/"
+          }
+        ]
+      },
+      {
+        "title": "Summarization and Structured Notes",
+        "description": "Generate organized learning materials from extracted content.",
+        "tasks": [
+          "Implement document chunking with configurable size and overlap.",
+          "Create an LLM prompt for structured academic summaries.",
+          "Generate key concepts and definitions from sections.",
+          "Generate topic-wise notes with consistent headings.",
+          "Store generated notes with source page references."
+        ],
+        "resources": [
+          {
+            "title": "Ollama Documentation",
+            "url": "https://docs.ollama.com/"
+          }
+        ]
+      },
+      {
+        "title": "Quiz and Flashcard Generation",
+        "description": "Create revision exercises from the source material.",
+        "tasks": [
+          "Generate multiple-choice questions with four options.",
+          "Create answer explanations linked to source passages.",
+          "Generate question-and-answer flashcards.",
+          "Implement beginner, intermediate, and advanced difficulty selection.",
+          "Build a quiz interface that records scores and completion."
+        ],
+        "resources": [
+          {
+            "title": "PyMuPDF Documentation",
+            "url": "https://pymupdf.readthedocs.io/"
+          }
+        ]
+      },
+      {
+        "title": "Content Evaluation and AI Reliability",
+        "description": "Evaluate learning content and guard against unsupported claims.",
+        "tasks": [
+          "Create 30 questions with verified reference answers.",
+          "Evaluate summaries for coverage and factual consistency.",
+          "Check quiz answers against source passages.",
+          "Add context limits, request throttling, and model timeouts.",
+          "Flag content that cannot be verified from uploaded material."
+        ],
+        "resources": [
+          {
+            "title": "Ragas Documentation",
+            "url": "https://docs.ragas.io/"
+          }
+        ]
+      },
+      {
+        "title": "Deploy and Publish the Study Assistant",
+        "description": "Publish the app and document its workflows and limitations.",
+        "tasks": [
+          "Create a dependency file and environment example.",
+          "Deploy using a compatible free-tier hosting option.",
+          "Document local Ollama setup and external inference alternatives.",
+          "Write a README with screenshots and evaluation findings.",
+          "Record a demo from PDF upload through quiz completion."
+        ],
+        "resources": [
+          {
+            "title": "Hugging Face Spaces",
+            "url": "https://huggingface.co/docs/hub/spaces"
+          }
+        ]
+      }
+    ]
+  }
+]

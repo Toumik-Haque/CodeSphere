@@ -11,6 +11,7 @@
 }
 
 .ph-muted { color: var(--p-muted); font-size: .88rem; }
+.ph-more { display: flex; justify-content: center; margin-top: 24px; }
 .ph-error { padding: 10px 14px; border-radius: 10px; background: #FEF1F1; color: #A11B1B; font-size: .9rem; }
 .ph-ok { padding: 10px 14px; border-radius: 10px; background: #E9F8EF; color: #16794A; font-size: .9rem; }
 .ph-linkbtn { padding: 0; border: 0; background: none; color: #B91C1C; font-size: inherit; }
