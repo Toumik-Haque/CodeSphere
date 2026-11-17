@@ -6,6 +6,7 @@ import CodeEditor from '../components/CodeEditor';
 import SafeText from '../components/SafeText';
 import { LevelPill } from './ReverseCoding';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { celebrateBadges } from '../lib/badges';
 import { LANGUAGES, STARTERS } from '../data/playground';
@@ -91,6 +92,7 @@ function Results({ result, kind }) {
 export default function ReverseChallenge() {
   const { slug } = useParams();
   const { user, token } = useAuth();
+  const { showNotice } = useNotice();
   const isLoggedIn = Boolean(user && token);
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -100,7 +102,6 @@ export default function ReverseChallenge() {
   const [busy, setBusy] = useState('');
   const [result, setResult] = useState(null);
   const [panel, setPanel] = useState('results');
-  const [notice, setNotice] = useState('');
   const [editorial, setEditorial] = useState(null);
 
   const storageKey = (lang) => `codesphere_rc_${slug}_${lang}`;
@@ -144,7 +145,6 @@ export default function ReverseChallenge() {
 
   const send = async (kind) => {
     setBusy(kind);
-    setNotice('');
     try {
       const r = await apiRequest(`/reverse/${slug}/${kind}`, { method: 'POST', body: JSON.stringify({ language, code }) });
       setResult({ ...r, kind });
@@ -155,7 +155,12 @@ export default function ReverseChallenge() {
         load().then((fresh) => setData((d) => ({ ...d, challenge: { ...fresh.challenge, editorial: fresh.challenge.editorial || r.editorial }, history: fresh.history }))).catch(() => {});
       }
     } catch (e) {
-      setNotice(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: kind === 'run' ? 'Run failed' : 'Submission failed',
+        title: kind === 'run' ? 'Could not run your code' : 'Could not submit your solution',
+        message: e.message,
+      });
     } finally {
       setBusy('');
     }
@@ -166,7 +171,12 @@ export default function ReverseChallenge() {
       const r = await apiRequest(`/reverse/${slug}/bookmark`, { method: 'POST' });
       setData((d) => ({ ...d, challenge: { ...d.challenge, bookmarked: r.bookmarked } }));
     } catch (e) {
-      setNotice(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Bookmark failed',
+        title: 'Could not update bookmark',
+        message: e.message,
+      });
     }
   };
 
@@ -286,7 +296,6 @@ export default function ReverseChallenge() {
               </div>
               <CodeEditor value={code} onChange={changeCode} language={language} height={430} />
               <p className="rc-muted rc-editor-note">Read input with input() (Python) and print the answer. Your code autosaves in this browser.</p>
-              {notice && <p className="rc-error" role="alert">{notice}</p>}
             </section>
           </div>
 

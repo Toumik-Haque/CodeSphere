@@ -1,6 +1,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { Link, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -58,6 +59,7 @@ export default function EventDetails() {
   const { slug } = useParams();
 
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const isAuthenticated = Boolean(user);
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -204,19 +206,32 @@ export default function EventDetails() {
         });
 
         setIsRegistered(false);
-        alert('Your event registration has been cancelled.');
+        showNotice({
+          tone: 'success',
+          kicker: 'Event update',
+          title: 'Registration cancelled',
+          message: `You're no longer registered for ${event.title}. You can register again before the event.`,
+        });
       } else {
         await apiRequest(`/events/${event._id}/register`, {
           method: 'POST',
         });
 
         setIsRegistered(true);
-        alert('Successfully registered for the event!');
+        showNotice({
+          tone: 'success',
+          kicker: 'Registration confirmed',
+          title: "You're registered!",
+          message: `Your spot for ${event.title} is confirmed. We look forward to seeing you there.`,
+        });
       }
     } catch (err) {
-      setRegistrationError(
-        err.message || 'Unable to process your registration.'
-      );
+      showNotice({
+        tone: 'error',
+        kicker: 'Registration update failed',
+        title: 'Something went wrong',
+        message: err.message || 'Unable to process your registration.',
+      });
     } finally {
       setRegistrationLoading(false);
     }
@@ -235,31 +250,34 @@ export default function EventDetails() {
       } catch (error) {
         // Ignore cancellation when the user closes the native share menu.
         if (error.name !== 'AbortError') {
-          console.error('Unable to share event:', error);
+          showNotice({
+            tone: 'error',
+            kicker: 'Share unavailable',
+            title: "Couldn't share this event",
+            message: 'Please copy the event link from your browser and try again.',
+          });
         }
       }
     } else {
       // Fallback for browsers without native sharing.
       try {
         await navigator.clipboard.writeText(window.location.href);
-        alert('Event link copied to clipboard!');
+        showNotice({
+          tone: 'info',
+          kicker: 'Link ready',
+          title: 'Event link copied',
+          message: 'Share it with your friends so they can join you at this event.',
+        });
       } catch {
-        window.prompt('Copy this event link:', window.location.href);
+        showNotice({
+          tone: 'info',
+          kicker: 'Clipboard unavailable',
+          title: 'Copy the event link',
+          message: 'Your browser blocked clipboard access. Copy the URL from the address bar to share this event.',
+        });
       }
     }
   }
-
-  console.log('REGISTRATION DEBUG:', {
-  user,
-  userRole: user?.role,
-  isAuthenticated,
-  eventTitle: event?.title,
-  eventDate: event?.date,
-  eventEndDate: event?.endDate,
-  passed,
-  registrationChecking,
-  isRegistered,
-});
 
   return (
     <>

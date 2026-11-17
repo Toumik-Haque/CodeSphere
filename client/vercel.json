@@ -2,6 +2,28 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
     {
+      "source": "/",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(?:facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|Pinterestbot|redditbot|Applebot|Googlebot|bingbot|DuckDuckBot|YandexBot|Baiduspider|Embedly|Quora link preview|SkypeUriPreview|vkShare|W3C_Validator|Iframely|Mastodon|Bluesky|Cardyb).*"
+        }
+      ],
+      "destination": "/api/meta?path=/"
+    },
+    {
+      "source": "/((?:events|projects|hackathons|user|admin|forum|materials|reverse-coding|news|updates)(?:/.*)?)",
+      "has": [
+        {
+          "type": "header",
+          "key": "user-agent",
+          "value": ".*(?:facebookexternalhit|Facebot|Twitterbot|LinkedInBot|Slackbot|Discordbot|TelegramBot|WhatsApp|Pinterestbot|redditbot|Applebot|Googlebot|bingbot|DuckDuckBot|YandexBot|Baiduspider|Embedly|Quora link preview|SkypeUriPreview|vkShare|W3C_Validator|Iframely|Mastodon|Bluesky|Cardyb).*"
+        }
+      ],
+      "destination": "/api/meta?path=/$1"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }

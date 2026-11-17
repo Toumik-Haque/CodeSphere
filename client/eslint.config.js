@@ -13,9 +13,27 @@ export default defineConfig([
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
     ],
+    rules: {
+      // JSX component references are not counted by ESLint's core rule.
+      // Ignore uppercase component-style bindings while checking other variables.
+      'no-unused-vars': ['error', {
+        varsIgnorePattern: '^[A-Z][A-Za-z0-9]*$',
+        argsIgnorePattern: '^(Eyebrow|ProjectCard)$',
+      }],
+      'react-refresh/only-export-components': [
+        'error',
+        { allowExportNames: ['useAuth', 'useNotice'] },
+      ],
+    },
     languageOptions: {
       globals: globals.browser,
       parserOptions: { ecmaFeatures: { jsx: true } },
+    },
+  },
+  {
+    files: ['api/**/*.js'],
+    languageOptions: {
+      globals: globals.node,
     },
   },
 ])

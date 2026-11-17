@@ -5,6 +5,7 @@ import { apiRequest } from '../lib/api';
 import { timeAgo } from '../lib/time';
 import { openUserStream } from '../lib/realtime';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import RichTextEditor from './RichTextEditor';
 import BroadcastOptions from './BroadcastOptions';
 import '../css/Updates.css';
@@ -40,6 +41,7 @@ const POLL_MS = 5 * 60000;
 // Bell with unread count and a dropdown of recent notifications.
 export default function NotificationBell({ compact = false }) {
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const [open, setOpen] = useState(false);
   const [data, setData] = useState(null);
   const [showPrefs, setShowPrefs] = useState(false);
@@ -47,13 +49,21 @@ export default function NotificationBell({ compact = false }) {
   const [updateTitle, setUpdateTitle] = useState('');
   const [updateBody, setUpdateBody] = useState('');
   const [updateFiles, setUpdateFiles] = useState([]);
-  const [sentTo, setSentTo] = useState('@all');
+  const [sentTo, setSentTo] = useState('');
+  const [memberQuery, setMemberQuery] = useState(null); // { text, start } while typing @… in "Sent to"
+  const [members, setMembers] = useState([]);
+  const [activeMember, setActiveMember] = useState(0);
   const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const [publishing, setPublishing] = useState(false);
-  const [publisherMessage, setPublisherMessage] = useState('');
-  const [publisherError, setPublisherError] = useState('');
   const ref = useRef(null);
+  const sentToRef = useRef(null);
   const isAdmin = user?.role === 'admin';
+
+  const closePublisher = useCallback(() => {
+    setPublisherOpen(false);
+    setMemberQuery(null);
+    setMembers([]);
+  }, []);
 
   const load = useCallback(() => apiRequest('/notifications?limit=15').then(setData).catch(() => {}), []);
 
@@ -86,11 +96,30 @@ export default function NotificationBell({ compact = false }) {
   useEffect(() => {
     if (!publisherOpen) return undefined;
     const onKey = (event) => {
-      if (event.key === 'Escape' && !publishing) setPublisherOpen(false);
+      if (event.key === 'Escape' && !publishing) closePublisher();
     };
     document.addEventListener('keydown', onKey);
     return () => document.removeEventListener('keydown', onKey);
-  }, [publisherOpen, publishing]);
+  }, [publisherOpen, publishing, closePublisher]);
+
+  // Suggest recipients as the admin types after "@" in "Sent to".
+  useEffect(() => {
+    if (!publisherOpen || !memberQuery) return undefined;
+    let cancelled = false;
+    const id = window.setTimeout(() => {
+      apiRequest(`/announcements/members?q=${encodeURIComponent(memberQuery.text)}`)
+        .then((r) => {
+          if (cancelled) return;
+          setMembers(r.members || []);
+          setActiveMember(0);
+        })
+        .catch(() => {});
+    }, 200);
+    return () => {
+      cancelled = true;
+      window.clearTimeout(id);
+    };
+  }, [publisherOpen, memberQuery]);
 
   const markAll = async () => {
     await apiRequest('/notifications/read', { method: 'POST', body: JSON.stringify({}) }).catch(() => {});
@@ -119,34 +148,98 @@ export default function NotificationBell({ compact = false }) {
     ]);
     const invalidFile = files.find((file) => !allowedTypes.has(file.type) || file.size > 10 * 1024 * 1024);
     if (invalidFile) {
-      setPublisherError(`${invalidFile.name} is unsupported or larger than 10 MB.`);
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Unsupported attachment',
+        message: `${invalidFile.name} is unsupported or larger than 10 MB.`,
+      });
       event.target.value = '';
       return;
     }
     if (updateFiles.length + files.length > 5) {
-      setPublisherError('Attach no more than 5 files.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Too many attachments',
+        message: 'Attach no more than 5 files.',
+      });
       event.target.value = '';
       return;
     }
-    setPublisherError('');
     setUpdateFiles((current) => [...current, ...files]);
     event.target.value = '';
   };
 
+  const detectRecipients = (text, caret) => {
+    const match = text.slice(0, caret).match(/@([a-z0-9-]*)$/i);
+    if (match) setMemberQuery({ text: match[1], start: caret - match[1].length - 1 });
+    else {
+      setMemberQuery(null);
+      setMembers([]);
+    }
+  };
+
+  const pickRecipient = (member) => {
+    const caret = sentToRef.current?.selectionStart ?? sentTo.length;
+    const token = `@${member.username}, `;
+    const next = sentTo.slice(0, memberQuery.start) + token + sentTo.slice(caret);
+    setSentTo(next);
+    setMemberQuery(null);
+    setMembers([]);
+    requestAnimationFrame(() => {
+      if (!sentToRef.current) return;
+      const pos = memberQuery.start + token.length;
+      sentToRef.current.focus();
+      sentToRef.current.setSelectionRange(pos, pos);
+    });
+  };
+
+  const closeRecipients = () => {
+    setMemberQuery(null);
+    setMembers([]);
+  };
+
+  const queryText = memberQuery?.text.toLowerCase() ?? null;
+  const suggestions = [
+    ...(!queryText || 'all'.startsWith(queryText)
+      ? [{ username: 'all', name: 'All members', note: 'Notify every member' }]
+      : []),
+    ...members,
+  ];
+  const suggestionsOpen = Boolean(memberQuery) && suggestions.length > 0;
+
   const publishUpdate = async (event) => {
     event.preventDefault();
-    setPublisherMessage('');
-    setPublisherError('');
     if (!updateTitle.trim() || !updateBody.replace(/<[^>]*>/g, ' ').trim()) {
-      setPublisherError('Add a title and update text before publishing.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Missing details',
+        message: 'Add a title and update text before publishing.',
+      });
       return;
     }
 
-    const audience = sentTo.trim() || '@all';
-    const tokens = audience.split(/[\s,]+/).filter(Boolean);
+    const tokens = sentTo.split(/[\s,]+/).filter(Boolean);
+    if (!tokens.length) {
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Choose recipients',
+        message: 'Choose who receives this update: type @ to pick members, or enter @all.',
+      });
+      sentToRef.current?.focus();
+      return;
+    }
     const invalidToken = tokens.find((token) => !/^@(?:all|[a-z0-9]+(?:-[a-z0-9]+)*)$/i.test(token));
     if (invalidToken) {
-      setPublisherError(`"${invalidToken}" is not a valid @username. Use @all or comma-separated @usernames.`);
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: 'Invalid recipient',
+        message: `"${invalidToken}" is not a valid @username. Use @all or comma-separated @usernames.`,
+      });
       return;
     }
 
@@ -163,13 +256,23 @@ export default function NotificationBell({ compact = false }) {
       setUpdateTitle('');
       setUpdateBody('');
       setUpdateFiles([]);
-      setSentTo('@all');
+      setSentTo('');
       setBroadcastOptions({ sendNotification: true, sendEmail: true });
-      setPublisherOpen(false);
-      setPublisherMessage(result.message || 'Update published.');
+      closePublisher();
+      showNotice({
+        tone: 'success',
+        kicker: 'Community update',
+        title: 'Update published',
+        message: result.message || 'Your update is now live for the selected members.',
+      });
       await load();
     } catch (error) {
-      setPublisherError(error.message || 'Could not publish the update.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Community update',
+        title: "Couldn't publish the update",
+        message: error.message || 'Please try again.',
+      });
     } finally {
       setPublishing(false);
     }
@@ -209,19 +312,13 @@ export default function NotificationBell({ compact = false }) {
             <button
               type="button"
               className="notif-publish-update"
-              onClick={() => {
-                setPublisherError('');
-                setPublisherMessage('');
-                setPublisherOpen(true);
-              }}
+              onClick={() => setPublisherOpen(true)}
             >
               <i className="bi bi-megaphone" aria-hidden="true" />
               Publish community update
               <i className="bi bi-plus-lg" aria-hidden="true" />
             </button>
           )}
-
-          {publisherMessage && <p className="notif-publish-success" role="status">{publisherMessage}</p>}
 
           {showPrefs && data && (
             <div className="notif-prefs">
@@ -261,7 +358,7 @@ export default function NotificationBell({ compact = false }) {
           className="update-publisher-backdrop"
           role="presentation"
           onMouseDown={(event) => {
-            if (event.target === event.currentTarget && !publishing) setPublisherOpen(false);
+            if (event.target === event.currentTarget && !publishing) closePublisher();
           }}
         >
           <form
@@ -280,7 +377,7 @@ export default function NotificationBell({ compact = false }) {
               <button
                 type="button"
                 className="update-publisher-close"
-                onClick={() => setPublisherOpen(false)}
+                onClick={closePublisher}
                 disabled={publishing}
                 aria-label="Close update publisher"
               >
@@ -338,26 +435,71 @@ export default function NotificationBell({ compact = false }) {
                 </ul>
               )}
               <label className="update-publisher-label" htmlFor="update-sent-to">Sent to</label>
-              <input
-                id="update-sent-to"
-                className="update-publisher-sent-to"
-                type="text"
-                value={sentTo}
-                onChange={(event) => setSentTo(event.target.value)}
-                placeholder="@all or @username, @another"
-                spellCheck="false"
-              />
+              <div className="update-recipients-box">
+                <input
+                  id="update-sent-to"
+                  ref={sentToRef}
+                  className="update-publisher-sent-to"
+                  type="text"
+                  value={sentTo}
+                  onChange={(event) => {
+                    setSentTo(event.target.value);
+                    detectRecipients(event.target.value, event.target.selectionStart);
+                  }}
+                  onKeyDown={(event) => {
+                    if (!suggestionsOpen) return;
+                    if (event.key === 'ArrowDown') {
+                      event.preventDefault();
+                      setActiveMember((i) => (i + 1) % suggestions.length);
+                    } else if (event.key === 'ArrowUp') {
+                      event.preventDefault();
+                      setActiveMember((i) => (i - 1 + suggestions.length) % suggestions.length);
+                    } else if (event.key === 'Enter' || event.key === 'Tab') {
+                      event.preventDefault();
+                      pickRecipient(suggestions[activeMember]);
+                    } else if (event.key === 'Escape') {
+                      event.preventDefault();
+                      event.stopPropagation();
+                      closeRecipients();
+                    }
+                  }}
+                  onBlur={() => window.setTimeout(closeRecipients, 150)}
+                  placeholder="Type @ to search members, or @all for everyone"
+                  spellCheck="false"
+                  aria-autocomplete="list"
+                  aria-expanded={suggestionsOpen}
+                />
+                {suggestionsOpen && (
+                  <ul className="recipient-list" role="listbox" aria-label="Members to notify">
+                    {suggestions.map((member, index) => (
+                      <li
+                        key={member.username}
+                        role="option"
+                        aria-selected={index === activeMember}
+                        className={index === activeMember ? 'is-active' : ''}
+                        onMouseDown={(event) => {
+                          event.preventDefault();
+                          pickRecipient(member);
+                        }}
+                      >
+                        <strong>{member.name}</strong>
+                        <small>@{member.username}</small>
+                        {member.note || member.email ? <small>{member.note || member.email}</small> : null}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
               <small className="update-publisher-hint">
                 The update stays public. This only controls who receives the notification and email.
               </small>
               <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />
             </div>
 
-            {publisherError && <p className="update-publisher-error" role="alert">{publisherError}</p>}
             <footer className="update-publisher-footer">
               <span>Choose how to notify members when you publish</span>
               <div>
-                <button type="button" className="update-publisher-cancel" onClick={() => setPublisherOpen(false)} disabled={publishing}>Cancel</button>
+                <button type="button" className="update-publisher-cancel" onClick={closePublisher} disabled={publishing}>Cancel</button>
                 <button type="submit" className="update-publisher-submit" disabled={publishing}>
                   <i className={`bi ${publishing ? 'bi-arrow-repeat' : 'bi-send'}`} aria-hidden="true" />
                   {publishing ? 'Publishing…' : 'Publish update'}

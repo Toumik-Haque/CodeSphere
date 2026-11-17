@@ -1,16 +1,18 @@
 import { useEffect, useState } from 'react';
 import { apiRequest } from '../lib/api';
+import { useNotice } from '../context/NoticeContext';
 import { loadBadgeCatalog } from '../lib/badges';
 import '../css/Badges.css';
 
 // Admin: view a student's badges and award/remove community badges.
 export default function AdminBadgeAwards({ userId, userName }) {
+  const { showNotice } = useNotice();
   const [open, setOpen] = useState(false);
   const [catalog, setCatalog] = useState(null);
   const [earned, setEarned] = useState(null);
   const [notes, setNotes] = useState({});
   const [busy, setBusy] = useState('');
-  const [message, setMessage] = useState('');
+  const [loadError, setLoadError] = useState('');
 
   useEffect(() => {
     if (!open) return undefined;
@@ -21,7 +23,7 @@ export default function AdminBadgeAwards({ userId, userName }) {
         setCatalog(cat);
         setEarned(list.badges);
       })
-      .catch((err) => !cancelled && setMessage(err.message));
+      .catch((err) => !cancelled && setLoadError(err.message));
     return () => {
       cancelled = true;
     };
@@ -34,16 +36,25 @@ export default function AdminBadgeAwards({ userId, userName }) {
 
   const award = async (badgeId) => {
     setBusy(badgeId);
-    setMessage('');
     try {
       await apiRequest('/badges/admin/award', {
         method: 'POST',
         body: JSON.stringify({ userId, badgeId, note: notes[badgeId] || '' }),
       });
       await refresh();
-      setMessage('Badge awarded. The student will see it next time they open their profile.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Community badges',
+        title: 'Badge awarded',
+        message: 'The student will see it next time they open their profile.',
+      });
     } catch (err) {
-      setMessage(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Community badges',
+        title: "Couldn't award the badge",
+        message: err.message || 'Please try again.',
+      });
     } finally {
       setBusy('');
     }
@@ -51,12 +62,22 @@ export default function AdminBadgeAwards({ userId, userName }) {
 
   const remove = async (badgeId) => {
     setBusy(badgeId);
-    setMessage('');
     try {
       await apiRequest('/badges/admin/award', { method: 'DELETE', body: JSON.stringify({ userId, badgeId }) });
       await refresh();
+      showNotice({
+        tone: 'success',
+        kicker: 'Community badges',
+        title: 'Badge removed',
+        message: "The badge has been removed from the student's profile.",
+      });
     } catch (err) {
-      setMessage(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Community badges',
+        title: "Couldn't remove the badge",
+        message: err.message || 'Please try again.',
+      });
     } finally {
       setBusy('');
     }
@@ -80,7 +101,7 @@ export default function AdminBadgeAwards({ userId, userName }) {
 
       {open && (
         <div className="adm-badges-panel">
-          {!earned && !message && <p className="bdg-muted">Loading badges…</p>}
+          {!earned && !loadError && <p className="bdg-muted">Loading badges…</p>}
 
           {earned && (
             <>
@@ -135,7 +156,7 @@ export default function AdminBadgeAwards({ userId, userName }) {
             </>
           )}
 
-          {message && <p className="adm-badges-message" role="status">{message}</p>}
+          {loadError && <p className="adm-badges-message" role="alert">{loadError}</p>}
         </div>
       )}
     </div>

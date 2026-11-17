@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 
 const hueOf = (name = '') => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
@@ -10,9 +11,9 @@ const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).map((w) => w
 // a photo is set.
 export default function AvatarUpload({ className = '' }) {
   const { user, updateUser } = useAuth();
+  const { showNotice } = useNotice();
   const inputRef = useRef(null);
   const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
   if (!user) return null;
 
   const pick = async (event) => {
@@ -20,22 +21,36 @@ export default function AvatarUpload({ className = '' }) {
     event.target.value = '';
     if (!file) return;
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      setError('Choose a JPEG, PNG or WebP image.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: 'Unsupported image format',
+        message: 'Choose a JPEG, PNG or WebP image.',
+      });
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('The photo must be 5 MB or smaller.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: 'Image is too large',
+        message: 'The photo must be 5 MB or smaller.',
+      });
       return;
     }
     setBusy(true);
-    setError('');
     try {
       const form = new FormData();
       form.append('profileImage', file, file.name);
       const { profileImage } = await apiRequest('/users/profile/image', { method: 'POST', body: form });
       updateUser({ profileImage });
     } catch (e) {
-      setError(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: "Couldn't upload your photo",
+        message: e.message || 'Please try again with a different image.',
+      });
     } finally {
       setBusy(false);
     }
@@ -51,7 +66,7 @@ export default function AvatarUpload({ className = '' }) {
         style={avatarUrl ? undefined : { '--hue': hueOf(user.name) }}
         onClick={() => inputRef.current?.click()}
         disabled={busy}
-        title={error || label}
+        title={label}
         aria-label={label}
       >
         {avatarUrl ? <img src={avatarUrl} alt="" /> : initialsOf(user.name)}
@@ -60,7 +75,6 @@ export default function AvatarUpload({ className = '' }) {
         </span>
       </button>
       <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp" hidden onChange={pick} />
-      {error && <span className="avatar-upload-error" role="alert">{error}</span>}
     </span>
   );
 }

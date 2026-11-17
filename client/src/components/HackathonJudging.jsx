@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
-import { apiRequest } from '../lib/api';
+import { useNotice } from '../context/NoticeContext';
+import { apiRequest, notifyAuthExpired } from '../lib/api';
 import BroadcastOptions from './BroadcastOptions';
 import { SubmissionDetails, SubmissionLinks } from './HackathonSubmission';
 import '../css/Hackathons.css';
@@ -101,8 +102,9 @@ function ReviewCard({ s, onSave }) {
 // Teams, submissions, review and result publishing for one hackathon.
 // Used by organisers and by students who host an approved hackathon.
 export default function HackathonJudging({ id, onChanged = () => {}, showEmails = true }) {
+  const { showNotice } = useNotice();
   const [data, setData] = useState(null);
-  const [msg, setMsg] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [version, setVersion] = useState(0);
   const [filter, setFilter] = useState('final');
   const [query, setQuery] = useState('');
@@ -112,7 +114,7 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
 
   useEffect(() => {
     let cancelled = false;
-    apiRequest(`/hackathons/admin/${id}`).then((r) => !cancelled && setData(r)).catch((e) => !cancelled && setMsg(e.message));
+    apiRequest(`/hackathons/admin/${id}`).then((r) => !cancelled && setData(r)).catch((e) => !cancelled && setLoadError(e.message));
     return () => {
       cancelled = true;
     };
@@ -129,16 +131,26 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
       .sort(SORTS[sort]);
   }, [subs, filter, query, sort]);
 
-  if (!data) return <p className="hk-muted">{msg || 'Loading submissions…'}</p>;
+  if (!data) return <p className="hk-muted">{loadError || 'Loading submissions…'}</p>;
   const h = data.hackathon;
 
   const saveReview = async (s, form) => {
     try {
       await apiRequest(`/hackathons/admin/submissions/${s.id}`, { method: 'PUT', body: JSON.stringify(form) });
-      setMsg(`Saved review for "${s.title}".`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Review saved',
+        title: `Review saved for "${s.title}"`,
+        message: 'The score, rank and notes have been updated for this submission.',
+      });
       setVersion((v) => v + 1);
     } catch (e) {
-      setMsg(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Review save failed',
+        title: `Couldn't save the review for "${s.title}"`,
+        message: e.message,
+      });
     }
   };
 
@@ -146,20 +158,37 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
     if (published && !window.confirm('Publish the results with the selected notification options?')) return;
     try {
       await apiRequest(`/hackathons/admin/${id}/results`, { method: 'POST', body: JSON.stringify({ published, ...broadcastOptions }) });
-      setMsg(published ? 'Results published.' : 'Results hidden.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Results updated',
+        title: published ? 'Results published' : 'Results hidden',
+        message: published
+          ? 'Winners and projects are now visible to participants.'
+          : 'Results are no longer visible to participants.',
+      });
       setVersion((v) => v + 1);
       onChanged();
     } catch (e) {
-      setMsg(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Results update failed',
+        title: published ? "Couldn't publish results" : "Couldn't hide results",
+        message: e.message,
+      });
     }
   };
 
   const downloadCsv = async () => {
     try {
+      const token = localStorage.getItem('codesphere_token');
       const response = await fetch(`${API_URL}/hackathons/admin/${id}/submissions.csv`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('codesphere_token')}` },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!response.ok) throw new Error('Could not download the spreadsheet.');
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        if (response.status === 401) notifyAuthExpired(data.message, token);
+        throw new Error(data.message || 'Could not download the spreadsheet.');
+      }
       const url = URL.createObjectURL(await response.blob());
       const link = document.createElement('a');
       link.href = url;
@@ -167,7 +196,12 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
       link.click();
       URL.revokeObjectURL(url);
     } catch (e) {
-      setMsg(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Download failed',
+        title: "Couldn't download submissions",
+        message: e.message,
+      });
     }
   };
 
@@ -192,7 +226,7 @@ export default function HackathonJudging({ id, onChanged = () => {}, showEmails 
         </div>
       </div>
       {!h.resultsPublished && <BroadcastOptions value={broadcastOptions} onChange={setBroadcastOptions} />}
-      {msg && <p className="hk-ok" role="status">{msg}</p>}
+      {loadError && <p className="hk-error" role="alert">{loadError}</p>}
 
       <div className="hk-judge-toolbar">
         <div className="hk-judge-filters" role="tablist" aria-label="Filter submissions">

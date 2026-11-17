@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 
 import { AuthProvider, useAuth } from './context/AuthContext';
+import { NoticeProvider } from './context/NoticeContext';
 
 import VideoBackground from './components/VideoBackground';
 import BadgeCelebration from './components/BadgeCelebration';
@@ -86,8 +87,6 @@ function HomePage() {
 // students holding that role may enter.
 // Guests may only see these pages; everything else asks them to sign in first
 // and brings them back to the page they wanted afterwards.
-const PUBLIC_PATHS = new Set(['/', '/login', '/register', '/reset-password']);
-
 function ProtectedRoute({ children, adminOnly = false, anyRole = false, staff = null }) {
   const { user, token } = useAuth();
 
@@ -290,8 +289,10 @@ export default function App() {
       <ScrollToTop />
 
       <AuthProvider>
-        <AppRoutes />
-        <BadgeCelebration />
+        <NoticeProvider>
+          <AppRoutes />
+          <BadgeCelebration />
+        </NoticeProvider>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -1,7 +1,8 @@
 
 import { Fragment, useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
@@ -113,6 +114,12 @@ const normalizeProfile = (source = {}) => {
   const codingProfiles = Array.isArray(source.codingProfiles)
     ? source.codingProfiles
     : [];
+  const rawAchievements = Array.isArray(source.achievements)
+    ? source.achievements
+    : [];
+  const achievementsHaveOrder = rawAchievements.every((achievement) =>
+    Number.isInteger(achievement?.order)
+  );
   const legacyGithubProfile = codingProfiles.find(
     (profile) => profile.platform?.toLowerCase() === 'github'
   );
@@ -131,7 +138,12 @@ const normalizeProfile = (source = {}) => {
     projects: Array.isArray(source.projects)
       ? source.projects.map(normalizeProject)
       : [],
-    achievements: Array.isArray(source.achievements) ? source.achievements : [],
+    achievements: rawAchievements
+      .map((achievement, index) => ({
+        ...achievement,
+        order: achievementsHaveOrder ? achievement.order : index,
+      }))
+      .sort((first, second) => first.order - second.order),
   };
 };
 
@@ -158,13 +170,14 @@ const sectionConfig = [
     ],
   },
   {
-    id: 'learning',
-    title: 'Interests & Learning Goals',
-    subtitle: 'Your interests and learning goals',
-    icon: 'bi-lightbulb',
+    id: 'professionalLinks',
+    title: 'Professional links',
+    subtitle: 'Connect your professional accounts',
+    icon: 'bi-link-45deg',
     fields: [
-      { name: 'technicalInterests', label: 'Technical interests', type: 'textarea', placeholder: 'Web development, AI, cybersecurity' },
-      { name: 'learningGoals', label: 'Learning goals', type: 'textarea', placeholder: 'Data structures, backend development' },
+      { name: 'github', label: 'GitHub profile', type: 'url', placeholder: 'https://github.com/username' },
+      { name: 'linkedin', label: 'LinkedIn profile', type: 'url', placeholder: 'https://linkedin.com/in/username' },
+      { name: 'portfolio', label: 'Portfolio website', type: 'url', placeholder: 'https://yourportfolio.com' },
     ],
   },
   {
@@ -176,17 +189,6 @@ const sectionConfig = [
     fields: [
       { name: 'platform', label: 'Platform', type: 'select', options: codingPlatforms },
       { name: 'url', label: 'Profile URL', type: 'url', placeholder: 'https://...', required: true },
-    ],
-  },
-  {
-    id: 'professionalLinks',
-    title: 'Professional links',
-    subtitle: 'Connect your professional accounts',
-    icon: 'bi-link-45deg',
-    fields: [
-      { name: 'github', label: 'GitHub profile', type: 'url', placeholder: 'https://github.com/username' },
-      { name: 'linkedin', label: 'LinkedIn profile', type: 'url', placeholder: 'https://linkedin.com/in/username' },
-      { name: 'portfolio', label: 'Portfolio website', type: 'url', placeholder: 'https://yourportfolio.com' },
     ],
   },
   {
@@ -218,6 +220,16 @@ const sectionConfig = [
       { name: 'issuer', label: 'Issued by', placeholder: 'Organisation / Platform' },
       { name: 'year', label: 'Year', type: 'select', options: Array.from({ length: 12 }, (_, i) => String(new Date().getFullYear() - i)) },
       { name: 'link', label: 'Certificate / proof link (optional)', type: 'url', placeholder: 'https://...' },
+    ],
+  },
+  {
+    id: 'learning',
+    title: 'Interests & Learning Goals',
+    subtitle: 'Your interests and learning goals',
+    icon: 'bi-lightbulb',
+    fields: [
+      { name: 'technicalInterests', label: 'Technical interests', type: 'textarea', placeholder: 'Web development, AI, cybersecurity' },
+      { name: 'learningGoals', label: 'Learning goals', type: 'textarea', placeholder: 'Data structures, backend development' },
     ],
   },
 ];
@@ -355,70 +367,11 @@ const extractResumeText = async (file, onProgress) => {
 };
 
 /* =========================================
-   TOAST
-========================================= */
-
-function Toast({ toast, onClose }) {
-  if (!toast) return null;
-
-  const styles = {
-    success: { icon: 'bi-check-circle-fill', color: '#16834a', background: '#edf9f1', border: '#b9e6c9' },
-    error: { icon: 'bi-x-circle-fill', color: '#c0392b', background: '#fff0ef', border: '#f2c4c0' },
-    warning: { icon: 'bi-exclamation-triangle-fill', color: '#a66a00', background: '#fff8e8', border: '#f0dba8' },
-    info: { icon: 'bi-info-circle-fill', color: '#245b83', background: '#edf6fc', border: '#c7dfef' },
-  };
-
-  const style = styles[toast.type] || styles.info;
-
-  return (
-    <div
-      role="status"
-      aria-live="polite"
-      style={{
-        position: 'fixed',
-        right: '24px',
-        bottom: '24px',
-        zIndex: 99999,
-        width: 'min(390px, calc(100vw - 32px))',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '12px',
-        padding: '15px 16px',
-        border: `1px solid ${style.border}`,
-        borderRadius: '12px',
-        background: style.background,
-        color: '#243447',
-        boxShadow: '0 8px 30px rgba(15, 35, 55, 0.16)',
-        animation: 'codesphereToastIn 220ms ease-out',
-      }}
-    >
-      <i className={`bi ${style.icon}`} style={{ color: style.color, fontSize: '21px', flexShrink: 0 }} />
-      <span style={{ flex: 1, fontSize: '14px', lineHeight: 1.5 }}>{toast.message}</span>
-      <button
-        type="button"
-        onClick={onClose}
-        aria-label="Dismiss notification"
-        style={{
-          border: 0,
-          background: 'transparent',
-          color: '#64748b',
-          cursor: 'pointer',
-          padding: '3px',
-          fontSize: '18px',
-          lineHeight: 1,
-        }}
-      >
-        <i className="bi bi-x-lg" />
-      </button>
-    </div>
-  );
-}
-
-/* =========================================
    RESUME UPLOAD COMPONENT
 ========================================= */
 
-function ResumeUpload({ profile, onApply, showToast, preview = false }) {
+function ResumeUpload({ profile, onApply, preview = false }) {
+  const { showNotice } = useNotice();
   const inputRef = useRef(null);
   // The resume file saved on the server (survives refreshes).
   const [savedResume, setSavedResume] = useState(null);
@@ -442,7 +395,12 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       const { resume } = await apiRequest('/users/me/resume', { method: 'PUT', body: form });
       setSavedResume(resume);
     } catch (error) {
-      showToast(`Your resume was read, but saving the file failed: ${error.message}`, 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: "Couldn't save your resume",
+        message: `Your resume was read, but saving the file failed: ${error.message}`,
+      });
     } finally {
       setSavingResume(false);
     }
@@ -453,9 +411,19 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
     try {
       await apiRequest('/users/me/resume', { method: 'DELETE' });
       setSavedResume(null);
-      showToast('Saved resume deleted.', 'success');
+      showNotice({
+        tone: 'success',
+        kicker: 'Resume removed',
+        title: 'Saved resume deleted',
+        message: 'You can upload it again at any time.',
+      });
     } catch (error) {
-      showToast(error.message, 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: "Couldn't delete your resume",
+        message: error.message || 'Please try again.',
+      });
     }
   };
   const [resumeOpen, setResumeOpen] = useState(() => {
@@ -504,12 +472,22 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       .includes(file.type);
 
     if (!isPdf && !isImage) {
-      showToast('Please select a PDF, JPG, JPEG or PNG resume.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: 'Unsupported file type',
+        message: 'Please select a PDF, JPG, JPEG or PNG resume.',
+      });
       return;
     }
 
     if (file.size > RESUME_SIZE_LIMIT) {
-      showToast('Please select a resume smaller than 5 MB.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume upload',
+        title: 'File is too large',
+        message: 'Please select a resume smaller than 5 MB.',
+      });
       return;
     }
 
@@ -555,13 +533,20 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
         ...Object.fromEntries((extracted.codingProfiles || []).map((_, i) => [`profile:${i}`, true])),
       });
 
-      showToast('Resume processed. Review the extracted information.', 'success');
+      showNotice({
+        tone: 'success',
+        kicker: 'Resume processed',
+        title: 'Review what we found',
+        message: 'Check the extracted information before adding it to your profile.',
+      });
     } catch (error) {
       console.error('Resume processing failed:', error);
-      showToast(
-        error.message || 'Unable to process this resume.',
-        'error'
-      );
+      showNotice({
+        tone: 'error',
+        kicker: 'Resume processing',
+        title: "Couldn't read this resume",
+        message: error.message || 'Unable to process this resume.',
+      });
     } finally {
       setIsProcessing(false);
     }
@@ -589,7 +574,12 @@ function ResumeUpload({ profile, onApply, showToast, preview = false }) {
       .map(([field]) => field);
 
     if (selected.length === 0) {
-      showToast('Select at least one detail to apply.', 'warning');
+      showNotice({
+        tone: 'info',
+        kicker: 'Resume details',
+        title: 'Choose what to apply',
+        message: 'Select at least one detail before applying it to your profile.',
+      });
       return;
     }
 
@@ -1005,16 +995,25 @@ function Field({ field, value, onChange }) {
   );
 }
 
-function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
-  const [expanded, setExpanded] = useState(false);
+function ProfileSection({ section, profile, onSave, onAdd, onDelete, onReorder, open = false, onToggle, onExpand }) {
   const [editing, setEditing] = useState(false);
   const [form, setForm] = useState({});
   const [editingIndex, setEditingIndex] = useState(null);
+  const [dragIndex, setDragIndex] = useState(null);
+  const [dragOverIndex, setDragOverIndex] = useState(null);
+
+  const expanded = open;
 
   const isCollection = Boolean(section.collection);
   const savedItems = isCollection && Array.isArray(profile[section.collection])
     ? profile[section.collection]
     : [];
+  const canReorder = Boolean(
+    isCollection &&
+    onReorder &&
+    ['projects', 'achievements'].includes(section.id) &&
+    savedItems.length > 1
+  );
 
   const hasEducation = section.id === 'education';
   const hasPersonal = section.id === 'personal';
@@ -1050,7 +1049,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
     setForm(form);
     setEditingIndex(index);
     setEditing(true);
-    setExpanded(true);
+    onExpand?.();
   };
 
   const cancelEdit = () => {
@@ -1115,7 +1114,7 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
         type="button"
         className="profile-builder-heading"
         onClick={() => {
-          setExpanded((value) => !value);
+          onToggle?.();
           if (editing) cancelEdit();
         }}
         aria-expanded={expanded}
@@ -1176,8 +1175,62 @@ function ProfileSection({ section, profile, onSave, onAdd, onDelete }) {
             <>
               {isCollection && savedItems.length > 0 && (
                 <div className="profile-saved-entries">
+                  {canReorder && (
+                    <p className="profile-reorder-hint">
+                      <i className="bi bi-grip-vertical" aria-hidden="true" />
+                      Drag entries to set the order shown on your public profile.
+                    </p>
+                  )}
+
                   {savedItems.map((item, index) => (
-                    <article className="profile-saved-entry" key={`${section.id}-${index}`}>
+                    <article
+                      className={`profile-saved-entry${dragOverIndex === index ? ' is-drag-over' : ''
+                        }${dragIndex === index ? ' is-dragging' : ''}`}
+                      key={`${section.id}-${index}`}
+                      onDragOver={canReorder ? (event) => {
+                        event.preventDefault();
+                        event.dataTransfer.dropEffect = 'move';
+                        if (dragIndex !== null && dragIndex !== index) {
+                          setDragOverIndex(index);
+                        }
+                      } : undefined}
+                      onDragLeave={canReorder ? (event) => {
+                        if (!event.currentTarget.contains(event.relatedTarget)) {
+                          setDragOverIndex(null);
+                        }
+                      } : undefined}
+                      onDrop={canReorder ? (event) => {
+                        event.preventDefault();
+                        if (dragIndex !== null && dragIndex !== index) {
+                          onReorder(section.collection, dragIndex, index);
+                        }
+                        setDragIndex(null);
+                        setDragOverIndex(null);
+                      } : undefined}
+                    >
+                      {canReorder && (
+                        <span
+                          className="profile-drag-handle"
+                          draggable
+                          role="button"
+                          tabIndex={0}
+                          title="Drag to reorder"
+                          aria-label={`Drag to reorder ${item.title || 'entry'}`}
+                          onDragStart={(event) => {
+                            setDragIndex(index);
+                            setDragOverIndex(index);
+                            event.dataTransfer.effectAllowed = 'move';
+                            event.dataTransfer.setData('text/plain', String(index));
+                          }}
+                          onDragEnd={() => {
+                            setDragIndex(null);
+                            setDragOverIndex(null);
+                          }}
+                        >
+                          <i className="bi bi-grip-vertical" aria-hidden="true" />
+                        </span>
+                      )}
+
                       <div className="profile-saved-entry-info">
                         <strong>{item.title || item.platform || 'Profile entry'}</strong>
                         <p>
@@ -1344,8 +1397,8 @@ export default function Profile({
   view = 'profile',
 }) {
   const isMilestoneView = view === 'milestone';
-  const navigate = useNavigate();
-  const { user, updateUser, logout } = useAuth();
+  const { user, updateUser } = useAuth();
+  const { showNotice } = useNotice();
 
   const [profile, setProfile] = useState(() => {
     if (preview) {
@@ -1360,46 +1413,34 @@ export default function Profile({
 
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(!preview);
-  const [saveStatus, setSaveStatus] = useState('');
-  const [toast, setToast] = useState(null);
   const [skillSearch, setSkillSearch] = useState('');
   const [skillLevel, setSkillLevel] = useState('Intermediate');
+  const [openSection, setOpenSection] = useState('');
 
-  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
-  const [deleteConfirmText, setDeleteConfirmText] = useState('');
-  const [deleteLoading, setDeleteLoading] = useState(false);
-  const [deleteError, setDeleteError] = useState('');
+  const [passwordForm, setPasswordForm] = useState({
+    current: '',
+    next: '',
+    confirm: '',
+  });
+  const [passwordVisible, setPasswordVisible] = useState({
+    current: false,
+    next: false,
+    confirm: false,
+  });
+  const [passwordLoading, setPasswordLoading] = useState(false);
+  const [passwordError, setPasswordError] = useState('');
 
   const photoInputRef = useRef(null);
-  const toastTimerRef = useRef(null);
-  const toastIdRef = useRef(0);
-
-  const showToast = (message, type = 'success') => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-
-    toastIdRef.current += 1;
-    setToast({ id: toastIdRef.current, message, type });
-
-    toastTimerRef.current = setTimeout(() => {
-      setToast(null);
-    }, 3500);
-  };
-
-  const closeToast = () => {
-    if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    setToast(null);
-  };
-
-  useEffect(() => {
-    return () => {
-      if (toastTimerRef.current) clearTimeout(toastTimerRef.current);
-    };
-  }, []);
 
   const persistProfile = async (updatedProfile, successMessage, fields) => {
     if (preview) {
       setProfile(updatedProfile);
-      showToast('Preview updated. Changes are temporary.', 'info');
+      showNotice({
+        tone: 'info',
+        kicker: 'Preview mode',
+        title: 'Preview updated',
+        message: 'Changes are temporary and will not be saved.',
+      });
       return true;
     }
 
@@ -1421,9 +1462,6 @@ export default function Profile({
 
     if (Object.keys(payload).length === 0) return true;
 
-    setError('');
-    setSaveStatus('');
-
     try {
       const response = await apiRequest('/users/profile', {
         method: 'PATCH',
@@ -1435,12 +1473,20 @@ export default function Profile({
         projects: updatedProfile.projects,
       }));
       updateUser(response.user);
-      setSaveStatus(successMessage);
-      showToast(successMessage);
+      showNotice({
+        tone: 'success',
+        kicker: 'Profile saved',
+        title: 'Your changes are live',
+        message: successMessage,
+      });
       return true;
     } catch (saveError) {
-      setError(saveError.message || 'Unable to save your profile.');
-      showToast(saveError.message || 'Unable to save your profile.', 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile save failed',
+        title: "Couldn't save your changes",
+        message: saveError.message || 'Unable to save your profile.',
+      });
       return false;
     }
   };
@@ -1450,13 +1496,23 @@ export default function Profile({
     if (!file) return;
 
     if (!['image/jpeg', 'image/png', 'image/webp'].includes(file.type)) {
-      showToast('Please select a JPG, PNG, or WebP image.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: 'Unsupported image format',
+        message: 'Please select a JPG, PNG, or WebP image.',
+      });
       event.target.value = '';
       return;
     }
 
     if (file.size > IMAGE_SIZE_LIMIT) {
-      showToast('Please select an image smaller than 5 MB.', 'warning');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: 'Image is too large',
+        message: 'Please select an image smaller than 5 MB.',
+      });
       event.target.value = '';
       return;
     }
@@ -1471,15 +1527,28 @@ export default function Profile({
         await apiRequest('/users/profile/image', { method: 'POST', body });
         const refreshed = await loadProfile();
         if (!refreshed) {
-          showToast('Image uploaded, but your profile could not be refreshed.', 'error');
+          showNotice({
+            tone: 'error',
+            kicker: 'Profile photo',
+            title: 'Photo uploaded, but profile not refreshed',
+            message: 'Refresh the page to see your updated profile photo.',
+          });
           return;
         }
       }
-      setError('');
-      showToast(`${imageLabel} updated successfully.`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Profile photo',
+        title: `${imageLabel} updated`,
+        message: 'Your new photo is now visible on your profile.',
+      });
     } catch (uploadError) {
-      setError(uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`);
-      showToast(uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`, 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Profile photo',
+        title: "Couldn't upload your photo",
+        message: uploadError.message || `Unable to upload ${imageLabel.toLowerCase()}.`,
+      });
     } finally {
       event.target.value = '';
     }
@@ -1610,12 +1679,20 @@ export default function Profile({
           : [...current.projects, savedProject];
         return { ...current, projects };
       });
-      setSaveStatus(response.message);
-      showToast(response.message);
+      showNotice({
+        tone: 'success',
+        kicker: 'Projects',
+        title: projectId ? 'Project updated' : 'Project added',
+        message: response.message || 'Your project has been saved.',
+      });
       return true;
     } catch (saveError) {
-      setError(saveError.message || 'Unable to save this project.');
-      showToast(saveError.message || 'Unable to save this project.', 'error');
+      showNotice({
+        tone: 'error',
+        kicker: 'Projects',
+        title: "Couldn't save this project",
+        message: saveError.message || 'Unable to save this project.',
+      });
       return false;
     }
   };
@@ -1629,10 +1706,24 @@ export default function Profile({
 
     if (section === 'projects') return saveProjectEntry(item);
 
+    const entry = section === 'achievements'
+      ? {
+        ...item,
+        order: (profile.achievements || []).reduce(
+          (nextOrder, achievement) => (
+            Number.isInteger(achievement.order)
+              ? Math.max(nextOrder, achievement.order + 1)
+              : nextOrder
+          ),
+          (profile.achievements || []).length
+        ),
+      }
+      : item;
+
     return persistProfile(
       {
         ...profile,
-        [section]: [...(profile[section] || []), item],
+        [section]: [...(profile[section] || []), entry],
       },
       messages[section] || 'Entry added successfully!',
       [section]
@@ -1669,29 +1760,127 @@ export default function Profile({
           ...current,
           projects: current.projects.filter((project) => project._id !== projectId),
         }));
-        setSaveStatus(response.message);
-        showToast(response.message);
+        showNotice({
+          tone: 'success',
+          kicker: 'Projects',
+          title: 'Project removed',
+          message: response.message || 'The project has been removed from your profile.',
+        });
         return true;
       } catch (deleteError) {
-        setError(deleteError.message || 'Unable to remove this project.');
-        showToast(deleteError.message || 'Unable to remove this project.', 'error');
+        showNotice({
+          tone: 'error',
+          kicker: 'Projects',
+          title: "Couldn't remove this project",
+          message: deleteError.message || 'Unable to remove this project.',
+        });
         return false;
       }
+    }
+
+    let nextEntries = (profile[section] || []).filter((_, i) => i !== index);
+
+    if (section === 'achievements') {
+      nextEntries = nextEntries.map((entry, order) => ({ ...entry, order }));
     }
 
     return persistProfile(
       {
         ...profile,
-        [section]: (profile[section] || []).filter((_, i) => i !== index),
+        [section]: nextEntries,
       },
       'Entry removed from your profile.',
       [section]
     );
   };
 
+  const reorderEntry = async (section, from, to) => {
+    if (from === to) return false;
+
+    if (section === 'achievements') {
+      const entries = [...(profile.achievements || [])];
+      if (from < 0 || to < 0 || from >= entries.length || to >= entries.length) {
+        return false;
+      }
+
+      const [moved] = entries.splice(from, 1);
+      entries.splice(to, 0, moved);
+
+      return persistProfile(
+        {
+          ...profile,
+          achievements: entries.map((entry, order) => ({ ...entry, order })),
+        },
+        'Achievement order updated.',
+        ['achievements']
+      );
+    }
+
+    if (section !== 'projects') return false;
+
+    const projects = profile.projects || [];
+    if (from < 0 || to < 0 || from >= projects.length || to >= projects.length) {
+      return false;
+    }
+
+    const previous = projects;
+    const entries = [...projects];
+    const [moved] = entries.splice(from, 1);
+    entries.splice(to, 0, moved);
+    const ordered = entries.map((project, order) => ({ ...project, order }));
+
+    if (preview) {
+      setProfile((current) => ({ ...current, projects: ordered }));
+      showNotice({
+        tone: 'info',
+        kicker: 'Preview mode',
+        title: 'Preview updated',
+        message: 'Changes are temporary and will not be saved.',
+      });
+      return true;
+    }
+
+    setProfile((current) => ({ ...current, projects: ordered }));
+
+    try {
+      const response = await apiRequest('/portfolio-projects/reorder', {
+        method: 'PATCH',
+        body: JSON.stringify({
+          ids: ordered.map((project) => project._id).filter(Boolean),
+        }),
+      });
+      const savedProjects = (response.projects || ordered).map(normalizeProject);
+
+      setProfile((current) => ({ ...current, projects: savedProjects }));
+      showNotice({
+        tone: 'success',
+        kicker: 'Projects',
+        title: 'Project order updated',
+        message: response.message || 'Your preferred order has been saved.',
+      });
+      return true;
+    } catch (reorderError) {
+      setProfile((current) => ({ ...current, projects: previous }));
+      showNotice({
+        tone: 'error',
+        kicker: 'Projects',
+        title: "Couldn't update project order",
+        message: reorderError.message || 'Unable to update project order.',
+      });
+      return false;
+    }
+  };
+
   const addSkill = async (skill) => {
     if (!skill || profile.skills.some((item) => (item.name || item) === skill)) {
-      if (skill) showToast('This skill is already in your profile.', 'warning');
+      if (skill) {
+        showNotice({
+          tone: 'info',
+          kicker: 'Technical skills',
+          title: 'Skill already added',
+          message: 'This skill is already in your profile.',
+        });
+      }
       return;
     }
 
@@ -1726,41 +1915,67 @@ export default function Profile({
     !profile.skills.some((item) => (item.name || item) === skill)
   );
 
-  const handleDeleteAccount = async () => {
-    if (preview) {
-      showToast('Account deletion is disabled in preview mode.', 'info');
+  const toggleSection = (id) => {
+    setOpenSection((current) => (current === id ? '' : id));
+  };
+
+  const handleChangePassword = async (event) => {
+    event.preventDefault();
+    if (passwordLoading) return;
+
+    const { current, next, confirm } = passwordForm;
+
+    if (!current || !next || !confirm) {
+      setPasswordError('Fill in all three password fields.');
       return;
     }
 
-    const expected = (currentUser?.username || 'DELETE').trim().toLowerCase();
-    const typed = deleteConfirmText.trim().toLowerCase();
-
-    if (typed !== expected && typed !== 'delete') {
-      setDeleteError(`Please type "${currentUser?.username || 'DELETE'}" to confirm.`);
+    if (next.length < 8 || next.length > 128) {
+      setPasswordError('Your new password must be 8–128 characters.');
       return;
     }
 
-    setDeleteLoading(true);
-    setDeleteError('');
+    if (next !== confirm) {
+      setPasswordError('The new passwords do not match.');
+      return;
+    }
+
+    if (next === current) {
+      setPasswordError('Choose a password different from your current one.');
+      return;
+    }
+
+    setPasswordLoading(true);
+    setPasswordError('');
 
     try {
-      await apiRequest('/users/profile', {
-        method: 'DELETE',
+      const response = await apiRequest('/users/me/password', {
+        method: 'PUT',
+        body: JSON.stringify({
+          currentPassword: current,
+          newPassword: next,
+          confirmNewPassword: confirm,
+        }),
       });
 
-      showToast('Your account has been deleted successfully.', 'success');
-      await logout();
-      navigate('/login', { replace: true });
+      setPasswordForm({ current: '', next: '', confirm: '' });
+      setPasswordVisible({ current: false, next: false, confirm: false });
+      showNotice({
+        tone: 'success',
+        kicker: 'Security',
+        title: 'Password updated',
+        message: response.message || 'Your password has been changed successfully.',
+      });
     } catch (err) {
-      console.error('Delete account error:', err);
-      setDeleteError(err.message || 'Unable to delete account. Please try again.');
-      setDeleteLoading(false);
+      setPasswordError(err.message || 'Unable to update your password. Please try again.');
+    } finally {
+      setPasswordLoading(false);
     }
   };
 
   const personalSection = {
     id: 'personal',
-    title: 'Personal details',
+    title: 'Personal Details',
     subtitle: 'Your basic information',
     icon: 'bi-person-vcard',
     fields: [
@@ -1777,17 +1992,6 @@ export default function Profile({
   return (
     <>
       {!embedded && <Navbar />}
-
-      <style>
-        {`
-          @keyframes codesphereToastIn {
-            from { opacity: 0; transform: translateY(12px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-        `}
-      </style>
-
-      <Toast toast={toast} onClose={closeToast} />
 
       <main className={`student-profile-page${embedded ? ' dashboard-profile-embed' : ''}`}>
         <div className="student-profile-container">
@@ -1845,12 +2049,6 @@ export default function Profile({
             </div>
           )}
 
-          {saveStatus && !error && (
-            <div className="profile-message" role="status">
-              <i className="bi bi-check-circle" /> {saveStatus}
-            </div>
-          )}
-
           <div className={`student-profile-layout dashboard-section-layout${isMilestoneView ? ' dashboard-badges-view' : ''}`}>
             {isMilestoneView ? (
               <>
@@ -1873,7 +2071,6 @@ export default function Profile({
                   <ResumeUpload
                     profile={profile}
                     onApply={applyResumeDetails}
-                    showToast={showToast}
                     preview={preview}
                   />
 
@@ -1893,16 +2090,36 @@ export default function Profile({
                       section={personalSection}
                       profile={profile}
                       onSave={updateSimpleSection}
+                      open={openSection === personalSection.id}
+                      onToggle={() => toggleSection(personalSection.id)}
+                      onExpand={() => setOpenSection(personalSection.id)}
                     />
 
                     <ProfileSection
                       section={sectionConfig[0]}
                       profile={profile}
                       onSave={updateSimpleSection}
+                      open={openSection === sectionConfig[0].id}
+                      onToggle={() => toggleSection(sectionConfig[0].id)}
+                      onExpand={() => setOpenSection(sectionConfig[0].id)}
                     />
 
-                    <div className="profile-builder-section">
-                      <div className="profile-builder-static-heading">
+                    <ProfileSection
+                      section={sectionConfig[1]}
+                      profile={profile}
+                      onSave={updateSimpleSection}
+                      open={openSection === sectionConfig[1].id}
+                      onToggle={() => toggleSection(sectionConfig[1].id)}
+                      onExpand={() => setOpenSection(sectionConfig[1].id)}
+                    />
+
+                    <div className={`profile-builder-section ${openSection === 'skills' ? 'is-expanded' : ''}`}>
+                      <button
+                        type="button"
+                        className="profile-builder-heading"
+                        onClick={() => toggleSection('skills')}
+                        aria-expanded={openSection === 'skills'}
+                      >
                         <span className="profile-builder-icon">
                           <i className="bi bi-code-slash" />
                         </span>
@@ -1911,8 +2128,14 @@ export default function Profile({
                           <strong>Technical skills</strong>
                           <small>{profile.skills.length} skills added</small>
                         </span>
-                      </div>
 
+                        <span className="profile-builder-heading-actions">
+                          <span className="profile-entry-count">{profile.skills.length}</span>
+                          <i className={`bi ${openSection === 'skills' ? 'bi-chevron-up' : 'bi-chevron-down'}`} />
+                        </span>
+                      </button>
+
+                      {openSection === 'skills' && (
                       <div className="profile-builder-content">
                         <div className="profile-skills-list">
                           {profile.skills.map((skill, index) => (
@@ -1981,9 +2204,10 @@ export default function Profile({
                           </button>
                         </div>
                       </div>
+                      )}
                     </div>
 
-                    {sectionConfig.slice(1).map((section) => (
+                    {sectionConfig.slice(2).map((section) => (
                       <ProfileSection
                         key={section.id}
                         section={section}
@@ -1991,99 +2215,139 @@ export default function Profile({
                         onSave={section.collection ? updateEntry : updateSimpleSection}
                         onAdd={addEntry}
                         onDelete={deleteEntry}
+                        onReorder={reorderEntry}
+                        open={openSection === section.id}
+                        onToggle={() => toggleSection(section.id)}
+                        onExpand={() => setOpenSection(section.id)}
                       />
                     ))}
                   </section>
 
                   {!preview && currentUser?.role !== 'admin' && (
-                    <EmailPreferences email={currentUser?.email || ''} />
-                  )}
+                    <div className="profile-settings-grid">
+                      <EmailPreferences
+                        email={currentUser?.email || ''}
+                        open={openSection === 'email'}
+                        onToggle={() => toggleSection('email')}
+                      />
 
-                  {/* Self-service account deletion control - hidden for admins */}
-                  {currentUser?.role !== 'admin' && (
-                    <section className="profile-section-card profile-danger-card">
-                      <div className="profile-section-heading">
-                        <div>
-                          <h2>Delete Account</h2>
-                          <p>Permanently remove your CodeSphere account and owned data.</p>
-                        </div>
-                        <span className="profile-section-icon">
-                          <i className="bi bi-exclamation-triangle" />
-                        </span>
-                      </div>
-
-                      <div className="profile-danger-body">
-                        <p className="profile-danger-warning">
-                          Once you delete your account, there is no going back. This will permanently remove your profile, photo, resume, earned badges, and personal project showcase entries.
-                        </p>
-
-                        {!deleteConfirmOpen ? (
-                          <div className="profile-danger-actions">
-                            <button
-                              type="button"
-                              className="profile-delete-account-btn"
-                              onClick={() => {
-                                setDeleteConfirmOpen(true);
-                                setDeleteConfirmText('');
-                                setDeleteError('');
-                              }}
-                            >
-                              <i className="bi bi-trash3" /> Delete My Account
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="profile-delete-confirm-box">
-                            <p>
-                              Are you absolutely sure? To confirm, please type <strong>{currentUser?.username || 'DELETE'}</strong> below:
-                            </p>
-
-                            <input
-                              type="text"
-                              className="profile-delete-confirm-input"
-                              value={deleteConfirmText}
-                              onChange={(e) => {
-                                setDeleteConfirmText(e.target.value);
-                                if (deleteError) setDeleteError('');
-                              }}
-                              placeholder={`Type ${currentUser?.username || 'DELETE'} to confirm`}
-                              disabled={deleteLoading}
-                              autoFocus
+                      <section className={`profile-section-card profile-password-card ${openSection === 'password' ? 'is-expanded' : ''}`}>
+                        <button
+                          type="button"
+                          className="profile-section-heading profile-section-toggle"
+                          onClick={() => toggleSection('password')}
+                          aria-expanded={openSection === 'password'}
+                        >
+                          <span className="profile-section-toggle-copy">
+                            <span className="profile-section-toggle-title">Change Password</span>
+                            <span className="profile-section-toggle-sub">
+                              Update the password you use to sign in to CodeSphere.
+                            </span>
+                          </span>
+                          <span className="profile-section-toggle-actions">
+                            <span className="profile-section-icon">
+                              <i className="bi bi-shield-lock" />
+                            </span>
+                            <i
+                              className={`bi ${openSection === 'password' ? 'bi-chevron-up' : 'bi-chevron-down'}`}
+                              aria-hidden="true"
                             />
+                          </span>
+                        </button>
 
-                            {deleteError && (
-                              <div className="profile-delete-error">
-                                <i className="bi bi-exclamation-circle" /> {deleteError}
+                        {openSection === 'password' && (
+                        <form className="profile-password-form" onSubmit={handleChangePassword} noValidate>
+                          {[
+                            {
+                              key: 'current',
+                              label: 'Current password',
+                              placeholder: 'Enter your current password',
+                              autoComplete: 'current-password',
+                            },
+                            {
+                              key: 'next',
+                              label: 'New password',
+                              placeholder: 'Create a new password',
+                              autoComplete: 'new-password',
+                            },
+                            {
+                              key: 'confirm',
+                              label: 'Confirm new password',
+                              placeholder: 'Re-enter the new password',
+                              autoComplete: 'new-password',
+                            },
+                          ].map((field) => (
+                            <div className="profile-password-field" key={field.key}>
+                              <label htmlFor={`password-${field.key}`}>{field.label}</label>
+                              <div className="profile-password-input">
+                                <input
+                                  id={`password-${field.key}`}
+                                  type={passwordVisible[field.key] ? 'text' : 'password'}
+                                  value={passwordForm[field.key]}
+                                  onChange={(e) => {
+                                    const { value } = e.target;
+                                    setPasswordForm((prev) => ({ ...prev, [field.key]: value }));
+                                    if (passwordError) setPasswordError('');
+                                  }}
+                                  placeholder={field.placeholder}
+                                  autoComplete={field.autoComplete}
+                                  disabled={passwordLoading}
+                                />
+                                <button
+                                  type="button"
+                                  className="profile-password-toggle"
+                                  onClick={() =>
+                                    setPasswordVisible((prev) => ({
+                                      ...prev,
+                                      [field.key]: !prev[field.key],
+                                    }))
+                                  }
+                                  aria-label={
+                                    passwordVisible[field.key]
+                                      ? `Hide ${field.label.toLowerCase()}`
+                                      : `Show ${field.label.toLowerCase()}`
+                                  }
+                                  aria-pressed={passwordVisible[field.key]}
+                                  disabled={passwordLoading}
+                                >
+                                  <i
+                                    className={`bi ${
+                                      passwordVisible[field.key] ? 'bi-eye-slash' : 'bi-eye'
+                                    }`}
+                                    aria-hidden="true"
+                                  />
+                                </button>
                               </div>
-                            )}
-
-                            <div className="profile-delete-confirm-btns">
-                              <button
-                                type="button"
-                                className="profile-delete-account-btn"
-                                onClick={handleDeleteAccount}
-                                disabled={deleteLoading || !deleteConfirmText.trim()}
-                              >
-                                <i className={`bi ${deleteLoading ? 'bi-hourglass-split' : 'bi-trash3'}`} />
-                                {deleteLoading ? 'Deleting Account...' : 'Permanently Delete Account'}
-                              </button>
-
-                              <button
-                                type="button"
-                                className="profile-delete-cancel-btn"
-                                onClick={() => {
-                                  setDeleteConfirmOpen(false);
-                                  setDeleteConfirmText('');
-                                  setDeleteError('');
-                                }}
-                                disabled={deleteLoading}
-                              >
-                                Cancel
-                              </button>
                             </div>
+                          ))}
+
+                          {passwordError && (
+                            <div className="profile-password-error" role="alert">
+                              <i className="bi bi-exclamation-circle" /> {passwordError}
+                            </div>
+                          )}
+
+                          <div className="profile-password-actions">
+                            <button
+                              type="submit"
+                              className="profile-password-submit"
+                              disabled={passwordLoading}
+                            >
+                              <i
+                                className={`bi ${
+                                  passwordLoading ? 'bi-hourglass-split' : 'bi-check2-circle'
+                                }`}
+                              />
+                              {passwordLoading ? 'Updating Password...' : 'Update Password'}
+                            </button>
+                            <span className="profile-password-hint">
+                              <i className="bi bi-info-circle" /> Use at least 8 characters.
+                            </span>
                           </div>
+                        </form>
                         )}
-                      </div>
-                    </section>
+                      </section>
+                    </div>
                   )}
 
                   <section className="profile-sidebar-card profile-help-card">

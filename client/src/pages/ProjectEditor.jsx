@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom'
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { CATEGORIES, LEVELS, STATUS } from '../lib/projects';
 import { timeAgo } from '../lib/time';
@@ -74,6 +75,7 @@ export default function ProjectEditor() {
   const [params] = useSearchParams();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const [mode, setMode] = useState(id ? 'edit' : params.get('mode') === 'manual' ? 'manual' : 'github');
   const [url, setUrl] = useState('');
   const [preview, setPreview] = useState(null);
@@ -81,7 +83,6 @@ export default function ProjectEditor() {
   const [form, setForm] = useState(EMPTY);
   const [project, setProject] = useState(null);
   const [problems, setProblems] = useState([]);
-  const [message, setMessage] = useState('');
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -117,7 +118,6 @@ export default function ProjectEditor() {
   const fetchPreview = async (e) => {
     e.preventDefault();
     setFetching(true);
-    setError('');
     try {
       const r = await apiRequest('/projects/github/preview', { method: 'POST', body: JSON.stringify({ url }) });
       setPreview(r);
@@ -133,7 +133,12 @@ export default function ProjectEditor() {
         contributors: f.contributors.length ? f.contributors : [{ name: user?.name || '', role: 'Author' }],
       }));
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'GitHub import failed',
+        title: "Couldn't fetch this repository",
+        message: err.message,
+      });
     } finally {
       setFetching(false);
     }
@@ -148,8 +153,6 @@ export default function ProjectEditor() {
 
   const save = async (andSubmit = false) => {
     setBusy(true);
-    setError('');
-    setMessage('');
     try {
       let projectId = id;
       if (id) {
@@ -161,19 +164,41 @@ export default function ProjectEditor() {
       }
       if (andSubmit) {
         await apiRequest(`/projects/${projectId}/submit`, { method: 'POST' });
+        showNotice({
+          tone: 'success',
+          kicker: 'Submitted for review',
+          title: 'Project submitted',
+          message: 'Your project is now in the review queue. We will let you know once it is reviewed.',
+        });
         navigate('/projects?tab=mine');
         return;
       }
       if (!id) {
+        showNotice({
+          tone: 'success',
+          kicker: 'Draft created',
+          title: 'Project draft created',
+          message: 'Add a cover and screenshots, then submit it for review when you are ready.',
+        });
         navigate(`/projects/${projectId}/edit`, { replace: true });
         return;
       }
-      setMessage('Saved.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Draft saved',
+        title: 'Project saved',
+        message: 'Your project details have been saved.',
+      });
       const fresh = await apiRequest(`/projects/edit/${projectId}`);
       setProject(fresh.project);
       setProblems(fresh.problems);
     } catch (err) {
-      setError(err.data?.problems ? `${err.message} ${err.data.problems.join(' ')}` : err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Project save failed',
+        title: "Couldn't save your project",
+        message: err.data?.problems ? `${err.message} ${err.data.problems.join(' ')}` : err.message,
+      });
     } finally {
       setBusy(false);
     }
@@ -182,18 +207,27 @@ export default function ProjectEditor() {
   const upload = async (file, kind) => {
     if (!file) return;
     if (file.size > 2 * 1024 * 1024) {
-      setError('Images must be 2 MB or smaller.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Image too large',
+        title: 'Images must be 2 MB or smaller',
+        message: `"${file.name}" is too large to upload. Please choose a smaller image.`,
+      });
       return;
     }
     setUploading(true);
-    setError('');
     try {
       const fd = new FormData();
       fd.append('image', file, file.name);
       const r = await apiRequest(`/projects/${id}/media?kind=${kind}`, { method: 'POST', body: fd });
       setProject((p) => ({ ...p, cover: r.cover, screenshots: r.screenshots }));
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Upload failed',
+        title: "Couldn't upload this image",
+        message: err.message,
+      });
     } finally {
       setUploading(false);
     }
@@ -206,12 +240,16 @@ export default function ProjectEditor() {
 
   const action = async (path, confirmText, after) => {
     if (confirmText && !window.confirm(confirmText)) return;
-    setError('');
     try {
       const r = await apiRequest(`/projects/${id}/${path}`, { method: path === '' ? 'DELETE' : 'POST' });
       after?.(r);
     } catch (err) {
-      setError(err.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Project action failed',
+        title: "Couldn't complete that action",
+        message: err.message,
+      });
     }
   };
 
@@ -286,7 +324,6 @@ export default function ProjectEditor() {
           )}
 
           {error && <p className="ph-error" role="alert">{error}</p>}
-          {message && <p className="ph-ok" role="status">{message}</p>}
 
           {showForm && !(preview?.duplicate) && (
             <form className="pe-layout" onSubmit={(e) => { e.preventDefault(); save(false); }}>

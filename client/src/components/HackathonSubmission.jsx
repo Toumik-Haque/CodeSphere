@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import SafeText from './SafeText';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { countdown, isPast } from '../lib/hackathons';
 
@@ -107,6 +108,7 @@ function FileSlot({ kind, label, file, busy, onUpload, onRemove, disabled }) {
 }
 
 export default function HackathonSubmission({ h, team, submission, slug, reload, ProjectCard }) {
+  const { showNotice } = useNotice();
   const [form, setForm] = useState(() => fromSubmission(submission));
   const [files, setFiles] = useState(() => ({
     deckFile: submission?.deckFile || null,
@@ -115,7 +117,6 @@ export default function HackathonSubmission({ h, team, submission, slug, reload,
   }));
   const [status, setStatus] = useState(submission?.status || null);
   const [editing, setEditing] = useState(!submission || submission.status === 'draft');
-  const [msg, setMsg] = useState({ text: '', tone: '' });
   const [busy, setBusy] = useState('');
   const shotInput = useRef(null);
 
@@ -174,17 +175,28 @@ export default function HackathonSubmission({ h, team, submission, slug, reload,
 
   const save = async (action) => {
     setBusy(action);
-    setMsg({ text: '', tone: '' });
     try {
       const r = await apiRequest(`/hackathons/${slug}/submission`, { method: 'PUT', body: JSON.stringify({ ...form, action }) });
       setStatus(r.status);
-      setMsg({ text: r.message, tone: 'ok' });
+      showNotice({
+        tone: 'success',
+        kicker: action === 'submit' ? 'Submission received' : 'Draft saved',
+        title: action === 'submit' ? 'Project submitted' : 'Submission draft saved',
+        message: r.message || (action === 'submit'
+          ? 'Your final submission is in. You can keep editing until the deadline.'
+          : 'Your draft has been saved. Submit it when you are ready.'),
+      });
       if (r.status === 'submitted') {
         setEditing(false);
         reload();
       }
     } catch (err) {
-      setMsg({ text: err.message, tone: 'error' });
+      showNotice({
+        tone: 'error',
+        kicker: 'Submission failed',
+        title: action === 'submit' ? "Couldn't submit your project" : "Couldn't save your draft",
+        message: err.message,
+      });
     } finally {
       setBusy('');
     }
@@ -192,15 +204,24 @@ export default function HackathonSubmission({ h, team, submission, slug, reload,
 
   const upload = async (kind, file) => {
     setBusy(kind);
-    setMsg({ text: '', tone: '' });
     try {
       const body = new FormData();
       body.append('file', file, file.name);
       const r = await apiRequest(`/hackathons/${slug}/submission/files/${kind}`, { method: 'POST', body });
       applyServer(r.submission);
-      setMsg({ text: `${file.name} uploaded.`, tone: 'ok' });
+      showNotice({
+        tone: 'success',
+        kicker: 'File uploaded',
+        title: `${file.name} uploaded`,
+        message: 'The file is attached to your submission.',
+      });
     } catch (err) {
-      setMsg({ text: err.message, tone: 'error' });
+      showNotice({
+        tone: 'error',
+        kicker: 'Upload failed',
+        title: `Couldn't upload ${file.name}`,
+        message: err.message,
+      });
     } finally {
       setBusy('');
     }
@@ -213,7 +234,12 @@ export default function HackathonSubmission({ h, team, submission, slug, reload,
       const r = await apiRequest(`/hackathons/${slug}/submission/files/${kind}${url ? `?url=${encodeURIComponent(url)}` : ''}`, { method: 'DELETE' });
       applyServer(r.submission);
     } catch (err) {
-      setMsg({ text: err.message, tone: 'error' });
+      showNotice({
+        tone: 'error',
+        kicker: 'Remove failed',
+        title: "Couldn't remove this file",
+        message: err.message,
+      });
     } finally {
       setBusy('');
     }
@@ -337,8 +363,6 @@ export default function HackathonSubmission({ h, team, submission, slug, reload,
           {!isFinal && <p className="hk-muted small">Files upload straight away. Save a draft to keep your text, then submit when it&apos;s ready.</p>}
         </aside>
       </div>
-
-      {msg.text && <p className={msg.tone === 'ok' ? 'hk-ok' : 'hk-error'} role={msg.tone === 'ok' ? 'status' : 'alert'}>{msg.text}</p>}
     </form>
   );
 }

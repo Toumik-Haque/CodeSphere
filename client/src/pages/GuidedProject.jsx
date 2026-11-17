@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import ProjectCard from '../components/ProjectCard';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
 import { categoryOf } from '../lib/projects';
 import '../css/Projects.css';
@@ -11,12 +12,12 @@ import '../css/Projects.css';
 export default function GuidedProject() {
   const { slug } = useParams();
   const { user } = useAuth();
+  const { showNotice } = useNotice();
   const navigate = useNavigate();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
   const [links, setLinks] = useState({ repoUrl: '', demoUrl: '' });
   const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState('');
 
   const load = useCallback(() => {
     apiRequest(`/projects/guided/${encodeURIComponent(slug)}`)
@@ -32,13 +33,17 @@ export default function GuidedProject() {
 
   const call = async (path, body, after) => {
     setBusy(true);
-    setMsg('');
     try {
       const r = await apiRequest(`/projects/guided/${slug}/${path}`, { method: path === 'progress' ? 'PUT' : 'POST', body: body ? JSON.stringify(body) : undefined });
       if (after) after(r);
       else load();
     } catch (e) {
-      setMsg(e.message);
+      showNotice({
+        tone: 'error',
+        kicker: 'Guided project update failed',
+        title: "Couldn't update your progress",
+        message: e.message,
+      });
     } finally {
       setBusy(false);
     }
@@ -165,7 +170,12 @@ export default function GuidedProject() {
                 <label className="pe-field"><span>Live demo</span>
                   <input type="url" value={links.demoUrl} onChange={(e) => setLinks((l) => ({ ...l, demoUrl: e.target.value }))} placeholder="https://…" />
                 </label>
-                <button type="button" className="ph-btn wide" disabled={busy} onClick={() => call('progress', links, () => setMsg('Links saved.'))}>Save links</button>
+                <button type="button" className="ph-btn wide" disabled={busy} onClick={() => call('progress', links, () => showNotice({
+                  tone: 'success',
+                  kicker: 'Links saved',
+                  title: 'Your links are saved',
+                  message: 'Your repository and live demo links have been added to this guided project.',
+                }))}>Save links</button>
                 <h3>When you&apos;re done</h3>
                 <ul className="pd-list">{g.submissionCriteria.map((x) => <li key={x}>{x}</li>)}</ul>
                 {progress.project
@@ -176,7 +186,6 @@ export default function GuidedProject() {
                     </button>
                   )}
                 <small className="ph-muted">Creates a draft with your links; you add screenshots and your story, then submit it for review.</small>
-                {msg && <p className="ph-ok" role="status">{msg}</p>}
               </section>
             )}
           </aside>

@@ -8,6 +8,7 @@ import {
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
+import { useNotice } from '../context/NoticeContext';
 import Navbar from '../components/Navbar';
 import { AdminSidebar, AdminMobileNav } from '../components/AdminNav';
 import { WORKSPACE } from '../lib/adminNav';
@@ -150,7 +151,8 @@ function createUsersCsv(users) {
 }
 
 export default function Admin() {
-  const { user, logout } = useAuth();
+  const { user } = useAuth();
+  const { showNotice } = useNotice();
   const location = useLocation();
   const navigate = useNavigate();
   const { username: routeUsername } = useParams();
@@ -169,11 +171,9 @@ export default function Admin() {
   // --------------------------------------------------
 
   const [error, setError] = useState('');
-  const [message, setMessage] = useState('');
 
   function clearFeedback() {
     setError('');
-    setMessage('');
   }
 
   // --------------------------------------------------
@@ -240,6 +240,8 @@ export default function Admin() {
   }, []);
 
   const loadEvents = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setLoading(true);
 
     try {
@@ -326,18 +328,27 @@ export default function Admin() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event banner',
+        title: 'Invalid file type',
+        message: 'Please select a valid image.',
+      });
       event.target.value = '';
       return;
     }
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setError('Image must be 5 MB or smaller.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event banner',
+        title: 'Image too large',
+        message: 'Image must be 5 MB or smaller.',
+      });
       event.target.value = '';
       return;
     }
 
-    setError('');
     setSelectedImage(file);
     createEventPreview(file);
     setRemoveEventImage(false);
@@ -363,13 +374,25 @@ export default function Admin() {
     event.preventDefault();
     clearFeedback();
 
+    const wasEditing = Boolean(editingId);
+
     if (!form.title.trim()) {
-      setError('Please enter an event title.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event form',
+        title: 'Title required',
+        message: 'Please enter an event title.',
+      });
       return;
     }
 
     if (!form.date || Number.isNaN(new Date(form.date).getTime())) {
-      setError('Please provide a valid event start date and time.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event form',
+        title: 'Invalid start date',
+        message: 'Please provide a valid event start date and time.',
+      });
       return;
     }
 
@@ -377,17 +400,32 @@ export default function Admin() {
       form.endDate &&
       new Date(form.endDate) < new Date(form.date)
     ) {
-      setError('The end date and time must be after the start date.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event form',
+        title: 'Invalid end date',
+        message: 'The end date and time must be after the start date.',
+      });
       return;
     }
 
     if (form.mode === 'In-person' && !form.venue.trim()) {
-      setError('Please enter the event venue.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event form',
+        title: 'Venue required',
+        message: 'Please enter the event venue.',
+      });
       return;
     }
 
     if (form.mode === 'Online' && !form.meetingLink.trim()) {
-      setError('Please enter the meeting link.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event form',
+        title: 'Meeting link required',
+        message: 'Please enter the meeting link.',
+      });
       return;
     }
 
@@ -396,7 +434,12 @@ export default function Admin() {
       form.meetingLink.trim() &&
       !isValidOptionalUrl(form.meetingLink)
     ) {
-      setError('Meeting link must be a valid HTTP or HTTPS URL.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Event form',
+        title: 'Invalid meeting link',
+        message: 'Meeting link must be a valid HTTP or HTTPS URL.',
+      });
       return;
     }
 
@@ -407,7 +450,12 @@ export default function Admin() {
 
     for (const [label, value] of optionalLinks) {
       if (!isValidOptionalUrl(value)) {
-        setError(`${label} must be a valid HTTP or HTTPS URL.`);
+        showNotice({
+          tone: 'error',
+          kicker: 'Event form',
+          title: `Invalid ${label.toLowerCase()}`,
+          message: `${label} must be a valid HTTP or HTTPS URL.`,
+        });
         return;
       }
     }
@@ -459,11 +507,21 @@ export default function Admin() {
       resetEventForm();
       setActiveEventTab('manage');
 
-      setMessage(result.message || 'Event saved successfully.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Events',
+        title: wasEditing ? 'Event updated' : 'Event created',
+        message: result.message || 'The event was saved successfully.',
+      });
 
       await loadEvents();
     } catch (err) {
-      setError(err.message || 'Unable to save event.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Events',
+        title: 'Event not saved',
+        message: err.message || 'Unable to save event.',
+      });
     } finally {
       setSaving(false);
     }
@@ -483,11 +541,21 @@ export default function Admin() {
         body: JSON.stringify({ status: 'draft' }),
       });
 
-      setMessage(result.message || 'Event status updated.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Events',
+        title: 'Event unpublished',
+        message: result.message || 'Event status updated.',
+      });
 
       await loadEvents();
     } catch (err) {
-      setError(err.message || 'Unable to update event status.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Events',
+        title: 'Status update failed',
+        message: err.message || 'Unable to update event status.',
+      });
     }
   }
 
@@ -510,11 +578,21 @@ export default function Admin() {
         setActiveEventTab('manage');
       }
 
-      setMessage(result.message || 'Event deleted successfully.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Events',
+        title: 'Event deleted',
+        message: result.message || 'Event deleted successfully.',
+      });
 
       await loadEvents();
     } catch (err) {
-      setError(err.message || 'Unable to delete event.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Events',
+        title: 'Delete failed',
+        message: err.message || 'Unable to delete event.',
+      });
     }
   }
 
@@ -581,6 +659,8 @@ export default function Admin() {
   }, []);
 
   const loadCoreMembers = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setCoreMembersLoading(true);
 
     try {
@@ -667,18 +747,27 @@ export default function Admin() {
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      setError('Please select a valid image.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Team member photo',
+        title: 'Invalid file type',
+        message: 'Please select a valid image.',
+      });
       event.target.value = '';
       return;
     }
 
     if (file.size > MAX_IMAGE_SIZE) {
-      setError('Image must be 5 MB or smaller.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Team member photo',
+        title: 'Image too large',
+        message: 'Image must be 5 MB or smaller.',
+      });
       event.target.value = '';
       return;
     }
 
-    setError('');
     setCoreMemberImage(file);
     createCoreMemberPreview(file);
     setRemoveCoreMemberImage(false);
@@ -698,16 +787,28 @@ export default function Admin() {
     event.preventDefault();
     clearFeedback();
 
+    const wasEditing = Boolean(editingCoreMemberId);
+
     if (
       !coreMemberForm.name.trim() ||
       !coreMemberForm.role.trim()
     ) {
-      setError('Please enter the member name and role.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Team member form',
+        title: 'Name and role required',
+        message: 'Please enter the member name and role.',
+      });
       return;
     }
 
     if (!coreMemberImage) {
-      setError('Please upload a profile image before saving.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Team member form',
+        title: 'Profile image required',
+        message: 'Please upload a profile image before saving.',
+      });
       return;
     }
 
@@ -719,7 +820,12 @@ export default function Admin() {
 
     for (const [label, value] of optionalLinks) {
       if (!isValidOptionalUrl(value)) {
-        setError(`${label} must be a valid HTTP or HTTPS URL.`);
+        showNotice({
+          tone: 'error',
+          kicker: 'Team member form',
+          title: `Invalid ${label.toLowerCase()}`,
+          message: `${label} must be a valid HTTP or HTTPS URL.`,
+        });
         return;
       }
     }
@@ -757,11 +863,21 @@ export default function Admin() {
       resetCoreMemberForm();
       setActiveCoreMemberTab('manage');
 
-      setMessage(result.message || 'Team Member saved successfully.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Team members',
+        title: wasEditing ? 'Team member updated' : 'Team member added',
+        message: result.message || 'Team Member saved successfully.',
+      });
 
       await loadCoreMembers();
     } catch (err) {
-      setError(err.message || 'Unable to save Team Member.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Team members',
+        title: 'Team member not saved',
+        message: err.message || 'Unable to save Team Member.',
+      });
     } finally {
       setCoreMemberSaving(false);
     }
@@ -786,11 +902,21 @@ export default function Admin() {
         setActiveCoreMemberTab('manage');
       }
 
-      setMessage(result.message || 'Team Member deleted successfully.');
+      showNotice({
+        tone: 'success',
+        kicker: 'Team members',
+        title: 'Team member deleted',
+        message: result.message || 'Team Member deleted successfully.',
+      });
 
       await loadCoreMembers();
     } catch (err) {
-      setError(err.message || 'Unable to delete Team Member.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Team members',
+        title: 'Delete failed',
+        message: err.message || 'Unable to delete Team Member.',
+      });
     }
   }
 
@@ -815,6 +941,8 @@ export default function Admin() {
   const [userSearch, setUserSearch] = useState('');
 
   const loadUsers = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setUsersLoading(true);
 
     try {
@@ -869,9 +997,19 @@ export default function Admin() {
       downloadLink.remove();
       window.setTimeout(() => URL.revokeObjectURL(url), 1000);
 
-      setMessage(`Exported ${exportUsersList.length} registered users.`);
+      showNotice({
+        tone: 'success',
+        kicker: 'Registered users',
+        title: 'Export ready',
+        message: `Exported ${exportUsersList.length} registered users.`,
+      });
     } catch (err) {
-      setError(err.message || 'Unable to export registered users.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Registered users',
+        title: 'Export failed',
+        message: err.message || 'Unable to export registered users.',
+      });
     } finally {
       setUsersExporting(false);
     }
@@ -891,6 +1029,8 @@ export default function Admin() {
   const [attendanceSavingId, setAttendanceSavingId] = useState('');
 
   const loadMembers = useCallback(async () => {
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setMembersLoading(true);
 
     try {
@@ -911,11 +1051,8 @@ export default function Admin() {
   }, [memberSearch]);
 
   const loadAttendance = useCallback(async () => {
-    if (!selectedAttendanceEvent) {
-      setAttendanceRows([]);
-      return;
-    }
-
+    // Yield before updating loading state when invoked by an effect.
+    await Promise.resolve();
     setAttendanceLoading(true);
 
     try {
@@ -935,7 +1072,12 @@ export default function Admin() {
 
   async function updateAttendance(userId, status) {
     if (!selectedAttendanceEvent) {
-      setError('Select an event first.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Attendance',
+        title: 'Select an event',
+        message: 'Choose an event before updating attendance.',
+      });
       return;
     }
 
@@ -951,13 +1093,21 @@ export default function Admin() {
         }
       );
 
-      setMessage(
-        result.message || 'Attendance updated successfully.'
-      );
+      showNotice({
+        tone: 'success',
+        kicker: 'Attendance',
+        title: 'Attendance updated',
+        message: result.message || 'Attendance updated successfully.',
+      });
 
       await loadAttendance();
     } catch (err) {
-      setError(err.message || 'Unable to update attendance.');
+      showNotice({
+        tone: 'error',
+        kicker: 'Attendance',
+        title: 'Attendance update failed',
+        message: err.message || 'Unable to update attendance.',
+      });
     } finally {
       setAttendanceSavingId('');
     }
@@ -990,33 +1140,55 @@ export default function Admin() {
   // --------------------------------------------------
 
   useEffect(() => {
-    loadEvents();
+    const timer = window.setTimeout(() => {
+      void loadEvents();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [loadEvents]);
 
   useEffect(() => {
-    if (activeSection === 'users') {
-      loadUsers();
-    }
+    if (activeSection !== 'users') return undefined;
+
+    const timer = window.setTimeout(() => {
+      void loadUsers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadUsers]);
 
   useEffect(() => {
-    if (activeSection === 'home' || activeSection === 'coreMembers') {
-      loadCoreMembers();
+    if (activeSection !== 'home' && activeSection !== 'coreMembers') {
+      return undefined;
     }
+
+    const timer = window.setTimeout(() => {
+      void loadCoreMembers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadCoreMembers]);
 
   useEffect(() => {
-    if (activeSection === 'attendance') {
-      loadMembers();
-    }
+    if (activeSection !== 'attendance') return undefined;
+
+    const timer = window.setTimeout(() => {
+      void loadMembers();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, loadMembers]);
 
   useEffect(() => {
-    if (activeSection === 'attendance' && selectedAttendanceEvent) {
-      loadAttendance();
-    } else if (!selectedAttendanceEvent) {
-      setAttendanceRows([]);
+    if (activeSection !== 'attendance' || !selectedAttendanceEvent) {
+      return undefined;
     }
+
+    const timer = window.setTimeout(() => {
+      void loadAttendance();
+    }, 0);
+
+    return () => window.clearTimeout(timer);
   }, [activeSection, selectedAttendanceEvent, loadAttendance]);
 
   useEffect(() => {
@@ -1029,6 +1201,8 @@ export default function Admin() {
         events.find((event) => event.status === 'published') ||
         events[0];
 
+      // The first event is selected after the event list arrives asynchronously.
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setSelectedAttendanceEvent(firstEvent._id);
     }
   }, [activeSection, events, selectedAttendanceEvent]);
@@ -1057,11 +1231,6 @@ export default function Admin() {
   // NAVIGATION HELPERS
   // --------------------------------------------------
 
-  function handleLogout() {
-    logout();
-    navigate('/login', { replace: true });
-  }
-
   function goToSection(section) {
     clearFeedback();
 
@@ -1086,40 +1255,9 @@ export default function Admin() {
     setActiveSection(section);
   }
 
-  function goBackToDashboard() {
-    if (activeSection === 'events' && activeEventTab === 'form') {
-      cancelEditing();
-      return;
-    }
-
-    if (activeSection === 'coreMembers' && activeCoreMemberTab === 'form') {
-      cancelCoreMemberEditing();
-      return;
-    }
-
-    goToSection('home');
-  }
-
   // --------------------------------------------------
   // RENDER
   // --------------------------------------------------
-
-  const pageTitle = {
-    home: 'Dashboard',
-    events:
-      activeEventTab === 'form'
-        ? editingId
-          ? 'Edit Event'
-          : 'Create Event'
-        : 'Events',
-    users: 'Users',
-    attendance: 'Attendance',
-    coreMembers: showCoreMemberForm
-      ? editingCoreMemberId
-        ? 'Edit Team Member'
-        : 'Add Team Member'
-      : 'Team Members',
-  }[activeSection];
 
   return (
     <>
@@ -1142,12 +1280,6 @@ export default function Admin() {
             {error && (
               <div className="auth-error" role="alert">
                 {error}
-              </div>
-            )}
-
-            {message && (
-              <div className="admin-success" role="status">
-                {message}
               </div>
             )}
 
