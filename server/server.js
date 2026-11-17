@@ -53,6 +53,7 @@ const { startHackathonSync } = require('./utils/hackathonSync');
 const { startNewsScheduler } = require('./utils/newsIngest');
 const { startReverseNotifications } = require('./utils/reverseNotifications');
 const { startDailyNews } = require('./utils/dailyNews');
+const { startBugReminder } = require('./utils/bugReminder');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
@@ -100,6 +101,8 @@ async function startServer() {
     startHackathonSync();
     // Daily refresh of published projects' GitHub details (PROJECT_SYNC=off to disable).
     startProjectSync();
+    // Daily "Today's bug" reminder email with each member's streak, 9 AM IST (BUG_REMINDER=off, BUG_REMINDER_HOUR=0-23).
+    startBugReminder();
 
     app.listen(PORT, () => {
       console.log(`CodeSphere API running on port ${PORT}`);
