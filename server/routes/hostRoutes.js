@@ -4,6 +4,7 @@
 // host can edit and resubmit.
 
 const express = require('express');
+const { eventEmailHtml, eventFactsText } = require('../utils/eventEmail');
 const multer = require('multer');
 const mongoose = require('mongoose');
 const Event = require('../models/Event');
@@ -260,9 +261,13 @@ router.post('/admin/:kind/:id/review', protect, async (req, res) => {
   if (decision === 'approve' && req.user.role === 'admin') {
     await broadcastUpdate({
       title: `New community ${kind}: ${doc.title}`,
+      imageUrl: doc.bannerImage?.url || doc.bannerUrl,
       body: kind === 'event'
-        ? htmlToText(doc.description).slice(0, 400)
+        ? `${eventFactsText(doc)}
+
+${htmlToText(doc.description).slice(0, 400)}`
         : doc.tagline || doc.description.slice(0, 400),
+      ...(kind === 'event' ? { htmlBody: eventEmailHtml(doc, htmlToText(doc.description).slice(0, 600)) } : {}),
       link: path,
       notificationExcludeUserIds: [doc.createdBy],
       ...getBroadcastOptions(req.body),
