@@ -1,19 +1,20 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
+import ProfileAvatar from './ProfileAvatar';
 import '../css/BadgeLeaderboard.css';
 
 function LeaderboardRow({ member, currentUser = false }) {
   const content = (
     <>
       <span className="badge-leaderboard-rank">{member.rank}</span>
-      {member.profileImage ? (
-        <img className="badge-leaderboard-avatar" src={member.profileImage} alt="" />
-      ) : (
-        <span className="badge-leaderboard-avatar badge-leaderboard-avatar-fallback" aria-hidden="true">
-          {member.name?.trim()?.[0]?.toUpperCase() || '?'}
-        </span>
-      )}
+      <ProfileAvatar
+        user={member}
+        name={member.name}
+        className="badge-leaderboard-avatar"
+        fallbackClassName="badge-leaderboard-avatar badge-leaderboard-avatar-fallback"
+        fallback={member.name?.trim()?.[0]?.toUpperCase() || '?'}
+      />
       <span className="badge-leaderboard-member">
         <strong>{member.name}{currentUser ? ' (You)' : ''}</strong>
         <small>{member.level?.emoji} {member.level?.name}</small>

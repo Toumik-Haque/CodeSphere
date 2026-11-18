@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
+import ProfileAvatar from './ProfileAvatar';
 
 const COLUMNS = [
   ['todo', 'To do', 'bi-circle'],
@@ -10,9 +11,15 @@ const COLUMNS = [
 ];
 
 function Avatar({ p, size = 28 }) {
-  return p.avatarUrl
-    ? <img className="pt-avatar" src={p.avatarUrl} alt="" style={{ width: size, height: size }} />
-    : <span className="pt-avatar" style={{ width: size, height: size }} aria-hidden="true">{p.initials}</span>;
+  return (
+    <ProfileAvatar
+      user={p}
+      name={p.name}
+      className="pt-avatar"
+      style={{ width: size, height: size }}
+      aria-hidden="true"
+    />
+  );
 }
 
 // Invite search (owner only).

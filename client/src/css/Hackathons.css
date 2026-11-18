@@ -345,6 +345,16 @@
 .hk-block h2, .hk-panel h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 12px; color: var(--navy); font-size: 1.2rem; font-weight: 800; }
 .hk-prose { color: #33475B; line-height: 1.7; }
 
+.hk-rich-details { color: #33475B; overflow-wrap: anywhere; }
+.hk-rich-details p, .hk-rich-details ul, .hk-rich-details ol { margin: 0 0 10px; }
+.hk-rich-details ul, .hk-rich-details ol { padding-left: 22px; }
+.hk-rich-details h1, .hk-rich-details h2, .hk-rich-details h3, .hk-rich-details h4 { color: #142D45; line-height: 1.3; margin: 16px 0 8px; }
+.hk-rich-details a { color: #E34D30; text-decoration: underline; }
+.hk-rich-details blockquote { border-left: 4px solid #F07868; padding: 8px 12px; margin: 10px 0; background: #FFF0ED; border-radius: 0 8px 8px 0; }
+.hk-rich-details pre { margin: 10px 0; padding: 10px 12px; overflow-x: auto; border-radius: 8px; }
+.hk-rich-details table { width: 100%; border-collapse: collapse; margin: 10px 0; }
+.hk-rich-details th, .hk-rich-details td { border: 1px solid #EEE3DF; padding: 7px 9px; text-align: left; }
+
 .hk-tracks { display: flex; flex-wrap: wrap; gap: 8px; }
 .hk-tracks span { display: inline-flex; gap: 6px; padding: 8px 14px; border-radius: 12px; background: #EEF4FF; color: #1E40AF; font-weight: 700; }
 
@@ -378,7 +388,8 @@
 .hk-members li > span:nth-child(2) { flex: 1; color: var(--navy); font-weight: 600; }
 .hk-members em { color: var(--hk-muted); font-size: .82rem; font-style: normal; font-weight: 500; }
 
-.hk-avatar { display: grid; flex-shrink: 0; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #F05A36, #6D28D9); color: #fff; font-size: .78rem; font-weight: 800; }
+.hk-avatar { display: grid; flex-shrink: 0; place-items: center; width: 34px; height: 34px; border-radius: 50%; background: linear-gradient(135deg, #F05A36, #6D28D9); color: #fff; font-size: .78rem; font-weight: 800; overflow: hidden; }
+.hk-avatar img { display: block; width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
 
 .hk-icon-btn { display: grid; place-items: center; width: 30px; height: 30px; border: 1px solid var(--hk-line); border-radius: 8px; background: #fff; color: #B91C1C; }
 

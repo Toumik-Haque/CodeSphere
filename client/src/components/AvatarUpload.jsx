@@ -2,9 +2,9 @@ import { useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
+import ProfileAvatar from './ProfileAvatar';
 
 const hueOf = (name = '') => [...name].reduce((h, c) => (h * 31 + c.charCodeAt(0)) % 360, 7);
-const initialsOf = (name = '') => name.split(/\s+/).filter(Boolean).map((w) => w[0]).slice(0, 2).join('').toUpperCase() || '?';
 
 // The signed-in user's avatar. Click it to upload or change the photo
 // (works for every account, admins included). Shows a camera badge until
@@ -69,7 +69,7 @@ export default function AvatarUpload({ className = '' }) {
         title={label}
         aria-label={label}
       >
-        {avatarUrl ? <img src={avatarUrl} alt="" /> : initialsOf(user.name)}
+        <ProfileAvatar user={user} name={user.name} />
         <span className={`avatar-upload-badge ${avatarUrl ? 'on-hover' : ''}`} aria-hidden="true">
           <i className={`bi ${busy ? 'bi-hourglass-split' : 'bi-camera-fill'}`} />
         </span>

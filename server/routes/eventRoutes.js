@@ -380,25 +380,50 @@ router.delete('/:id/register', protect, memberOnly, async (req, res) => {
 
 // Member: get registration history of the logged-in member.
 router.get('/my-registrations', protect, memberOnly, async (req, res) => {
-  try {
-    const registrations = await Registration.find({
-      user: req.user._id,
-    })
-      .populate(
-        'event',
-        'title slug category description date endDate venue mode bannerImage status'
-      )
+  const loadRegistrations = async () => {
+    const registrations = await Registration.find({ user: req.user._id })
+      .select('event status registeredAt')
       .sort({ registeredAt: -1 })
       .lean();
 
-    return res.json({
-      registrations: registrations.filter((registration) => registration.event),
-    });
+    const eventIds = [...new Set(registrations.map((registration) => String(registration.event || '')))]
+      .filter((id) => mongoose.Types.ObjectId.isValid(id))
+      .map((id) => new mongoose.Types.ObjectId(id));
+
+    const events = eventIds.length
+      ? await Event.find({ _id: { $in: eventIds } })
+        .select('-createdBy -__v -contactEmail -contactPhone -reviewNote -reviewedBy -reviewStatus')
+        .lean()
+      : [];
+
+    const eventsById = new Map(events.map((event) => [String(event._id), event]));
+
+    return registrations
+      .filter((registration) => eventsById.has(String(registration.event)))
+      .map((registration) => ({
+        ...registration,
+        event: eventsById.get(String(registration.event)),
+      }));
+  };
+
+  try {
+    let registrations;
+    try {
+      registrations = await loadRegistrations();
+    } catch (error) {
+      if (!/ECONNRESET|ECONNREFUSED|ETIMEDOUT|ServerSelectionTimeout|socket hang up/i.test(error?.message || '')) throw error;
+      registrations = await loadRegistrations();
+    }
+
+    return res.json({ registrations });
   } catch (error) {
-    console.error('Fetch my registrations error:', error.message);
+    console.error('Fetch my registrations error:', error);
 
     return res.status(500).json({
       message: 'Unable to fetch your event registrations.',
+      ...(process.env.NODE_ENV !== 'production' && error?.message
+        ? { detail: error.message }
+        : {}),
     });
   }
 });

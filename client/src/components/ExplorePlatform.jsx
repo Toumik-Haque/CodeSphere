@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 import '../css/ExplorePlatform.css';
 
 // Landing page map of everything on CodeSphere: a 3D "solar system" where each
@@ -175,6 +176,7 @@ function OrbitStage({ active, onPick }) {
 }
 
 export default function ExplorePlatform() {
+  const { user } = useAuth();
   const [active, setActive] = useState(0);
   const [stats, setStats] = useState({});
   const tabRefs = useRef([]);
@@ -184,6 +186,17 @@ export default function ExplorePlatform() {
   }, []);
 
   const level = LEVELS[active];
+  const quests = level.quests.map((quest) => {
+    if (user?.role === 'admin' && quest.to === '/host') {
+      return {
+        title: 'Review host listings',
+        text: 'Approve student events & hackathons',
+        icon: 'bi-inbox',
+        to: '/admin/review',
+      };
+    }
+    return quest;
+  });
   const headline = HEADLINE.filter((h) => stats[h.key] > 0).slice(0, 4);
 
   // Arrow keys move between the level tabs.
@@ -249,7 +262,7 @@ export default function ExplorePlatform() {
                 </div>
 
                 <ul className="explore-quests">
-                  {level.quests.map((quest, index) => (
+                  {quests.map((quest, index) => (
                     <li key={quest.title} style={{ '--delay': `${index * 70}ms` }}>
                       <Link to={quest.to} className="explore-quest">
                         <span className="explore-quest-icon"><i className={`bi ${quest.icon}`} aria-hidden="true" /></span>
