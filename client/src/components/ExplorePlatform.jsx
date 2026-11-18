@@ -197,7 +197,7 @@ export default function ExplorePlatform() {
   };
 
   return (
-    <section className="explore" aria-labelledby="explore-title">
+    <section className="explore" id="explore" aria-labelledby="explore-title">
       <div className="container">
         <div className="explore-space" style={{ '--accent': level.color }}>
           <div className="explore-aurora" aria-hidden="true"><span /><span /><span /></div>
