@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-// import { Link } from 'react-router-dom'; // Judge0 checker
+import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DebugArena from '../components/DebugArena';
@@ -44,23 +43,23 @@ function challengeTemplate(challenge, language) {
   );
 }
 
-// Judge0 answer checking: disabled until a RapidAPI key is set up.
-// const FAIL_HEADLINES = {
-  // 'compile-error': '❌ Your code didn\'t compile.',
-  // 'runtime-error': '❌ Your code crashed while running.',
-  // timeout: '⏱️ Your code took too long.',
-  // 'service-error': '⚠️ The checker had a problem.',
-  // 'request-error': '⚠️ Couldn\'t check your code.',
-// };
+// Messages for "Check answer" results.
+const FAIL_HEADLINES = {
+  'compile-error': '❌ Your code didn\'t compile.',
+  'runtime-error': '❌ Your code crashed while running.',
+  timeout: '⏱️ Your code took too long.',
+  'service-error': '⚠️ The code checker is down right now.',
+  'request-error': '⚠️ Couldn\'t check your code.',
+};
 
-// function resultHeadline(result) {
-  // if (result.passed) {
-    // return result.alreadySolved
-      // ? '✅ Correct! You already solved this one.'
-      // : `✅ Correct! +${result.xp} XP earned.`;
-  // }
-  // return FAIL_HEADLINES[result.status] || '❌ Not quite. The output doesn\'t match yet.';
-// }
+function resultHeadline(result) {
+  if (result.passed) {
+    return result.alreadySolved
+      ? '✅ Correct! You already solved this one.'
+      : `✅ Correct! +${result.xp} XP earned.`;
+  }
+  return FAIL_HEADLINES[result.status] || '❌ Not quite. The output doesn\'t match yet.';
+}
 
 function loadSolved() {
   try {
@@ -88,8 +87,11 @@ const Playground = () => {
   const [highlighted, setHighlighted] = useState(null);
   const [activeChallenge, setActiveChallenge] = useState(null);
   // Judge0 checker:
-  // const [checking, setChecking] = useState(false);
-  // const [checkResult, setCheckResult] = useState(null);
+  const [checking, setChecking] = useState(false);
+  const [checkResult, setCheckResult] = useState(null);
+  // The server checks answers automatically unless it says otherwise; then
+  // students mark challenges done themselves.
+  const [manualMode, setManualMode] = useState(false);
 
   const iframeRef = useRef(null);
   const langRailRef = useRef(null);
@@ -236,7 +238,11 @@ const Playground = () => {
     if (!isLoggedIn) return undefined;
     let cancelled = false;
     apiRequest('/challenges/progress')
-      .then((data) => !cancelled && setSolved(data.solved.map((item) => item.challengeId)))
+      .then((data) => {
+        if (cancelled) return;
+        setSolved(data.solved.map((item) => item.challengeId));
+        setManualMode(Boolean(data.manualMode));
+      })
       .catch(() => {});
     return () => {
       cancelled = true;
@@ -319,7 +325,7 @@ const Playground = () => {
 
   const solveChallenge = (challenge) => {
     setActiveChallenge(challenge);
-    // setCheckResult(null); // Judge0 checker
+    setCheckResult(null);
     sendToEditor(challengeTemplate(challenge, language.id));
     workspaceRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     showNotice({
@@ -330,34 +336,39 @@ const Playground = () => {
     });
   };
 
-  // Judge0 answer checking: disabled until a RapidAPI key is set up.
-  // const exitChallenge = () => {
-    // setActiveChallenge(null);
-    // setCheckResult(null);
-  // };
+  const exitChallenge = () => {
+    setActiveChallenge(null);
+    setCheckResult(null);
+  };
 
-  // // The server runs the code and marks the challenge solved only if the
-  // // output is correct.
-  // const checkAnswer = async () => {
-    // if (!activeChallenge || checking) return;
-    // setChecking(true);
-    // setCheckResult(null);
-    // try {
-      // const result = await apiRequest(`/challenges/${activeChallenge.id}/check`, {
-        // method: 'POST',
-        // body: JSON.stringify({ language: language.id, code: codeRef.current }),
-      // });
-      // setCheckResult(result);
-      // if (result.passed) {
-        // setSolved((prev) => (prev.includes(activeChallenge.id) ? prev : [...prev, activeChallenge.id]));
-        // showToast(result.alreadySolved ? 'Correct again! Already solved.' : `Solved! +${result.xp} XP 🎉`);
-      // }
-    // } catch (err) {
-      // setCheckResult({ passed: false, status: 'request-error', error: err.message, output: '' });
-    // } finally {
-      // setChecking(false);
-    // }
-  // };
+  // The server runs the code and marks the challenge solved only if the
+  // output is correct.
+  const checkAnswer = async () => {
+    if (!activeChallenge || checking) return;
+    setChecking(true);
+    setCheckResult(null);
+    try {
+      const result = await apiRequest(`/challenges/${activeChallenge.id}/check`, {
+        method: 'POST',
+        body: JSON.stringify({ language: language.id, code: codeRef.current }),
+      });
+      setCheckResult(result);
+      if (result.passed) {
+        setSolved((prev) => (prev.includes(activeChallenge.id) ? prev : [...prev, activeChallenge.id]));
+        celebrateBadges(result.newBadges);
+        showNotice({
+          tone: 'success',
+          kicker: 'Challenge solved',
+          title: result.alreadySolved ? 'Correct again!' : 'Correct answer!',
+          message: result.alreadySolved ? 'You had already solved this one.' : `+${result.xp} XP added to your account.`,
+        });
+      }
+    } catch (err) {
+      setCheckResult({ passed: false, status: 'request-error', error: err.message, output: '' });
+    } finally {
+      setChecking(false);
+    }
+  };
 
   const toggleSolved = async (id) => {
     if (!isLoggedIn) {
@@ -522,8 +533,8 @@ const Playground = () => {
           </aside>
 
           <div className="playground-editor">
-            {/* Judge0 answer checking: disabled until a RapidAPI key is set up.
-            {activeChallenge && (
+            {/* Check answer: the server runs the code and saves it only if the output is right. */}
+            {activeChallenge && !manualMode && (
               <div className="playground-check" aria-live="polite">
                 <div className="playground-check-head">
                   <div className="playground-check-title">
@@ -578,14 +589,23 @@ const Playground = () => {
                     {!checkResult.passed && checkResult.status === 'ok' && (
                       <p>Compare your output with the expected output in the challenge.</p>
                     )}
-                    {(checkResult.error || checkResult.output) && (
+                    {checkResult.status === 'service-error' && (
+                      <>
+                        <p>Your code couldn&apos;t be run, but you can still save your progress if your output matches the expected one.</p>
+                        {!solved.includes(activeChallenge.id) && (
+                          <button type="button" className="playground-check-btn" onClick={() => toggleSolved(activeChallenge.id)}>
+                            <i className="bi bi-check2-square" aria-hidden="true" /> Mark as done
+                          </button>
+                        )}
+                      </>
+                    )}
+                    {(checkResult.error || checkResult.output) && checkResult.status !== 'service-error' && (
                       <pre>{checkResult.error || checkResult.output}</pre>
                     )}
                   </div>
                 )}
               </div>
             )}
-            */}
 
             <div className="playground-toolbar">
               <div className="playground-file">
@@ -662,7 +682,7 @@ const Playground = () => {
               </span>
               <h2>Coding Challenges</h2>
               <p className="playground-muted">
-                Solve them in any language. Mark a challenge done to earn XP.
+                Solve them in any language. Write your code, then press Check answer to earn XP.
               </p>
             </div>
 
@@ -730,15 +750,21 @@ const Playground = () => {
                     >
                       Hint
                     </button>
-                    <button
-                      type="button"
-                      className={`playground-ghost playground-done ${isSolved ? 'active' : ''}`}
-                      onClick={() => toggleSolved(challenge.id)}
-                      aria-pressed={isSolved}
-                    >
-                      <i className={`bi ${isSolved ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" />
-                      {isSolved ? 'Solved' : 'Done?'}
-                    </button>
+                    {manualMode || !isLoggedIn ? (
+                      <button
+                        type="button"
+                        className={`playground-ghost playground-done ${isSolved ? 'active' : ''}`}
+                        onClick={() => toggleSolved(challenge.id)}
+                        aria-pressed={isSolved}
+                      >
+                        <i className={`bi ${isSolved ? 'bi-check-circle-fill' : 'bi-circle'}`} aria-hidden="true" />
+                        {isSolved ? 'Solved' : 'Done?'}
+                      </button>
+                    ) : isSolved ? (
+                      <span className="playground-ghost playground-done active" aria-label="Solved">
+                        <i className="bi bi-check-circle-fill" aria-hidden="true" /> Solved
+                      </span>
+                    ) : null}
                   </div>
                 </article>
               );
