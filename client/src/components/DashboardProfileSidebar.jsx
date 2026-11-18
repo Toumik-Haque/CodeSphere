@@ -1,4 +1,5 @@
 import BadgeStrip from './BadgeStrip';
+import ProfileAvatar from './ProfileAvatar';
 
 export default function DashboardProfileSidebar({
   user,
@@ -11,7 +12,6 @@ export default function DashboardProfileSidebar({
 }) {
   const name = user?.name || 'Member';
   const username = user?.username;
-  const profileImage = user?.profileImage?.url;
   const joinedDate = user?.createdAt
     ? new Date(user.createdAt).toLocaleDateString('en-IN', {
         month: 'long',
@@ -27,11 +27,7 @@ export default function DashboardProfileSidebar({
           style={{ backgroundImage: `url("${encodeURI(defaultBanner)}")` }}
         />
         <div className="student-avatar">
-          {profileImage ? (
-            <img src={profileImage} alt={name} />
-          ) : (
-            name.charAt(0).toUpperCase()
-          )}
+          <ProfileAvatar user={user} name={name} alt={name} fallback={name.charAt(0).toUpperCase()} />
 
           {photoInputRef && onPhotoChange && (
             <>

@@ -254,6 +254,44 @@
 .host-cta p { margin: 2px 0 0; color: var(--h-muted, #5B7083); }
 .host-cta > div:last-child { display: flex; flex-wrap: wrap; gap: 8px; }
 
+/* TinyMCE editor toolbar (same theme as the admin workspace) */
+.host-field .tox-tinymce {
+  overflow: hidden;
+  width: 100%;
+  border: 1px solid #f0d0c5;
+  border-radius: 12px;
+  box-shadow: 0 0 0 3px rgba(227, 77, 48, 0.05);
+}
+
+.host-field .tox-toolbar,
+.host-field .tox-toolbar__primary {
+  background: linear-gradient(180deg, #fff3ef 0%, #ffeae2 100%);
+  border-bottom: 2px solid #f07868;
+}
+
+.host-field .tox-toolbar__group { padding: 4px 6px; }
+
+.host-field .tox-tbtn {
+  color: #142d45;
+  border-radius: 7px;
+  transition: background 0.2s ease, color 0.2s ease, transform 0.2s ease;
+}
+
+.host-field .tox-tbtn:hover,
+.host-field .tox-tbtn:focus-visible,
+.host-field .tox-tbtn--enabled {
+  color: #e34d30;
+  background: linear-gradient(180deg, #fff1ee 0%, #ffe4dc 100%);
+  box-shadow: inset 0 0 0 1px rgba(227, 77, 48, 0.14);
+}
+
+.host-field .tox-tbtn:focus-visible {
+  outline: 2px solid rgba(227, 77, 48, 0.2);
+  outline-offset: 1px;
+}
+
+.host-field .tox-edit-area { border-top: 0; }
+
 @keyframes host-shimmer { to { background-position: -200% 0; } }
 
 @media (max-width: 991.98px) {

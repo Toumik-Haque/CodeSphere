@@ -641,6 +641,19 @@
   gap: 12px;
 }
 
+.navbar-account-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  overflow: hidden;
+  font-size: 14px;
+}
+
 .dropdown-chevron {
   font-size: 12px;
   transition: transform 0.25s ease;

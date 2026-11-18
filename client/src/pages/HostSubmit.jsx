@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
+import RichTextEditor from '../components/RichTextEditor';
 import '../css/Host.css';
 
 const toLocal = (d) => {
@@ -14,7 +15,7 @@ const toLocal = (d) => {
 const fromLocal = (s) => (s ? new Date(s).toISOString() : '');
 
 const COMMON = {
-  title: '', description: '', rules: '', hostName: '', contactEmail: '', contactPhone: '', websiteLink: '',
+  title: '', description: '', hostName: '', contactEmail: '', contactPhone: '', websiteLink: '',
   linkedinPostLink: '', instagramPostLink: '',
 };
 const EMPTY = {
@@ -26,6 +27,11 @@ const EMPTY = {
 };
 const DATE_KEYS = ['date', 'endDate', 'regStart', 'regEnd', 'submissionStart', 'submissionEnd'];
 
+const plainText = (html = '') => {
+  const doc = new DOMParser().parseFromString(String(html), 'text/html');
+  return (doc.body.textContent || '').trim();
+};
+
 const isUrl = (v) => /^https?:\/\/\S+$/i.test(v || '');
 const LINKEDIN = /^https:\/\/([a-z0-9-]+\.)?linkedin\.com\//i;
 const INSTAGRAM = /^https:\/\/(www\.)?instagram\.com\//i;
@@ -35,8 +41,7 @@ function checklist(kind, f, hasBanner) {
   const items = [
     { label: 'Title', ok: f.title.trim().length >= 3 },
     { label: 'Banner image', ok: hasBanner },
-    { label: 'Description (50+ characters)', ok: f.description.trim().length >= 50 },
-    { label: 'Rules / guidelines', ok: f.rules.trim().length >= 20 },
+    { label: 'Details (50+ characters)', ok: plainText(f.description).length >= 50 },
   ];
   if (kind === 'event') {
     items.push(
@@ -279,11 +284,18 @@ export default function HostSubmit() {
                 <section className="host-card">
                   <h2><span>4</span> Details</h2>
                   <div className="host-grid">
-                    <Field label="Description" required wide hint={`${form.description.trim().length} characters · who it's for, what they'll learn or build, agenda, speakers.`}>
-                      <textarea rows={8} value={form.description} onChange={set('description')} maxLength={kind === 'event' ? 5000 : 20000} />
-                    </Field>
-                    <Field label="Rules & guidelines" required wide hint="Eligibility, code of conduct, what to bring, judging criteria…">
-                      <textarea rows={6} value={form.rules} onChange={set('rules')} maxLength={10000} />
+                    <Field label="Details" required wide hint={`${plainText(form.description).length} characters · who it's for, what they'll learn or build, rules, agenda, speakers.`}>
+                      <RichTextEditor
+                        value={form.description}
+                        onChange={(content) => setForm((f) => ({ ...f, description: content }))}
+                        height={350}
+                        placeholder={`Write the ${noun} details...`}
+                        contentStyle="
+                          body { white-space: normal; }
+                          p, h1, h2, h3, h4, h5, h6, ul, ol, blockquote, pre, table { margin: 0; }
+                          li { margin: 0; }
+                        "
+                      />
                     </Field>
                     {kind === 'hackathon' && (
                       <Field label="Tracks / themes" wide hint="Comma separated"><input value={form.tracks} onChange={set('tracks')} placeholder="AI for Good, FinTech, Open Innovation" /></Field>

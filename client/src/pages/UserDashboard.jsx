@@ -10,6 +10,7 @@ import CodingStats from '../components/CodingStats';
 import DashboardProfileSidebar from '../components/DashboardProfileSidebar';
 import ProfileBadges from '../components/ProfileBadges';
 import DashboardDiscover from '../components/DashboardDiscover';
+import ProfileAvatar from '../components/ProfileAvatar';
 import Profile from './Profile';
 import { calculateProfileCompletion } from '../lib/profileCompletion';
 import '../css/UserDashboard.css';
@@ -544,13 +545,12 @@ export default function UserDashboard() {
 
           <div className="user-dashboard-sidebar-bottom">
             <div className="user-dashboard-account">
-              {user?.profileImage?.url ? (
-                <img src={user.profileImage.url} alt="" />
-              ) : (
-                <span className="user-dashboard-account-avatar">
-                  {user?.name?.trim()?.[0]?.toUpperCase() || 'U'}
-                </span>
-              )}
+              <ProfileAvatar
+                user={user}
+                name={user?.name || 'U'}
+                fallbackClassName="user-dashboard-account-avatar"
+                fallback={user?.name?.trim()?.[0]?.toUpperCase() || 'U'}
+              />
               <div>
                 <strong>{user?.name || 'CodeSphere member'}</strong>
                 <span>{user?.username ? `@${user.username}` : 'Member account'}</span>
