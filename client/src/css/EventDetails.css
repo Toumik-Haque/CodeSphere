@@ -340,21 +340,80 @@
   width: 100%;
   margin-top: 14px;
   padding: 13px 16px;
-  color: var(--navy-deep);
+  border-radius: 12px;
   font-size: .9rem;
   font-weight: 800;
   text-align: center;
-  border: 1px solid #c39a3d;
-  border-radius: 12px;
-  background: var(--gold-gradient);
-  box-shadow: 0 6px 18px rgba(201, 162, 74, .16);
-  transition: transform .2s ease, box-shadow .2s ease;
+  text-decoration: none;
+  transition:
+    transform .2s ease,
+    box-shadow .2s ease,
+    background .2s ease,
+    border-color .2s ease,
+    color .2s ease;
 }
 
 .event-view-button:hover {
   transform: translateY(-2px);
-  color: var(--navy-deep);
-  box-shadow: 0 10px 24px rgba(201, 162, 74, .23);
+}
+
+.event-view-button:focus-visible {
+  outline: 2px solid var(--gold);
+  outline-offset: 3px;
+}
+
+.event-view-button:disabled {
+  opacity: .65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.event-view-button-primary {
+  border: 1px solid var(--gold-deep);
+  background: linear-gradient(135deg, var(--gold), var(--gold-deep));
+  box-shadow: 0 8px 20px rgba(240, 90, 54, .25);
+  color: #fff;
+}
+
+.event-view-button-primary:hover {
+  color: #fff;
+  box-shadow: 0 12px 26px rgba(240, 90, 54, .34);
+}
+
+.event-view-button-secondary {
+  border: 1px solid var(--gold-border);
+  background: rgba(255, 255, 255, .9);
+  box-shadow: var(--shadow-sm);
+  color: var(--gold-deep);
+}
+
+.event-view-button-secondary:hover {
+  border-color: var(--gold);
+  background: #fff4ef;
+  color: var(--gold-deep);
+  box-shadow: 0 10px 22px rgba(240, 90, 54, .14);
+}
+
+.event-view-button-social {
+  border: 1px solid rgba(21, 54, 83, .12);
+  background: rgba(255, 255, 255, .9);
+  box-shadow: var(--shadow-sm);
+  color: var(--navy);
+  font-size: .82rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.event-view-button-social i:first-child {
+  color: var(--gold-deep);
+  font-size: 1.05rem;
+}
+
+.event-view-button-social:hover {
+  border-color: var(--gold-border);
+  background: #fff6f2;
+  color: var(--navy);
+  box-shadow: 0 10px 22px rgba(240, 90, 54, .12);
 }
 
 .event-view-state {

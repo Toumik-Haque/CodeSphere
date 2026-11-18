@@ -219,14 +219,17 @@
   width: 100%;
   height: 100%;
   place-items: center;
-  color: var(--navy);
-  font-size: 4rem;
-  font-weight: 800;
+  color: rgba(16, 36, 58, 0.32);
   background: linear-gradient(
     135deg,
     #eaf5fc,
     #fff9e9
   );
+}
+
+.team-member-photo-fallback i,
+.team-directory-photo-fallback i {
+  font-size: 3.6rem;
 }
 
 /* ==============================
@@ -515,3 +518,96 @@
   font-size: 2rem;
   font-weight: 700;
 }
+
+.team-page {
+  padding-bottom: 90px;
+  background:
+    radial-gradient(circle at 12% 6%, rgba(240, 90, 54, 0.12), transparent 30%),
+    radial-gradient(circle at 88% 16%, rgba(215, 236, 249, 0.9), transparent 35%),
+    linear-gradient(180deg, #f7fbfe, #fff 60%);
+}
+
+.team-hero-copy {
+  max-width: 720px;
+}
+
+.team-page .team-page-intro {
+  max-width: 560px;
+}
+
+.team-directory {
+  padding-top: clamp(2rem, 5vw, 4rem);
+}
+
+.team-directory-heading {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.team-directory-heading::after {
+  flex: 1;
+  height: 1px;
+  background: rgba(21, 54, 83, 0.1);
+  content: "";
+}
+
+.team-category-kicker {
+  display: inline-block;
+  color: #f05a36;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 2px;
+}
+
+.team-page .team-directory-grid {
+  grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+  gap: 20px;
+}
+
+.team-page .team-member-slide {
+  position: relative;
+  border-radius: 22px;
+}
+
+.team-page .team-member-slide::before {
+  position: absolute;
+  z-index: 3;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #f05a36, #ffb08f);
+  content: "";
+}
+
+.team-page .team-member-photo-wrap {
+  aspect-ratio: 4 / 4.4;
+  background: linear-gradient(135deg, #eaf5fc, #fff4ef);
+}
+
+.team-page .team-member-info {
+  padding: 18px;
+}
+
+.team-page .team-member-role {
+  display: inline-flex;
+  max-width: 100%;
+  margin-top: 12px;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: #fff1ec;
+  color: #d94324;
+  font-size: 0.78rem;
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.team-page .team-member-socials a {
+  width: 34px;
+  height: 34px;
+  font-size: 15px;
+}
+
+

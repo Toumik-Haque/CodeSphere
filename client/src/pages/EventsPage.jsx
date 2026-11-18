@@ -91,30 +91,32 @@ export default function EventsPage() {
 
       <main className="events-page">
         <div className="container">
-          <header className="events-page-heading">
-            <span className="section-eyebrow">
-              <span className="section-eyebrow-line" />
-              THE CODESPHERE EXPERIENCE
-            </span>
+          <div className="events-page-header">
+            <header className="events-page-heading">
+              <span className="section-eyebrow">
+                <span className="section-eyebrow-line" />
+                THE CODESPHERE EXPERIENCE
+              </span>
 
-            <h1 className="events-page-title">
-              Explore <span className="gold-text">Our Events.</span>
-            </h1>
+              <h1 className="events-page-title">
+                Explore <span className="gold-text">Our Events.</span>
+              </h1>
 
-            <p className="events-subtitle">
-              Discover all the events and experiences shared by
-              our CodeSphere community.
-            </p>
-          </header>
+              <p className="events-subtitle">
+                Discover all the events and experiences shared by
+                our CodeSphere community.
+              </p>
+            </header>
 
-          <div className="host-cta">
-            <div>
-              <strong>Hosting an event?</strong>
-              <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
-            </div>
-            <div>
-              <Link to="/host/event/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your event</Link>
-              <Link to="/host" className="host-btn">My listings</Link>
+            <div className="host-cta events-host-cta">
+              <div>
+                <strong>Hosting an event?</strong>
+                <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
+              </div>
+              <div>
+                <Link to="/host/event/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your event</Link>
+                <Link to="/host" className="host-btn">My listings</Link>
+              </div>
             </div>
           </div>
 

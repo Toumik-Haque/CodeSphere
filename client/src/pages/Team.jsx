@@ -20,7 +20,7 @@ function TeamMemberCard({ member }) {
           />
         ) : (
           <div className="team-member-photo-fallback" aria-hidden="true">
-            {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
+            <i className="bi bi-person" />
           </div>
         )}
 
@@ -108,16 +108,6 @@ export default function Team() {
     };
   }, []);
 
-  // Faculty Coordinators only
-  const facultyMembers = members.filter(
-    (member) => member.role === 'Faculty Coordinator'
-  );
-
-  // Everyone except Faculty Coordinators
-  const studentMembers = members.filter(
-    (member) => member.role !== 'Faculty Coordinator'
-  );
-
   return (
     <>
       <Navbar />
@@ -125,18 +115,20 @@ export default function Team() {
       <main className="team-page">
         <div className="container">
           <header className="team-page-hero">
-            <p className="team-eyebrow">
-              <span className="team-eyebrow-line" />
-              THE PEOPLE BEHIND
-            </p>
+            <div className="team-hero-copy">
+              <p className="team-eyebrow">
+                <span className="team-eyebrow-line" />
+                THE PEOPLE BEHIND
+              </p>
 
-            <h1>
-              Meet Our <span>Team</span>
-            </h1>
+              <h1>
+                Meet Our <span>Team</span>
+              </h1>
 
-            <p className="team-page-intro">
-              Meet the people who collaborate, create, and help our community grow.
-            </p>
+              <p className="team-page-intro">
+                Meet the people who collaborate, create, and help our community grow.
+              </p>
+            </div>
           </header>
 
           <section className="team-directory" aria-label="Team members">
@@ -154,41 +146,15 @@ export default function Team() {
               </p>
             ) : (
               <>
-                {/* Faculty Members Section */}
-                {facultyMembers.length > 0 && (
-                  <div className="team-category">
-                    <h2 className="team-category-title">
-                      Faculty Members
-                    </h2>
+                <div className="team-directory-heading">
+                  <span className="team-category-kicker">THE FULL TEAM</span>
+                </div>
 
-                    <div className="team-directory-grid">
-                      {facultyMembers.map((member) => (
-                        <TeamMemberCard
-                          key={member._id}
-                          member={member}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
-
-                {/* Student Members Section */}
-                {studentMembers.length > 0 && (
-                  <div className="team-category">
-                    <h2 className="team-category-title">
-                      Student Members
-                    </h2>
-
-                    <div className="team-directory-grid">
-                      {studentMembers.map((member) => (
-                        <TeamMemberCard
-                          key={member._id}
-                          member={member}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+                <div className="team-directory-grid">
+                  {members.map((member) => (
+                    <TeamMemberCard key={member._id} member={member} />
+                  ))}
+                </div>
               </>
             )}
           </section>

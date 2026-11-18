@@ -465,7 +465,7 @@ export default function EventDetails() {
                     <>
                       {/* Event registration */}
                       {user?.role === 'admin' ? null : !isAuthenticated ? (
-                        <Link className="event-view-button text-white" to="/login" state={{ from: location.pathname + location.search }}>
+                        <Link className="event-view-button event-view-button-primary" to="/login" state={{ from: location.pathname + location.search }}>
                           Login to Register
                           <i className="bi bi-arrow-right" aria-hidden="true" />
                         </Link>
@@ -474,7 +474,7 @@ export default function EventDetails() {
                           {registrationChecking ? (
                             <button
                               type="button"
-                              className="event-view-button text-white"
+                              className="event-view-button event-view-button-primary"
                               disabled
                             >
                               Checking registration...
@@ -482,7 +482,7 @@ export default function EventDetails() {
                           ) : (
                             <button
                               type="button"
-                              className="event-view-button text-white"
+                              className="event-view-button event-view-button-primary"
                               onClick={handleRegistration}
                               disabled={registrationLoading}
                             >
@@ -491,14 +491,6 @@ export default function EventDetails() {
                                 : isRegistered
                                   ? 'Cancel Registration'
                                   : 'Register Now'}
-
-                              {!registrationLoading && (
-                                <i
-                                  className={`bi ${isRegistered ? 'bi-x-circle' : 'bi-arrow-right'
-                                    }`}
-                                  aria-hidden="true"
-                                />
-                              )}
                             </button>
                           )}
                         </>
@@ -514,7 +506,7 @@ export default function EventDetails() {
                       {event.meetingLink && (
                         isAuthenticated ? (
                           <a
-                            className="event-view-button text-white"
+                            className="event-view-button event-view-button-secondary"
                             href={event.meetingLink}
                             target="_blank"
                             rel="noopener noreferrer"
@@ -523,7 +515,7 @@ export default function EventDetails() {
                             <i className="bi bi-arrow-up-right" aria-hidden="true" />
                           </a>
                         ) : (
-                          <Link className="event-view-button text-white" to="/login" state={{ from: location.pathname + location.search }}>
+                          <Link className="event-view-button event-view-button-secondary" to="/login" state={{ from: location.pathname + location.search }}>
                             Login to Access Meeting
                             <i className="bi bi-arrow-right" aria-hidden="true" />
                           </Link>
@@ -534,7 +526,7 @@ export default function EventDetails() {
 
                   {(passed || event.origin === 'community') && event.linkedinPostLink && (
                     <a
-                      className="event-view-button text-white"
+                      className="event-view-button event-view-button-social"
                       href={event.linkedinPostLink}
                       target="_blank"
                       rel="noopener noreferrer"
@@ -547,7 +539,7 @@ export default function EventDetails() {
 
                   {(passed || event.origin === 'community') && event.instagramPostLink && (
                     <a
-                      className="event-view-button text-white"
+                      className="event-view-button event-view-button-social"
                       href={event.instagramPostLink}
                       target="_blank"
                       rel="noopener noreferrer"

@@ -214,7 +214,7 @@ export default function TeamCarousel() {
                   className="team-member-photo-fallback"
                   aria-hidden="true"
                 >
-                  {member.name?.trim().charAt(0)?.toUpperCase() || '?'}
+                  <i className="bi bi-person" />
                 </div>
               )}
 
