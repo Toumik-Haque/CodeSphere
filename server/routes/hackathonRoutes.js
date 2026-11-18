@@ -225,6 +225,7 @@ router.post('/admin', organizer, async (req, res) => {
         title: `New hackathon: ${h.title}`,
         body: h.tagline || h.description.slice(0, 400),
         link: `/hackathons/${h.slug}`,
+        imageUrl: h.bannerUrl,
         ...getBroadcastOptions(req.body),
       });
     }
@@ -249,6 +250,7 @@ router.put('/admin/:id', organizer, async (req, res) => {
         title: `New hackathon: ${h.title}`,
         body: h.tagline || h.description.slice(0, 400),
         link: `/hackathons/${h.slug}`,
+        imageUrl: h.bannerUrl,
         ...getBroadcastOptions(req.body),
       });
     }
@@ -355,6 +357,7 @@ router.post('/admin/:id/results', manageById, async (req, res) => {
     if (req.user.role === 'admin') {
       await broadcastUpdate({
         title: `Hackathon results are live: ${h.title}`,
+        imageUrl: h.bannerUrl,
         body: 'See the final results and celebrate the teams.',
         link: `/hackathons/${h.slug}`,
         notificationExcludeUserIds: teamMembers,

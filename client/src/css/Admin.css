@@ -2657,3 +2657,46 @@
 @media (prefers-reduced-motion: reduce) {
   .admin-tools-sheet-panel { animation: none; }
 }
+
+/* ---------- Events → registrations & attendance ---------- */
+.admin-event-open {
+  flex: none;
+  padding: 0;
+  border: 0;
+  border-radius: 12px;
+  background: none;
+  cursor: pointer;
+}
+.admin-event-open:hover .admin-event-image { filter: brightness(0.92); }
+
+.admin-event-title-button {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.admin-event-title-button:hover { color: var(--admin-primary); text-decoration: underline; }
+
+.admin-event-actions .admin-registrations-button {
+  border-color: var(--admin-primary);
+  background: var(--admin-primary-light, #fff0eb);
+  color: var(--admin-primary);
+  font-weight: 700;
+}
+
+.admin-member-avatar { overflow: hidden; }
+.admin-member-avatar img { width: 100%; height: 100%; border-radius: inherit; object-fit: cover; }
+
+.admin-member-details .admin-member-sub {
+  margin-top: 2px;
+  color: var(--admin-muted-light, #8793a1);
+  font-size: 12px;
+}
+
+.admin-member-item.attendance-present {
+  border-color: rgba(22, 134, 83, 0.35);
+  background: linear-gradient(90deg, var(--admin-success-bg, #eaf8f0), #fff 45%);
+}

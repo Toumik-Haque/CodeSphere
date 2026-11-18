@@ -60,6 +60,7 @@ import AdminProjects from './pages/AdminProjects';
 
 import UserDashboard from './pages/UserDashboard';
 import { AdminToolLayout } from './components/AdminNav';
+import { rememberPage } from './lib/returnTo';
 
 function HomePage() {
   return (
@@ -135,7 +136,12 @@ function RoleBasedMemberProfile() {
 
 // Scroll to the top whenever the route changes.
 function ScrollToTop() {
-  const { pathname } = useLocation();
+  const { pathname, search, hash } = useLocation();
+
+  // Remember the page, so signing in can bring the visitor back here.
+  useEffect(() => {
+    rememberPage(pathname + search + hash);
+  }, [pathname, search, hash]);
 
   useEffect(() => {
     window.scrollTo({
@@ -165,26 +171,26 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
-      <Route path="/events" element={<EventsPage />} />
-      <Route path="/team" element={<Team />} />
+      <Route path="/events" element={<ProtectedRoute anyRole><EventsPage /></ProtectedRoute>} />
+      <Route path="/team" element={<ProtectedRoute anyRole><Team /></ProtectedRoute>} />
       <Route path="/contact" element={<Contact />} />
 
       <Route path="/open-source" element={<ProtectedRoute anyRole><OpenSource /></ProtectedRoute>} />
 
-      <Route path="/playground" element={<Playground />} />
+      <Route path="/playground" element={<ProtectedRoute anyRole><Playground /></ProtectedRoute>} />
 
       <Route path="/leaderboard" element={<ProtectedRoute anyRole><Leaderboard /></ProtectedRoute>} />
 
-      <Route path="/forum" element={<Forum />} />
+      <Route path="/forum" element={<ProtectedRoute anyRole><Forum /></ProtectedRoute>} />
       <Route path="/forum/new" element={<ProtectedRoute anyRole><ForumNew /></ProtectedRoute>} />
       <Route path="/forum/:id" element={<ProtectedRoute anyRole><ForumThread /></ProtectedRoute>} />
       <Route path="/admin/forum" element={<ProtectedRoute staff="moderator"><AdminToolLayout><AdminForum /></AdminToolLayout></ProtectedRoute>} />
 
-      <Route path="/reverse-coding" element={<ReverseCoding />} />
+      <Route path="/reverse-coding" element={<ProtectedRoute anyRole><ReverseCoding /></ProtectedRoute>} />
       <Route path="/reverse-coding/:slug" element={<ProtectedRoute anyRole><ReverseChallenge /></ProtectedRoute>} />
       <Route path="/admin/reverse-coding" element={<ProtectedRoute staff="challenge-editor"><AdminToolLayout><AdminReverse /></AdminToolLayout></ProtectedRoute>} />
       
-      <Route path="/materials" element={<Materials />} />
+      <Route path="/materials" element={<ProtectedRoute anyRole><Materials /></ProtectedRoute>} />
       <Route path="/materials/:slug" element={<ProtectedRoute anyRole><Materials /></ProtectedRoute>} />
       <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminToolLayout><AdminMaterials /></AdminToolLayout></ProtectedRoute>} />
       
@@ -194,18 +200,18 @@ function AppRoutes() {
       
       <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminToolLayout><AdminReview /></AdminToolLayout></ProtectedRoute>} />
       
-      <Route path="/projects" element={<ProjectHub />} />
+      <Route path="/projects" element={<ProtectedRoute anyRole><ProjectHub /></ProtectedRoute>} />
       <Route path="/projects/new" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
-      <Route path="/projects/guided/:slug" element={<GuidedProject />} />
+      <Route path="/projects/guided/:slug" element={<ProtectedRoute anyRole><GuidedProject /></ProtectedRoute>} />
       <Route path="/projects/:id/edit" element={<ProtectedRoute anyRole><ProjectEditor /></ProtectedRoute>} />
-      <Route path="/projects/:slug" element={<ProjectDetail />} />
+      <Route path="/projects/:slug" element={<ProtectedRoute anyRole><ProjectDetail /></ProtectedRoute>} />
       <Route path="/admin/projects" element={<ProtectedRoute staff="project-reviewer"><AdminToolLayout><AdminProjects /></AdminToolLayout></ProtectedRoute>} />
       
-      <Route path="/hackathons" element={<Hackathons />} />
+      <Route path="/hackathons" element={<ProtectedRoute anyRole><Hackathons /></ProtectedRoute>} />
       <Route path="/hackathons/:slug" element={<ProtectedRoute anyRole><HackathonDetail /></ProtectedRoute>} />
       <Route path="/admin/hackathons" element={<ProtectedRoute staff="hackathon-organizer"><AdminToolLayout><AdminHackathons /></AdminToolLayout></ProtectedRoute>} />
       
-      <Route path="/news" element={<News />} />
+      <Route path="/news" element={<ProtectedRoute anyRole><News /></ProtectedRoute>} />
       <Route path="/news/:slug" element={<ProtectedRoute anyRole><News /></ProtectedRoute>} />
       <Route path="/admin/news" element={<ProtectedRoute staff="news-editor"><AdminToolLayout><AdminNews /></AdminToolLayout></ProtectedRoute>} />
 
@@ -214,8 +220,7 @@ function AppRoutes() {
       <Route path="/register" element={<Register />} />
       <Route path="/reset-password" element={<ResetPassword />} />
 
-      {/* Public event details page */}
-      <Route path="/events/:slug" element={<EventDetails />} />
+      <Route path="/events/:slug" element={<ProtectedRoute anyRole><EventDetails /></ProtectedRoute>} />
 
       {/* Protected user dashboard */}
       <Route

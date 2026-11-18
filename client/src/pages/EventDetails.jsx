@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { useNotice } from '../context/NoticeContext';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useLocation, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
@@ -57,6 +57,7 @@ function eventHasPassed(event) {
 
 export default function EventDetails() {
   const { slug } = useParams();
+  const location = useLocation();
 
   const { user } = useAuth();
   const { showNotice } = useNotice();
@@ -464,7 +465,7 @@ export default function EventDetails() {
                     <>
                       {/* Event registration */}
                       {user?.role === 'admin' ? null : !isAuthenticated ? (
-                        <Link className="event-view-button text-white" to="/login">
+                        <Link className="event-view-button text-white" to="/login" state={{ from: location.pathname + location.search }}>
                           Login to Register
                           <i className="bi bi-arrow-right" aria-hidden="true" />
                         </Link>
@@ -522,7 +523,7 @@ export default function EventDetails() {
                             <i className="bi bi-arrow-up-right" aria-hidden="true" />
                           </a>
                         ) : (
-                          <Link className="event-view-button text-white" to="/login">
+                          <Link className="event-view-button text-white" to="/login" state={{ from: location.pathname + location.search }}>
                             Login to Access Meeting
                             <i className="bi bi-arrow-right" aria-hidden="true" />
                           </Link>

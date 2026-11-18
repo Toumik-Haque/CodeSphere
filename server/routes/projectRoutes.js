@@ -278,6 +278,7 @@ router.post('/admin/:id/review', protect, async (req, res) => {
   if (req.user.role === 'admin' && decision === 'approve' && !wasPublished) {
     await broadcastUpdate({
       title: `New community project: ${project.title}`,
+      imageUrl: project.screenshots?.[0]?.url,
       body: project.summary,
       link: `/projects/${project.slug}`,
       notificationExcludeUserIds: [project.owner],

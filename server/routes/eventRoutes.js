@@ -1,4 +1,5 @@
 const express = require('express');
+const { eventEmailHtml, eventFactsText } = require('../utils/eventEmail');
 const mongoose = require('mongoose');
 const multer = require('multer');
 
@@ -491,8 +492,13 @@ router.post('/', protect, adminOnly, handleBannerUpload, async (req, res) => {
     if (event.status === 'published') {
       await broadcastUpdate({
         title: `New event: ${event.title}`,
-        body: getPlainText(event.description).slice(0, 400),
+        // Date, time and place first: the key facts of the event.
+        body: `${eventFactsText(event)}
+
+${getPlainText(event.description).slice(0, 400)}`,
+        htmlBody: eventEmailHtml(event, getPlainText(event.description).slice(0, 600)),
         link: `/events/${event.slug}`,
+        imageUrl: event.bannerImage?.url,
         ...getBroadcastOptions(req.body),
       });
     }
@@ -627,8 +633,13 @@ router.patch('/:id', protect, adminOnly, handleBannerUpload, async (req, res) =>
     if (!wasPublished && existing.status === 'published') {
       await broadcastUpdate({
         title: `New event: ${existing.title}`,
-        body: getPlainText(existing.description).slice(0, 400),
+        // Date, time and place first: the key facts of the event.
+        body: `${eventFactsText(existing)}
+
+${getPlainText(existing.description).slice(0, 400)}`,
+        htmlBody: eventEmailHtml(existing, getPlainText(existing.description).slice(0, 600)),
         link: `/events/${existing.slug}`,
+        imageUrl: existing.bannerImage?.url,
         ...getBroadcastOptions(req.body),
       });
     }
@@ -858,7 +869,7 @@ router.get(
         event: id,
         status: 'registered',
       })
-        .populate('user', 'name email username')
+        .populate('user', 'name email username collegeName yearOfStudy profileImage avatarUrl')
         .sort({ registeredAt: -1 })
         .lean();
 
@@ -882,6 +893,9 @@ router.get(
             name: member.name,
             email: member.email,
             username: member.username,
+            college: member.collegeName || '',
+            year: member.yearOfStudy || '',
+            avatar: member.profileImage?.url || member.avatarUrl || '',
             registrationId: registration._id,
             registeredAt: registration.registeredAt,
             status: record?.status || 'absent',
