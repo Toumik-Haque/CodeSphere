@@ -87,6 +87,7 @@ router.post('/:id/check', protect, async (req, res) => {
 
     const run = await runCode(language, code);
     const passed = run.status === 'ok' && normalise(run.stdout) === normalise(challenge.expected);
+    if (run.status === 'service-error') checkerDownFor.set(String(req.user._id), Date.now());
 
     let alreadySolved = false;
     if (passed) {
@@ -134,10 +135,15 @@ router.post('/:id/check', protect, async (req, res) => {
   }
 });
 
-// Manual marking (honour system), used while Judge0 isn't configured.
-// Once JUDGE0_API_KEY / JUDGE0_URL is set, only /check can solve challenges.
+// Manual marking (honour system), used while no code runner is configured.
+// With a runner, only /check can solve challenges, except right after a check
+// failed because the runner itself was down (then "Mark as done" is allowed).
+const OUTAGE_GRACE_MS = 15 * 60 * 1000;
+const checkerDownFor = new Map(); // userId -> time the runner failed for them
+
 function manualModeOnly(req, res, next) {
-  if (isConfigured()) {
+  const downAt = checkerDownFor.get(String(req.user._id));
+  if (isConfigured() && !(downAt && Date.now() - downAt < OUTAGE_GRACE_MS)) {
     return res.status(403).json({ message: 'Use Check answer to solve this challenge.' });
   }
   return next();
