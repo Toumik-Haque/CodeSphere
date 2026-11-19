@@ -36,6 +36,19 @@
   line-height: 1.45;
 }
 
+.events-page .events-host-cta.events-admin-cta {
+  flex-basis: 440px;
+}
+
+.events-page .events-admin-cta-actions {
+  flex-wrap: nowrap;
+}
+
+.events-page .events-admin-cta-actions > a {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
 .section-eyebrow {
   display: inline-flex;
   align-items: center;
@@ -228,6 +241,15 @@
 
   .events-page .events-host-cta {
     flex: 1 1 100%;
+  }
+
+  .events-page .events-admin-cta-actions {
+    gap: 6px;
+  }
+
+  .events-page .events-admin-cta-actions > a {
+    padding: 8px 10px;
+    font-size: 0.78rem;
   }
 
   .events-search-input {

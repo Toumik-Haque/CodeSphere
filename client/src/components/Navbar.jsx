@@ -4,6 +4,7 @@ import { Link, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import logo from '../assets/logo.png';
 import NotificationBell from './NotificationBell';
+import ProfileAvatar from './ProfileAvatar';
 import '../css/Navbar.css';
 
 // Top-level links and grouped sections (Learn / Discover / Community).
@@ -320,11 +321,17 @@ const Navbar = () => {
           aria-haspopup="true"
         >
           <span>
-            <i
-              className={`bi ${
-                isAdmin ? 'bi-shield-lock' : 'bi-person-circle'
-              } me-2`}
-              aria-hidden="true"
+            <ProfileAvatar
+              user={user}
+              name={user?.name}
+              className="navbar-account-photo me-2"
+              fallbackClassName="navbar-account-photo me-2"
+              fallback={
+                <i
+                  className={`bi ${isAdmin ? 'bi-shield-lock' : 'bi-person-circle'}`}
+                  aria-hidden="true"
+                />
+              }
             />
             {isAdmin ? 'Admin' : 'My Account'}
           </span>
@@ -348,10 +355,17 @@ const Navbar = () => {
               <span>{dashboardLabel}</span>
             </Link>
 
-            <Link to="/host" className="navbar-dropdown-item" onClick={closeMenu}>
-              <i className="bi bi-megaphone" aria-hidden="true" />
-              <span>My hosted listings</span>
-            </Link>
+            {isAdmin ? (
+              <Link to="/admin/review" className="navbar-dropdown-item" onClick={closeMenu}>
+                <i className="bi bi-inbox" aria-hidden="true" />
+                <span>Review hosted listings</span>
+              </Link>
+            ) : (
+              <Link to="/host" className="navbar-dropdown-item" onClick={closeMenu}>
+                <i className="bi bi-megaphone" aria-hidden="true" />
+                <span>My hosted listings</span>
+              </Link>
+            )}
 
             {staffLinks.map((link) => (
               <Link key={link.path} to={link.path} className="navbar-dropdown-item" onClick={closeMenu}>

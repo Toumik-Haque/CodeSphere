@@ -7,6 +7,7 @@ import { apiRequest } from '../lib/api';
 import { loadForumConfig } from '../lib/forum';
 import { timeAgo } from '../lib/time';
 import AvatarUpload from '../components/AvatarUpload';
+import ProfileAvatar from '../components/ProfileAvatar';
 import '../css/Forum.css';
 import '../css/ForumSocial.css';
 
@@ -23,14 +24,16 @@ const avatarHue = (name = '') => [...name].reduce((h, c) => (h * 31 + c.charCode
 
 // Profile photo when the person has one, coloured initials otherwise.
 function Avatar({ person, className }) {
-  if (person.avatarUrl) {
-    return (
-      <span className={`${className} has-photo`} aria-hidden="true">
-        <img src={person.avatarUrl} alt="" loading="lazy" />
-      </span>
-    );
-  }
-  return <span className={className} style={{ '--hue': avatarHue(person.name) }} aria-hidden="true">{person.initials}</span>;
+  const hasPhoto = Boolean(person.avatarUrl);
+  return (
+    <span
+      className={`${className}${hasPhoto ? ' has-photo' : ''}`}
+      style={hasPhoto ? undefined : { '--hue': avatarHue(person.name) }}
+      aria-hidden="true"
+    >
+      <ProfileAvatar user={person} name={person.name} fallback={person.initials} loading="lazy" />
+    </span>
+  );
 }
 
 export function AuthorBadge({ author, size = 'sm' }) {

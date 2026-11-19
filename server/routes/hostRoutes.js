@@ -26,6 +26,16 @@ const EVENT_MODES = ['In-person', 'Online', 'Hybrid'];
 const MAX_OPEN = 5;
 const submitLimiter = createLimiter({ windowMs: 24 * 60 * 60 * 1000, max: 10, message: 'You can submit up to 10 times a day.' });
 
+function memberOnly(req, res, next) {
+  if (req.user?.role !== 'user') {
+    return res.status(403).json({
+      message: 'Only CodeSphere members can host events or hackathons.',
+    });
+  }
+
+  next();
+}
+
 const isId = (id) => mongoose.Types.ObjectId.isValid(id);
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const LINKEDIN = /^https:\/\/([a-z0-9-]+\.)?linkedin\.com\//i;
@@ -47,9 +57,6 @@ function bannerUpload(req, res, next) {
 }
 
 // ---------- Text helpers ----------
-const escapeHtml = (s) => s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-// Plain text from the form → safe paragraphs for the event page.
-const textToHtml = (text) => text.split(/\n{2,}/).map((p) => `<p>${escapeHtml(p).replace(/\n/g, '<br>')}</p>`).join('');
 const htmlToText = (html = '') => html
   .replace(/<br\s*\/?>/gi, '\n').replace(/<\/p>\s*/gi, '\n\n').replace(/<[^>]*>/g, '')
   .replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&')
@@ -73,7 +80,6 @@ function validateHost(body) {
     websiteLink: safeUrl(body.websiteLink),
     linkedinPostLink: safeUrl(body.linkedinPostLink),
     instagramPostLink: safeUrl(body.instagramPostLink),
-    rules: clean(body.rules, 10000),
   };
   if (host.hostName.length < 2) return { error: 'Add the organiser / club name.' };
   if (!EMAIL.test(host.contactEmail)) return { error: 'Add a valid contact email.' };
@@ -81,12 +87,12 @@ function validateHost(body) {
   if (body.websiteLink && !host.websiteLink) return { error: 'The website must be an http(s) link.' };
   if (!LINKEDIN.test(host.linkedinPostLink)) return { error: 'Add the LinkedIn post link (https://www.linkedin.com/…).' };
   if (!INSTAGRAM.test(host.instagramPostLink)) return { error: 'Add the Instagram post link (https://www.instagram.com/…).' };
-  if (host.rules.length < 20) return { error: 'Add the rules / guidelines (at least 20 characters).' };
   return { host };
 }
 
 function validateEventFields(body) {
-  const description = clean(body.description, 5000);
+  const descriptionHtml = sanitizeDescription(clean(body.description, 30000));
+  const descriptionText = htmlToText(descriptionHtml);
   const data = {
     title: clean(body.title, 120),
     category: EVENT_CATEGORIES.includes(body.category) ? body.category : '',
@@ -99,7 +105,8 @@ function validateEventFields(body) {
   };
   if (data.title.length < 3) return { error: 'Give the event a title.' };
   if (!data.category) return { error: 'Choose a category.' };
-  if (description.length < 50) return { error: 'Describe the event in at least 50 characters.' };
+  if (descriptionText.length < 50) return { error: 'Add at least 50 characters of event details.' };
+  if (descriptionText.length > 5000) return { error: 'Event details must be under 5000 characters.' };
   if (Number.isNaN(data.date.getTime())) return { error: 'Set the start date and time.' };
   if (data.date < new Date()) return { error: 'The event must start in the future.' };
   if (data.endDate && (Number.isNaN(data.endDate.getTime()) || data.endDate < data.date)) return { error: 'The end must be after the start.' };
@@ -108,20 +115,25 @@ function validateEventFields(body) {
   if (!data.registrationLink) return { error: 'Add the registration link (http/https).' };
   if (data.mode === 'Online') data.venue = '';
   if (data.mode === 'In-person') data.meetingLink = '';
-  data.description = sanitizeDescription(textToHtml(description));
+  data.description = descriptionHtml;
   return { data };
 }
 
 function validateHackathonFields(body) {
+  const descriptionHtml = sanitizeDescription(clean(body.description, 20000));
+  const descriptionText = htmlToText(descriptionHtml);
   const { data, error } = validateHackathon({
     ...body,
+    description: descriptionHtml,
+    rules: '',
     tracks: parseJsonField(body.tracks, []),
     prizes: parseJsonField(body.prizes, []),
     status: 'draft',
     bannerUrl: '',
   });
   if (error) return { error };
-  if (data.description.length < 50) return { error: 'Describe the hackathon in at least 50 characters.' };
+  if (descriptionText.length < 50) return { error: 'Add at least 50 characters of hackathon details.' };
+  if (descriptionText.length > 5000) return { error: 'Hackathon details must be under 5000 characters.' };
   if (data.regEnd < new Date()) return { error: 'Registration must still be open in the future.' };
   delete data.bannerUrl;
   delete data.status;
@@ -162,6 +174,7 @@ function view(doc, kind) {
     websiteLink: doc.websiteLink,
     linkedinPostLink: doc.linkedinPostLink,
     instagramPostLink: doc.instagramPostLink,
+    descriptionText: htmlToText(doc.description),
     rules: doc.rules,
     mode: doc.mode,
     venue: doc.venue,
@@ -172,7 +185,7 @@ function view(doc, kind) {
     return {
       ...base,
       category: doc.category,
-      description: htmlToText(doc.description),
+      description: doc.description || '',
       date: doc.date,
       endDate: doc.endDate,
       meetingLink: doc.meetingLink,
@@ -281,7 +294,7 @@ ${htmlToText(doc.description).slice(0, 400)}`
 // =====================================================================
 
 // GET /api/host/mine
-router.get('/mine', protect, async (req, res) => {
+router.get('/mine', protect, memberOnly, async (req, res) => {
   const [events, hackathons] = await Promise.all([
     Event.find({ origin: 'community', createdBy: req.user._id }).sort({ updatedAt: -1 }).lean(),
     Hackathon.find({ origin: 'community', createdBy: req.user._id }).sort({ updatedAt: -1 }).lean(),
@@ -289,8 +302,8 @@ router.get('/mine', protect, async (req, res) => {
   res.json({ items: [...events.map((e) => view(e, 'event')), ...hackathons.map((h) => view(h, 'hackathon'))].sort((a, b) => new Date(b.updatedAt) - new Date(a.updatedAt)) });
 });
 
-// GET /api/host/:kind/:id (host or reviewer)
-router.get('/:kind/:id', protect, async (req, res) => {
+// GET /api/host/:kind/:id
+router.get('/:kind/:id', protect, memberOnly, async (req, res) => {
   const kind = kindParam(req, res);
   if (!kind) return;
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });
@@ -330,6 +343,7 @@ async function save(req, res) {
   const doc = existing || new Model({ origin: 'community', createdBy: req.user._id });
   const oldBanner = kind === 'event' ? doc.bannerImage?.publicId : doc.bannerFileId;
   Object.assign(doc, data, host, {
+    rules: '',
     reviewStatus: 'pending',
     status: 'draft', // hidden until approved (again)
     reviewNote: existing ? doc.reviewNote : '',
@@ -360,11 +374,11 @@ async function save(req, res) {
   res.status(existing ? 200 : 201).json({ id: String(doc._id), message: existing ? 'Changes sent for review.' : 'Submitted! We\'ll notify you after review.' });
 }
 
-router.post('/:kind', protect, submitLimiter, bannerUpload, save);
-router.put('/:kind/:id', protect, submitLimiter, bannerUpload, save);
+router.post('/:kind', protect, memberOnly, submitLimiter, bannerUpload, save);
+router.put('/:kind/:id', protect, memberOnly, submitLimiter, bannerUpload, save);
 
 // DELETE /api/host/:kind/:id — withdraw (not once approved; ask an admin then)
-router.delete('/:kind/:id', protect, async (req, res) => {
+router.delete('/:kind/:id', protect, memberOnly, async (req, res) => {
   const kind = kindParam(req, res);
   if (!kind) return;
   if (!isId(req.params.id)) return res.status(404).json({ message: 'Not found.' });

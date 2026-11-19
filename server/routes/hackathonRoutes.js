@@ -93,7 +93,7 @@ async function countsFor(ids) {
   return map;
 }
 
-const member = (u) => ({ id: String(u._id), name: u.name, initials: initials(u.name), year: u.yearOfStudy || '' });
+const member = (u) => ({ id: String(u._id), name: u.name, initials: initials(u.name), year: u.yearOfStudy || '', avatarUrl: u.profileImage?.url || '' });
 
 const fileView = (f) => (f?.url ? { url: f.url, name: f.name, size: f.size, type: f.type } : null);
 
@@ -198,8 +198,8 @@ router.get('/admin/:id', manageById, async (req, res) => {
   const h = await Hackathon.findById(req.params.id).lean();
   if (!h) return res.status(404).json({ message: 'Not found.' });
   const [teams, subs] = await Promise.all([
-    HackathonTeam.find({ hackathon: h._id }).populate('members', 'name email yearOfStudy').sort({ createdAt: 1 }).lean(),
-    HackathonSubmission.find({ hackathon: h._id }).populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name yearOfStudy' } }).sort({ rank: 1, submittedAt: 1, updatedAt: -1 }).lean(),
+    HackathonTeam.find({ hackathon: h._id }).populate('members', 'name email yearOfStudy profileImage').sort({ createdAt: 1 }).lean(),
+    HackathonSubmission.find({ hackathon: h._id }).populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name yearOfStudy profileImage' } }).sort({ rank: 1, submittedAt: 1, updatedAt: -1 }).lean(),
   ]);
   res.json({
     hackathon: { ...card(h), description: h.description, rules: h.rules },
@@ -389,7 +389,7 @@ router.get('/:slug', optionalAuth, async (req, res) => {
   let team = null;
   let submission = null;
   if (req.user) {
-    const t = await myTeam(h._id, req.user._id).populate('members', 'name yearOfStudy').lean();
+    const t = await myTeam(h._id, req.user._id).populate('members', 'name yearOfStudy profileImage').lean();
     if (t) {
       team = {
         id: String(t._id),
@@ -408,7 +408,7 @@ router.get('/:slug', optionalAuth, async (req, res) => {
   let gallery = [];
   if (now > h.submissionEnd || h.resultsPublished) {
     const subs = await HackathonSubmission.find({ hackathon: h._id, ...HANDED_IN })
-      .populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name yearOfStudy' } })
+      .populate({ path: 'team', select: 'name members', populate: { path: 'members', select: 'name yearOfStudy profileImage' } })
       .sort(h.resultsPublished ? { rank: 1, createdAt: 1 } : { createdAt: 1 })
       .lean();
     gallery = subs.map((s) => submissionView(s, { withAward: h.resultsPublished }));

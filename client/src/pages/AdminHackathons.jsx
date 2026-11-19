@@ -1,5 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useCallback, useEffect, useRef, useState } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { PHASES, SOURCES } from '../lib/hackathons';
@@ -46,6 +46,8 @@ const toPayload = (f) => ({
 
 export default function AdminHackathons() {
   const { showNotice } = useNotice();
+  const location = useLocation();
+  const openedFromState = useRef(false);
   const [data, setData] = useState(null);
   const [form, setForm] = useState(null);
   const [editingId, setEditingId] = useState(null);
@@ -55,14 +57,28 @@ export default function AdminHackathons() {
   const [version, setVersion] = useState(0);
   const [broadcastOptions, setBroadcastOptions] = useState({ sendNotification: true, sendEmail: true });
   const reload = useCallback(() => setVersion((v) => v + 1), []);
+  const editingIdFromState = location.state?.editingId;
 
   useEffect(() => {
     let cancelled = false;
-    apiRequest('/hackathons/admin/all').then((r) => !cancelled && setData(r)).catch((e) => !cancelled && setMessage(e.message));
+    apiRequest('/hackathons/admin/all').then((r) => {
+      if (cancelled) return;
+      setData(r);
+      const target = r.hackathons?.find((h) => h.id === editingIdFromState);
+      if (target && !openedFromState.current) {
+        openedFromState.current = true;
+        setForm(toForm(target));
+        setEditingId(target.id);
+        setBroadcastOptions({ sendNotification: true, sendEmail: true });
+        setJudgingId(null);
+        setMessage('');
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }
+    }).catch((e) => !cancelled && setMessage(e.message));
     return () => {
       cancelled = true;
     };
-  }, [version]);
+  }, [version, editingIdFromState]);
 
   const set = (k) => (e) => setForm((f) => ({ ...f, [k]: e.target.value }));
   const setPrize = (i, k, v) => setForm((f) => ({ ...f, prizes: f.prizes.map((p, j) => (j === i ? { ...p, [k]: v } : p)) }));

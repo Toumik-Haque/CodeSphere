@@ -5,6 +5,7 @@ import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
 import { loadBadgeCatalog } from '../lib/badges';
 import OpenSourceContributors from '../components/OpenSourceContributors';
+import ProfileAvatar from '../components/ProfileAvatar';
 import '../css/Leaderboard.css';
 
 const YEARS = ['1st Year', '2nd Year', '3rd Year', '4th Year'];
@@ -35,15 +36,14 @@ function memberSince(date) {
 
 // Profile photo, or coloured initials when there is none (or it fails to load).
 function Avatar({ row, size = 'md' }) {
-  const [broken, setBroken] = useState(false);
-  const photo = row.avatar && !broken;
+  const hasPhoto = Boolean(row.avatar);
   return (
     <span
-      className={`lb-avatar lb-avatar-${size} ${photo ? 'has-photo' : ''}`}
+      className={`lb-avatar lb-avatar-${size} ${hasPhoto ? 'has-photo' : ''}`}
       style={{ background: avatarColor(row.initials + row.year) }}
       aria-hidden="true"
     >
-      {photo ? <img src={row.avatar} alt="" loading="lazy" onError={() => setBroken(true)} /> : row.initials}
+      <ProfileAvatar user={row} name={row.name} fallback={row.initials} loading="lazy" />
     </span>
   );
 }

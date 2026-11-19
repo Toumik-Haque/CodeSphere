@@ -5,6 +5,7 @@ import { apiRequest } from '../lib/api';
 import Navbar from '../components/Navbar';
 import BadgeStrip from '../components/BadgeStrip';
 import CodingStats from '../components/CodingStats';
+import ProfileAvatar from '../components/ProfileAvatar';
 import '../css/MemberProfile.css';
 
 const CODING_ICONS = {
@@ -16,16 +17,6 @@ const CODING_ICONS = {
   GeeksforGeeks: 'bi-journal-code',
   HackerRank: 'bi-award',
 };
-
-function getInitials(name = '') {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
-}
 
 function skillLevelClass(level = '') {
   const key = level.toLowerCase();
@@ -251,11 +242,7 @@ export default function MemberProfile({
             <section className="member-profile-hero">
               <div className="member-profile-hero-body">
                 <div className="member-profile-avatar">
-                  {member.profileImage?.url ? (
-                    <img src={member.profileImage.url} alt={member.name} />
-                  ) : (
-                    <span>{getInitials(member.name)}</span>
-                  )}
+                  <ProfileAvatar user={member} name={member.name} alt={member.name} />
                 </div>
 
                 <div className="member-profile-identity">

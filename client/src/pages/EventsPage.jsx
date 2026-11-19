@@ -6,6 +6,7 @@ import Footer from '../components/Footer';
 import VideoBackground from '../components/VideoBackground';
 import { apiRequest } from '../lib/api';
 import { EventCard } from '../components/Events';
+import { useAuth } from '../context/AuthContext';
 import '../css/EventsPage.css';
 import '../css/Host.css';
 
@@ -14,6 +15,7 @@ function isValidDate(value) {
 }
 
 export default function EventsPage() {
+  const { user } = useAuth();
   const [events, setEvents] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('All');
@@ -108,16 +110,29 @@ export default function EventsPage() {
               </p>
             </header>
 
-            <div className="host-cta events-host-cta">
-              <div>
-                <strong>Hosting an event?</strong>
-                <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
+            {user?.role === 'admin' ? (
+              <div className="host-cta events-host-cta events-admin-cta">
+                <div>
+                  <strong>Managing events?</strong>
+                  <p>Create and publish CodeSphere events, or review community submissions.</p>
+                </div>
+                <div className="events-admin-cta-actions">
+                  <Link to="/admin" state={{ activeSection: 'events' }} className="btn btn-gold"><i className="bi bi-calendar-event" aria-hidden="true" /> Manage events</Link>
+                  <Link to="/admin/review" className="host-btn">Review submissions</Link>
+                </div>
               </div>
-              <div>
-                <Link to="/host/event/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your event</Link>
-                <Link to="/host" className="host-btn">My listings</Link>
+            ) : (
+              <div className="host-cta events-host-cta">
+                <div>
+                  <strong>Hosting an event?</strong>
+                  <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
+                </div>
+                <div>
+                  <Link to="/host/event/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your event</Link>
+                  <Link to="/host" className="host-btn">My listings</Link>
+                </div>
               </div>
-            </div>
+            )}
           </div>
 
           <div className="events-toolbar">

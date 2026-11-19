@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { STATUS, categoryOf } from '../lib/projects';
+import ProfileAvatar from './ProfileAvatar';
 import '../css/Projects.css';
 
 // Project card used in the Showcase, My Projects and guided pages.
@@ -26,7 +27,7 @@ export default function ProjectCard({ p, showStatus = false }) {
         <footer className="ph-card-foot">
           {p.owner && (
             <span className="ph-owner">
-              {p.owner.avatarUrl ? <img src={p.owner.avatarUrl} alt="" /> : <span aria-hidden="true">{p.owner.initials}</span>}
+              <ProfileAvatar user={p.owner} name={p.owner.name} aria-hidden="true" />
               {p.owner.name}{p.contributorsCount > 1 && ` +${p.contributorsCount - 1}`}
             </span>
           )}

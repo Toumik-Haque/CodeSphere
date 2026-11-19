@@ -194,9 +194,9 @@ function AppRoutes() {
       <Route path="/materials/:slug" element={<ProtectedRoute anyRole><Materials /></ProtectedRoute>} />
       <Route path="/admin/materials" element={<ProtectedRoute staff="challenge-editor"><AdminToolLayout><AdminMaterials /></AdminToolLayout></ProtectedRoute>} />
       
-      <Route path="/host" element={<ProtectedRoute anyRole><MyHosting /></ProtectedRoute>} />
-      <Route path="/host/:kind/new" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
-      <Route path="/host/:kind/:id/edit" element={<ProtectedRoute anyRole><HostSubmit /></ProtectedRoute>} />
+      <Route path="/host" element={<ProtectedRoute><MyHosting /></ProtectedRoute>} />
+      <Route path="/host/:kind/new" element={<ProtectedRoute><HostSubmit /></ProtectedRoute>} />
+      <Route path="/host/:kind/:id/edit" element={<ProtectedRoute><HostSubmit /></ProtectedRoute>} />
       
       <Route path="/admin/review" element={<ProtectedRoute staff="hackathon-organizer"><AdminToolLayout><AdminReview /></AdminToolLayout></ProtectedRoute>} />
       
