@@ -200,6 +200,12 @@
 .pe-import-row input { flex: 1 1 300px; min-height: 44px; padding: 0 14px; border: 1px solid var(--p-line); border-radius: 12px; font: inherit; }
 .pe-import small { display: block; margin-top: 6px; color: var(--p-muted); }
 
+.pe-duplicate { margin-top: 12px; padding: 12px 14px; border: 1px solid #F5D28C; border-radius: 12px; background: #FFFBEF; color: #7C5510; }
+.pe-duplicate p { margin: 0 0 6px; }
+.pe-duplicate p:last-child { margin-bottom: 0; }
+.pe-duplicate a { color: #B7791F; font-weight: 700; }
+.pe-duplicate .pe-checklist { margin: 8px 0 10px; }
+
 .pe-preview { margin-top: 16px; padding: 16px; border: 1px solid #D0D7DE; border-radius: 14px; background: #F6F8FA; }
 .pe-preview-head { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
 .pe-preview-head > i { font-size: 1.8rem; }

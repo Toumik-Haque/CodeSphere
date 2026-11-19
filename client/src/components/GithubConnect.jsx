@@ -19,7 +19,18 @@ export default function GithubConnect({ outcome }) {
     apiRequest('/github/status').then(setStatus).catch(() => setStatus({ enabled: false }));
   }, []);
 
-  if (!status?.enabled) return null;
+  if (!status) return null;
+  if (!status.enabled && !status.connected) {
+    return (
+      <section className="gc-card">
+        <i className="bi bi-github" aria-hidden="true" />
+        <div>
+          <strong>GitHub connection is not configured</strong>
+          <span>Ask an admin to enable GitHub OAuth on the server before verifying project ownership.</span>
+        </div>
+      </section>
+    );
+  }
 
   const connect = async () => {
     try {
@@ -41,14 +52,14 @@ export default function GithubConnect({ outcome }) {
       <i className="bi bi-github" aria-hidden="true" />
       <div>
         {status.connected
-          ? <><strong>Connected as @{status.login}</strong><span>Open a project and press &quot;Verify with GitHub&quot; to earn a verified badge.</span></>
+          ? <><strong>Connected as @{status.login}</strong><span>{status.enabled ? 'Open a project and press "Verify with GitHub" to earn a verified badge.' : 'Verification works locally with this saved connection; OAuth is only needed to connect a new account.'}</span></>
           : <><strong>Connect your GitHub account</strong><span>Prove you own or contributed to a repository. We only read your public profile and don&apos;t store any token.</span></>}
         {outcome && OUTCOMES[outcome] && <em className={outcome === 'connected' ? 'ok' : ''}>{OUTCOMES[outcome]}</em>}
         {error && <em>{error}</em>}
       </div>
       {status.connected
         ? <button type="button" className="ph-btn" onClick={disconnect}>Disconnect</button>
-        : <button type="button" className="btn btn-gold" onClick={connect}>Connect GitHub</button>}
+        : status.enabled ? <button type="button" className="btn btn-gold" onClick={connect}>Connect GitHub</button> : null}
     </section>
   );
 }
