@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { apiRequest } from '../lib/api';
+import { useAuth } from '../context/AuthContext';
 import { formatDate, timeAgo } from '../lib/time';
 import { SOURCES, PHASES, countdown, closesWithin } from '../lib/hackathons';
 import '../css/Hackathons.css';
@@ -75,6 +76,7 @@ function ExternalCard({ h }) {
 }
 
 export default function Hackathons() {
+  const { user } = useAuth();
   const [params, setParams] = useSearchParams();
   const [club, setClub] = useState(null);
   const [feed, setFeed] = useState(null);
@@ -190,16 +192,29 @@ export default function Hackathons() {
             )}
           </section>
 
-          <div className="host-cta">
-            <div>
-              <strong>Hosting a hackathon?</strong>
-              <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
+          {user?.role === 'admin' ? (
+            <div className="host-cta">
+              <div>
+                <strong>Managing a hackathon?</strong>
+                <p>Create and publish official hackathons, or review community submissions.</p>
+              </div>
+              <div>
+                <Link to="/admin/hackathons" className="btn btn-gold"><i className="bi bi-trophy" aria-hidden="true" /> Manage hackathons</Link>
+                <Link to="/admin/review" className="host-btn">Review submissions</Link>
+              </div>
             </div>
-            <div>
-              <Link to="/host/hackathon/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your hackathon</Link>
-              <Link to="/host" className="host-btn">My listings</Link>
+          ) : (
+            <div className="host-cta">
+              <div>
+                <strong>Hosting a hackathon?</strong>
+                <p>List it on CodeSphere. Fill in the details, our team reviews it, and it goes live for every student.</p>
+              </div>
+              <div>
+                <Link to="/host/hackathon/new" className="btn btn-gold"><i className="bi bi-plus-lg" aria-hidden="true" /> Add your hackathon</Link>
+                <Link to="/host" className="host-btn">My listings</Link>
+              </div>
             </div>
-          </div>
+          )}
 
           {/* ---------- Live from other platforms ---------- */}
           <section id="live" className="hk-section">

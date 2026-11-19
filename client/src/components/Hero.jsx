@@ -112,7 +112,7 @@ const Hero = () => {
         {/* Bottom scroll indicator */}
         <a
           className="hero-scroll-indicator"
-          href="#about"
+          href="#explore"
           aria-label="Scroll to Events section"
         >
           <span>SCROLL TO EXPLORE</span>

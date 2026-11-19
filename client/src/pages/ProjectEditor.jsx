@@ -86,6 +86,15 @@ export default function ProjectEditor() {
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [githubStatus, setGithubStatus] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiRequest('/github/status')
+      .then((r) => { if (!cancelled) setGithubStatus(r); })
+      .catch(() => {});
+    return () => { cancelled = true; };
+  }, []);
 
   // Editing: load the project.
   useEffect(() => {
@@ -238,6 +247,31 @@ export default function ProjectEditor() {
     setProject((p) => ({ ...p, cover: r.cover, screenshots: r.screenshots }));
   };
 
+  const applyExisting = async () => {
+    const duplicateId = preview?.duplicate?.id;
+    if (!duplicateId) return;
+    setBusy(true);
+    try {
+      await apiRequest(`/projects/${duplicateId}/submit`, { method: 'POST', body: JSON.stringify({ visibility: 'public' }) });
+      showNotice({
+        tone: 'success',
+        kicker: 'Sent for review',
+        title: 'Projects Hub application submitted',
+        message: 'An admin will review it before it appears on the Projects Hub.',
+      });
+      navigate('/projects?tab=mine');
+    } catch (err) {
+      showNotice({
+        tone: 'error',
+        kicker: 'Application failed',
+        title: "Couldn't apply to the Projects Hub",
+        message: err.data?.problems ? `${err.message} ${err.data.problems.join(' ')}` : err.message,
+      });
+    } finally {
+      setBusy(false);
+    }
+  };
+
   const action = async (path, confirmText, after) => {
     if (confirmText && !window.confirm(confirmText)) return;
     try {
@@ -254,6 +288,11 @@ export default function ProjectEditor() {
   };
 
   const showForm = mode !== 'github' || preview || id;
+  const duplicate = preview?.duplicate;
+  const duplicateCanApply = duplicate?.own && (
+    ['draft', 'changes_requested', 'archived'].includes(duplicate.status)
+    || (duplicate.status === 'published' && duplicate.visibility !== 'public')
+  );
   const st = project && STATUS[project.status];
 
   return (
@@ -293,12 +332,31 @@ export default function ProjectEditor() {
                 <button type="submit" className="btn btn-gold" disabled={fetching}>{fetching ? 'Fetching…' : 'Fetch project details'}</button>
               </div>
               <small>Public repositories only. We read the repository details and README. Your code stays on GitHub.</small>
-              {preview?.duplicate && (
-                <p className="ph-error">
-                  {preview.duplicate.own
-                    ? <>You have already added this repository. <Link to={`/projects/${preview.duplicate.id}/edit`}>Open it</Link>.</>
-                    : <>This repository is already on CodeSphere as <Link to={`/projects/${preview.duplicate.slug}`}>{preview.duplicate.title}</Link>. Ask its owner to credit you.</>}
-                </p>
+              {duplicate && (
+                <div className="pe-duplicate">
+                  {duplicate.own ? (
+                    <>
+                      <p>You have already added this repository as <Link to={`/projects/${duplicate.id}/edit`}>{duplicate.title}</Link>.</p>
+                      {duplicate.status === 'pending_review' && <p className="ph-muted">It is already in the review queue. An admin will decide soon.</p>}
+                      {duplicate.status === 'published' && duplicate.visibility === 'public' && <p className="ph-ok">It is already on the Projects Hub. 🎉</p>}
+                      {duplicateCanApply && (
+                        <>
+                          <p>Want it on the Projects Hub? Apply below; it will go public only after admin approval.</p>
+                          {duplicate.problems?.length > 0 && (
+                            <ul className="pe-checklist">
+                              {duplicate.problems.map((problem) => <li key={problem}><i className="bi bi-circle" aria-hidden="true" /> {problem}</li>)}
+                            </ul>
+                          )}
+                          <button type="button" className="btn btn-gold" disabled={busy || duplicate.problems?.length > 0} onClick={applyExisting}>
+                            {busy ? 'Sending…' : 'Apply to Projects Hub'}
+                          </button>
+                        </>
+                      )}
+                    </>
+                  ) : (
+                    <p>This repository is already on CodeSphere as <Link to={`/projects/${duplicate.slug}`}>{duplicate.title}</Link>. Ask its owner to credit you.</p>
+                  )}
+                </div>
               )}
               {preview && <GithubPreview repo={preview.repository} warnings={preview.warnings} />}
             </form>
@@ -313,13 +371,14 @@ export default function ProjectEditor() {
                 </button>
                 {project.ownershipVerified
                   ? <span className="pd-verified"><i className="bi bi-patch-check-fill" aria-hidden="true" /> Verified {project.ownershipVerified.kind} (@{project.ownershipVerified.login})</span>
-                  : (
+                  : githubStatus?.connected ? (
                     <button type="button" className="ph-btn" onClick={() => action('verify-github', null, (r) => setProject((p) => ({ ...p, ownershipVerified: r.ownershipVerified })))}>
                       <i className="bi bi-patch-check" aria-hidden="true" /> Verify with GitHub
                     </button>
-                  )}
+                  ) : null}
               </div>
-              {!project.ownershipVerified && <small className="ph-muted">Verification needs your GitHub account connected (My projects → Connect GitHub).</small>}
+              {!project.ownershipVerified && githubStatus && !githubStatus.enabled && !githubStatus.connected && <small className="ph-muted">GitHub verification is not configured on this server.</small>}
+              {!project.ownershipVerified && githubStatus?.enabled && !githubStatus.connected && <small className="ph-muted">Connect GitHub from <Link to="/projects?tab=mine">My projects</Link> first.</small>}
             </div>
           )}
 

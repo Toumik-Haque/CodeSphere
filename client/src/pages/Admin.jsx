@@ -19,6 +19,7 @@ import AdminBadgeAwards from '../components/AdminBadgeAwards';
 import AdminStaffRoles from '../components/AdminStaffRoles';
 import MemberProfile from './MemberProfile';
 import BroadcastOptions from '../components/BroadcastOptions';
+import ProfileAvatar from '../components/ProfileAvatar';
 
 const initialForm = {
   title: '',
@@ -802,16 +803,6 @@ export default function Admin() {
       return;
     }
 
-    if (!coreMemberImage) {
-      showNotice({
-        tone: 'error',
-        kicker: 'Team member form',
-        title: 'Profile image required',
-        message: 'Please upload a profile image before saving.',
-      });
-      return;
-    }
-
     const optionalLinks = [
       ['GitHub profile link', coreMemberForm.githubLink],
       ['LinkedIn profile link', coreMemberForm.linkedinLink],
@@ -1043,7 +1034,7 @@ export default function Admin() {
     } finally {
       setAttendanceLoading(false);
     }
-  }, [selectedAttendanceEvent]);
+  }, [selectedAttendanceEvent, setAttendanceRows]);
 
   async function updateAttendance(userId, status) {
     if (!selectedAttendanceEvent) {
@@ -2112,7 +2103,7 @@ export default function Admin() {
 
                         <div className="admin-member-info">
                           <div className="admin-member-avatar">
-                            {getInitial(registeredUser.name)}
+                            <ProfileAvatar user={registeredUser} name={registeredUser.name} fallback={getInitial(registeredUser.name)} />
                           </div>
 
                           <div className="admin-member-details">
@@ -2496,7 +2487,7 @@ export default function Admin() {
 
                       <div className="admin-form-field admin-field-full">
                         <label htmlFor="team-member-image">
-                          Profile image *
+                          Profile image
                         </label>
 
                         <input
@@ -2505,7 +2496,6 @@ export default function Admin() {
                           id="team-member-image"
                           type="file"
                           accept="image/jpeg,image/png,image/webp"
-                          required={!coreMemberImage}
                           onChange={handleCoreMemberImageChange}
                         />
 
@@ -2666,18 +2656,15 @@ export default function Admin() {
                             key={member._id}
                           >
 
-                            {member.image?.url ? (
-                              <img
-                                className="admin-team-member-avatar"
-                                src={member.image.url}
-                                alt={member.name}
-                                loading="lazy"
-                              />
-                            ) : (
-                              <div className="admin-team-member-avatar admin-team-member-fallback">
-                                {getInitial(member.name)}
-                              </div>
-                            )}
+                            <ProfileAvatar
+                              user={member}
+                              name={member.name}
+                              className="admin-team-member-avatar"
+                              fallbackClassName="admin-team-member-avatar admin-team-member-fallback"
+                              fallback={getInitial(member.name)}
+                              alt={member.name}
+                              loading="lazy"
+                            />
 
                             <div className="admin-team-member-card-content">
                               <h3>{member.name}</h3>

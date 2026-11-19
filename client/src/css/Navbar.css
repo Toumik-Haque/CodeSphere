@@ -351,7 +351,7 @@
   height: 44px;
   flex: 0 0 44px;
   place-items: center;
-  color: #10243A !important;
+  color: #10243A;
 }
 
 .codesphere-menu-toggle i {
@@ -639,6 +639,19 @@
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+.navbar-account-photo {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  object-fit: cover;
+  vertical-align: middle;
+  overflow: hidden;
+  font-size: 14px;
 }
 
 .dropdown-chevron {

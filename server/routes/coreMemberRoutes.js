@@ -1,4 +1,4 @@
-
+// coreMemberRoutes.js
 const express = require('express');
 const mongoose = require('mongoose');
 const multer = require('multer');
@@ -188,17 +188,12 @@ router.post(
         });
       }
 
-      // Require a profile image during creation.
-      if (!req.file) {
-        return res.status(400).json({
-          message: 'Please upload a profile image.',
-        });
+      if (req.file) {
+        uploadedImage = await uploadToImageKit(
+          req.file.buffer,
+          req.file.originalname
+        );
       }
-
-      uploadedImage = await uploadToImageKit(
-        req.file.buffer,
-        req.file.originalname
-      );
 
       const member = await CoreMember.create({
         name: req.body.name.trim(),
@@ -207,11 +202,15 @@ router.post(
         instagramLink: (req.body.instagramLink || '').trim(),
         githubLink: (req.body.githubLink || '').trim(),
         order: 0,
-        image: {
-          url: uploadedImage.url,
-          publicId: uploadedImage.publicId,
-          provider: uploadedImage.provider,
-        },
+        ...(uploadedImage
+          ? {
+              image: {
+                url: uploadedImage.url,
+                publicId: uploadedImage.publicId,
+                provider: uploadedImage.provider,
+              },
+            }
+          : {}),
       });
 
       await broadcastUpdate({
@@ -248,7 +247,7 @@ router.post(
   }
 );
 
-// Admin: update a Team Member. A new profile image is mandatory.
+// Admin: update a Team Member. A new profile image is optional.
 router.patch(
   '/:id',
   protect,
@@ -272,12 +271,7 @@ router.patch(
         });
       }
 
-      // Require a new profile image during every edit.
-      if (!req.file) {
-        return res.status(400).json({
-          message: 'Please upload a new profile image.',
-        });
-      }
+      const removeImage = req.body.removeImage === 'true';
 
       const candidate = {
         name: req.body.name ?? member.name,
@@ -300,11 +294,12 @@ router.patch(
         publicId: member.image?.publicId,
       };
 
-      // Upload the mandatory replacement image.
-      uploadedImage = await uploadToImageKit(
-        req.file.buffer,
-        req.file.originalname
-      );
+      if (req.file) {
+        uploadedImage = await uploadToImageKit(
+          req.file.buffer,
+          req.file.originalname
+        );
+      }
 
       member.name = candidate.name.trim();
       member.role = candidate.role.trim();
@@ -312,18 +307,21 @@ router.patch(
       member.instagramLink = candidate.instagramLink.trim();
       member.githubLink = candidate.githubLink.trim();
 
-      // Replace the existing profile image.
-      member.image = {
-        url: uploadedImage.url,
-        publicId: uploadedImage.publicId,
-        provider: uploadedImage.provider,
-      };
+      if (uploadedImage) {
+        member.image = {
+          url: uploadedImage.url,
+          publicId: uploadedImage.publicId,
+          provider: uploadedImage.provider,
+        };
+      } else if (removeImage) {
+        member.image = { url: '', publicId: '', provider: '' };
+      }
 
       // Save database changes before deleting the previous image.
       await member.save();
 
       // Delete the old image only after the database update succeeds.
-      if (oldImage.publicId) {
+      if ((uploadedImage || removeImage) && oldImage.publicId) {
         try {
           await deleteStoredImage(oldImage);
         } catch (cleanupError) {

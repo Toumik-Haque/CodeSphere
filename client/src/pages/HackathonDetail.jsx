@@ -1,10 +1,12 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link, useParams } from 'react-router-dom';
+import DOMPurify from 'dompurify';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import SafeText from '../components/SafeText';
 import HackathonJudging from '../components/HackathonJudging';
 import HackathonSubmission, { SubmissionDetails, SubmissionLinks } from '../components/HackathonSubmission';
+import ProfileAvatar from '../components/ProfileAvatar';
 import { useAuth } from '../context/AuthContext';
 import { useNotice } from '../context/NoticeContext';
 import { apiRequest } from '../lib/api';
@@ -12,6 +14,7 @@ import { isPast, PHASES } from '../lib/hackathons';
 import '../css/Hackathons.css';
 
 const fmt = (d) => new Date(d).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' });
+const hasHtml = (text = '') => /<\/?[a-z][\s\S]*>/i.test(text);
 
 function Timeline({ h }) {
   const steps = [
@@ -133,7 +136,7 @@ function TeamPanel({ h, team, reload, slug }) {
       <ul className="hk-members">
         {team.members.map((m) => (
           <li key={m.id}>
-            <span className="hk-avatar" aria-hidden="true">{m.initials}</span>
+            <ProfileAvatar user={m} name={m.name} fallback={m.initials} className="hk-avatar" fallbackClassName="hk-avatar" aria-hidden="true" />
             <span>{m.name}{m.id === team.leaderId && <em> · Leader</em>}{m.id === String(user._id || user.id) && <em> · You</em>}</span>
             {team.isLeader && m.id !== team.leaderId && h.canChangeTeam && (
               <button type="button" className="hk-icon-btn" title={`Remove ${m.name}`} aria-label={`Remove ${m.name}`} disabled={busy}
@@ -163,6 +166,7 @@ function TeamPanel({ h, team, reload, slug }) {
 }
 
 export default function HackathonDetail() {
+  const { user } = useAuth();
   const { slug } = useParams();
   const [data, setData] = useState(null);
   const [error, setError] = useState('');
@@ -235,7 +239,11 @@ export default function HackathonDetail() {
                       <summary className="hk-btn">Open submissions & judging</summary>
                       <HackathonJudging id={h.id} showEmails={false} onChanged={reload} />
                     </details>
-                    <Link to={`/host/hackathon/${h.id}/edit`} className="hk-btn" style={{ marginTop: 8 }}>Edit listing</Link>
+                    {user?.role === 'admin' ? (
+                      <Link to="/admin/hackathons" state={{ editingId: h.id }} className="hk-btn" style={{ marginTop: 8 }}>Edit in admin tools</Link>
+                    ) : (
+                      <Link to={`/host/hackathon/${h.id}/edit`} className="hk-btn" style={{ marginTop: 8 }}>Edit listing</Link>
+                    )}
                   </section>
                 )}
                 {data.team && <HackathonSubmission key={data.submission?.updatedAt || 'new'} h={h} team={data.team} submission={data.submission} slug={slug} reload={reload} ProjectCard={ProjectCard} />}
@@ -250,7 +258,13 @@ export default function HackathonDetail() {
                 {h.description && (
                   <section className="hk-block">
                     <h2>About</h2>
-                    <div className="hk-prose"><SafeText text={h.description} /></div>
+                    <div className="hk-prose">
+                      {hasHtml(h.description) ? (
+                        <div className="hk-rich-details" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(h.description) }} />
+                      ) : (
+                        <SafeText text={h.description} />
+                      )}
+                    </div>
                   </section>
                 )}
 

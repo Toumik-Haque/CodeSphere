@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { lazy, Suspense, useEffect, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
@@ -6,6 +6,9 @@ import SafeText from '../components/SafeText';
 import { apiRequest } from '../lib/api';
 import { formatDate } from '../lib/time';
 import '../css/Materials.css';
+
+// The 239-link library is loaded only when its tab is opened.
+const ResourceLibrary = lazy(() => import('../components/ResourceLibrary'));
 
 const KIND_ICONS = { docs: 'bi-book', video: 'bi-play-btn', article: 'bi-file-text', practice: 'bi-controller', course: 'bi-mortarboard' };
 
@@ -178,13 +181,47 @@ function GuideList() {
   );
 }
 
+function MaterialsHome() {
+  const [params, setParams] = useSearchParams();
+  const tab = params.get('tab') === 'library' ? 'library' : 'guides';
+  const tabs = [
+    ['guides', 'Written guides', 'bi-journal-text'],
+    ['library', 'Resource library', 'bi-collection'],
+  ];
+  return (
+    <>
+      <div className="mat-tabs" role="tablist" aria-label="Study materials">
+        {tabs.map(([id, label, icon]) => (
+          <button
+            key={id}
+            type="button"
+            role="tab"
+            aria-selected={tab === id}
+            className={tab === id ? 'active' : ''}
+            onClick={() => setParams(id === 'library' ? { tab: 'library' } : {})}
+          >
+            <i className={`bi ${icon}`} aria-hidden="true" /> {label}
+          </button>
+        ))}
+      </div>
+      {tab === 'library' ? (
+        <Suspense fallback={<div className="mat-grid">{Array.from({ length: 6 }, (_, i) => <div key={i} className="mat-card mat-skeleton" />)}</div>}>
+          <ResourceLibrary />
+        </Suspense>
+      ) : (
+        <GuideList />
+      )}
+    </>
+  );
+}
+
 export default function Materials() {
   const { slug } = useParams();
   return (
     <>
       <Navbar />
       <main className="mat-page">
-        <div className="container">{slug ? <GuideView slug={slug} /> : <GuideList />}</div>
+        <div className="container">{slug ? <GuideView slug={slug} /> : <MaterialsHome />}</div>
       </main>
       <Footer />
     </>

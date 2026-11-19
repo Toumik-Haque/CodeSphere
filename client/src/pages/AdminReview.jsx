@@ -104,11 +104,8 @@ function ReviewCard({ item, onDone }) {
         )}
 
         <details open={item.reviewStatus === 'pending'}>
-          <summary>Description & rules</summary>
-          <h3>Description</h3>
-          <div className="review-text"><SafeText text={item.description} /></div>
-          <h3>Rules</h3>
-          <div className="review-text"><SafeText text={item.rules} /></div>
+          <summary>Details</summary>
+          <div className="review-text"><SafeText text={item.descriptionText || item.description} /></div>
         </details>
 
         {item.reviewNote && item.reviewStatus !== 'pending' && <div className={`host-review-note ${item.reviewStatus}`}><strong>Note sent</strong><p>{item.reviewNote}</p></div>}

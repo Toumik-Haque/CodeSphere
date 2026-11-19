@@ -3,17 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import MemberProfile from '../pages/MemberProfile';
+import ProfileAvatar from './ProfileAvatar';
 import '../css/DashboardDiscover.css';
-
-function getInitials(name = '') {
-  return name
-    .trim()
-    .split(/\s+/)
-    .slice(0, 2)
-    .map((part) => part[0])
-    .join('')
-    .toUpperCase();
-}
 
 export default function DashboardDiscover({ user, profileUsername }) {
   const navigate = useNavigate();
@@ -96,11 +87,7 @@ export default function DashboardDiscover({ user, profileUsername }) {
           aria-label="Return to your public profile"
           title="Your public profile"
         >
-          {currentUser?.profileImage?.url ? (
-            <img src={currentUser.profileImage.url} alt="" />
-          ) : (
-            getInitials(currentUser?.name || 'User')
-          )}
+          <ProfileAvatar user={currentUser} name={currentUser?.name || 'User'} />
           <span className="dashboard-discover-own-avatar-indicator" />
         </button>
         <div className="dashboard-discover-search">
@@ -149,11 +136,7 @@ export default function DashboardDiscover({ user, profileUsername }) {
                     }
                   >
                     <span className="dashboard-discover-avatar">
-                      {member.profileImage?.url ? (
-                        <img src={member.profileImage.url} alt="" />
-                      ) : (
-                        getInitials(member.name)
-                      )}
+                      <ProfileAvatar user={member} name={member.name} />
                     </span>
                     <span className="dashboard-discover-member-info">
                       <strong>{member.name}</strong>

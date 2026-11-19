@@ -53,15 +53,17 @@ async function gh(path, { accept = 'application/vnd.github+json', text = false }
   const headers = { Accept: accept, 'User-Agent': 'CodeSphere-Project-Hub', 'X-GitHub-Api-Version': '2022-11-28' };
   if (process.env.GITHUB_TOKEN) headers.Authorization = `Bearer ${process.env.GITHUB_TOKEN}`;
   let response;
-  // One retry: GitHub occasionally returns a brief 5xx.
-  for (let attempt = 0; attempt < 2; attempt += 1) {
+  for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       response = await fetch(`https://api.github.com${path}`, { headers, redirect: 'error', signal: AbortSignal.timeout(TIMEOUT) });
-    } catch {
-      if (attempt === 1) throw new ImportError(503, 'GitHub is not responding right now. Your details are kept; try again in a minute.');
+    } catch (cause) {
+      const networkError = cause?.cause || cause;
+      const reason = networkError?.code || networkError?.message || cause?.message || 'fetch failed';
+      if (attempt === 2) throw new ImportError(503, 'GitHub is not responding right now. Your details are kept; try again in a minute.', { cause: reason });
+      await new Promise((resolve) => setTimeout(resolve, 400 * (attempt + 1)));
       continue;
     }
-    if (response.status < 500 || attempt === 1) break;
+    if (response.status < 500 || attempt === 2) break;
     await new Promise((resolve) => setTimeout(resolve, 800));
   }
   if (response.status === 404) return { notFound: true };
@@ -70,7 +72,7 @@ async function gh(path, { accept = 'application/vnd.github+json', text = false }
     const retryAt = reset ? new Date(reset * 1000) : null;
     throw new ImportError(429, 'GitHub\'s rate limit was reached. Try again a little later.', { retryAt });
   }
-  if (!response.ok) throw new ImportError(response.status >= 500 ? 503 : 422, 'GitHub could not process this repository right now.');
+  if (!response.ok) throw new ImportError(response.status >= 500 ? 503 : 422, 'GitHub could not process this repository right now.', { upstreamStatus: response.status });
   if (text) {
     const body = await response.text();
     return { body: body.slice(0, 200000) };
