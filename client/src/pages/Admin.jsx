@@ -2302,7 +2302,9 @@ export default function Admin() {
 
                             <div className="admin-member-info">
                               <div className="admin-member-avatar">
-                                <ProfileAvatar user={member} name={member.name} fallback={getInitial(member.name)} loading="lazy" />
+                                {member.avatar
+                                  ? <img src={member.avatar} alt="" loading="lazy" />
+                                  : getInitial(member.name)}
                               </div>
 
                               <div className="admin-member-details">
