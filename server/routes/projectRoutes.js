@@ -158,7 +158,14 @@ const snapshotFrom = (repo) => ({ ...repo, pushedAt: repo.pushedAt ? new Date(re
 
 function importErrorResponse(res, error) {
   if (error instanceof ImportError) {
-    return res.status(error.status).json({ message: error.message, ...(error.retryAt ? { retryAt: error.retryAt } : {}), ...(error.existing ? { existing: error.existing } : {}) });
+    return res.status(error.status).json({
+      message: error.message,
+      ...(error.retryAt ? { retryAt: error.retryAt } : {}),
+      ...(error.existing ? { existing: error.existing } : {}),
+      ...(process.env.NODE_ENV !== 'production' && (error.cause || error.upstreamStatus)
+        ? { detail: error.cause || `GitHub responded ${error.upstreamStatus}` }
+        : {}),
+    });
   }
   console.error('Project import error:', error);
   return res.status(500).json({ message: 'Something went wrong. Your details are kept; please try again.' });
@@ -195,10 +202,18 @@ router.post('/github/preview', protect, previewLimiter, async (req, res) => {
   try {
     const preview = await fetchRepoPreview(req.body?.url);
     track('github_import_succeeded', { user: req.user._id, meta: { repo: preview.repository.url } });
-    const existing = await Project.findOne({ githubNodeId: preview.repository.nodeId, status: { $ne: 'rejected' } }).select('slug title owner status').lean();
+    const existing = await Project.findOne({ githubNodeId: preview.repository.nodeId, status: { $ne: 'rejected' } }).lean();
     if (existing) {
       const own = String(existing.owner) === String(req.user._id);
-      preview.duplicate = { slug: existing.slug, title: existing.title, own, status: existing.status, id: own ? String(existing._id) : undefined };
+      preview.duplicate = {
+        slug: existing.slug,
+        title: existing.title,
+        own,
+        status: existing.status,
+        visibility: existing.visibility,
+        id: own ? String(existing._id) : undefined,
+        problems: own ? submissionProblems(existing) : [],
+      };
     }
     res.json(preview);
   } catch (error) {
@@ -520,15 +535,23 @@ router.put('/:id', protect, writeLimiter, async (req, res) => {
 router.post('/:id/submit', protect, writeLimiter, async (req, res) => {
   const project = await loadOwned(req, res);
   if (!project) return;
-  if (!['draft', 'changes_requested', 'archived'].includes(project.status)) return res.status(400).json({ message: 'This project is already submitted.' });
+  const requestedVisibility = req.body?.visibility;
+  if (requestedVisibility !== undefined && !['public', 'unlisted'].includes(requestedVisibility)) {
+    return res.status(400).json({ message: 'Choose a valid visibility.' });
+  }
+  const readyToSubmit = ['draft', 'changes_requested', 'archived'].includes(project.status);
+  const applyingForHub = requestedVisibility === 'public' && project.status === 'published' && project.visibility !== 'public';
+  if (!readyToSubmit && !applyingForHub) return res.status(400).json({ message: 'This project is already submitted.' });
   const problems = submissionProblems(project);
   if (problems.length) return res.status(400).json({ message: 'A few things are missing before review.', problems });
+  if (requestedVisibility) project.visibility = requestedVisibility;
   project.status = 'pending_review';
   project.submittedAt = new Date();
+  if (applyingForHub) project.featured = false;
   await project.save();
   track('project_submitted', { user: req.user._id, project: project._id });
   await notify(await reviewersOf(), { type: 'project', title: `Project to review: ${project.title}`, body: `Submitted by ${req.user.name}`, link: '/admin/projects' });
-  res.json({ status: project.status });
+  res.json({ status: project.status, visibility: project.visibility });
 });
 
 router.post('/:id/unpublish', protect, async (req, res) => {
