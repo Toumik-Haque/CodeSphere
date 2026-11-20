@@ -5,6 +5,7 @@ import { apiRequest } from '../lib/api';
 import { PHASES, SOURCES } from '../lib/hackathons';
 import { timeAgo } from '../lib/time';
 import HackathonJudging from '../components/HackathonJudging';
+import PushEmailButton from '../components/PushEmailButton';
 import BroadcastOptions from '../components/BroadcastOptions';
 import { useNotice } from '../context/NoticeContext';
 import '../css/Hackathons.css';
@@ -292,6 +293,7 @@ export default function AdminHackathons() {
                     <button type="button" className="hk-btn" onClick={() => open(h)}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
                     <button type="button" className={judgingId === h.id ? 'hk-btn' : 'btn btn-gold'} onClick={() => setJudgingId(judgingId === h.id ? null : h.id)} aria-expanded={judgingId === h.id}><i className="bi bi-inboxes" aria-hidden="true" /> {judgingId === h.id ? 'Hide submissions' : `Submissions (${h.submissions})`}</button>
                     {h.status === 'published' && <Link className="hk-btn" to={`/hackathons/${h.slug}`}>Open</Link>}
+                    {h.status === 'published' && <PushEmailButton kind="hackathon" id={h.id} title={h.title} label="Email" />}
                     <button type="button" className="hk-btn hk-btn-danger" onClick={() => removeHackathon(h)} aria-label={`Delete ${h.title}`}><i className="bi bi-trash3" aria-hidden="true" /> Delete</button>
                   </div>
                 </div>

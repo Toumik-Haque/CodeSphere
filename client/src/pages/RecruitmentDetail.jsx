@@ -4,6 +4,8 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import DOMPurify from 'dompurify';
 import SafeText from '../components/SafeText';
+import ShareButton from '../components/ShareButton';
+import PushEmailButton from '../components/PushEmailButton';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { daysLeft, formatDateTime, formatDay, STATUS_LABEL, TYPE_LABEL } from '../lib/recruitments';
@@ -204,6 +206,12 @@ export default function RecruitmentDetail() {
             <small className="rec-org">{r.organization}{r.origin === 'club' && <i className="bi bi-patch-check-fill" title="Posted by CodeSphere" />}</small>
             <h1>{r.title}</h1>
             {r.summary && <p className="rec-lead">{r.summary}</p>}
+            {['published', 'closed'].includes(r.status) && (
+              <div className="rec-head-actions">
+                <ShareButton className="on-dark" title={`${r.organization}: ${r.title}`} text={r.open ? `Apply by ${formatDay(r.applyBy)}` : ''} path={`/recruitments/${r.slug}`} />
+                <PushEmailButton kind="recruitment" id={r.id} title={r.title} />
+              </div>
+            )}
           </div>
         </header>
 

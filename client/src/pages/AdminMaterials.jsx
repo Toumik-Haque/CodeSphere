@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
+import PushEmailButton from '../components/PushEmailButton';
 import Navbar from '../components/Navbar';
 import SafeText from '../components/SafeText';
 import BroadcastOptions from '../components/BroadcastOptions';
@@ -163,6 +164,7 @@ export default function AdminMaterials() {
                 <span>{g.topic} · {g.level}</span>
                 <span className={`mat-pill ${g.status === 'published' ? 'level-beginner' : ''}`}>{g.status}</span>
                 <button type="button" className="mat-btn" onClick={() => open(g)}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
+                {g.status === 'published' && <PushEmailButton kind="guide" id={g.id} title={g.title} label="Email" />}
               </article>
             ))}
           </div>

@@ -93,7 +93,7 @@
 .rec-empty h2 { margin: 8px 0 6px; font-size: 1.2rem; }
 
 /* Detail */
-.rec-detail-hero { position: relative; overflow: hidden; padding: 30px 0 28px; background: linear-gradient(135deg, #10243a, #183a5a); color: #fff; }
+.rec-detail-hero { position: relative; z-index: 2; overflow: visible; padding: 30px 0 28px; background: linear-gradient(135deg, #10243a, #183a5a); color: #fff; }
 .rec-detail-banner { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .25; }
 .rec-detail-head { position: relative; }
 .rec-back { display: inline-flex; align-items: center; gap: 6px; margin-bottom: 14px; color: inherit; font-size: .88rem; font-weight: 700; text-decoration: none; opacity: .85; }
@@ -243,3 +243,5 @@
 .rec-rich img { max-width: 100%; height: auto; border-radius: 10px; }
 .rec-rich table { width: 100%; margin: 0 0 12px; border-collapse: collapse; }
 .rec-rich th, .rec-rich td { padding: 6px 10px; border: 1px solid var(--rec-line); text-align: left; }
+
+.rec-head-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }

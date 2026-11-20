@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import BroadcastOptions from '../components/BroadcastOptions';
+import PushEmailButton from '../components/PushEmailButton';
 import { apiRequest } from '../lib/api';
 import { formatDay, TYPE_LABEL } from '../lib/recruitments';
 import '../css/Recruitments.css';
@@ -105,6 +106,7 @@ export default function AdminRecruitments() {
                 <div className="rec-actions">
                   <Link to={`/recruitments/${r.slug}`} className="rec-btn"><i className="bi bi-people" aria-hidden="true" /> Applicants</Link>
                   <Link to={`/recruitments/${r.id}/edit`} className="rec-btn"><i className="bi bi-pencil" aria-hidden="true" /> Edit</Link>
+                  {['published', 'closed'].includes(r.status) && <PushEmailButton kind="recruitment" id={r.id} title={r.title} />}
                 </div>
               )}
             </article>

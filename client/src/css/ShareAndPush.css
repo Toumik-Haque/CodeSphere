@@ -1,0 +1,56 @@
+/* Share button + admin "Email everyone" button */
+
+.share { position: relative; z-index: 60; display: inline-flex; }
+.share-btn, .push-btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 8px 14px; border: 1px solid #e3eaf2; border-radius: 11px; background: #fff;
+  color: #10243a; font-size: .88rem; font-weight: 700; cursor: pointer; white-space: nowrap;
+  transition: border-color .2s, background .2s;
+}
+.share-btn:hover, .push-btn:hover { border-color: #10243a; }
+.push-btn { border-color: #ffd0c0; background: #fff4ef; color: #c2410c; }
+.push-btn:hover { border-color: #f05a36; background: #ffe9e1; }
+
+.share-menu {
+  position: absolute; z-index: 50; top: calc(100% + 6px); left: 0; display: grid; min-width: 180px;
+  padding: 6px; border: 1px solid #e3eaf2; border-radius: 12px; background: #fff;
+  box-shadow: 0 14px 34px rgba(16, 36, 58, .16);
+}
+.share-menu a, .share-menu button {
+  display: flex; align-items: center; gap: 10px; padding: 9px 10px; border: 0; border-radius: 8px;
+  background: none; color: #10243a; font: inherit; font-size: .88rem; font-weight: 600; text-align: left; text-decoration: none; cursor: pointer;
+}
+.share-menu a:hover, .share-menu button:hover { background: #f3f6fa; color: #10243a; }
+.share-menu .bi-whatsapp { color: #16a34a; }
+.share-menu .bi-linkedin { color: #0a66c2; }
+
+/* On a dark header */
+.share.on-dark .share-btn { border-color: rgba(255, 255, 255, .3); background: rgba(255, 255, 255, .1); color: #fff; }
+.share.on-dark .share-btn:hover { background: rgba(255, 255, 255, .18); }
+
+/* Confirm dialog */
+.push-dialog { position: fixed; inset: 0; z-index: 2000; display: grid; place-items: center; padding: 16px; }
+.push-backdrop { position: absolute; inset: 0; border: 0; background: rgba(9, 24, 39, .5); }
+.push-panel {
+  position: relative; display: grid; gap: 12px; width: min(480px, 100%); max-height: calc(100vh - 32px); overflow-y: auto;
+  padding: 22px; border-radius: 18px; background: #fff; color: #10243a; box-shadow: 0 24px 60px rgba(9, 24, 39, .3);
+  text-align: left;
+}
+.push-panel h3 { display: flex; align-items: center; gap: 8px; margin: 0; font-size: 1.15rem; font-weight: 800; }
+.push-panel h3 i { color: #f05a36; }
+.push-what { margin: 0; font-weight: 700; }
+.push-muted { margin: 0; color: #5b7083; font-size: .88rem; }
+.push-panel label { display: grid; gap: 5px; color: #5b7083; font-size: .84rem; font-weight: 700; }
+.push-panel label small { font-weight: 500; }
+.push-panel input:not([type='checkbox']), .push-panel textarea {
+  padding: 9px 11px; border: 1px solid #e3eaf2; border-radius: 10px; color: #10243a; font: inherit; font-size: .92rem;
+}
+.push-check { display: flex !important; align-items: center; gap: 8px !important; color: #10243a !important; font-weight: 600 !important; }
+.push-check input { width: 17px; height: 17px; }
+.push-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.push-cancel, .push-send { padding: 9px 16px; border-radius: 11px; font-size: .9rem; font-weight: 700; cursor: pointer; }
+.push-cancel { border: 1px solid #e3eaf2; background: #fff; color: #10243a; }
+.push-send { display: inline-flex; align-items: center; gap: 7px; border: 0; background: linear-gradient(135deg, #ff7a52, #f05a36); color: #fff; }
+.push-send:disabled, .push-cancel:disabled { opacity: .6; cursor: not-allowed; }
+.push-ok { margin: 0; padding: 9px 12px; border-radius: 10px; background: #e9f8ef; color: #16794a; font-size: .9rem; }
+.push-error { margin: 0; padding: 9px 12px; border-radius: 10px; background: #fef2f2; color: #b91c1c; font-size: .9rem; }
