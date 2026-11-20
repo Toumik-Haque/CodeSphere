@@ -63,7 +63,7 @@ const LEVELS = [
     quests: [
       { title: 'Events', text: 'Workshops, talks and meetups', icon: 'bi-calendar-event', to: '/events', stat: 'upcomingEvents', unit: 'upcoming' },
       { title: 'Forum', text: 'Ask, answer, share', icon: 'bi-chat-square-text', to: '/forum', stat: 'threads', unit: 'threads' },
-      { title: 'Core Team', text: 'The people behind CodeSphere', icon: 'bi-stars', to: '/team' },
+      { title: 'Recruitment', text: 'Join a club or team, apply in one click', icon: 'bi-person-badge', to: '/recruitments' },
     ],
   },
 ];

@@ -16,4 +16,5 @@ export const TOOLS = [
   { to: '/admin/news', icon: 'bi-newspaper', label: 'Tech News', hint: 'Stories, sources and digests' },
   { to: '/admin/materials', icon: 'bi-journal-bookmark', label: 'Study Guide', hint: 'Write learning materials' },
   { to: '/admin/reverse-coding', icon: 'bi-arrow-repeat', label: 'Reverse Coding', hint: 'Author and publish challenges' },
+  { to: '/admin/recruitments', icon: 'bi-person-badge', label: 'Recruitment', hint: 'Approve and post recruitments & interviews' },
 ];

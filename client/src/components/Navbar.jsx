@@ -33,6 +33,7 @@ const navItems = [
     children: [
       { label: 'Discussion Forum', path: '/forum', icon: 'bi-chat-dots', description: 'Ask, share and discuss anything' },
       { label: 'Leaderboard', path: '/leaderboard', icon: 'bi-trophy', description: 'XP, streaks and badges' },
+      { label: 'Recruitment & Interviews', path: '/recruitments', icon: 'bi-person-badge', description: 'Join a club or team: apply in one click' },
       { label: 'Team', path: '/team', icon: 'bi-people', description: 'The people behind CodeSphere' },
     ],
   },
