@@ -48,6 +48,7 @@ const projectTeamRoutes = require('./routes/projectTeamRoutes');
 const githubRoutes = require('./routes/githubRoutes');
 const statsRoutes = require('./routes/statsRoutes');
 const recruitmentRoutes = require('./routes/recruitmentRoutes');
+const pushRoutes = require('./routes/pushRoutes');
 const shareRoutes = require('./routes/shareRoutes');
 const { startProjectSync } = require('./utils/projectSync');
 const { startHackathonSync } = require('./utils/hackathonSync');
@@ -82,6 +83,7 @@ app.use('/api/projects', projectRoutes);
 app.use('/api/github', githubRoutes);
 app.use('/api/stats', statsRoutes);
 app.use('/api/recruitments', recruitmentRoutes);
+app.use('/api/push', pushRoutes); // admin: email any item to everyone
 app.use('/api/share', shareRoutes);
 
 const PORT = process.env.PORT || 5000;

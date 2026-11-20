@@ -7,6 +7,7 @@ import { timeAgo } from '../lib/time';
 import ProjectAnalytics from '../components/ProjectAnalytics';
 import GuidedEditor from '../components/GuidedEditor';
 import BroadcastOptions from '../components/BroadcastOptions';
+import PushEmailButton from '../components/PushEmailButton';
 import { useNotice } from '../context/NoticeContext';
 import '../css/Projects.css';
 
@@ -107,6 +108,7 @@ function ReviewCard({ p, onDone }) {
             <button type="button" className="btn btn-gold" disabled={busy} onClick={() => decide('approve')}>Approve & publish</button>
           </>
         )}
+        {p.status === 'published' && <PushEmailButton kind="project" id={p.id} title={p.title} label="Email" />}
         {p.status === 'published' && (p.featured
           ? <button type="button" className="ph-btn" disabled={busy} onClick={() => decide('unfeature')}>Unfeature</button>
           : <button type="button" className="ph-btn" disabled={busy} onClick={() => decide('feature')}><i className="bi bi-star" aria-hidden="true" /> Feature</button>)}

@@ -4,6 +4,7 @@ import Navbar from '../components/Navbar';
 import { apiRequest } from '../lib/api';
 import { formatDate } from '../lib/time';
 import BroadcastOptions from '../components/BroadcastOptions';
+import PushEmailButton from '../components/PushEmailButton';
 import { useNotice } from '../context/NoticeContext';
 import '../css/Reverse.css';
 
@@ -362,6 +363,7 @@ export default function AdminReverse() {
                   <span className="rc-muted">{c.validatedAt ? '✔ validated' : '✘ not validated'}</span>
                   <span className="rc-muted">{c.stats.accepted}/{c.stats.attempts} accepted</span>
                   <button type="button" className="rc-ghost" onClick={() => open(c)}><i className="bi bi-pencil" aria-hidden="true" /> Edit</button>
+                  {c.status === 'published' && <PushEmailButton kind="reverse" id={c.id} title={c.title} label="Email" />}
                 </div>
               </article>
             ))}
