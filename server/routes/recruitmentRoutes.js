@@ -13,6 +13,7 @@ const { broadcastUpdate, getBroadcastOptions } = require('../utils/broadcast');
 const { createLimiter } = require('../utils/rateLimit');
 const { adminIds } = require('../utils/accounts');
 const { storeImage, deleteImages } = require('../utils/forumMedia');
+const sanitizeDescription = require('../utils/sanitizeDescription');
 
 const router = express.Router();
 
@@ -23,6 +24,18 @@ const MAX_PENDING = 5;
 const EMAIL = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 const isId = (id) => mongoose.Types.ObjectId.isValid(id);
+// Visible text of the rich-text description (for length checks and emails).
+const plainText = (html = '') => String(html)
+  .replace(/<(br|\/p|\/li|\/h[1-6])[^>]*>/gi, ' ')
+  .replace(/<[^>]*>/g, '')
+  .replace(/&nbsp;/g, ' ')
+  .replace(/&lt;/g, '<')
+  .replace(/&gt;/g, '>')
+  .replace(/&quot;/g, '"')
+  .replace(/&#39;/g, "'")
+  .replace(/&amp;/g, '&')
+  .replace(/\s+/g, ' ')
+  .trim();
 const isAdmin = (user) => user?.role === 'admin';
 const clean = (value, max) => String(value ?? '').replace(/\r\n?/g, '\n').trim().slice(0, max);
 const httpsUrl = (value) => {
@@ -73,7 +86,7 @@ function validate(body) {
     organization: clean(body.organization, 100),
     type: TYPES.includes(body.type) ? body.type : 'recruitment',
     summary: clean(body.summary, 300),
-    description: clean(body.description, 8000),
+    description: sanitizeDescription(String(body.description ?? '').slice(0, 30000)),
     eligibility: clean(body.eligibility, 1500),
     mode: MODES.includes(body.mode) ? body.mode : 'In-person',
     venue: clean(body.venue, 200),
@@ -98,7 +111,7 @@ function validate(body) {
   };
   if (data.title.length < 5) return { error: 'Give it a title (at least 5 characters).' };
   if (data.organization.length < 2) return { error: 'Which organisation is recruiting?' };
-  if (data.description.length < 40) return { error: 'Describe it in at least 40 characters: what it is and who should apply.' };
+  if (plainText(data.description).length < 40) return { error: 'Describe it in at least 40 characters: what it is and who should apply.' };
   if (!data.applyBy) return { error: 'Set the last date to apply.' };
   if (data.formUrl === null) return { error: 'The Google Form link must be a full https:// link.' };
   if (!data.oneClick && !data.formUrl) return { error: 'Choose how people register: one-click, a Google Form link, or both.' };
@@ -178,7 +191,7 @@ async function findManageable(req, res) {
 async function announce(r, options) {
   await broadcastUpdate({
     title: `${r.type === 'interview' ? 'Interviews' : 'Now recruiting'}: ${r.organization}, ${r.title}`.slice(0, 200),
-    body: `${r.summary || r.description.slice(0, 300)}\n\nApply by ${new Date(r.applyBy).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' })}.`,
+    body: `${r.summary || plainText(r.description).slice(0, 300)}\n\nApply by ${new Date(r.applyBy).toLocaleDateString('en-IN', { day: 'numeric', month: 'long', timeZone: 'Asia/Kolkata' })}.`,
     link: `/recruitments/${r.slug}`,
     imageUrl: r.banner?.url,
     notificationType: 'recruitment',

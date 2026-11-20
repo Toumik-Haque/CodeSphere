@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { Link, useLocation, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
+import DOMPurify from 'dompurify';
 import SafeText from '../components/SafeText';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
@@ -223,7 +224,9 @@ export default function RecruitmentDetail() {
 
             <section className="rec-section">
               <h2>About</h2>
-              <SafeText text={r.description} />
+              {/<[a-z][sS]*>/i.test(r.description)
+                ? <div className="rec-rich" dangerouslySetInnerHTML={{ __html: DOMPurify.sanitize(r.description) }} />
+                : <SafeText text={r.description} />}
             </section>
 
             {r.rolesDetail.length > 0 && (

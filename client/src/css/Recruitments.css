@@ -221,3 +221,25 @@
 @media (prefers-reduced-motion: reduce) {
   .rec-card, .rec-btn { transition: none; }
 }
+
+/* Rich-text description (editor + page) */
+.rec-rich-field { display: grid; gap: 6px; }
+.rec-label { color: var(--rec-muted); font-size: .84rem; font-weight: 700; }
+.rec-rich { color: #34465a; line-height: 1.7; overflow-wrap: anywhere; }
+.rec-rich > :first-child { margin-top: 0; }
+.rec-rich > :last-child { margin-bottom: 0; }
+.rec-rich h1, .rec-rich h2, .rec-rich h3, .rec-rich h4 { margin: 18px 0 8px; color: var(--rec-navy); font-weight: 800; line-height: 1.3; }
+.rec-rich h1 { font-size: 1.35rem; }
+.rec-rich h2 { font-size: 1.2rem; }
+.rec-rich h3, .rec-rich h4 { font-size: 1.05rem; }
+.rec-rich p { margin: 0 0 12px; }
+.rec-rich ul, .rec-rich ol { margin: 0 0 12px; padding-left: 22px; }
+.rec-rich li { margin: 4px 0; }
+.rec-rich a { color: #2875a8; text-decoration: underline; }
+.rec-rich blockquote { margin: 0 0 12px; padding: 8px 14px; border-left: 3px solid var(--rec-orange); background: var(--rec-orange-soft); border-radius: 0 10px 10px 0; }
+.rec-rich pre { overflow-x: auto; padding: 12px 14px; border-radius: 10px; background: #0f1d2e; color: #e2e8f0; font-size: .85rem; }
+.rec-rich code { padding: 1px 5px; border-radius: 5px; background: #eef2f6; font-size: .88em; }
+.rec-rich pre code { padding: 0; background: none; }
+.rec-rich img { max-width: 100%; height: auto; border-radius: 10px; }
+.rec-rich table { width: 100%; margin: 0 0 12px; border-collapse: collapse; }
+.rec-rich th, .rec-rich td { padding: 6px 10px; border: 1px solid var(--rec-line); text-align: left; }

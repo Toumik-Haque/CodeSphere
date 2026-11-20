@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import BroadcastOptions from '../components/BroadcastOptions';
+import RichTextEditor from '../components/RichTextEditor';
 import { useAuth } from '../context/AuthContext';
 import { apiRequest } from '../lib/api';
 import { toInputValue } from '../lib/recruitments';
@@ -131,9 +132,15 @@ export default function RecruitmentEditor() {
                 <label>Organisation *<input value={form.organization} onChange={set('organization')} maxLength={100} placeholder="e.g. GDG on Campus AGEMC" required /></label>
                 <label>Title *<input value={form.title} onChange={set('title')} maxLength={120} placeholder="e.g. Core Team Recruitment 2026" required /></label>
                 <label className="wide">One-line summary<input value={form.summary} onChange={set('summary')} maxLength={300} placeholder="What it is, in one sentence" /></label>
-                <label className="wide">Description *
-                  <textarea value={form.description} onChange={set('description')} rows={6} maxLength={8000} required placeholder="About the organisation, what members do, what you are looking for…" />
-                </label>
+                <div className="wide rec-rich-field">
+                  <span className="rec-label">Description *</span>
+                  <RichTextEditor
+                    value={form.description}
+                    onChange={(content) => setForm((f) => ({ ...f, description: content }))}
+                    height={320}
+                    placeholder="About the organisation, what members do, what you are looking for…"
+                  />
+                </div>
                 <label className="wide">Who can apply
                   <textarea value={form.eligibility} onChange={set('eligibility')} rows={3} maxLength={1500} placeholder="e.g. 1st–3rd year students of any branch. Basic programming knowledge." />
                 </label>

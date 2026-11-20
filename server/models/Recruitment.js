@@ -13,7 +13,7 @@ const recruitmentSchema = new Schema(
     organization: { type: String, required: true, trim: true, maxlength: 100 },
     type: { type: String, enum: ['recruitment', 'interview'], default: 'recruitment', index: true },
     summary: { type: String, trim: true, maxlength: 300, default: '' },
-    description: { type: String, maxlength: 8000, default: '' },
+    description: { type: String, maxlength: 30000, default: '' }, // rich text (sanitised HTML)
     eligibility: { type: String, maxlength: 1500, default: '' },
     roles: [{
       _id: false,
